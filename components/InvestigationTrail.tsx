@@ -1,0 +1,12 @@
+'use client'
+import { useState } from 'react'
+import { Icon } from './Icon'
+import type { App } from '../lib/lachesis'
+
+export type InvestigationEvent={id:number;action:string;target:string;detail:string;at:number}
+
+export function InvestigationTrail({app,items,onClear}:{app:App;items:InvestigationEvent[];onClear:()=>void}){
+  const [open,setOpen]=useState(false)
+  function exportTrail(){const rows=items.slice().reverse().map(item=>`- **${item.action}** — ${item.target}${item.detail?` (${item.detail})`:''}`).join('\n');const body=`# Lachesis investigation\n\nBundle: ${app.name||'Untitled'}\nRevision: ${app.commit||'unknown'}\n\n${rows||'No investigation steps recorded.'}\n`;const href=URL.createObjectURL(new Blob([body],{type:'text/markdown'}));const link=document.createElement('a');link.href=href;link.download='lachesis-investigation.md';link.click();URL.revokeObjectURL(href)}
+  return <><button className="trail-trigger" onClick={()=>setOpen(true)} aria-label="Open investigation trail" aria-expanded={open}><Icon name="history" size={15}/><span>Trail</span>{items.length>0&&<b>{items.length}</b>}</button>{open&&<div className="trail-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false)}}><aside className="trail-drawer" role="dialog" aria-modal="true" aria-label="Investigation trail"><header><div><span className="panel-label">LOCAL ANALYSIS PROVENANCE</span><h2>Investigation trail</h2></div><button onClick={()=>setOpen(false)} aria-label="Close investigation trail"><Icon name="close" size={14}/></button></header><p className="trail-intro">A local record of how you moved through this bundle. Nothing here is sent through analytics.</p><div className="trail-actions"><button onClick={exportTrail} disabled={!items.length}>Export Markdown</button><button onClick={onClear} disabled={!items.length}>Clear</button></div><ol className="trail-list">{items.length?items.map((item,index)=><li key={item.id}><span>{String(items.length-index).padStart(2,'0')}</span><div><b>{item.action}</b><strong>{item.target}</strong><small>{item.detail}</small></div><time>{new Date(item.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</time></li>):<li className="trail-empty"><span>00</span><div><b>No steps yet</b><small>Select a value, request node, or sink to begin.</small></div></li>}</ol></aside></div>}</>
+}
