@@ -9,6 +9,7 @@ colors:
   ink: "#e9f1ed"
   ink-muted: "#a5b7af"
   line: "#21382f"
+  ambient-shadow: "rgba(0,0,0,.13)"
   evidence-green: "#58d6a1"
   exact-cyan: "#70cfe2"
   dynamic-amber: "#e4b464"
@@ -26,16 +27,92 @@ typography:
     fontSize: "13px"
     fontWeight: 400
     lineHeight: 1.6
+  workspace-title:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "18px"
+    fontWeight: 700
+    lineHeight: 1.2
+  control:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "11px"
+    fontWeight: 600
+    lineHeight: 1.4
+  body-compact:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: 1.6
+  brand:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "14px"
+    fontWeight: 700
+    lineHeight: 1.2
+  metric:
+    fontFamily: "Berkeley Mono, SFMono-Regular, Consolas, monospace"
+    fontSize: "15px"
+    fontWeight: 600
+    lineHeight: 1.2
+  section-title:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "20px"
+    fontWeight: 700
+    lineHeight: 1.2
+  dialog-title:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "22px"
+    fontWeight: 700
+    lineHeight: 1.15
+  display-compact:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "28px"
+    fontWeight: 700
+    lineHeight: 1.05
+  display-mobile:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "32px"
+    fontWeight: 700
+    lineHeight: 1.03
+  display-install:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "37px"
+    fontWeight: 700
+    lineHeight: 1.02
+  support:
+    fontFamily: "Söhne, Avenir Next, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "10px"
+    fontWeight: 400
+    lineHeight: 1.5
   label:
     fontFamily: "Berkeley Mono, SFMono-Regular, Consolas, monospace"
     fontSize: "9px"
     fontWeight: 700
     lineHeight: 1.4
     letterSpacing: "0.14em"
+  micro:
+    fontFamily: "Berkeley Mono, SFMono-Regular, Consolas, monospace"
+    fontSize: "8px"
+    fontWeight: 500
+    lineHeight: 1.4
+  nano:
+    fontFamily: "Berkeley Mono, SFMono-Regular, Consolas, monospace"
+    fontSize: "7px"
+    fontWeight: 500
+    lineHeight: 1.4
 rounded:
+  micro: "5px"
+  micro-lg: "6px"
+  compact: "7px"
+  small: "8px"
   control: "9px"
+  control-md: "10px"
+  control-lg: "11px"
+  card: "12px"
+  card-md: "13px"
+  card-lg: "14px"
   panel: "16px"
+  dialog: "17px"
   shell: "18px"
+  pill: "999px"
 spacing:
   tight: "8px"
   control: "12px"
@@ -136,6 +213,14 @@ Navigation is a compact set of analysis lenses with a quiet default and green ac
 ### Evidence Path
 
 Nodes are keyboard-selectable circles with stable numbering. Exact edges are solid neutral lines, aliases use violet dashes, dynamic edges use amber dots, and sinks receive coral outlines. Fit and Reset change only the viewport, never graph evidence.
+
+### Sink Field
+
+Sink-first investigation uses coral sparingly as a boundary signal. The convergence field merges shared nodes across value flows, while the evidence matrix exposes the same facts in a comparison-friendly form. Request overlap must always be labeled as overlap rather than reachability.
+
+### Investigation Trail
+
+The fixed Trail control opens a right-side provenance drawer. Events remain local, use compact chronological notation, and can be exported as Markdown. The drawer behaves as a modal with trapped focus, Escape dismissal, and focus restoration.
 
 ## Do's and Don'ts
 

@@ -26,8 +26,11 @@ Users work with local code repositories, generated JSON bundles, source location
 
 - Load a compatible `bundle.json` entirely in the browser.
 - Trace values forward and backward through graph nodes.
+- Investigate sinks first and compare every bundled value flow that reaches them.
+- Normalize explicit and path-derived relationships while retaining their provenance.
 - Walk request callpaths using baked layout coordinates when provided.
 - Inspect node source, role, edge metadata, and MCP evidence.
+- Capture and export local investigation history without sending it through analytics.
 - Preserve current and compatible legacy bundle field names.
 - Never fabricate repository data, evidence, paths, or counts.
 - Never send source content, filenames, repository names, or uploaded bundle data through analytics.
