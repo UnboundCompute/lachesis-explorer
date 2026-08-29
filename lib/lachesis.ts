@@ -5,7 +5,9 @@ export type Evidence = { for: string; verb: string; args: string; result_summary
 export type LayoutPoint = { x: number; y: number }
 export type Hop = { node_id: string; edge_label: string; caption: string; layout?: LayoutPoint }
 export type Entry = { id: string; label: string; file: string; entry_node?: string; hops: Hop[]; hasLayout: boolean }
-export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; flows: Flow[]; entries: Entry[]; mcp: Evidence[] }
+export type EdgeOrigin = 'bundle' | 'value-flow' | 'request-path'
+export type GraphEdge = { id:string; source:string; target:string; relation:string; alias:boolean; dynamic:boolean; origins:EdgeOrigin[]; flow_ids:string[]; entry_ids:string[] }
+export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; entries: Entry[]; mcp: Evidence[] }
 
 export const starterNodes: Node[] = [
   { id:'n_api_42',kind:'assignment',file:'handlers/api.py',line:42,label:'data = request.json["q"]',snippet:'data = request.json["q"]' },
@@ -32,7 +34,7 @@ export const starterEvidence: Evidence[] = [
   {for:'user_input',verb:'trace',args:'value="user_input"',result_summary:'reaches(cursor.execute) → sink found',hops:4,nodes:4,indirections:2,confidence:'exact',origin:'demo bundle'},
   {for:'cp_search',verb:'cursor.exec',args:'/api/search',result_summary:'request path resolved',hops:5,nodes:5,indirections:0,confidence:'exact',origin:'demo bundle'}
 ]
-export const starter: App = {name:'example/webapp',language:'python',commit:'a1b2c3d',lines:18432,nodes:starterNodes,flows:starterFlows,entries:starterEntries,mcp:starterEvidence}
+export const starter: App = {name:'example/webapp',language:'python',commit:'a1b2c3d',lines:18432,nodes:starterNodes,edges:deriveGraphEdges([],starterFlows,starterEntries),flows:starterFlows,entries:starterEntries,mcp:starterEvidence}
 
 function formatArgs(args: unknown) {
   if (typeof args === 'string') return args
@@ -48,6 +50,23 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
   }
   const point = rawLayout && typeof rawLayout === 'object' ? (rawLayout as Record<string, any>)[nodeId] : undefined
   return point && Number.isFinite(Number(point.x)) ? {x:Number(point.x), y:Number(point.y ?? 110)} : undefined
+}
+
+type EdgeSeed = Omit<GraphEdge,'id'|'origins'|'flow_ids'|'entry_ids'> & {origin:EdgeOrigin;flow_id?:string;entry_id?:string}
+
+export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entry[]): GraphEdge[] {
+  const collected = new Map<string,GraphEdge>()
+  function include(seed:EdgeSeed) {
+    if (!seed.source || !seed.target) return
+    const key=[seed.source,seed.target,seed.relation,seed.alias?'alias':'exact',seed.dynamic?'dynamic':'static'].join('|')
+    const current=collected.get(key)
+    if(current){if(!current.origins.includes(seed.origin))current.origins.push(seed.origin);if(seed.flow_id&&!current.flow_ids.includes(seed.flow_id))current.flow_ids.push(seed.flow_id);if(seed.entry_id&&!current.entry_ids.includes(seed.entry_id))current.entry_ids.push(seed.entry_id);return}
+    collected.set(key,{id:`edge_${collected.size+1}`,source:seed.source,target:seed.target,relation:seed.relation||'connects',alias:seed.alias,dynamic:seed.dynamic,origins:[seed.origin],flow_ids:seed.flow_id?[seed.flow_id]:[],entry_ids:seed.entry_id?[seed.entry_id]:[]})
+  }
+  explicit.forEach(include)
+  flows.forEach(flow=>flow.steps.slice(1).forEach((step,index)=>include({source:flow.steps[index].node_id,target:step.node_id,relation:step.role||'flows to',alias:Boolean(step.edge?.alias),dynamic:Boolean(step.edge?.dynamic),origin:'value-flow',flow_id:flow.id})))
+  entries.forEach(entry=>entry.hops.slice(1).forEach((hop,index)=>include({source:entry.hops[index].node_id,target:hop.node_id,relation:hop.edge_label||'calls',alias:false,dynamic:false,origin:'request-path',entry_id:entry.id})))
+  return [...collected.values()]
 }
 
 export function normalize(raw: any): App {
@@ -69,6 +88,8 @@ export function normalize(raw: any): App {
   }) : []
   const rawMcp = raw.mcp ?? source.mcp
   const mcp = Array.isArray(rawMcp) ? rawMcp.map((m:any)=>({for:String(m.for??m.flow??''),verb:String(m.tool??m.verb??''),args:formatArgs(m.args),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops),nodes:m.nodes==null?undefined:Number(m.nodes),indirections:m.indirections==null?undefined:Number(m.indirections),confidence:m.confidence==null?undefined:String(m.confidence),origin:m.origin==null?undefined:String(m.origin)})) : []
+  const rawEdges = Array.isArray(source.edges) ? source.edges : []
+  const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),origin:'bundle'}))
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
   if (!flows.length) throw new Error('The bundle contains no value flows.')
   const ids = new Set(nodes.map((node:Node)=>node.id))
@@ -79,7 +100,10 @@ export function normalize(raw: any): App {
   if (brokenStep) throw new Error(`A flow references missing node "${brokenStep.node_id}".`)
   const brokenHop = entries.flatMap((entry:Entry)=>entry.hops).find((hop:Hop)=>!ids.has(hop.node_id))
   if (brokenHop) throw new Error(`A callpath references missing node "${brokenHop.node_id}".`)
-  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,flows,entries,mcp}
+  const brokenEdge = explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
+  if (brokenEdge) throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
+  const edges=deriveGraphEdges(explicitEdges,flows,entries)
+  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,entries,mcp}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {
