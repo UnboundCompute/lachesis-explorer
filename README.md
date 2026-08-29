@@ -66,6 +66,12 @@ npm run build
 
 Please keep the JSON contract stable, keep evidence grounded in bundle data, and include a short note about responsive behavior when changing UI.
 
+## Analytics
+
+The deployed app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. Events cover navigation and product interactions such as changing views, toggling theme, selecting a flow or callpath hop, loading a bundle, copying an install command, and opening a related resource.
+
+Event payloads deliberately exclude repository names, filenames, code snippets, flow values, and uploaded bundle contents. Analytics is best-effort; the explorer continues to work when it is unavailable.
+
 ## Related links
 
 - [UnboundCompute](https://unboundcompute.com/) — the main site

@@ -1,4 +1,5 @@
 import { Icon } from './Icon'
+import { trackEvent } from '../lib/analytics'
 
 const resources = [
   { label: 'Main site', href: 'https://unboundcompute.com/', detail: 'UnboundCompute' },
@@ -11,7 +12,7 @@ export function ResourceLinks() {
   return <nav className="resource-links" aria-label="UnboundCompute resources">
     <span className="resource-title">EXPLORE THE STACK</span>
     <div className="resource-list">
-      {resources.map(resource => <a key={resource.href} href={resource.href} target="_blank" rel="noreferrer">
+      {resources.map(resource => <a key={resource.href} href={resource.href} target="_blank" rel="noreferrer" onClick={()=>trackEvent('resource_opened',{resource:resource.label})}>
         <span><b>{resource.label}</b><small>{resource.detail}</small></span><Icon name="arrow" size={14}/>
       </a>)}
     </div>
