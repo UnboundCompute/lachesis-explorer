@@ -11,6 +11,8 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Walk a request callpath hop by hop with baked graph layout when available.
 - Load any compatible `bundle.json` from the browser.
 - Switch between light and dark themes; the preference is saved locally.
+- Jump to views, values, or entrypoints with `Cmd/Ctrl+K`; deep links preserve the active graph selection.
+- Keep a local-only list of recent bundle metadata without storing bundle contents.
 
 ## Run locally
 
@@ -60,8 +62,7 @@ lib/lachesis.ts           bundle types, starter data, normalization
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and review checklist. Before opening a pull request, run the build and strict TypeScript checks:
 
 ```bash
-npx tsc --noEmit
-npm run build
+npm run check
 ```
 
 Please keep the JSON contract stable, keep evidence grounded in bundle data, and include a short note about responsive behavior when changing UI.
