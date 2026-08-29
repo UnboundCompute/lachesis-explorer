@@ -5,9 +5,10 @@ import { useMemo, useRef, useState } from 'react'
 type Node = { id: string; kind: string; file: string; line: number; label: string; snippet: string }
 type Step = { node_id: string; role: string; note?: string; edge?: { alias?: boolean; dynamic?: boolean } }
 type Flow = { id: string; name: string; steps: Step[] }
+type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number }
 type Hop = { node_id: string; edge_label: string; caption: string }
-type Entry = { label: string; file: string; hops: Hop[] }
-type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; flows: Flow[]; entries: Entry[] }
+type Entry = { id: string; label: string; file: string; hops: Hop[] }
+type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; flows: Flow[]; entries: Entry[]; mcp: Evidence[] }
 
 const starterNodes: Node[] = [
   { id:'n_api_42',kind:'assignment',file:'handlers/api.py',line:42,label:'data = request.json["q"]',snippet:'data = request.json["q"]' },
@@ -25,19 +26,23 @@ const starterFlows: Flow[] = [
   {id:'sql_statement',name:'sql_statement',steps:[{node_id:'n_db_88',role:'origin'},{node_id:'n_db_93',role:'sink',edge:{dynamic:true}}]},
   {id:'cache_key',name:'cache_key',steps:[{node_id:'n_api_51',role:'origin'},{node_id:'n_cache_18',role:'transform'}]},
 ]
-const starterEntries: Entry[] = [{label:'POST /api/search',file:'routes.py:12',hops:[{node_id:'n_route_12',edge_label:'route',caption:'route — accepts POST /api/search'},{node_id:'n_auth_30',edge_label:'middleware',caption:'guard — checks the request token'},{node_id:'n_api_42',edge_label:'handler',caption:'handler — reads the query value'},{node_id:'n_svc_70',edge_label:'service',caption:'service — delegates query execution'},{node_id:'n_db_88',edge_label:'repository',caption:'repository — builds the statement'}]},{label:'GET /api/suggestions',file:'routes.py:28',hops:[{node_id:'n_route_12',edge_label:'route',caption:'route — accepts GET /api/suggestions'},{node_id:'n_auth_30',edge_label:'middleware',caption:'guard — checks the request token'},{node_id:'n_api_51',edge_label:'handler',caption:'handler — normalizes the query'},{node_id:'n_cache_18',edge_label:'cache',caption:'cache — derives a stable lookup key'}]}]
-const starter: App = {name:'example/webapp',language:'python',commit:'a1b2c3d',lines:18432,nodes:starterNodes,flows:starterFlows,entries:starterEntries}
-const curated: App[] = [starter,{name:'acme/checkout',language:'typescript',commit:'7e91c4a',lines:9210,nodes:starterNodes.map(n=>({...n,file:n.file.replace('.py','.ts')})),flows:starterFlows,entries:starterEntries},{name:'data-lab/ingest',language:'javascript',commit:'f02d88b',lines:28340,nodes:starterNodes,flows:starterFlows,entries:starterEntries}]
+const starterEntries: Entry[] = [{id:'cp_search',label:'POST /api/search',file:'routes.py:12',hops:[{node_id:'n_route_12',edge_label:'route',caption:'route — accepts POST /api/search'},{node_id:'n_auth_30',edge_label:'middleware',caption:'guard — checks the request token'},{node_id:'n_api_42',edge_label:'handler',caption:'handler — reads the query value'},{node_id:'n_svc_70',edge_label:'service',caption:'service — delegates query execution'},{node_id:'n_db_88',edge_label:'repository',caption:'repository — builds the statement'}]},{id:'cp_suggestions',label:'GET /api/suggestions',file:'routes.py:28',hops:[{node_id:'n_route_12',edge_label:'route',caption:'route — accepts GET /api/suggestions'},{node_id:'n_auth_30',edge_label:'middleware',caption:'guard — checks the request token'},{node_id:'n_api_51',edge_label:'handler',caption:'handler — normalizes the query'},{node_id:'n_cache_18',edge_label:'cache',caption:'cache — derives a stable lookup key'}]}]
+const starterEvidence: Evidence[] = [{for:'user_input',verb:'trace',args:'value="user_input"',result_summary:'reaches(cursor.execute) → sink found',hops:4},{for:'cp_search',verb:'cursor.exec',args:'/api/search',result_summary:'request path resolved',hops:5}]
+const starter: App = {name:'example/webapp',language:'python',commit:'a1b2c3d',lines:18432,nodes:starterNodes,flows:starterFlows,entries:starterEntries,mcp:starterEvidence}
+const curated: App[] = [starter,{...starter,name:'acme/checkout',language:'typescript',commit:'7e91c4a',lines:9210,nodes:starterNodes.map(n=>({...n,file:n.file.replace('.py','.ts')}))},{...starter,name:'data-lab/ingest',language:'javascript',commit:'f02d88b',lines:28340}]
 
 function Icon({children}:{children:string}) { return <span className="icon" aria-hidden="true">{children}</span> }
 function CodeBlock({children}:{children:string}) { return <pre className="code-block"><code>{children}</code><button className="copy-button" aria-label="Copy code">copy</button></pre> }
 function normalize(raw: any): App {
   const source = raw.graph ?? raw
-  const nodes = Array.isArray(source.nodes) ? source.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??'unknown'),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??'node'),snippet:String(n.snippet??n.code??n.label??n.name??'')})) : []
-  const flows = Array.isArray(source.flows) ? source.flows.map((f:any,i:number)=>({id:String(f.id??f.name??`flow_${i}`),name:String(f.name??f.id??`flow_${i}`),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node),role:String(s.role??'step'),note:s.note,edge:s.edge})) : []})) : []
-  const entries = Array.isArray(source.entries??source.entry_points) ? (source.entries??source.entry_points).map((e:any)=>({label:String(e.label??e.name??e.path??'entry point'),file:String(e.file??''),hops:(e.hops??e.nodes??[]).map((h:any)=>({node_id:String(h.node_id??h.nodeId??h.id??h),edge_label:String(h.edge_label??h.edge??'hop'),caption:String(h.caption??h.label??'graph hop')}))})) : []
+  const meta = raw.meta ?? source.meta ?? {}
+  const nodes = Array.isArray(source.nodes) ? source.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')})) : []
+  const flows = Array.isArray(source.flows) ? source.flows.map((f:any,i:number)=>({id:String(f.id??`flow_${i}`),name:String(f.value??''),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node),role:String(s.role??''),note:s.note,edge:s.edge})) : []})) : []
+  const rawPaths = raw.callpaths ?? source.callpaths ?? []
+  const entries = Array.isArray(rawPaths) ? rawPaths.map((e:any,i:number)=>({id:String(e.id??e.callpath_id??`callpath_${i}`),label:String(e.entry??''),file:String(e.file??''),hops:Array.isArray(e.hops)?e.hops.map((h:any)=>({node_id:String(h.node_id??h.nodeId??h.id??''),edge_label:String(h.edge_label??''),caption:String(h.caption??'')})):[]})) : []
+  const mcp = Array.isArray(raw.mcp??source.mcp) ? (raw.mcp??source.mcp).map((m:any)=>({for:String(m.for??''),verb:String(m.verb??''),args:String(m.args??''),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops)})) : []
   if (!nodes.length || !flows.length) throw new Error('Expected graph.nodes and graph.flows in bundle.json')
-  return {name:String(raw.name??raw.repository??raw.repo??'imported/bundle'),language:String(raw.language??raw.languages?.[0]??'unknown'),commit:String(raw.commit??raw.revision??'local'),lines:Number(raw.lines??raw.line_count??0),nodes,flows,entries:entries.length?entries:[{label:'Imported entry point',file:'bundle.json',hops:flows[0].steps.map((s:any)=>({node_id:s.node_id,edge_label:s.role,caption:`${s.role} — imported from bundle`}))}]}
+  return {name:String(meta.repo??''),language:String(meta.lang??''),commit:String(meta.commit??''),lines:Number(meta.loc??0),nodes,flows,entries,mcp}
 }
 
 export default function Page() {
