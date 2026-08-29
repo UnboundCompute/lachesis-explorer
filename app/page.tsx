@@ -17,7 +17,7 @@ export default function Page() {
   const [direction,setDirection]=useState<'backward'|'forward'>('backward')
   const [app,setApp]=useState<App>(starter)
   const [menu,setMenu]=useState(false)
-  const [dark,setDark]=useState(false)
+  const [dark,setDark]=useState(true)
   const [flowId,setFlowId]=useState(starter.flows[0].id)
   const [stepId,setStepId]=useState(starter.flows[0].steps[0].node_id)
   const [entryIndex,setEntryIndex]=useState(0)
@@ -26,7 +26,7 @@ export default function Page() {
   const [notice,setNotice]=useState('')
   const fileRef=useRef<HTMLInputElement>(null)
 
-  useEffect(()=>{ const stored=window.localStorage.getItem('lachesis-theme'); if(stored==='dark') setDark(true) },[])
+  useEffect(()=>{ const stored=window.localStorage.getItem('lachesis-theme'); if(stored==='light') setDark(false) },[])
   useEffect(()=>{ document.documentElement.dataset.theme=dark?'dark':'light'; window.localStorage.setItem('lachesis-theme',dark?'dark':'light') },[dark])
   function activate(next:App){setApp(next);setFlowId(next.flows[0]?.id??'');setStepId(next.flows[0]?.steps[0]?.node_id??next.nodes[0]?.id??'');setEntryIndex(0);setHopId(next.entries[0]?.hops[0]?.node_id??next.nodes[0]?.id??'');setMenu(false);setNotice(`Loaded ${next.name || 'bundle.json'}`);trackEvent('bundle_loaded',{has_callpaths:next.entries.length>0,flow_count:next.flows.length})}
   async function upload(file?:File){if(!file)return;try{activate(normalize(JSON.parse(await file.text())))}catch(error){setNotice(error instanceof Error?error.message:'Could not read bundle.json');trackEvent('bundle_load_failed')}}
