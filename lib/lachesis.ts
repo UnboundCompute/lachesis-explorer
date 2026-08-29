@@ -51,10 +51,14 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
 }
 
 export function normalize(raw: any): App {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Bundle must be a JSON object.')
   const source = raw.graph ?? raw
+  if (!source || typeof source !== 'object') throw new Error('Expected a graph object in bundle.json.')
   const meta = raw.meta ?? source.meta ?? {}
-  const nodes = Array.isArray(source.nodes) ? source.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')})) : []
-  const flows = Array.isArray(source.flows) ? source.flows.map((f:any,i:number)=>({id:String(f.id??`flow_${i}`),name:String(f.value??f.name??''),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node),role:String(s.role??''),note:s.note,edge:s.edge})) : []})) : []
+  if (!Array.isArray(source.nodes)) throw new Error('Expected graph.nodes to be an array.')
+  if (!Array.isArray(source.flows)) throw new Error('Expected graph.flows to be an array.')
+  const nodes = source.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')}))
+  const flows = source.flows.map((f:any,i:number)=>{const id=String(f.id??`flow_${i}`);return {id,name:String(f.value??f.name??id),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []}})
   const rawPaths = raw.callpaths ?? source.callpaths ?? []
   const entries = Array.isArray(rawPaths) ? rawPaths.map((e:any,i:number)=>{
     const rawHops = Array.isArray(e.hops) ? e.hops : []
@@ -65,7 +69,16 @@ export function normalize(raw: any): App {
   }) : []
   const rawMcp = raw.mcp ?? source.mcp
   const mcp = Array.isArray(rawMcp) ? rawMcp.map((m:any)=>({for:String(m.for??m.flow??''),verb:String(m.tool??m.verb??''),args:formatArgs(m.args),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops),nodes:m.nodes==null?undefined:Number(m.nodes),indirections:m.indirections==null?undefined:Number(m.indirections),confidence:m.confidence==null?undefined:String(m.confidence),origin:m.origin==null?undefined:String(m.origin)})) : []
-  if (!nodes.length || !flows.length) throw new Error('Expected graph.nodes and graph.flows in bundle.json')
+  if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
+  if (!flows.length) throw new Error('The bundle contains no value flows.')
+  const ids = new Set(nodes.map((node:Node)=>node.id))
+  if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
+  const emptyFlow = flows.find((flow:Flow)=>flow.steps.length===0)
+  if (emptyFlow) throw new Error(`Flow "${emptyFlow.name}" contains no steps.`)
+  const brokenStep = flows.flatMap((flow:Flow)=>flow.steps).find((step:Step)=>!ids.has(step.node_id))
+  if (brokenStep) throw new Error(`A flow references missing node "${brokenStep.node_id}".`)
+  const brokenHop = entries.flatMap((entry:Entry)=>entry.hops).find((hop:Hop)=>!ids.has(hop.node_id))
+  if (brokenHop) throw new Error(`A callpath references missing node "${brokenHop.node_id}".`)
   return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,flows,entries,mcp}
 }
 
