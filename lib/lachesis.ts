@@ -1,7 +1,7 @@
 export type Node = { id: string; kind: string; file: string; line: number; label: string; snippet: string }
 export type Step = { node_id: string; role: string; note?: string; edge?: { alias?: boolean; dynamic?: boolean } }
 export type Flow = { id: string; name: string; steps: Step[] }
-export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; indirections?: number }
+export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; indirections?: number; confidence?: string; origin?: string }
 export type LayoutPoint = { x: number; y: number }
 export type Hop = { node_id: string; edge_label: string; caption: string; layout?: LayoutPoint }
 export type Entry = { id: string; label: string; file: string; entry_node?: string; hops: Hop[]; hasLayout: boolean }
@@ -29,8 +29,8 @@ export const starterEntries: Entry[] = [
   {id:'cp_suggestions',label:'GET /api/suggestions',file:'routes.py:28',entry_node:'n_route_12',hasLayout:true,hops:layout([72,286,500]).map((hop, i) => ({...hop, edge_label:['route','middleware','cache'][i], caption:['route — accepts GET /api/suggestions','guard — checks the request token','cache — derives a stable lookup key'][i], node_id:['n_route_12','n_auth_30','n_cache_18'][i]}))}
 ]
 export const starterEvidence: Evidence[] = [
-  {for:'user_input',verb:'trace',args:'value="user_input"',result_summary:'reaches(cursor.execute) → sink found',hops:4,nodes:4,indirections:2},
-  {for:'cp_search',verb:'cursor.exec',args:'/api/search',result_summary:'request path resolved',hops:5,nodes:5,indirections:0}
+  {for:'user_input',verb:'trace',args:'value="user_input"',result_summary:'reaches(cursor.execute) → sink found',hops:4,nodes:4,indirections:2,confidence:'exact',origin:'demo bundle'},
+  {for:'cp_search',verb:'cursor.exec',args:'/api/search',result_summary:'request path resolved',hops:5,nodes:5,indirections:0,confidence:'exact',origin:'demo bundle'}
 ]
 export const starter: App = {name:'example/webapp',language:'python',commit:'a1b2c3d',lines:18432,nodes:starterNodes,flows:starterFlows,entries:starterEntries,mcp:starterEvidence}
 
@@ -64,7 +64,7 @@ export function normalize(raw: any): App {
     return {id:String(e.id??e.callpath_id??`callpath_${i}`),label:String(e.entry??e.label??''),file:firstNode ? `${firstNode.file}:${firstNode.line}` : '',entry_node:entryNode,hops,hasLayout:hops.length > 0 && hops.every((h: Hop) => h.layout !== undefined)}
   }) : []
   const rawMcp = raw.mcp ?? source.mcp
-  const mcp = Array.isArray(rawMcp) ? rawMcp.map((m:any)=>({for:String(m.for??m.flow??''),verb:String(m.tool??m.verb??''),args:formatArgs(m.args),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops),nodes:m.nodes==null?undefined:Number(m.nodes),indirections:m.indirections==null?undefined:Number(m.indirections)})) : []
+  const mcp = Array.isArray(rawMcp) ? rawMcp.map((m:any)=>({for:String(m.for??m.flow??''),verb:String(m.tool??m.verb??''),args:formatArgs(m.args),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops),nodes:m.nodes==null?undefined:Number(m.nodes),indirections:m.indirections==null?undefined:Number(m.indirections),confidence:m.confidence==null?undefined:String(m.confidence),origin:m.origin==null?undefined:String(m.origin)})) : []
   if (!nodes.length || !flows.length) throw new Error('Expected graph.nodes and graph.flows in bundle.json')
   return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,flows,entries,mcp}
 }
