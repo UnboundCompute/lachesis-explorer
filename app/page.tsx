@@ -114,17 +114,18 @@ export default function Page() {
     setApp(next);setFlowId(next.flows[0].id);setStepId(next.flows[0].steps[0].node_id);setEntryIndex(0);setHopId(next.entries[0]?.hops[0]?.node_id??next.nodes[0].id);setSinkId(firstSink)
     let restored=false
     if(pending){
-      if(pending.view==='trace'||pending.view==='journey'||pending.view==='investigate'||pending.view==='install'){setView(pending.view);restored=true}
+      if(pending.view==='trace'||pending.view==='journey'||pending.view==='investigate'||pending.view==='install')setView(pending.view)
       const linkedFlow=next.flows.find(flow=>flow.id===pending.flow)
-      if(linkedFlow){setFlowId(linkedFlow.id);setStepId(pending.node&&linkedFlow.steps.some(step=>step.node_id===pending.node)?pending.node:linkedFlow.steps[0].node_id)}
+      if(linkedFlow){setFlowId(linkedFlow.id);setStepId(pending.node&&linkedFlow.steps.some(step=>step.node_id===pending.node)?pending.node:linkedFlow.steps[0].node_id);restored=true}
       const linkedEntry=next.entries.findIndex(entry=>entry.id===pending.entry)
-      if(linkedEntry>=0){setEntryIndex(linkedEntry);setHopId(pending.hop&&next.entries[linkedEntry].hops.some(hop=>hop.node_id===pending.hop)?pending.hop:next.entries[linkedEntry].hops[0]?.node_id??next.nodes[0].id)}
-      if(pending.sink&&next.nodes.some(node=>node.id===pending.sink))setSinkId(pending.sink)
+      if(linkedEntry>=0){setEntryIndex(linkedEntry);setHopId(pending.hop&&next.entries[linkedEntry].hops.some(hop=>hop.node_id===pending.hop)?pending.hop:next.entries[linkedEntry].hops[0]?.node_id??next.nodes[0].id);restored=true}
+      if(pending.sink&&next.nodes.some(node=>node.id===pending.sink)){setSinkId(pending.sink);restored=true}
+      if(pending.view==='install')restored=true
       if(pending.direction==='forward')setDirection('forward')
       pendingLink.current=null;setPendingLocal(false)
     }
     setMenu(false);setInspectorOpen(true);setIsDemo(false);setBundleScope('local')
-    setLoadState({type:'success',message:restored?`Loaded ${next.name||'bundle.json'} and restored the local investigation link.`:`Loaded ${next.name||'bundle.json'}.`})
+    setLoadState({type:restored||!pending?'success':'error',message:restored?`Loaded ${next.name||'bundle.json'} and restored the local investigation link.`:pending?`Loaded ${next.name||'bundle.json'}, but its linked evidence IDs were not found. Opened the first available evidence.`:`Loaded ${next.name||'bundle.json'}.`})
     const recent:RecentBundle={name:next.name||'Untitled bundle',language:next.language||'unknown',commit:next.commit||'no commit',lines:next.lines,flows:next.flows.length,loadedAt:Date.now()}
     setRecentBundles(current=>{const updated=[recent,...current.filter(item=>`${item.name}:${item.commit}`!==`${recent.name}:${recent.commit}`)].slice(0,3);window.localStorage.setItem('lachesis-recent-bundles',JSON.stringify(updated));return updated})
     record('Loaded bundle',next.name||'Untitled bundle',`${next.nodes.length} nodes · ${next.flows.length} flows`)
