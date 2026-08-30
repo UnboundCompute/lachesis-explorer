@@ -641,6 +641,9 @@ export default function Page() {
         upload(event.dataTransfer.files?.[0]);
       }}
     >
+      <a className="skip-link" href="#workspace-content">
+        Skip to workspace
+      </a>
       <Header
         view={view}
         setView={changeView}
@@ -734,6 +737,7 @@ export default function Page() {
           </div>
         </div>
       )}
+      <div id="workspace-content" tabIndex={-1}>
       {view !== "home" && (
         <Intro
           view={view as Exclude<View, "home">}
@@ -928,6 +932,7 @@ export default function Page() {
       {view === "install" && (
         <InstallView onUpload={() => fileRef.current?.click()} />
       )}
+      </div>
       <ResourceLinks />
       <InvestigationTrail
         app={app}

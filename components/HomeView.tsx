@@ -198,6 +198,30 @@ export function HomeView({
         </div>
       </header>
 
+      <ol className="briefing-guide" aria-label="How to read this bundle">
+        <li>
+          <span>01</span>
+          <div>
+            <b>Choose a path</b>
+            <small>Start with a value flow or request path.</small>
+          </div>
+        </li>
+        <li>
+          <span>02</span>
+          <div>
+            <b>Follow the handoffs</b>
+            <small>Read each symbol and relationship in sequence.</small>
+          </div>
+        </li>
+        <li>
+          <span>03</span>
+          <div>
+            <b>Open the source</b>
+            <small>Verify the exact file and line behind the step.</small>
+          </div>
+        </li>
+      </ol>
+
       {loadState.message && (
         <p
           className={`briefing-notice ${loadState.type}`}
