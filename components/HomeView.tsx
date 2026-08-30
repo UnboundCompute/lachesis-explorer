@@ -433,7 +433,7 @@ export function HomeView({
                 </div>
                 <div>
                   <small>Evidence</small>
-                  <b>{app.mcp.length ? `${app.mcp.length} MCP records` : "not supplied"}</b>
+                  <b>{app.mcp.length ? `${app.mcp.length} linked records` : "not supplied"}</b>
                 </div>
               </div>
               <div className="priority-actions">
