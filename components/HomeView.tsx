@@ -58,6 +58,12 @@ function sourceFor(flow: Flow, app: App): Node | undefined {
   );
 }
 
+function nodeLocation(node?: Node) {
+  return node
+    ? `${node.file || "Source unavailable"}:${node.line || "—"}`
+    : "Source location unavailable";
+}
+
 function flowContext(flow: Flow, app: App) {
   const evidence = app.mcp.find((item) => item.for === flow.id);
   if (evidence?.result_summary) return evidence.result_summary;
@@ -334,7 +340,7 @@ export function HomeView({
                 <div>
                   <h2>{priority.flow.name}</h2>
                   <p>
-                    {priority.sink?.file}:{priority.sink?.line}
+                    {nodeLocation(priority.sink)}
                   </p>
                 </div>
               </div>

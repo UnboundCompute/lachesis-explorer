@@ -7,6 +7,10 @@ import { ConvergenceCanvas } from "./ConvergenceCanvas";
 import { EvidenceMatrix } from "./EvidenceMatrix";
 import { trackEvent } from "../lib/analytics";
 
+function nodeLocation(node: App["nodes"][number]) {
+  return `${node.file || "Source unavailable"}:${node.line || "—"}`;
+}
+
 type Props = {
   app: App;
   sinkId: string;
@@ -108,7 +112,7 @@ export function SinkView({
       onRecord(
         "Inspected node",
         node.label || node.id,
-        `${node.file}:${node.line}`,
+        nodeLocation(node),
       );
   }
   return (
@@ -137,7 +141,7 @@ export function SinkView({
                 <span>
                   <b>{item.label || item.id}</b>
                   <small>
-                    {item.file}:{item.line}
+                    {nodeLocation(item)}
                   </small>
                 </span>
                 <em>{count}</em>
@@ -159,7 +163,7 @@ export function SinkView({
             <span className="context-kicker">{securityMode ? "SINK-FIRST INVESTIGATION" : "BOUNDARY CONVERGENCE"}</span>
             <h2>{sink.label || sink.id}</h2>
             <p>
-              {sink.file}:{sink.line}
+              {nodeLocation(sink)}
             </p>
           </div>
           <div
