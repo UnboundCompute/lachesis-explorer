@@ -407,6 +407,7 @@ export function TraceView({
         </div>
         <PathCanvas
           items={items}
+          title={app.findings.some((finding) => finding.id === flow.id) ? "Witness path" : "Code path"}
           selectedId={stepId}
           selectedIndex={selectedIndex}
           onSelect={(id, index) => {

@@ -291,6 +291,7 @@ export function JourneyView({
         </div>
         <PathCanvas
           items={items}
+          title="Request path"
           selectedId={hopId}
           selectedIndex={selectedIndex}
           onSelect={(id, index) => {
