@@ -20,6 +20,7 @@ import {
 } from "../components/InvestigationTrail";
 import { starter, normalize, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
+import { copyText } from "../lib/clipboard";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -245,20 +246,7 @@ export default function Page() {
       if (value) url.searchParams.set(key, value);
     });
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url.toString());
-      } else {
-        const input = document.createElement("textarea");
-        input.value = url.toString();
-        input.setAttribute("readonly", "");
-        input.style.position = "fixed";
-        input.style.opacity = "0";
-        document.body.appendChild(input);
-        input.select();
-        const copied = document.execCommand("copy");
-        input.remove();
-        if (!copied) throw new Error("Clipboard fallback failed");
-      }
+      await copyText(url.toString());
       setLoadState({ type: "success", message: "Investigation link copied." });
       trackEvent("investigation_link_copied", {
         view: params.view ?? "unknown",

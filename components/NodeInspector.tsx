@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { App, Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
+import { copyText } from "../lib/clipboard";
 
 const descriptions: Record<string, string> = {
   sink: "Execution boundary or sensitive effect reached by this path.",
@@ -55,20 +56,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
   ).length;
   async function copyLocation() {
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(location);
-      } else {
-        const input = document.createElement("textarea");
-        input.value = location;
-        input.setAttribute("readonly", "");
-        input.style.position = "fixed";
-        input.style.opacity = "0";
-        document.body.appendChild(input);
-        input.select();
-        const copiedWithFallback = document.execCommand("copy");
-        input.remove();
-        if (!copiedWithFallback) throw new Error("Clipboard fallback failed");
-      }
+      await copyText(location);
       setCopyError(false);
       setCopied(true);
       trackEvent("source_location_copied");
