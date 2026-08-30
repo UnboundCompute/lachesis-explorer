@@ -149,7 +149,7 @@ export function JourneyView({
           {entry.hops.map((hop, index) => (
           <button
             key={`${index}-${hop.node_id}`}
-            className={hopId === hop.node_id ? "hop-row selected" : "hop-row"}
+            className={selectedIndex === index ? "hop-row selected" : "hop-row"}
             onClick={() => {
               const node = app.nodes.find((item) => item.id === hop.node_id);
               setSelectedPosition(index);
