@@ -839,11 +839,13 @@ export default function Page() {
         />
       )}
       {view === "compare" && (
-        <CompareView
-          base={app}
-          compare={compareApp}
-          onUpload={() => compareFileRef.current?.click()}
-        />
+        <div role="main" aria-label="Revision comparison">
+          <CompareView
+            base={app}
+            compare={compareApp}
+            onUpload={() => compareFileRef.current?.click()}
+          />
+        </div>
       )}
       {view === "install" && (
         <InstallView onUpload={() => fileRef.current?.click()} />

@@ -136,7 +136,7 @@ export function HomeView({
         : "No open evidence paths in this bundle.";
 
   return (
-    <section className="investigation-briefing">
+    <main className="investigation-briefing">
       <header className="briefing-intro">
         <div className="briefing-copy">
           <div className="briefing-status-line">
@@ -609,6 +609,6 @@ export function HomeView({
           <b>{app.bundle.catalog ?? "not reported"}</b>
         </div>
       </footer>
-    </section>
+    </main>
   );
 }
