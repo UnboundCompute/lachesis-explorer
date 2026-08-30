@@ -165,6 +165,10 @@ export default function Page() {
     writeLocal("lachesis-theme", dark ? "dark" : "light");
   }, [dark]);
   useEffect(() => {
+    const bundle = app.name || "Untitled bundle";
+    document.title = `${viewLabels[view]} · ${bundle} · Lachesis`;
+  }, [app.name, view]);
+  useEffect(() => {
     if (previousView.current === null) {
       previousView.current = view;
       return;
