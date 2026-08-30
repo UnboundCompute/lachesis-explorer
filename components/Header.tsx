@@ -11,13 +11,13 @@ type Props = { view: View; setView: (view: View) => void; app: App; menu: boolea
 
 const primary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'home', label: 'Briefing', detail: 'Start here' },
-  { id: 'investigate', label: 'Investigate', detail: 'Find convergence' },
-  { id: 'map', label: 'Explore', detail: 'See topology' },
-  { id: 'compare', label: 'Compare', detail: 'Review revisions' },
+  { id: 'trace', label: 'Value flow', detail: 'Follow a value' },
+  { id: 'journey', label: 'Request path', detail: 'Follow callers' },
+  { id: 'map', label: 'Graph', detail: 'See relationships' },
 ]
 const secondary: Array<{ id: View; label: string; detail: string }> = [
-  { id: 'trace', label: 'Value flow', detail: 'Trace data' },
-  { id: 'journey', label: 'Request path', detail: 'Walk calls' },
+  { id: 'investigate', label: 'Convergence', detail: 'Compare shared paths' },
+  { id: 'compare', label: 'Revision diff', detail: 'Review changes' },
   { id: 'install', label: 'Local workflow', detail: 'Run locally' },
 ]
 
