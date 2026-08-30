@@ -315,9 +315,11 @@ export default function Page() {
       if (occurrence) params.set("hop_occurrence", occurrence);
     } else if (view === "investigate" && sinkId) {
       params.set("sink", sinkId);
+    } else if (view === "map" && focusNodeId) {
+      params.set("node", focusNodeId);
     }
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, direction, entryIndex, flowId, hopId, hopIndex, isDemo, sinkId, stepId, stepIndex, view]);
+  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, sinkId, stepId, stepIndex, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
