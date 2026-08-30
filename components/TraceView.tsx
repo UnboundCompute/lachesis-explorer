@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import type { App, Flow } from "../lib/lachesis";
 import { indirectionCount } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
@@ -86,6 +87,19 @@ export function TraceView({
   onEntry,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement;
+      if (target.matches("input, textarea, select, [contenteditable='true']"))
+        return;
+      if (event.key === "[" || event.key === "]") {
+        event.preventDefault();
+        moveStep(event.key === "]" ? 1 : -1);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [flow, direction, stepId]);
   if (!flow)
     return (
       <section className="workspace-empty">

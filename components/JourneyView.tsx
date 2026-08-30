@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import type { App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { Icon } from "./Icon";
@@ -36,6 +37,19 @@ export function JourneyView({
   onEntry,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement;
+      if (target.matches("input, textarea, select, [contenteditable='true']"))
+        return;
+      if (event.key === "[" || event.key === "]") {
+        event.preventDefault();
+        moveHop(event.key === "]" ? 1 : -1);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [entry, hopId]);
   if (!entry)
     return (
       <section className="workspace-empty">

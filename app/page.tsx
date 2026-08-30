@@ -755,6 +755,7 @@ export default function Page() {
         </span>
         <span>
           Shortcuts: <b>⌘K</b> jump · <b>/</b> search · <b>← →</b> direction ·{" "}
+          <b>[ ]</b> step ·{" "}
           <b>Esc</b> close
         </span>
         <span className="footer-brand">Lachesis · graph reader</span>
