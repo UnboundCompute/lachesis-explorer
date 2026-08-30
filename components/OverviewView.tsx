@@ -336,13 +336,26 @@ export function OverviewView({
                       : edge.alias
                         ? "alias"
                         : "exact";
+                    const nearby = connectedIds.has(edge.source) || connectedIds.has(edge.target);
+                    const touchesSelected = selected?.id === edge.source || selected?.id === edge.target;
                     return (
-                      <path
-                        key={edge.id}
-                        className={`topology-edge ${kind}${focusActive && !connectedIds.has(edge.source) && !connectedIds.has(edge.target) ? " dimmed" : ""}`}
-                        markerEnd={`url(#topology-arrow-${kind})`}
-                        d={`M${a.x} ${a.y} C${(a.x + b.x) / 2} ${a.y},${(a.x + b.x) / 2} ${b.y},${b.x} ${b.y}`}
-                      />
+                      <g key={edge.id}>
+                        <path
+                          className={`topology-edge ${kind}${focusActive && !nearby ? " dimmed" : ""}`}
+                          markerEnd={`url(#topology-arrow-${kind})`}
+                          d={`M${a.x} ${a.y} C${(a.x + b.x) / 2} ${a.y},${(a.x + b.x) / 2} ${b.y},${b.x} ${b.y}`}
+                        />
+                        {focusActive && touchesSelected && (
+                          <text
+                            className={`topology-edge-label ${kind}`}
+                            x={(a.x + b.x) / 2}
+                            y={(a.y + b.y) / 2 - 8}
+                            textAnchor="middle"
+                          >
+                            {shorten(edge.relation || "connected", 18)}
+                          </text>
+                        )}
+                      </g>
                     );
                   })}
                   {visible.map((node) => {
