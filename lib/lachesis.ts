@@ -214,7 +214,7 @@ function normalizeBundleV1(raw: any): App {
   assertUniqueIds(findingFlows,'Security findings')
   const flows = findingFlows.filter(flow=>flow.steps.length>0)
   findingFlows.forEach((flow)=>assertUniqueOccurrenceIds(flow.steps,`Security finding ${flow.id}`))
-  const mcp:Evidence[] = raw.findings.map((f:any,i:number)=>{
+  const findingEvidence:Evidence[] = raw.findings.map((f:any,i:number)=>{
     const id=String(f.finding_id??f.id??`finding_${i}`)
     const steps=Array.isArray(f.witness?.steps)?f.witness.steps:[]
     const node_ids=steps.map((s:any)=>String(s.node_id??s.nodeId??s.node??'')).filter(Boolean)
@@ -224,6 +224,11 @@ function normalizeBundleV1(raw: any): App {
     const summary=status==='refuted'?'A bundled guard refutes this candidate path.':status==='inconclusive'?'The witness reaches the boundary, but unresolved evidence prevents a conclusion.':'A source-to-sink witness is present and ready for review.'
     return {for:id,verb:String(f.analysis?.projection??f.projection??'finding'),args:loc,result_summary:String(f.result_summary??f.objective??summary),nodes:node_ids.length,node_ids,indirections,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:String(f.origin??f.analysis?.origin??'finding envelope'),status,lifecycle:f.lifecycle_state==null?undefined:String(f.lifecycle_state),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}
   })
+  const explicitMcp:Evidence[]=Array.isArray(raw.mcp??graph.mcp)?(raw.mcp??graph.mcp).map(normalizeEvidence):[]
+  const evidenceById=new Map<string,Evidence>()
+  explicitMcp.forEach((item)=>{if(item.for)evidenceById.set(item.for,item)})
+  findingEvidence.forEach((item)=>{if(item.for&&!evidenceById.has(item.for))evidenceById.set(item.for,item)})
+  const mcp=[...evidenceById.values()]
   const entries=normalizeEntries(raw.callpaths??graph.callpaths??[],nodes)
   const rawEdges = Array.isArray(graph.edges) ? graph.edges : []
   const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:normalizeRelation(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
