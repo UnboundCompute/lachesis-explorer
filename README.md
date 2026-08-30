@@ -102,7 +102,9 @@ At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_
   "schema_version": "2.0",
   "meta": { "repository": "owner/repo", "description": "A short human-readable bundle description", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
   "graph": {
-    "nodes": [],
+    "nodes": [
+      { "id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "snippet": "function search() {}" }
+    ],
     "edges": [],
     "files": [],
     "modules": [],

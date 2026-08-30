@@ -31,7 +31,9 @@ rather than loaded as a successful snapshot.
     "indexed_nodes": 193057
   },
   "graph": {
-    "nodes": [],
+    "nodes": [
+      {"id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "snippet": "function search() {}"}
+    ],
     "edges": [],
     "files": [],
     "modules": [],
