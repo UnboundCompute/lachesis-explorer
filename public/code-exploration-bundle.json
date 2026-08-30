@@ -36,13 +36,13 @@
       {"id": "db.products", "kind": "effect", "file": "src/catalog/client.ts", "line": 64, "label": "products.query", "qualified_name": "CatalogClient.products.query", "module": "catalog", "snippet": "return db.products.query(statement)"}
     ],
     "edges": [
-      {"source": "route.search", "target": "parse.query", "relation": "calls"},
-      {"source": "parse.query", "target": "normalize.query", "relation": "calls"},
-      {"source": "normalize.query", "target": "search.service", "relation": "calls"},
-      {"source": "search.service", "target": "search.query", "relation": "calls", "confidence": "medium", "limitations": ["The query builder is represented as a bounded projection."]},
-      {"source": "search.service", "target": "catalog.client", "relation": "uses"},
-      {"source": "catalog.client", "target": "db.products", "relation": "queries"},
-      {"source": "search.service", "target": "search.result", "relation": "returns"}
+      {"id": "edge.route-parse", "source": "route.search", "target": "parse.query", "relation": "calls"},
+      {"id": "edge.parse-normalize", "source": "parse.query", "target": "normalize.query", "relation": "calls"},
+      {"id": "edge.normalize-service", "source": "normalize.query", "target": "search.service", "relation": "calls"},
+      {"id": "edge.service-query", "source": "search.service", "target": "search.query", "relation": "calls", "confidence": "medium", "limitations": ["The query builder is represented as a bounded projection."]},
+      {"id": "edge.service-catalog", "source": "search.service", "target": "catalog.client", "relation": "uses"},
+      {"id": "edge.catalog-products", "source": "catalog.client", "target": "db.products", "relation": "queries"},
+      {"id": "edge.service-result", "source": "search.service", "target": "search.result", "relation": "returns"}
     ],
     "entrypoints": [
       {"id": "entry.search", "label": "POST /api/search", "kind": "http", "node_id": "route.search", "file": "src/routes/search.ts"}
