@@ -491,8 +491,10 @@ export function HomeView({
         <div className="reading-grid">
           <button
             onClick={() =>
-              graphOnly && graphFocus
-                ? onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "")
+              graphOnly
+                ? graphFocus
+                  ? onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "")
+                  : onView("map")
                 : onView("investigate")
             }
           >
@@ -505,9 +507,11 @@ export function HomeView({
             <span>
               <b>{graphOnly ? "Graph paths" : "Execution boundaries"}</b>
               <small>
-                {graphOnly
+                {graphOnly && graphFocus
                   ? "Trace a bundled path through its connected symbols."
-                  : "Compare every value converging on a sink."}
+                  : graphOnly
+                    ? "Open the graph to inspect its included structure."
+                    : "Compare every value converging on a sink."}
               </small>
             </span>
             <Icon name="arrow" size={13} />
