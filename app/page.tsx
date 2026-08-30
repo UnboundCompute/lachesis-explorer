@@ -36,6 +36,8 @@ type PendingLink = {
   direction?: string;
   entry?: string;
   hop?: string;
+  stepIndex?: number;
+  hopIndex?: number;
   sink?: string;
 };
 
@@ -60,8 +62,10 @@ export default function Page() {
   const [dark, setDark] = useState(true);
   const [flowId, setFlowId] = useState(starter.flows[0].id);
   const [stepId, setStepId] = useState(starter.flows[0].steps[0].node_id);
+  const [stepIndex, setStepIndex] = useState(0);
   const [entryIndex, setEntryIndex] = useState(0);
   const [hopId, setHopId] = useState(starter.entries[0].hops[0].node_id);
+  const [hopIndex, setHopIndex] = useState(0);
   const [sinkId, setSinkId] = useState(
     starter.nodes.find((node) => node.kind === "sink")?.id ?? "",
   );
@@ -138,6 +142,8 @@ export default function Page() {
       direction: params.get("direction") ?? undefined,
       entry: params.get("entry") ?? undefined,
       hop: params.get("hop") ?? undefined,
+      stepIndex: params.get("step_index") == null ? undefined : Number(params.get("step_index")),
+      hopIndex: params.get("hop_index") == null ? undefined : Number(params.get("hop_index")),
       sink: params.get("sink") ?? undefined,
     };
     if (params.get("scope") === "local") {
@@ -164,6 +170,8 @@ export default function Page() {
       setFlowId(flow.id);
       if (link.node && flow.steps.some((step) => step.node_id === link.node))
         setStepId(link.node);
+      if (link.stepIndex != null && link.stepIndex >= 0 && link.stepIndex < flow.steps.length && flow.steps[link.stepIndex]?.node_id === link.node)
+        setStepIndex(link.stepIndex);
     }
     const index = starter.entries.findIndex((item) => item.id === link.entry);
     if (index >= 0) {
@@ -173,6 +181,8 @@ export default function Page() {
         starter.entries[index].hops.some((item) => item.node_id === link.hop)
       )
         setHopId(link.hop);
+      if (link.hopIndex != null && link.hopIndex >= 0 && link.hopIndex < starter.entries[index].hops.length && starter.entries[index].hops[link.hopIndex]?.node_id === link.hop)
+        setHopIndex(link.hopIndex);
     }
     if (
       link.sink &&
@@ -278,8 +288,10 @@ export default function Page() {
     setApp(next);
     setFlowId(firstFlow?.id ?? "");
     setStepId(firstFlow?.steps[0]?.node_id ?? next.nodes[0]?.id ?? "");
+    setStepIndex(0);
     setEntryIndex(0);
     setHopId(next.entries[0]?.hops[0]?.node_id ?? next.nodes[0]?.id ?? "");
+    setHopIndex(0);
     setSinkId(firstSink);
     let restored = false;
     if (pending) {
@@ -302,6 +314,8 @@ export default function Page() {
             ? pending.node
             : (linkedFlow.steps[0]?.node_id ?? ""),
         );
+        const linkedStepIndex = pending.stepIndex;
+        setStepIndex(linkedStepIndex != null && linkedStepIndex >= 0 && linkedStepIndex < linkedFlow.steps.length && linkedFlow.steps[linkedStepIndex]?.node_id === pending.node ? linkedStepIndex : 0);
         restored = true;
       }
       const linkedEntry = next.entries.findIndex(
@@ -317,6 +331,8 @@ export default function Page() {
             ? pending.hop
             : (next.entries[linkedEntry].hops[0]?.node_id ?? next.nodes[0].id),
         );
+        const linkedHopIndex = pending.hopIndex;
+        setHopIndex(linkedHopIndex != null && linkedHopIndex >= 0 && linkedHopIndex < next.entries[linkedEntry].hops.length && next.entries[linkedEntry].hops[linkedHopIndex]?.node_id === pending.hop ? linkedHopIndex : 0);
         restored = true;
       }
       if (
@@ -633,17 +649,20 @@ export default function Page() {
           setQuery={setQuery}
           direction={direction}
           setDirection={setDirection}
+          position={stepIndex}
+          onPositionChange={setStepIndex}
           inspectorOpen={inspectorOpen}
           onInspectorOpen={() => setInspectorOpen(true)}
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
           onView={(next: "journey" | "map") => changeView(next)}
-          onShare={() =>
+          onShare={(position) =>
             copyInvestigationLink({
               view: "trace",
               flow: flowId,
               node: stepId,
               direction,
+              step_index: String(position),
             })
           }
           onFlow={(nextFlow, nextNode) => {
@@ -666,16 +685,19 @@ export default function Page() {
           setEntryIndex={setEntryIndex}
           hopId={hopId}
           setHopId={setHopId}
+          position={hopIndex}
+          onPositionChange={setHopIndex}
           inspectorOpen={inspectorOpen}
           onInspectorOpen={() => setInspectorOpen(true)}
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
           onView={(next: "trace" | "map") => changeView(next)}
-          onShare={() =>
+          onShare={(position) =>
             copyInvestigationLink({
               view: "journey",
               entry: app.entries[entryIndex]?.id ?? "",
               hop: hopId,
+              hop_index: String(position),
             })
           }
           onFlow={(nextFlow, nextNode) => {

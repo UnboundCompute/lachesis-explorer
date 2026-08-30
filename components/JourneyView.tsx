@@ -12,12 +12,14 @@ type Props = {
   setEntryIndex: (v: number) => void;
   hopId: string;
   setHopId: (v: string) => void;
+  position?: number;
+  onPositionChange?: (position: number) => void;
   inspectorOpen: boolean;
   onInspectorOpen: () => void;
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map") => void;
-  onShare: () => void;
+  onShare: (position: number) => void;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
 };
@@ -27,6 +29,8 @@ export function JourneyView({
   setEntryIndex,
   hopId,
   setHopId,
+  position,
+  onPositionChange,
   inspectorOpen,
   onInspectorOpen,
   onInspectorClose,
@@ -37,12 +41,15 @@ export function JourneyView({
   onEntry,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
-  const [selectedPosition, setSelectedPosition] = useState(0);
+  const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   useEffect(() => {
     if (!entry) return;
-    const position = entry.hops.findIndex((hop) => hop.node_id === hopId);
-    setSelectedPosition(position >= 0 ? position : 0);
-  }, [app, entryIndex]);
+    const fallback = entry.hops.findIndex((hop) => hop.node_id === hopId);
+    const next = position != null && entry.hops[position]?.node_id === hopId
+      ? position
+      : fallback;
+    setSelectedPosition(next >= 0 ? next : 0);
+  }, [app, entryIndex, position]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -101,6 +108,7 @@ export function JourneyView({
     const next = items[selectedIndex + delta];
     if (!next) return;
     setSelectedPosition(selectedIndex + delta);
+    onPositionChange?.(selectedIndex + delta);
     setHopId(next.id);
     onInspectorOpen();
     onRecord(
@@ -127,6 +135,7 @@ export function JourneyView({
             const selectedEntry = app.entries[next];
             setEntryIndex(next);
             setHopId(selectedEntry?.hops[0]?.node_id ?? "");
+            onPositionChange?.(0);
             onInspectorOpen();
             if (selectedEntry)
               onRecord(
@@ -153,6 +162,7 @@ export function JourneyView({
             onClick={() => {
               const node = app.nodes.find((item) => item.id === hop.node_id);
               setSelectedPosition(index);
+              onPositionChange?.(index);
               setHopId(hop.node_id);
               onInspectorOpen();
               if (node)
@@ -186,7 +196,7 @@ export function JourneyView({
                 Show source
               </button>
             )}
-            <button className="inspector-reopen" type="button" onClick={onShare}>
+            <button className="inspector-reopen" type="button" onClick={() => onShare(selectedIndex)}>
               Copy link
             </button>
             <div className="step-nav" aria-label="Request path step navigation">
@@ -254,6 +264,7 @@ export function JourneyView({
           onSelect={(id, index) => {
             const node = app.nodes.find((item) => item.id === id);
             setSelectedPosition(index);
+            onPositionChange?.(index);
             setHopId(id);
             onInspectorOpen();
             if (node)

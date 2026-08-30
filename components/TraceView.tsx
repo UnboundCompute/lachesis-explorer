@@ -17,12 +17,14 @@ type Props = {
   setQuery: (v: string) => void;
   direction: "backward" | "forward";
   setDirection: (v: "backward" | "forward") => void;
+  position?: number;
+  onPositionChange?: (position: number) => void;
   inspectorOpen: boolean;
   onInspectorOpen: () => void;
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "journey" | "map") => void;
-  onShare: () => void;
+  onShare: (position: number) => void;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
 };
@@ -81,6 +83,8 @@ export function TraceView({
   setQuery,
   direction,
   setDirection,
+  position,
+  onPositionChange,
   inspectorOpen,
   onInspectorOpen,
   onInspectorClose,
@@ -91,13 +95,16 @@ export function TraceView({
   onEntry,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
-  const [selectedPosition, setSelectedPosition] = useState(0);
+  const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   useEffect(() => {
     if (!flow) return;
     const ordered = direction === "backward" ? flow.steps : [...flow.steps].reverse();
-    const position = ordered.findIndex((step) => step.node_id === stepId);
-    setSelectedPosition(position >= 0 ? position : 0);
-  }, [app, flowId, direction]);
+    const fallback = ordered.findIndex((step) => step.node_id === stepId);
+    const next = position != null && ordered[position]?.node_id === stepId
+      ? position
+      : fallback;
+    setSelectedPosition(next >= 0 ? next : 0);
+  }, [app, flowId, direction, position]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -170,6 +177,7 @@ export function TraceView({
     const next = items[selectedIndex + delta];
     if (!next) return;
     setSelectedPosition(selectedIndex + delta);
+    onPositionChange?.(selectedIndex + delta);
     setStepId(next.id);
     onInspectorOpen();
     onRecord(
@@ -219,6 +227,7 @@ export function TraceView({
                 onClick={() => {
                   setFlowId(item.id);
                   setStepId(item.steps[0]?.node_id ?? "");
+                  onPositionChange?.(0);
                   onInspectorOpen();
                   onRecord(
                     "Opened graph path",
@@ -265,7 +274,7 @@ export function TraceView({
                 Show source
               </button>
             )}
-            <button className="inspector-reopen" type="button" onClick={onShare}>
+            <button className="inspector-reopen" type="button" onClick={() => onShare(selectedIndex)}>
               Copy link
             </button>
             <div className="step-nav" aria-label="Path step navigation">
@@ -350,6 +359,7 @@ export function TraceView({
           onSelect={(id, index) => {
             const node = app.nodes.find((item) => item.id === id);
             setSelectedPosition(index);
+            onPositionChange?.(index);
             setStepId(id);
             onInspectorOpen();
             if (node)
