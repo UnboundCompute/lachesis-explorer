@@ -179,6 +179,7 @@ export function TraceView({
   const steps =
     direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const evidence = app.mcp.find((item) => item.for === flow.id);
+  const securityPath = app.findings.some((finding) => finding.id === flow.id);
   const firstNode = app.nodes.find((node) => node.id === (flow.sourceNodeId ?? flow.steps[0]?.node_id));
   const lastNode = app.nodes.find((node) => node.id === (flow.sinkNodeId ?? flow.steps.at(-1)?.node_id));
   const indirectSteps = flow.steps.filter(
@@ -278,7 +279,7 @@ export function TraceView({
                       : app.mcp.some((evidence) => evidence.for === item.id)
                         ? "Bundle-backed value path"
                       : "Value path"} {" · "}
-                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} indirect · {flowLocation(app, item)}
+                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "non-direct"} · {flowLocation(app, item)}
                   </small>
                   <small className="node-row-context">
                     {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary ?? flowLocation(app, item)}
@@ -401,13 +402,13 @@ export function TraceView({
             </b>
           </div>
           <div className="trace-orientation-fact">
-            <span>INDIRECT</span>
+              <span>{securityPath ? "INDIRECT" : "NON-DIRECT"}</span>
             <b>{indirectSteps}</b>
           </div>
         </div>
         <PathCanvas
           items={items}
-          title={app.findings.some((finding) => finding.id === flow.id) ? "Witness path" : "Code path"}
+          title={securityPath ? "Witness path" : "Code path"}
           selectedId={stepId}
           selectedIndex={selectedIndex}
           onSelect={(id, index) => {
@@ -433,7 +434,7 @@ export function TraceView({
           fallbackSummary={`${steps.length} visible nodes in this graph path.`}
           nodeCount={steps.length}
           indirections={indirectionCount(flow, evidence)}
-          variant={app.findings.some((finding) => finding.id === flow.id) ? "evidence" : "path"}
+          variant={securityPath ? "evidence" : "path"}
         />
       </main>
       {inspectorOpen && (
