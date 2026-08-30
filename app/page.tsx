@@ -516,7 +516,7 @@ export default function Page() {
   }
 
   return (
-    <main
+    <div
       className="app-shell"
       id="top"
       onDragEnter={(event) => {
@@ -846,6 +846,6 @@ export default function Page() {
         </span>
         <span className="footer-brand">Lachesis · graph reader</span>
       </footer>
-    </main>
+    </div>
   );
 }
