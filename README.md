@@ -29,6 +29,30 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Browse the graph hierarchy from module to file to symbol in the System Map.
 - Keep a local-only list of recent bundle metadata without storing bundle contents.
 
+## A typical investigation
+
+Explorer is a code-understanding surface first. Security findings can be layered on top, but they are
+not required to use the graph. A useful first pass is:
+
+1. Load a bundle and choose a question from the Briefing view: follow a value, inspect a caller, find
+   convergence, or understand the system shape.
+2. Follow the highlighted path one step at a time. Each step is a graph relationship with source
+   location and provenance, not a generated explanation.
+3. Open the source inspector for the selected symbol to see its signature, module, relationships, and
+   evidence before forming a conclusion.
+
+The Briefing, Investigate, Explore, and Compare lenses are different views over the same bundle. They
+do not create new evidence; they help you move from a high-signal path to the underlying graph and
+source.
+
+### Keyboard workflow
+
+- `Cmd/Ctrl+K` opens the command palette for views, symbols, values, and entrypoints.
+- `/` focuses search where a lens supports filtering.
+- `[` and `]` move to the previous or next step in a value flow or request path.
+- `Esc` closes the current overlay or source inspector.
+- The Help control in the footer shows the current shortcut list.
+
 ## Run locally
 
 Requirements: Node.js 20+ and npm (pnpm is also supported by the workspace configuration).
@@ -53,13 +77,20 @@ The preferred contract is `lachesis-explorer-bundle` `2.0`: a graph-first snapsh
 
 The full graph-first contract is documented in [`docs/GRAPH_EXPLORER_CONTRACT.md`](docs/GRAPH_EXPLORER_CONTRACT.md), with a machine-readable v2 schema at [`docs/GRAPH_EXPLORER_BUNDLE.schema.json`](docs/GRAPH_EXPLORER_BUNDLE.schema.json). It defines stable graph entities, source locations, hierarchy, path projections, capabilities, coverage, and limitations.
 
+For a producer, the important distinction is between the graph and its projections: `graph.nodes` and
+`graph.edges` describe the reusable code relationship layer, while `paths.value_flows` and
+`paths.request_paths` provide readable traversals through that graph. A path step or hop should carry
+an `occurrence_id` (unique within its path) when the same node appears more than once. This lets the
+Explorer deep-link to the exact occurrence instead of only selecting a repeated symbol. Stable IDs are
+also recommended for nodes, edges, flows, paths, files, modules, entrypoints, and findings.
+
 At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional fields include:
 
 ```json
 {
   "format": "lachesis-explorer-bundle",
   "schema_version": "2.0",
-  "meta": { "repository": "owner/repo", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
+  "meta": { "repository": "owner/repo", "description": "A short human-readable bundle description", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
   "graph": {
     "nodes": [],
     "edges": [],
@@ -71,6 +102,11 @@ At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_
   }
 }
 ```
+
+`meta.description` is optional but recommended: it gives people immediate context when they switch
+bundles in the app. `meta.coverage` and `meta.limitations` should describe what was indexed and what
+the graph cannot establish. Keep those limitations close to the evidence so a partial graph is not
+mistaken for a complete call graph.
 
 Edges may use `source`/`target` (or `from`/`to`), a relationship `kind`, and optional `alias`, `dynamic`, `confidence`, or `limitations` metadata. The uncertainty fields are preserved in the source inspector so bounded or unresolved relationships remain explicit. When explicit edges are absent, Explorer derives clearly attributed relationships from flow and callpath sequences. Callpaths may provide `entry_node`, `hops`, and a `layout`. MCP evidence supports `tool` (or the legacy `verb`), object `args`, `result_summary`, `nodes`, `indirections`, and `hops`. The importer accepts both the current and compatible legacy field names where practical.
 
