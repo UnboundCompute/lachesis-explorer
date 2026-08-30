@@ -170,7 +170,8 @@ export default function Page() {
       setFlowId(flow.id);
       if (link.node && flow.steps.some((step) => step.node_id === link.node))
         setStepId(link.node);
-      if (link.stepIndex != null && link.stepIndex >= 0 && link.stepIndex < flow.steps.length && flow.steps[link.stepIndex]?.node_id === link.node)
+      const linkedSteps = link.direction === "forward" ? [...flow.steps].reverse() : flow.steps;
+      if (link.stepIndex != null && link.stepIndex >= 0 && link.stepIndex < linkedSteps.length && linkedSteps[link.stepIndex]?.node_id === link.node)
         setStepIndex(link.stepIndex);
     }
     const index = starter.entries.findIndex((item) => item.id === link.entry);
@@ -315,7 +316,8 @@ export default function Page() {
             : (linkedFlow.steps[0]?.node_id ?? ""),
         );
         const linkedStepIndex = pending.stepIndex;
-        setStepIndex(linkedStepIndex != null && linkedStepIndex >= 0 && linkedStepIndex < linkedFlow.steps.length && linkedFlow.steps[linkedStepIndex]?.node_id === pending.node ? linkedStepIndex : 0);
+        const linkedSteps = pending.direction === "forward" ? [...linkedFlow.steps].reverse() : linkedFlow.steps;
+        setStepIndex(linkedStepIndex != null && linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length && linkedSteps[linkedStepIndex]?.node_id === pending.node ? linkedStepIndex : 0);
         restored = true;
       }
       const linkedEntry = next.entries.findIndex(
