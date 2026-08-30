@@ -61,7 +61,14 @@ function verify(file, bundle) {
   const paths = bundle.paths ?? {};
   for (const [kind, pathList] of Object.entries({ values: paths.values ?? graph.value_flows ?? graph.flows ?? [], requests: paths.requests ?? graph.request_paths ?? graph.callpaths ?? [] })) {
     if (!Array.isArray(pathList)) fail(file, `paths.${kind} must be an array`);
+    const pathIds = new Set();
     for (const [pathIndex, path] of pathList.entries()) {
+      if (path.id != null) {
+        const pathId = String(path.id);
+        if (!pathId) fail(file, `paths.${kind}[${pathIndex}].id must not be empty`);
+        if (pathIds.has(pathId)) fail(file, `paths.${kind}[${pathIndex}] duplicates path ID ${pathId}`);
+        pathIds.add(pathId);
+      }
       validateNodes(file, ids, path.steps ?? path.hops ?? [], `paths.${kind}[${pathIndex}]`);
       const entryNode = path.entry_node ?? path.entryNode;
       if (entryNode != null && !ids.has(String(entryNode))) fail(file, `paths.${kind}[${pathIndex}] entry_node references a missing node`);
@@ -77,7 +84,15 @@ function verify(file, bundle) {
 
   const findings = bundle.security?.findings ?? bundle.findings;
   if (findings != null && !Array.isArray(findings)) fail(file, "security.findings must be an array");
+  const findingIds = new Set();
   for (const [index, finding] of (findings ?? []).entries()) {
+    const findingId = finding.finding_id ?? finding.id;
+    if (findingId != null) {
+      const id = String(findingId);
+      if (!id) fail(file, `findings[${index}] ID must not be empty`);
+      if (findingIds.has(id)) fail(file, `findings[${index}] duplicates finding ID ${id}`);
+      findingIds.add(id);
+    }
     const witness = finding.witness?.steps;
     if (witness != null) validateNodes(file, ids, witness, `findings[${index}].witness`, { required: false });
   }
