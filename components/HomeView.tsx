@@ -99,6 +99,17 @@ function pathKindLabel(flow: Flow) {
   return flow.kind?.trim() || "graph path";
 }
 
+function pathQuestion(flow?: Flow) {
+  const kind = flow?.kind?.trim().toLowerCase();
+  if (kind === "call-path" || kind === "callpath")
+    return { title: "How does this call chain unfold?", detail: "Follow calls from symbol to symbol." };
+  if (kind === "data-flow" || kind === "dataflow")
+    return { title: "How does data move?", detail: "Follow data through each relationship." };
+  if (kind === "value-flow" || kind === "valueflow")
+    return { title: "Where does a value go?", detail: "Trace a value through its handoffs." };
+  return { title: "How does this path work?", detail: "Follow its symbols and relationships." };
+}
+
 function EvidenceState({ evidence }: { evidence?: Evidence }) {
   const status = evidence?.status ?? (evidence ? "reported" : "lead");
   return (
@@ -292,7 +303,7 @@ export function HomeView({
           <span>01</span>
           <div>
             <b>Choose a path</b>
-            <small>{graphFocus ? "Start with a value flow or request path." : "Open the graph to inspect its relationships."}</small>
+            <small>{graphFocus ? `Start with a ${pathKindLabel(graphFocus)} or request path.` : "Open the graph to inspect its relationships."}</small>
           </div>
         </li>
         <li>
@@ -645,8 +656,8 @@ export function HomeView({
         </div>
         <div className="question-list">
           <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
-            <b>Where does a value go?</b>
-            <small>{graphFocus ? "Trace a value through its handoffs." : "No value paths in this bundle."}</small>
+            <b>{pathQuestion(graphFocus).title}</b>
+            <small>{graphFocus ? pathQuestion(graphFocus).detail : "No graph paths in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
           <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
