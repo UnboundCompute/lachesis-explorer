@@ -113,7 +113,10 @@ rewrite it into a security conclusion.
 
 `coverage.scope`, `coverage.limitations`, and `graph.capabilities` make missing
 language constructs, unresolved calls, omitted dependencies, and projections
-visible to the Explorer.
+visible to the Explorer. If `indexed_nodes` is greater than the number of
+included graph nodes and no equivalent limitation is supplied, the Explorer
+adds a clearly labelled projected-subset notice; exporters should still state
+the precise reason and boundary whenever they can.
 
 ## Compatibility
 

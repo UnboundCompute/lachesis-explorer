@@ -108,7 +108,8 @@ At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_
 `meta.description` is optional but recommended: it gives people immediate context when they switch
 bundles in the app. `meta.coverage` and `meta.limitations` should describe what was indexed and what
 the graph cannot establish. Keep those limitations close to the evidence so a partial graph is not
-mistaken for a complete call graph.
+mistaken for a complete call graph. When a legacy bundle reports more indexed nodes than it includes,
+Explorer also surfaces a projected-subset notice automatically.
 
 Edges may use `source`/`target` (or `from`/`to`), a relationship `kind`, and optional `alias`, `dynamic`, `confidence`, or `limitations` metadata. The uncertainty fields are preserved in the source inspector so bounded or unresolved relationships remain explicit. When explicit edges are absent, Explorer derives clearly attributed relationships from flow and callpath sequences. Callpaths may provide `entry_node`, `hops`, and a `layout`. MCP evidence supports `tool` (or the legacy `verb`), object `args`, `result_summary`, `nodes`, `indirections`, and `hops`. The importer accepts both the current and compatible legacy field names where practical.
 
