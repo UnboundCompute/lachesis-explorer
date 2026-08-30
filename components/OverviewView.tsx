@@ -287,7 +287,7 @@ export function OverviewView({
               uncertain
             </button>
             <button type="button" onClick={() => setQuery("has:mcp")}>
-              MCP
+              linked
             </button>
             {query && (
               <button

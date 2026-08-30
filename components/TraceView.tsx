@@ -235,7 +235,7 @@ export function TraceView({
           <button onClick={() => setQuery("edge:alias")}>alias</button>
           <button onClick={() => setQuery("edge:uncertain")}>uncertain</button>
           <button onClick={() => setQuery("kind:sink")}>sink</button>
-          <button onClick={() => setQuery("has:mcp")}>MCP</button>
+          <button type="button" onClick={() => setQuery("has:mcp")}>linked</button>
           {query && (
             <button
               type="button"
