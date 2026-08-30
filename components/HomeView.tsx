@@ -557,6 +557,11 @@ export function HomeView({
           <span>
             {app.language} · {app.lines.toLocaleString()} indexed lines
           </span>
+          <span className="coverage-note">
+            <i />
+            {(app.coverage.includedNodes ?? app.nodes.length).toLocaleString()} graph nodes shown ·{" "}
+            {(app.coverage.indexedNodes ?? app.nodes.length).toLocaleString()} indexed
+          </span>
         </div>
         <div>
           <span>Engine</span>
