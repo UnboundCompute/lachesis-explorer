@@ -332,6 +332,7 @@ export default function Page() {
       )?.id ?? "";
     const firstFlow = next.flows[0];
     setApp(next);
+    setCompareApp(null);
     setFlowId(firstFlow?.id ?? "");
     setStepId(firstFlow?.steps[0]?.node_id ?? next.nodes[0]?.id ?? "");
     setStepIndex(0);
