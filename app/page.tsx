@@ -60,6 +60,21 @@ function stepAtPosition(app: App, flowId: string, position: number, direction: "
   return steps[position];
 }
 
+function positionForFlow(app: App, flowId: string, nodeId: string, direction: "backward" | "forward") {
+  const flow = app.flows.find((item) => item.id === flowId);
+  if (!flow) return 0;
+  const steps = direction === "forward" ? [...flow.steps].reverse() : flow.steps;
+  const position = steps.findIndex((step) => step.node_id === nodeId);
+  return position >= 0 ? position : 0;
+}
+
+function positionForEntry(app: App, entryIndex: number, nodeId: string) {
+  const entry = app.entries[entryIndex];
+  if (!entry) return 0;
+  const position = entry.hops.findIndex((hop) => hop.node_id === nodeId);
+  return position >= 0 ? position : 0;
+}
+
 export default function Page() {
   const [view, setView] = useState<View>("home");
   const [direction, setDirection] = useState<"backward" | "forward">(
@@ -587,7 +602,7 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(0);
+            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
             setInspectorOpen(true);
             record("Opened graph path", nextFlow, "via command palette");
           }}
@@ -595,7 +610,7 @@ export default function Page() {
             setView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(0);
+            setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
             record(
               "Opened request path",
@@ -658,7 +673,7 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(0);
+            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
             setInspectorOpen(true);
             record("Opened priority witness", nextFlow, "from briefing");
           }}
@@ -671,7 +686,7 @@ export default function Page() {
             setView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(0);
+            setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
             record(
               "Opened request path",
@@ -723,14 +738,14 @@ export default function Page() {
           onFlow={(nextFlow, nextNode) => {
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(0);
+            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
             setView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(0);
+            setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
           }}
         />
@@ -762,13 +777,13 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(0);
+            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(0);
+            setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
           }}
         />
@@ -783,7 +798,7 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(0);
+            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
             setInspectorOpen(true);
           }}
           onView={(next) => changeView(next)}
@@ -801,7 +816,7 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(0);
+            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
             setInspectorOpen(true);
             record("Opened connected graph path", nextFlow, "from system map");
           }}
@@ -809,7 +824,7 @@ export default function Page() {
             setView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(0);
+            setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
             record(
               "Opened connected request path",
