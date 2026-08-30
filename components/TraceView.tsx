@@ -195,6 +195,7 @@ export function TraceView({
     node: app.nodes.find((node) => node.id === step.node_id) ?? app.nodes[0],
     label: step.role,
     caption: step.note,
+    relation: step.edge?.relation ?? (step.role === "transforms" ? "transforms" : step.role === "used by" ? "used by" : step.role === "sink" ? "value flows to" : undefined),
     edge: step.edge,
   }));
   const selectedIndex = Math.max(

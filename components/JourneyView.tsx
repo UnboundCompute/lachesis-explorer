@@ -107,6 +107,7 @@ export function JourneyView({
     node: app.nodes.find((node) => node.id === hop.node_id) ?? app.nodes[0],
     label: hop.edge_label,
     caption: hop.caption,
+    relation: hop.edge_label,
   }));
   const selectedIndex = Math.max(
     0,
