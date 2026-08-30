@@ -9,6 +9,7 @@ type Mode = "map" | "architecture" | "health";
 type Props = {
   app: App;
   focusNodeId?: string;
+  onFocusNode?: (nodeId: string) => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onFlow?: (flowId: string, nodeId: string) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
@@ -81,6 +82,7 @@ function matches(node: Node, query: string, app: App) {
 export function OverviewView({
   app,
   focusNodeId,
+  onFocusNode,
   onRecord,
   onFlow,
   onEntry,
@@ -223,6 +225,7 @@ export function OverviewView({
     const node = app.nodes.find((item) => item.id === id);
     setSelectedId(id);
     setInspectorOpen(true);
+    onFocusNode?.(id);
     if (node)
       onRecord(
         "Inspected graph node",

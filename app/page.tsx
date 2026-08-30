@@ -1000,6 +1000,7 @@ export default function Page() {
         <OverviewView
           app={app}
           focusNodeId={focusNodeId}
+          onFocusNode={setFocusNodeId}
           onRecord={record}
           onShare={(nodeId) =>
             copyInvestigationLink({ view: "map", node: nodeId })
