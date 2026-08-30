@@ -95,10 +95,9 @@ export function OverviewView({
   const edges = app.edges.filter(
     (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
   );
-  const selected =
-    app.nodes.find((node) => node.id === selectedId) ??
-    visible[0] ??
-    app.nodes[0];
+  const selected = visible.length
+    ? visible.find((node) => node.id === selectedId) ?? visible[0]
+    : undefined;
   const focusActive = Boolean(inspectorOpen && selected);
   const connectedIds = new Set(
     selected
