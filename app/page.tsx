@@ -39,14 +39,11 @@ export default function Page() {
   const [query,setQuery]=useState('')
   const [loadState,setLoadState]=useState<LoadState>({type:'idle',message:''})
   const [isDemo,setIsDemo]=useState(true)
-  const [bundleScope,setBundleScope]=useState<'demo'|'local'>('demo')
   const [dragActive,setDragActive]=useState(false)
   const [commandOpen,setCommandOpen]=useState(false)
   const [inspectorOpen,setInspectorOpen]=useState(true)
   const [recentBundles,setRecentBundles]=useState<RecentBundle[]>([])
   const [activity,setActivity]=useState<InvestigationEvent[]>([])
-  const [pendingLocal,setPendingLocal]=useState(false)
-  const [urlReady,setUrlReady]=useState(false)
   const fileRef=useRef<HTMLInputElement>(null)
   const compareFileRef=useRef<HTMLInputElement>(null)
   const dragDepth=useRef(0)
@@ -63,9 +60,7 @@ export default function Page() {
     const link:PendingLink={view:params.get('view')??undefined,flow:params.get('flow')??undefined,node:params.get('node')??undefined,direction:params.get('direction')??undefined,entry:params.get('entry')??undefined,hop:params.get('hop')??undefined,sink:params.get('sink')??undefined}
     if(params.get('scope')==='local'){
       pendingLink.current=link
-      setPendingLocal(true)
       setLoadState({type:'idle',message:'This link belongs to a local bundle. Load that bundle to restore its investigation state.'})
-      setUrlReady(true)
       return
     }
     if(link.view==='home'||link.view==='trace'||link.view==='journey'||link.view==='investigate'||link.view==='map'||link.view==='compare'||link.view==='install')setView(link.view)
@@ -75,28 +70,7 @@ export default function Page() {
     if(index>=0){setEntryIndex(index);if(link.hop&&starter.entries[index].hops.some(item=>item.node_id===link.hop))setHopId(link.hop)}
     if(link.sink&&starter.nodes.some(node=>node.id===link.sink&&node.kind==='sink'))setSinkId(link.sink)
     if(link.direction==='forward')setDirection('forward')
-    setUrlReady(true)
   },[])
-
-  useEffect(()=>{
-    if(!urlReady||pendingLocal)return
-    const url=new URL(window.location.href)
-    url.searchParams.set('view',view)
-    url.searchParams.set('scope',bundleScope)
-    if(view==='trace'){
-      url.searchParams.set('flow',flowId);url.searchParams.set('node',stepId);url.searchParams.set('direction',direction)
-      ;['entry','hop','sink'].forEach(key=>url.searchParams.delete(key))
-    }else if(view==='journey'){
-      url.searchParams.set('entry',app.entries[entryIndex]?.id??'');url.searchParams.set('hop',hopId)
-      ;['flow','node','direction','sink'].forEach(key=>url.searchParams.delete(key))
-    }else if(view==='investigate'){
-      url.searchParams.set('sink',sinkId)
-      ;['flow','node','direction','entry','hop'].forEach(key=>url.searchParams.delete(key))
-    }else{
-      ;['flow','node','direction','entry','hop','sink'].forEach(key=>url.searchParams.delete(key))
-    }
-    if(window.history.state)window.history.replaceState(window.history.state,'',url)
-  },[urlReady,pendingLocal,bundleScope,view,flowId,stepId,direction,entryIndex,hopId,sinkId,app.entries])
 
   useEffect(()=>{
     function onKeyDown(event:KeyboardEvent){
@@ -129,9 +103,9 @@ export default function Page() {
       if(pending.sink&&next.nodes.some(node=>node.id===pending.sink)){setSinkId(pending.sink);restored=true}
       if(pending.view==='install'||pending.view==='map')restored=true
       if(pending.direction==='forward')setDirection('forward')
-      pendingLink.current=null;setPendingLocal(false)
+      pendingLink.current=null
     }
-    setMenu(false);setInspectorOpen(true);setIsDemo(false);setBundleScope('local')
+    setMenu(false);setInspectorOpen(true);setIsDemo(false)
     setLoadState({type:restored||!pending?'success':'error',message:restored?`Loaded ${next.name||'bundle.json'} and restored the local investigation link.`:pending?`Loaded ${next.name||'bundle.json'}, but its linked evidence IDs were not found. Opened the first available evidence.`:`Loaded ${next.name||'bundle.json'}.`})
     const recent:RecentBundle={name:next.name||'Untitled bundle',language:next.language||'unknown',commit:next.commit||'no commit',lines:next.lines,flows:next.flows.length,loadedAt:Date.now()}
     setRecentBundles(current=>{const updated=[recent,...current.filter(item=>`${item.name}:${item.commit}`!==`${recent.name}:${recent.commit}`)].slice(0,3);window.localStorage.setItem('lachesis-recent-bundles',JSON.stringify(updated));return updated})
