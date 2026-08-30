@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { App, Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
@@ -27,6 +27,7 @@ type Props = {
 };
 
 export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
+  const inspectorRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const [showAllConnections, setShowAllConnections] = useState(false);
@@ -55,6 +56,9 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
   const outgoing = relationships.filter(
     (edge) => edge.source === node.id,
   ).length;
+  useEffect(() => {
+    inspectorRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [node.id]);
   async function copyLocation() {
     try {
       await copyText(location);
@@ -68,7 +72,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
     }
   }
   return (
-    <aside className="detail-panel">
+    <aside ref={inspectorRef} className="detail-panel">
       <div className="inspector-heading">
         <span className={`kind-badge kind-${node.kind}`}>
           <i />
