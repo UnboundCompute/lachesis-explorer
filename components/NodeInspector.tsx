@@ -29,6 +29,7 @@ type Props = {
 export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
+  const [showAllConnections, setShowAllConnections] = useState(false);
   const location = node.file
     ? `${node.file}:${node.line || "—"}${node.column ? `:${node.column}` : ""}`
     : node.id;
@@ -137,7 +138,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
             {flows.length > 0 && (
               <div>
                 <small>VALUE FLOWS</small>
-                {flows.slice(0, 4).map((flow) =>
+                {(showAllConnections ? flows : flows.slice(0, 4)).map((flow) =>
                   onFlow ? (
                     <button
                       type="button"
@@ -157,7 +158,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
             {entries.length > 0 && (
               <div>
                 <small>REQUEST PATHS</small>
-                {entries.slice(0, 4).map((entry) =>
+                {(showAllConnections ? entries : entries.slice(0, 4)).map((entry) =>
                   onEntry ? (
                     <button
                       type="button"
@@ -180,7 +181,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
             {relationships.length > 0 && (
               <div>
                 <small>RELATIONSHIPS</small>
-                {relationships.slice(0, 4).map((edge) => {
+                {(showAllConnections ? relationships : relationships.slice(0, 4)).map((edge) => {
                   const peerId =
                     edge.source === node.id ? edge.target : edge.source;
                   const peer = app.nodes.find((item) => item.id === peerId);
@@ -207,6 +208,17 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
                     );
                 })}
               </div>
+            )}
+            {(flows.length > 4 || entries.length > 4 || relationships.length > 4) && (
+              <button
+                type="button"
+                className="connections-toggle"
+                onClick={() => setShowAllConnections((open) => !open)}
+              >
+                {showAllConnections
+                  ? "Show fewer connections"
+                  : `Show all connections · ${flows.length + entries.length + relationships.length}`}
+              </button>
             )}
             {!flows.length && !entries.length && !relationships.length && (
               <p>No connected evidence records in this bundle.</p>
