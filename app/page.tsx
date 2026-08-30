@@ -1,34 +1,156 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Header } from '../components/Header'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Header, type RecentBundle } from '../components/Header'
 import { Intro } from '../components/Intro'
 import { InstallView } from '../components/InstallView'
 import { JourneyView } from '../components/JourneyView'
 import { TraceView } from '../components/TraceView'
+import { SinkView } from '../components/SinkView'
 import { ResourceLinks } from '../components/ResourceLinks'
+import { Icon } from '../components/Icon'
+import { CommandPalette } from '../components/CommandPalette'
+import { InvestigationTrail, type InvestigationEvent } from '../components/InvestigationTrail'
 import { starter, normalize, type App } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
 
-type View = 'trace' | 'journey' | 'install'
+type View = 'trace' | 'journey' | 'investigate' | 'install'
+type LoadState = {type:'idle'|'loading'|'success'|'error';message:string}
+type PendingLink = {view?:string;flow?:string;node?:string;direction?:string;entry?:string;hop?:string;sink?:string}
+
+const viewLabels:Record<View,string>={trace:'Value flow',journey:'Request path',investigate:'Sink field',install:'Local workflow'}
 
 export default function Page() {
   const [view,setView]=useState<View>('trace')
   const [direction,setDirection]=useState<'backward'|'forward'>('backward')
   const [app,setApp]=useState<App>(starter)
   const [menu,setMenu]=useState(false)
-  const [dark,setDark]=useState(false)
+  const [dark,setDark]=useState(true)
   const [flowId,setFlowId]=useState(starter.flows[0].id)
   const [stepId,setStepId]=useState(starter.flows[0].steps[0].node_id)
   const [entryIndex,setEntryIndex]=useState(0)
   const [hopId,setHopId]=useState(starter.entries[0].hops[0].node_id)
+  const [sinkId,setSinkId]=useState(starter.nodes.find(node=>node.kind==='sink')?.id??'')
   const [query,setQuery]=useState('')
-  const [notice,setNotice]=useState('')
+  const [loadState,setLoadState]=useState<LoadState>({type:'idle',message:''})
+  const [isDemo,setIsDemo]=useState(true)
+  const [bundleScope,setBundleScope]=useState<'demo'|'local'>('demo')
+  const [dragActive,setDragActive]=useState(false)
+  const [commandOpen,setCommandOpen]=useState(false)
+  const [inspectorOpen,setInspectorOpen]=useState(true)
+  const [recentBundles,setRecentBundles]=useState<RecentBundle[]>([])
+  const [activity,setActivity]=useState<InvestigationEvent[]>([])
+  const [pendingLocal,setPendingLocal]=useState(false)
+  const [urlReady,setUrlReady]=useState(false)
   const fileRef=useRef<HTMLInputElement>(null)
+  const pendingLink=useRef<PendingLink|null>(null)
 
-  useEffect(()=>{ const stored=window.localStorage.getItem('lachesis-theme'); if(stored==='dark') setDark(true) },[])
-  useEffect(()=>{ document.documentElement.dataset.theme=dark?'dark':'light'; window.localStorage.setItem('lachesis-theme',dark?'dark':'light') },[dark])
-  function activate(next:App){setApp(next);setFlowId(next.flows[0]?.id??'');setStepId(next.flows[0]?.steps[0]?.node_id??next.nodes[0]?.id??'');setEntryIndex(0);setHopId(next.entries[0]?.hops[0]?.node_id??next.nodes[0]?.id??'');setMenu(false);setNotice(`Loaded ${next.name || 'bundle.json'}`);trackEvent('bundle_loaded',{has_callpaths:next.entries.length>0,flow_count:next.flows.length})}
-  async function upload(file?:File){if(!file)return;try{activate(normalize(JSON.parse(await file.text())))}catch(error){setNotice(error instanceof Error?error.message:'Could not read bundle.json');trackEvent('bundle_load_failed')}}
-  return <main className="app-shell" id="top"><Header view={view} setView={setView} app={app} menu={menu} setMenu={setMenu} onUpload={()=>fileRef.current?.click()} dark={dark} setDark={setDark}/><input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={e=>upload(e.target.files?.[0])}/><Intro view={view} app={app} notice={notice}/>{view==='trace'&&<TraceView app={app} flowId={flowId} setFlowId={setFlowId} stepId={stepId} setStepId={setStepId} query={query} setQuery={setQuery} direction={direction} setDirection={setDirection}/>} {view==='journey'&&<JourneyView app={app} entryIndex={entryIndex} setEntryIndex={setEntryIndex} hopId={hopId} setHopId={setHopId}/>} {view==='install'&&<InstallView onUpload={()=>fileRef.current?.click()}/>}<ResourceLinks/><footer><span><i className="status-dot"/> Active bundle: <b>{app.name}</b></span><span>Trace-your-own runs locally. <b>No model in the loop.</b></span><span className="footer-brand">Lachesis · graph reader</span></footer></main>
+  const record=useCallback((action:string,target:string,detail:string)=>setActivity(current=>[{id:Date.now()+Math.random(),action,target,detail,at:Date.now()},...current].slice(0,20)),[])
+
+  useEffect(()=>{const stored=window.localStorage.getItem('lachesis-theme');if(stored==='light')setDark(false)},[])
+  useEffect(()=>{try{const stored=JSON.parse(window.localStorage.getItem('lachesis-recent-bundles')??'[]');if(Array.isArray(stored))setRecentBundles(stored.filter(item=>item&&typeof item.name==='string'&&typeof item.loadedAt==='number').slice(0,3))}catch{window.localStorage.removeItem('lachesis-recent-bundles')}},[])
+  useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';window.localStorage.setItem('lachesis-theme',dark?'dark':'light')},[dark])
+
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search)
+    const link:PendingLink={view:params.get('view')??undefined,flow:params.get('flow')??undefined,node:params.get('node')??undefined,direction:params.get('direction')??undefined,entry:params.get('entry')??undefined,hop:params.get('hop')??undefined,sink:params.get('sink')??undefined}
+    if(params.get('scope')==='local'){
+      pendingLink.current=link
+      setPendingLocal(true)
+      setLoadState({type:'idle',message:'This link belongs to a local bundle. Load that bundle to restore its investigation state.'})
+      setUrlReady(true)
+      return
+    }
+    if(link.view==='trace'||link.view==='journey'||link.view==='investigate'||link.view==='install')setView(link.view)
+    const flow=starter.flows.find(item=>item.id===link.flow)
+    if(flow){setFlowId(flow.id);if(link.node&&flow.steps.some(step=>step.node_id===link.node))setStepId(link.node)}
+    const index=starter.entries.findIndex(item=>item.id===link.entry)
+    if(index>=0){setEntryIndex(index);if(link.hop&&starter.entries[index].hops.some(item=>item.node_id===link.hop))setHopId(link.hop)}
+    if(link.sink&&starter.nodes.some(node=>node.id===link.sink&&node.kind==='sink'))setSinkId(link.sink)
+    if(link.direction==='forward')setDirection('forward')
+    setUrlReady(true)
+  },[])
+
+  useEffect(()=>{
+    if(!urlReady||pendingLocal)return
+    const url=new URL(window.location.href)
+    url.searchParams.set('view',view)
+    url.searchParams.set('scope',bundleScope)
+    if(view==='trace'){
+      url.searchParams.set('flow',flowId);url.searchParams.set('node',stepId);url.searchParams.set('direction',direction)
+      ;['entry','hop','sink'].forEach(key=>url.searchParams.delete(key))
+    }else if(view==='journey'){
+      url.searchParams.set('entry',app.entries[entryIndex]?.id??'');url.searchParams.set('hop',hopId)
+      ;['flow','node','direction','sink'].forEach(key=>url.searchParams.delete(key))
+    }else if(view==='investigate'){
+      url.searchParams.set('sink',sinkId)
+      ;['flow','node','direction','entry','hop'].forEach(key=>url.searchParams.delete(key))
+    }else{
+      ;['flow','node','direction','entry','hop','sink'].forEach(key=>url.searchParams.delete(key))
+    }
+    window.history.replaceState({},'',url)
+  },[urlReady,pendingLocal,bundleScope,view,flowId,stepId,direction,entryIndex,hopId,sinkId,app.entries])
+
+  useEffect(()=>{
+    function onKeyDown(event:KeyboardEvent){
+      const target=event.target as HTMLElement
+      const editing=target.matches('input, textarea, select, [contenteditable="true"]')
+      if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();setCommandOpen(open=>!open);return}
+      if(event.key==='Escape'){setCommandOpen(false);setMenu(false);setInspectorOpen(false);return}
+      if(editing)return
+      if(event.key==='/'&&view==='trace'){event.preventDefault();document.querySelector<HTMLInputElement>('.search input')?.focus()}
+      if(view==='trace'&&event.key==='ArrowLeft'){setDirection('backward');record('Changed direction',flowId,'comes from');trackEvent('trace_direction_changed',{direction:'backward',source:'keyboard'})}
+      if(view==='trace'&&event.key==='ArrowRight'){setDirection('forward');record('Changed direction',flowId,'goes to');trackEvent('trace_direction_changed',{direction:'forward',source:'keyboard'})}
+    }
+    window.addEventListener('keydown',onKeyDown)
+    return()=>window.removeEventListener('keydown',onKeyDown)
+  },[view,flowId,record])
+
+  function changeView(next:View){setView(next);record('Changed lens',viewLabels[next],'')}
+
+  function activate(next:App){
+    const pending=pendingLink.current
+    const firstSink=next.nodes.find(node=>node.kind==='sink'||next.flows.some(flow=>flow.steps.some(step=>step.node_id===node.id&&step.role==='sink')))?.id??''
+    setApp(next);setFlowId(next.flows[0].id);setStepId(next.flows[0].steps[0].node_id);setEntryIndex(0);setHopId(next.entries[0]?.hops[0]?.node_id??next.nodes[0].id);setSinkId(firstSink)
+    let restored=false
+    if(pending){
+      if(pending.view==='trace'||pending.view==='journey'||pending.view==='investigate'||pending.view==='install')setView(pending.view)
+      const linkedFlow=next.flows.find(flow=>flow.id===pending.flow)
+      if(linkedFlow){setFlowId(linkedFlow.id);setStepId(pending.node&&linkedFlow.steps.some(step=>step.node_id===pending.node)?pending.node:linkedFlow.steps[0].node_id);restored=true}
+      const linkedEntry=next.entries.findIndex(entry=>entry.id===pending.entry)
+      if(linkedEntry>=0){setEntryIndex(linkedEntry);setHopId(pending.hop&&next.entries[linkedEntry].hops.some(hop=>hop.node_id===pending.hop)?pending.hop:next.entries[linkedEntry].hops[0]?.node_id??next.nodes[0].id);restored=true}
+      if(pending.sink&&next.nodes.some(node=>node.id===pending.sink)){setSinkId(pending.sink);restored=true}
+      if(pending.view==='install')restored=true
+      if(pending.direction==='forward')setDirection('forward')
+      pendingLink.current=null;setPendingLocal(false)
+    }
+    setMenu(false);setInspectorOpen(true);setIsDemo(false);setBundleScope('local')
+    setLoadState({type:restored||!pending?'success':'error',message:restored?`Loaded ${next.name||'bundle.json'} and restored the local investigation link.`:pending?`Loaded ${next.name||'bundle.json'}, but its linked evidence IDs were not found. Opened the first available evidence.`:`Loaded ${next.name||'bundle.json'}.`})
+    const recent:RecentBundle={name:next.name||'Untitled bundle',language:next.language||'unknown',commit:next.commit||'no commit',lines:next.lines,flows:next.flows.length,loadedAt:Date.now()}
+    setRecentBundles(current=>{const updated=[recent,...current.filter(item=>`${item.name}:${item.commit}`!==`${recent.name}:${recent.commit}`)].slice(0,3);window.localStorage.setItem('lachesis-recent-bundles',JSON.stringify(updated));return updated})
+    record('Loaded bundle',next.name||'Untitled bundle',`${next.nodes.length} nodes · ${next.flows.length} flows`)
+    trackEvent('bundle_loaded',{has_callpaths:next.entries.length>0,flow_count:next.flows.length})
+  }
+
+  async function upload(file?:File){
+    if(!file)return
+    setLoadState({type:'loading',message:`Reading ${file.name}…`})
+    try{const text=await file.text();let raw:unknown;try{raw=JSON.parse(text)}catch{throw new Error('This file is not valid JSON.')}activate(normalize(raw))}
+    catch(error){setLoadState({type:'error',message:`${error instanceof Error?error.message:'Could not read bundle.json'} The current bundle was kept.`});trackEvent('bundle_load_failed')}
+    finally{setDragActive(false)}
+  }
+
+  return <main className="app-shell" id="top" onDragEnter={event=>{event.preventDefault();setDragActive(true)}} onDragOver={event=>event.preventDefault()} onDragLeave={event=>{if(event.currentTarget===event.target)setDragActive(false)}} onDrop={event=>{event.preventDefault();upload(event.dataTransfer.files?.[0])}}>
+    <Header view={view} setView={changeView} app={app} menu={menu} setMenu={setMenu} onUpload={()=>fileRef.current?.click()} onCommand={()=>setCommandOpen(true)} dark={dark} setDark={setDark} recentBundles={recentBundles}/>
+    <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={event=>{upload(event.target.files?.[0]);event.target.value=''}}/>
+    {commandOpen&&<CommandPalette app={app} onClose={()=>setCommandOpen(false)} onView={changeView} onFlow={(nextFlow,nextNode)=>{setView('trace');setFlowId(nextFlow);setStepId(nextNode);setInspectorOpen(true);record('Opened value flow',nextFlow,'via command palette')}} onEntry={(nextIndex,nextHop)=>{setView('journey');setEntryIndex(nextIndex);setHopId(nextHop);setInspectorOpen(true);record('Opened request path',app.entries[nextIndex]?.label??'Unknown entry','via command palette')}} onSink={nextSink=>{setView('investigate');setSinkId(nextSink);record('Focused sink',app.nodes.find(node=>node.id===nextSink)?.label??nextSink,'via command palette')}}/>}
+    {dragActive&&<div className="drop-overlay" role="presentation"><div><span className="drop-glyph"><Icon name="upload" size={22}/></span><b>Drop bundle.json to inspect</b><small>Your current bundle changes only after validation succeeds.</small></div></div>}
+    <Intro view={view} app={app} loadState={loadState} isDemo={isDemo} onUpload={()=>fileRef.current?.click()}/>
+    {view==='trace'&&<TraceView app={app} flowId={flowId} setFlowId={setFlowId} stepId={stepId} setStepId={setStepId} query={query} setQuery={setQuery} direction={direction} setDirection={setDirection} inspectorOpen={inspectorOpen} onInspectorOpen={()=>setInspectorOpen(true)} onInspectorClose={()=>setInspectorOpen(false)} onRecord={record}/>}
+    {view==='journey'&&<JourneyView app={app} entryIndex={entryIndex} setEntryIndex={setEntryIndex} hopId={hopId} setHopId={setHopId} inspectorOpen={inspectorOpen} onInspectorOpen={()=>setInspectorOpen(true)} onInspectorClose={()=>setInspectorOpen(false)} onRecord={record}/>}
+    {view==='investigate'&&<SinkView app={app} sinkId={sinkId} setSinkId={setSinkId} onRecord={record} onOpenFlow={(nextFlow,nextNode)=>{setView('trace');setFlowId(nextFlow);setStepId(nextNode);setInspectorOpen(true)}}/>}
+    {view==='install'&&<InstallView onUpload={()=>fileRef.current?.click()}/>}<ResourceLinks/>
+    <InvestigationTrail app={app} items={activity} onClear={()=>setActivity([])}/>
+    <footer><span><i className="status-dot"/> Active bundle: <b>{app.name}</b></span><span>Shortcuts: <b>⌘K</b> jump · <b>/</b> search · <b>← →</b> direction · <b>Esc</b> close</span><span className="footer-brand">Lachesis · graph reader</span></footer>
+  </main>
 }

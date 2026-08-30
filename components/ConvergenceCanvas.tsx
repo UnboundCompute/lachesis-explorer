@@ -1,0 +1,22 @@
+'use client'
+import { useMemo, useState } from 'react'
+import type { Flow, Node } from '../lib/lachesis'
+
+type Props={flows:Flow[];nodes:Node[];sinkId:string;selectedId:string;onSelect:(nodeId:string)=>void}
+type Point={id:string;x:number;y:number;node:Node;roles:Set<string>;lanes:Set<number>}
+
+const short=(value:string,limit=17)=>value.length>limit?`${value.slice(0,limit-1)}…`:value
+
+export function ConvergenceCanvas({flows,nodes,sinkId,selectedId,onSelect}:Props){
+  const [zoom,setZoom]=useState(1)
+  const graph=useMemo(()=>{
+    const occurrences=new Map<string,Array<{distance:number;lane:number;role:string}>>()
+    const edges=new Map<string,{source:string;target:string;alias:boolean;dynamic:boolean}>()
+    flows.forEach((flow,lane)=>{const sinkIndex=flow.steps.findIndex(step=>step.node_id===sinkId);if(sinkIndex<0)return;flow.steps.slice(0,sinkIndex+1).forEach((step,index)=>{const current=occurrences.get(step.node_id)??[];current.push({distance:sinkIndex-index,lane,role:step.role});occurrences.set(step.node_id,current);if(index>0){const previous=flow.steps[index-1];const key=`${previous.node_id}:${step.node_id}`;const existing=edges.get(key);edges.set(key,{source:previous.node_id,target:step.node_id,alias:Boolean(existing?.alias||step.edge?.alias),dynamic:Boolean(existing?.dynamic||step.edge?.dynamic)})}})})
+    const points=new Map<string,Point>();occurrences.forEach((items,id)=>{const distance=Math.max(...items.map(item=>item.distance));const lanes=new Set(items.map(item=>item.lane));const y=items.reduce((sum,item)=>sum+72+item.lane*82,0)/items.length;const node=nodes.find(item=>item.id===id);if(node)points.set(id,{id,x:690-distance*142,y,node,roles:new Set(items.map(item=>item.role)),lanes})})
+    const width=Math.max(760,Math.max(...[...points.values()].map(point=>point.x))+70);const height=Math.max(250,flows.length*82+92)
+    return {points,edges:[...edges.values()],width,height}
+  },[flows,nodes,sinkId])
+  const ordered=[...graph.points.values()].sort((a,b)=>a.x-b.x||a.y-b.y)
+  return <section className="convergence-canvas" aria-label="Converging value flows"><header className="convergence-bar"><div><span className="canvas-title">Convergence field</span><span className="canvas-count">{flows.length} paths · {graph.points.size} unique nodes</span></div><div className="zoom-controls" aria-label="Graph zoom"><button onClick={()=>setZoom(value=>Math.max(.7,Number((value-.1).toFixed(1))))} aria-label="Zoom out">−</button><output>{Math.round(zoom*100)}%</output><button onClick={()=>setZoom(value=>Math.min(1.5,Number((value+.1).toFixed(1))))} aria-label="Zoom in">+</button><button onClick={()=>setZoom(1)}>Reset</button></div></header><div className="convergence-viewport"><svg viewBox={`0 0 ${graph.width} ${graph.height}`} style={{transform:`scale(${zoom})`}} aria-hidden="true" focusable="false">{flows.map((flow,lane)=><text key={flow.id} className="lane-label" x="18" y={76+lane*82}>{short(flow.name,15)}</text>)}{graph.edges.map(edge=>{const source=graph.points.get(edge.source);const target=graph.points.get(edge.target);if(!source||!target)return null;const edgeClass=edge.dynamic?'dynamic':edge.alias?'alias':'exact';return <path key={`${edge.source}:${edge.target}`} className={`convergence-edge ${edgeClass}`} d={`M${source.x+25} ${source.y} C${source.x+66} ${source.y},${target.x-66} ${target.y},${target.x-25} ${target.y}`}/>})}{ordered.map((point,index)=>{const selected=point.id===selectedId;return <g key={point.id} className={`convergence-node kind-${point.node.kind}${selected?' selected':''}`} onClick={()=>onSelect(point.id)}><circle className="convergence-halo" cx={point.x} cy={point.y} r="34"/><circle className="convergence-body" cx={point.x} cy={point.y} r="24"/><text className="convergence-index" x={point.x} y={point.y+4} textAnchor="middle">{String(index+1).padStart(2,'0')}</text><text className="convergence-role" x={point.x} y={point.y+43} textAnchor="middle">{short([...point.roles].join('/'),14)}</text></g>})}</svg></div><div className="convergence-index-list" aria-label="Graph nodes">{ordered.map((point,index)=><button key={point.id} className={point.id===selectedId?'selected':''} onClick={()=>onSelect(point.id)} aria-pressed={point.id===selectedId}><span>{String(index+1).padStart(2,'0')}</span><b>{point.node.label||point.id}</b><small>{[...point.roles].join(' · ')} · {point.node.file}:{point.node.line}</small></button>)}</div></section>
+}

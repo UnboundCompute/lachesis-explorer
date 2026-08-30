@@ -5,15 +5,15 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Lachesis — Deterministic code graph reader',
   description: 'Follow values and requests through a deterministic code graph.',
-  generator: 'v0.app',
+  generator: 'Next.js',
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light',
-  themeColor: '#f4f6f5',
+  colorScheme: 'dark light',
+  themeColor: '#07100d',
   userScalable: true,
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" className="bg-background"><body className="antialiased">{children}{process.env.NODE_ENV === 'production' && <Analytics />}</body></html>
+  return <html lang="en" data-theme="dark" data-scroll-behavior="smooth"><body>{children}{process.env.NODE_ENV === 'production' && <Analytics />}</body></html>
 }

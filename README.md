@@ -7,10 +7,16 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 ## What it does
 
 - Trace a value backward to its origin or forward to its sink.
+- Start from a sink and reveal every bundled value flow converging on it.
+- Compare reaching flows in an evidence matrix with alias, dynamic-edge, and MCP provenance.
 - Show node source, file locations, aliases, dynamic edges, and MCP evidence.
 - Walk a request callpath hop by hop with baked graph layout when available.
+- Filter flows with semantic terms such as `edge:dynamic`, `kind:sink`, `file:db/`, and `has:mcp`.
+- Capture a local investigation trail and export it as Markdown.
 - Load any compatible `bundle.json` from the browser.
 - Switch between light and dark themes; the preference is saved locally.
+- Jump to views, values, or entrypoints with `Cmd/Ctrl+K`; deep links preserve the active graph selection.
+- Keep a local-only list of recent bundle metadata without storing bundle contents.
 
 ## Run locally
 
@@ -37,6 +43,7 @@ The explorer accepts the Lachesis bundle shape and preserves the graph data rath
   "meta": { "repo": "owner/repo", "lang": "typescript", "commit": "abc123", "loc": 12345 },
   "graph": {
     "nodes": [],
+    "edges": [],
     "flows": [],
     "callpaths": []
   },
@@ -44,7 +51,7 @@ The explorer accepts the Lachesis bundle shape and preserves the graph data rath
 }
 ```
 
-Callpaths may provide `entry_node`, `hops`, and a `layout`. MCP evidence supports `tool` (or the legacy `verb`), object `args`, `result_summary`, `nodes`, `indirections`, and `hops`. The importer accepts both the current and compatible legacy field names where practical.
+Edges may use `source`/`target` (or `from`/`to`), a relationship `kind`, and optional `alias` or `dynamic` flags. When explicit edges are absent, Explorer derives clearly attributed relationships from flow and callpath sequences. Callpaths may provide `entry_node`, `hops`, and a `layout`. MCP evidence supports `tool` (or the legacy `verb`), object `args`, `result_summary`, `nodes`, `indirections`, and `hops`. The importer accepts both the current and compatible legacy field names where practical.
 
 ## Project structure
 
@@ -60,8 +67,7 @@ lib/lachesis.ts           bundle types, starter data, normalization
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and review checklist. Before opening a pull request, run the build and strict TypeScript checks:
 
 ```bash
-npx tsc --noEmit
-npm run build
+npm run check
 ```
 
 Please keep the JSON contract stable, keep evidence grounded in bundle data, and include a short note about responsive behavior when changing UI.

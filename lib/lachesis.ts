@@ -1,11 +1,13 @@
 export type Node = { id: string; kind: string; file: string; line: number; label: string; snippet: string }
 export type Step = { node_id: string; role: string; note?: string; edge?: { alias?: boolean; dynamic?: boolean } }
 export type Flow = { id: string; name: string; steps: Step[] }
-export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; indirections?: number }
+export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; indirections?: number; confidence?: string; origin?: string }
 export type LayoutPoint = { x: number; y: number }
 export type Hop = { node_id: string; edge_label: string; caption: string; layout?: LayoutPoint }
 export type Entry = { id: string; label: string; file: string; entry_node?: string; hops: Hop[]; hasLayout: boolean }
-export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; flows: Flow[]; entries: Entry[]; mcp: Evidence[] }
+export type EdgeOrigin = 'bundle' | 'value-flow' | 'request-path'
+export type GraphEdge = { id:string; source:string; target:string; relation:string; alias:boolean; dynamic:boolean; origins:EdgeOrigin[]; flow_ids:string[]; entry_ids:string[] }
+export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; entries: Entry[]; mcp: Evidence[] }
 
 export const starterNodes: Node[] = [
   { id:'n_api_42',kind:'assignment',file:'handlers/api.py',line:42,label:'data = request.json["q"]',snippet:'data = request.json["q"]' },
@@ -29,10 +31,10 @@ export const starterEntries: Entry[] = [
   {id:'cp_suggestions',label:'GET /api/suggestions',file:'routes.py:28',entry_node:'n_route_12',hasLayout:true,hops:layout([72,286,500]).map((hop, i) => ({...hop, edge_label:['route','middleware','cache'][i], caption:['route — accepts GET /api/suggestions','guard — checks the request token','cache — derives a stable lookup key'][i], node_id:['n_route_12','n_auth_30','n_cache_18'][i]}))}
 ]
 export const starterEvidence: Evidence[] = [
-  {for:'user_input',verb:'trace',args:'value="user_input"',result_summary:'reaches(cursor.execute) → sink found',hops:4,nodes:4,indirections:2},
-  {for:'cp_search',verb:'cursor.exec',args:'/api/search',result_summary:'request path resolved',hops:5,nodes:5,indirections:0}
+  {for:'user_input',verb:'trace',args:'value="user_input"',result_summary:'reaches(cursor.execute) → sink found',hops:4,nodes:4,indirections:2,confidence:'exact',origin:'demo bundle'},
+  {for:'cp_search',verb:'cursor.exec',args:'/api/search',result_summary:'request path resolved',hops:5,nodes:5,indirections:0,confidence:'exact',origin:'demo bundle'}
 ]
-export const starter: App = {name:'example/webapp',language:'python',commit:'a1b2c3d',lines:18432,nodes:starterNodes,flows:starterFlows,entries:starterEntries,mcp:starterEvidence}
+export const starter: App = {name:'example/webapp',language:'python',commit:'a1b2c3d',lines:18432,nodes:starterNodes,edges:deriveGraphEdges([],starterFlows,starterEntries),flows:starterFlows,entries:starterEntries,mcp:starterEvidence}
 
 function formatArgs(args: unknown) {
   if (typeof args === 'string') return args
@@ -50,11 +52,32 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
   return point && Number.isFinite(Number(point.x)) ? {x:Number(point.x), y:Number(point.y ?? 110)} : undefined
 }
 
+type EdgeSeed = Omit<GraphEdge,'id'|'origins'|'flow_ids'|'entry_ids'> & {origin:EdgeOrigin;flow_id?:string;entry_id?:string}
+
+export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entry[]): GraphEdge[] {
+  const collected = new Map<string,GraphEdge>()
+  function include(seed:EdgeSeed) {
+    if (!seed.source || !seed.target) return
+    const key=[seed.source,seed.target,seed.relation,seed.alias?'alias':'exact',seed.dynamic?'dynamic':'static'].join('|')
+    const current=collected.get(key)
+    if(current){if(!current.origins.includes(seed.origin))current.origins.push(seed.origin);if(seed.flow_id&&!current.flow_ids.includes(seed.flow_id))current.flow_ids.push(seed.flow_id);if(seed.entry_id&&!current.entry_ids.includes(seed.entry_id))current.entry_ids.push(seed.entry_id);return}
+    collected.set(key,{id:`edge_${collected.size+1}`,source:seed.source,target:seed.target,relation:seed.relation||'connects',alias:seed.alias,dynamic:seed.dynamic,origins:[seed.origin],flow_ids:seed.flow_id?[seed.flow_id]:[],entry_ids:seed.entry_id?[seed.entry_id]:[]})
+  }
+  explicit.forEach(include)
+  flows.forEach(flow=>flow.steps.slice(1).forEach((step,index)=>include({source:flow.steps[index].node_id,target:step.node_id,relation:step.role||'flows to',alias:Boolean(step.edge?.alias),dynamic:Boolean(step.edge?.dynamic),origin:'value-flow',flow_id:flow.id})))
+  entries.forEach(entry=>entry.hops.slice(1).forEach((hop,index)=>include({source:entry.hops[index].node_id,target:hop.node_id,relation:hop.edge_label||'calls',alias:false,dynamic:false,origin:'request-path',entry_id:entry.id})))
+  return [...collected.values()]
+}
+
 export function normalize(raw: any): App {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Bundle must be a JSON object.')
   const source = raw.graph ?? raw
+  if (!source || typeof source !== 'object') throw new Error('Expected a graph object in bundle.json.')
   const meta = raw.meta ?? source.meta ?? {}
-  const nodes = Array.isArray(source.nodes) ? source.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')})) : []
-  const flows = Array.isArray(source.flows) ? source.flows.map((f:any,i:number)=>({id:String(f.id??`flow_${i}`),name:String(f.value??f.name??''),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node),role:String(s.role??''),note:s.note,edge:s.edge})) : []})) : []
+  if (!Array.isArray(source.nodes)) throw new Error('Expected graph.nodes to be an array.')
+  if (!Array.isArray(source.flows)) throw new Error('Expected graph.flows to be an array.')
+  const nodes = source.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')}))
+  const flows = source.flows.map((f:any,i:number)=>{const id=String(f.id??`flow_${i}`);return {id,name:String(f.value??f.name??id),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []}})
   const rawPaths = raw.callpaths ?? source.callpaths ?? []
   const entries = Array.isArray(rawPaths) ? rawPaths.map((e:any,i:number)=>{
     const rawHops = Array.isArray(e.hops) ? e.hops : []
@@ -64,9 +87,23 @@ export function normalize(raw: any): App {
     return {id:String(e.id??e.callpath_id??`callpath_${i}`),label:String(e.entry??e.label??''),file:firstNode ? `${firstNode.file}:${firstNode.line}` : '',entry_node:entryNode,hops,hasLayout:hops.length > 0 && hops.every((h: Hop) => h.layout !== undefined)}
   }) : []
   const rawMcp = raw.mcp ?? source.mcp
-  const mcp = Array.isArray(rawMcp) ? rawMcp.map((m:any)=>({for:String(m.for??m.flow??''),verb:String(m.tool??m.verb??''),args:formatArgs(m.args),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops),nodes:m.nodes==null?undefined:Number(m.nodes),indirections:m.indirections==null?undefined:Number(m.indirections)})) : []
-  if (!nodes.length || !flows.length) throw new Error('Expected graph.nodes and graph.flows in bundle.json')
-  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,flows,entries,mcp}
+  const mcp = Array.isArray(rawMcp) ? rawMcp.map((m:any)=>({for:String(m.for??m.flow??''),verb:String(m.tool??m.verb??''),args:formatArgs(m.args),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops),nodes:m.nodes==null?undefined:Number(m.nodes),indirections:m.indirections==null?undefined:Number(m.indirections),confidence:m.confidence==null?undefined:String(m.confidence),origin:m.origin==null?undefined:String(m.origin)})) : []
+  const rawEdges = Array.isArray(source.edges) ? source.edges : []
+  const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),origin:'bundle'}))
+  if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
+  if (!flows.length) throw new Error('The bundle contains no value flows.')
+  const ids = new Set(nodes.map((node:Node)=>node.id))
+  if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
+  const emptyFlow = flows.find((flow:Flow)=>flow.steps.length===0)
+  if (emptyFlow) throw new Error(`Flow "${emptyFlow.name}" contains no steps.`)
+  const brokenStep = flows.flatMap((flow:Flow)=>flow.steps).find((step:Step)=>!ids.has(step.node_id))
+  if (brokenStep) throw new Error(`A flow references missing node "${brokenStep.node_id}".`)
+  const brokenHop = entries.flatMap((entry:Entry)=>entry.hops).find((hop:Hop)=>!ids.has(hop.node_id))
+  if (brokenHop) throw new Error(`A callpath references missing node "${brokenHop.node_id}".`)
+  const brokenEdge = explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
+  if (brokenEdge) throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
+  const edges=deriveGraphEdges(explicitEdges,flows,entries)
+  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,entries,mcp}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {
