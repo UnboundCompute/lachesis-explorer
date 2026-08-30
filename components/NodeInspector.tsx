@@ -44,6 +44,12 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
     app?.edges.filter(
       (edge) => edge.source === node.id || edge.target === node.id,
     ) ?? [];
+  const incoming = relationships.filter(
+    (edge) => edge.target === node.id,
+  ).length;
+  const outgoing = relationships.filter(
+    (edge) => edge.source === node.id,
+  ).length;
   async function copyLocation() {
     await navigator.clipboard?.writeText(location);
     setCopied(true);
@@ -191,6 +197,18 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
           <dt>Graph ID</dt>
           <dd>{node.id}</dd>
         </div>
+        {app && (
+          <>
+            <div>
+              <dt>Incoming</dt>
+              <dd>{incoming}</dd>
+            </div>
+            <div>
+              <dt>Outgoing</dt>
+              <dd>{outgoing}</dd>
+            </div>
+          </>
+        )}
         {app && (
           <>
             <div>
