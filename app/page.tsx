@@ -179,6 +179,12 @@ export default function Page() {
     )
       setSinkId(link.sink);
     if (link.direction === "forward") setDirection("forward");
+    if (
+      link.view === "map" &&
+      link.node &&
+      starter.nodes.some((node) => node.id === link.node)
+    )
+      setFocusNodeId(link.node);
   }, []);
 
   useEffect(() => {
@@ -321,6 +327,14 @@ export default function Page() {
             ? pending.hop
             : (next.entries[linkedEntry].hops[0]?.node_id ?? next.nodes[0].id),
         );
+        restored = true;
+      }
+      if (
+        pending.view === "map" &&
+        pending.node &&
+        next.nodes.some((node) => node.id === pending.node)
+      ) {
+        setFocusNodeId(pending.node);
         restored = true;
       }
       if (pending.sink && next.nodes.some((node) => node.id === pending.sink)) {
