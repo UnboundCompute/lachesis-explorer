@@ -22,6 +22,7 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Jump to views, values, or entrypoints with `Cmd/Ctrl+K`; deep links preserve the active graph selection.
 - Copy a local link to the selected graph node, value-flow step, or request-path hop.
 - Move through value-flow and request-path steps sequentially with Previous/Next controls.
+- Use `[` and `]` to step backward or forward while reading a path; text inputs are unaffected.
 - Search symbols by label, qualified name, file, module, or graph ID from the universal command palette.
 - Browse the graph hierarchy from module to file to symbol in the System Map.
 - Keep a local-only list of recent bundle metadata without storing bundle contents.
