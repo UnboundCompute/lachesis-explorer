@@ -15,6 +15,21 @@ type Props = {
   onNode: (nodeId: string) => void;
   opener?: HTMLElement | null;
 };
+
+function flowLocation(app: App, flow: App["flows"][number]) {
+  const nodes = flow.steps
+    .map((step) => app.nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean);
+  if (!nodes.length) return "source unavailable";
+  const location = (node: (typeof app.nodes)[number]) =>
+    `${node.file || "source unavailable"}:${node.line || "—"}`;
+  const first = nodes[0]!;
+  const last = nodes[nodes.length - 1]!;
+  return first.id === last.id
+    ? location(first)
+    : `${location(first)} → ${location(last)}`;
+}
+
 export function CommandPalette({
   app,
   onClose,
@@ -74,7 +89,7 @@ export function CommandPalette({
             app.findings.some((finding) => finding.id === flow.id)
               ? "Security witness"
               : "Value path"
-          } · ${flow.steps.length} nodes`,
+          } · ${flow.steps.length} nodes · ${flowLocation(app, flow)}`,
           run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
         })),
         ...app.entries.map((entry, index) => ({
