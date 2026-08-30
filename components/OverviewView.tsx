@@ -64,6 +64,12 @@ function matches(node: Node, query: string, app: App) {
               (edge.source === node.id || edge.target === node.id) &&
               edge.confidence?.toLowerCase().includes(value),
           );
+        if (key === "path")
+          return app.flows.some(
+            (flow) =>
+              flow.kind?.toLowerCase().includes(value) &&
+              flow.steps.some((step) => step.node_id === node.id),
+          );
       }
       return [
         node.id,
@@ -131,6 +137,9 @@ export function OverviewView({
     ? "function"
     : app.nodes[0]?.kind || "node";
   const filterSuggestions = [
+    ...[...new Set(app.flows.map((flow) => flow.kind).filter(Boolean))]
+      .slice(0, 2)
+      .map((kind) => ({ label: kind!, query: `path:${kind}` })),
     securityMode
       ? { label: "sinks", query: "kind:sink" }
       : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
@@ -324,7 +333,7 @@ export function OverviewView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter nodes: symbol:query file:src/ edge:dynamic"
+            placeholder="Filter nodes: symbol:query path:value-flow file:src/ edge:dynamic"
             aria-label="Filter graph nodes"
           />
           <div className="query-chips">
