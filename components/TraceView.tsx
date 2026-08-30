@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { App, Flow } from "../lib/lachesis";
 import { indirectionCount } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
@@ -96,15 +96,23 @@ export function TraceView({
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
+  const previousDirection = useRef(direction);
   useEffect(() => {
     if (!flow) return;
     const ordered = direction === "backward" ? flow.steps : [...flow.steps].reverse();
+    if (previousDirection.current !== direction) {
+      const next = Math.max(0, ordered.length - 1 - selectedPosition);
+      previousDirection.current = direction;
+      setSelectedPosition(next);
+      onPositionChange?.(next);
+      return;
+    }
     const fallback = ordered.findIndex((step) => step.node_id === stepId);
     const next = position != null && ordered[position]?.node_id === stepId
       ? position
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
-  }, [app, flowId, direction, position]);
+  }, [app, flowId, direction, position, selectedPosition]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
