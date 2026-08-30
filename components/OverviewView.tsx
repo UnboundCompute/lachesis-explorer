@@ -103,7 +103,23 @@ export function OverviewView({
     }
   }, [app, focusNodeId]);
   const visible = useMemo(
-    () => app.nodes.filter((node) => matches(node, query, app)),
+    () => {
+      const pathOrder = new Map<string, number>();
+      let order = 0;
+      const remember = (nodeId: string) => {
+        if (!pathOrder.has(nodeId)) pathOrder.set(nodeId, order++);
+      };
+      app.entries.forEach((entry) => entry.hops.forEach((hop) => remember(hop.node_id)));
+      app.flows.forEach((flow) => flow.steps.forEach((step) => remember(step.node_id)));
+      return app.nodes
+        .filter((node) => matches(node, query, app))
+        .sort(
+          (a, b) =>
+            (pathOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+              (pathOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER) ||
+            app.nodes.indexOf(a) - app.nodes.indexOf(b),
+        );
+    },
     [app, query],
   );
   const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
