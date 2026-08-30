@@ -5,21 +5,151 @@ import { Icon } from './Icon'
 import type { App } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
 
-type View='home'|'trace'|'journey'|'investigate'|'map'|'compare'|'install'
-export type RecentBundle={name:string;language:string;commit:string;lines:number;flows:number;loadedAt:number}
-type Props={view:View;setView:(view:View)=>void;app:App;menu:boolean;setMenu:(open:boolean)=>void;onUpload:()=>void;onCommand:()=>void;dark:boolean;setDark:(dark:boolean)=>void;recentBundles:RecentBundle[]}
-const primary:Array<{id:View;label:string;detail:string}>=[{id:'home',label:'Briefing',detail:'Start here'},{id:'investigate',label:'Investigate',detail:'Find convergence'},{id:'map',label:'Explore',detail:'See topology'},{id:'compare',label:'Compare',detail:'Review revisions'}]
-const secondary:Array<{id:View;label:string;detail:string}>=[{id:'trace',label:'Value flow',detail:'Trace data'},{id:'journey',label:'Request path',detail:'Walk calls'},{id:'install',label:'Local workflow',detail:'Run locally'}]
+type View = 'home' | 'trace' | 'journey' | 'investigate' | 'map' | 'compare' | 'install'
+export type RecentBundle = { name: string; language: string; commit: string; lines: number; flows: number; loadedAt: number }
+type Props = { view: View; setView: (view: View) => void; app: App; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[] }
 
-export function Header({view,setView,app,menu,setMenu,onUpload,onCommand,dark,setDark,recentBundles}:Props){
-  const [moreOpen,setMoreOpen]=useState(false)
-  const moreRef=useRef<HTMLDivElement>(null)
-  const moreTriggerRef=useRef<HTMLButtonElement>(null)
-  const appPickerRef=useRef<HTMLDivElement>(null)
-  const appTriggerRef=useRef<HTMLButtonElement>(null)
-  useEffect(()=>{if(!moreOpen)return;const items=()=>[...(moreRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]')??[])];items()[0]?.focus();function close(event:MouseEvent){if(!moreRef.current?.contains(event.target as Node))setMoreOpen(false)}function onKey(event:KeyboardEvent){const menuItems=items();const current=menuItems.indexOf(document.activeElement as HTMLElement);if(event.key==='Escape'){event.preventDefault();setMoreOpen(false);moreTriggerRef.current?.focus();return}if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();const delta=event.key==='ArrowDown'?1:-1;menuItems[(current+delta+menuItems.length)%menuItems.length]?.focus();return}if(event.key==='Home'||event.key==='End'){event.preventDefault();menuItems[event.key==='Home'?0:menuItems.length-1]?.focus();return}if(event.key==='Tab')setMoreOpen(false)}document.addEventListener('mousedown',close);document.addEventListener('keydown',onKey);return()=>{document.removeEventListener('mousedown',close);document.removeEventListener('keydown',onKey)}},[moreOpen])
-  useEffect(()=>{if(!menu)return;function close(event:MouseEvent){if(!appPickerRef.current?.contains(event.target as Node))setMenu(false)}function onKey(event:KeyboardEvent){if(event.key==='Escape'){setMenu(false);appTriggerRef.current?.focus()}}document.addEventListener('mousedown',close);document.addEventListener('keydown',onKey);return()=>{document.removeEventListener('mousedown',close);document.removeEventListener('keydown',onKey)}},[menu,setMenu])
-  useEffect(()=>{document.querySelector<HTMLElement>('.nav-tab[aria-current="page"]')?.scrollIntoView({block:'nearest',inline:'nearest'})},[view])
-  function choose(next:View){setView(next);setMoreOpen(false);trackEvent('view_changed',{view:next})}
-  return <div className="topbar-wrap"><header className="topbar"><a className="brand" href="#top" aria-label="Lachesis Explorer home" onClick={event=>{event.preventDefault();choose('home')}}><span className="brand-mark"><i/><i/><i/></span><span><b>Lachesis</b><small>evidence explorer</small></span></a><nav className="nav-tabs" aria-label="Primary analysis lenses">{primary.map(item=><button type="button" key={item.id} className={view===item.id?'nav-tab active':'nav-tab'} aria-current={view===item.id?'page':undefined} onClick={()=>choose(item.id)}><span>{item.label}</span><small>{item.detail}</small></button>)}<div className="more-views" ref={moreRef}><button ref={moreTriggerRef} type="button" className={secondary.some(item=>item.id===view)?'nav-tab active':'nav-tab'} aria-current={secondary.some(item=>item.id===view)?'page':undefined} onClick={()=>setMoreOpen(open=>!open)} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu"><span>More</span><small>Other lenses</small><Icon name="chevron" size={11}/></button>{moreOpen&&<div id="more-analysis-menu" className="more-menu" role="menu" aria-label="More analysis views">{secondary.map(item=><button type="button" key={item.id} role="menuitem" aria-current={view===item.id?'page':undefined} onClick={()=>choose(item.id)}><span><b>{item.label}</b><small>{item.detail}</small></span><Icon name="arrow" size={12}/></button>)}</div>}</div></nav><div className="header-actions"><button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14}/><span>Jump</span><kbd>⌘K</kbd></button><button type="button" className="theme-toggle" aria-label={`Switch to ${dark?'light':'dark'} mode`} onClick={()=>{setDark(!dark);trackEvent('theme_toggled',{theme:dark?'light':'dark'})}}><Icon name={dark?'sun':'moon'} size={15}/><span>{dark?'Light':'Dark'}</span></button><div className="app-picker" ref={appPickerRef}><button ref={appTriggerRef} type="button" className="repo-control" onClick={()=>setMenu(!menu)} aria-expanded={menu} aria-haspopup="dialog"><span className="status-dot"/><span><small>Active bundle</small><b>{app.name||'Untitled bundle'}</b></span><Icon name="chevron" size={14}/></button>{menu&&<div className="app-menu" role="dialog" aria-label="Bundle context"><span className="menu-title">BUNDLE CONTEXT</span><div className="active-bundle"><span className="status-dot"/><span><b>{app.name||'Untitled bundle'}</b><small>{app.language||'unknown'} · {app.commit||'no commit'}</small></span></div><div className="menu-metrics"><span><b>{app.nodes.length}</b> nodes</span><span><b>{app.flows.length}</b> flows</span><span><b>{app.entries.length}</b> paths</span></div>{recentBundles.length>0&&<div className="recent-bundles"><span className="menu-title">RECENT METADATA · LOCAL ONLY</span>{recentBundles.map(item=><div className="recent-bundle" key={`${item.name}:${item.commit}`}><span><b>{item.name}</b><small>{item.language} · {item.commit}</small></span><em>{item.flows} flows</em></div>)}</div>}<button type="button" className="upload-action" onClick={()=>{onUpload();trackEvent('bundle_upload_started')}}><span>Load another bundle</span><span className="button-icon"><Icon name="upload" size={14}/></span></button></div>}</div></div></header></div>
+const primary: Array<{ id: View; label: string; detail: string }> = [
+  { id: 'home', label: 'Briefing', detail: 'Start here' },
+  { id: 'investigate', label: 'Investigate', detail: 'Find convergence' },
+  { id: 'map', label: 'Explore', detail: 'See topology' },
+  { id: 'compare', label: 'Compare', detail: 'Review revisions' },
+]
+const secondary: Array<{ id: View; label: string; detail: string }> = [
+  { id: 'trace', label: 'Value flow', detail: 'Trace data' },
+  { id: 'journey', label: 'Request path', detail: 'Walk calls' },
+  { id: 'install', label: 'Local workflow', detail: 'Run locally' },
+]
+
+export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles }: Props) {
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
+  const moreTriggerRef = useRef<HTMLButtonElement>(null)
+  const appPickerRef = useRef<HTMLDivElement>(null)
+  const appTriggerRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!moreOpen) return
+    const items = () => [...(moreRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
+    items()[0]?.focus()
+    function close(event: MouseEvent) {
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false)
+    }
+    function onKey(event: KeyboardEvent) {
+      const menuItems = items()
+      const current = menuItems.indexOf(document.activeElement as HTMLElement)
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setMoreOpen(false)
+        moreTriggerRef.current?.focus()
+        return
+      }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        const delta = event.key === 'ArrowDown' ? 1 : -1
+        menuItems[(current + delta + menuItems.length) % menuItems.length]?.focus()
+        return
+      }
+      if (event.key === 'Home' || event.key === 'End') {
+        event.preventDefault()
+        menuItems[event.key === 'Home' ? 0 : menuItems.length - 1]?.focus()
+        return
+      }
+      if (event.key === 'Tab') setMoreOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [moreOpen])
+
+  useEffect(() => {
+    if (!menu) return
+    function close(event: MouseEvent) {
+      if (!appPickerRef.current?.contains(event.target as Node)) setMenu(false)
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setMenu(false)
+        appTriggerRef.current?.focus()
+      }
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menu, setMenu])
+
+  useEffect(() => {
+    document.querySelector<HTMLElement>('.nav-tab[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [view])
+
+  function choose(next: View) {
+    setView(next)
+    setMoreOpen(false)
+    trackEvent('view_changed', { view: next })
+  }
+
+  return (
+    <div className="topbar-wrap">
+      <header className="topbar">
+        <a className="brand" href="#top" aria-label="Lachesis Explorer home" onClick={event => { event.preventDefault(); choose('home') }}>
+          <span className="brand-mark"><i /><i /><i /></span>
+          <span><b>Lachesis</b><small>evidence explorer</small></span>
+        </a>
+        <nav className="nav-tabs" aria-label="Primary analysis lenses">
+          {primary.map(item => (
+            <button type="button" key={item.id} className={view === item.id ? 'nav-tab active' : 'nav-tab'} aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
+              <span>{item.label}</span><small>{item.detail}</small>
+            </button>
+          ))}
+          <div className="more-views" ref={moreRef}>
+            <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => setMoreOpen(open => !open)} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
+              <span>More</span><small>Other lenses</small><Icon name="chevron" size={11} />
+            </button>
+            {moreOpen && (
+              <div id="more-analysis-menu" className="more-menu" role="menu" aria-label="More analysis views">
+                {secondary.map(item => (
+                  <button type="button" key={item.id} role="menuitem" aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
+                    <span><b>{item.label}</b><small>{item.detail}</small></span><Icon name="arrow" size={12} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </nav>
+        <div className="header-actions">
+          <button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14} /><span>Jump</span><kbd>⌘K</kbd></button>
+          <button type="button" className="theme-toggle" aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`} onClick={() => { setDark(!dark); trackEvent('theme_toggled', { theme: dark ? 'light' : 'dark' }) }}><Icon name={dark ? 'sun' : 'moon'} size={15} /><span>{dark ? 'Light' : 'Dark'}</span></button>
+          <div className="app-picker" ref={appPickerRef}>
+            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-haspopup="dialog">
+              <span className="status-dot" /><span><small>Active bundle</small><b>{app.name || 'Untitled bundle'}</b></span><Icon name="chevron" size={14} />
+            </button>
+            {menu && (
+              <div className="app-menu" role="dialog" aria-label="Bundle context">
+                <span className="menu-title">BUNDLE CONTEXT</span>
+                <div className="active-bundle">
+                  <span className="status-dot" />
+                  <span><b>{app.name || 'Untitled bundle'}</b><small>{app.language || 'unknown'} · {app.commit || 'no commit'}</small></span>
+                </div>
+                {app.bundle.description && <p className="bundle-description">{app.bundle.description}</p>}
+                <div className="menu-metrics"><span><b>{app.nodes.length}</b> nodes</span><span><b>{app.flows.length}</b> flows</span><span><b>{app.entries.length}</b> paths</span></div>
+                {recentBundles.length > 0 && (
+                  <div className="recent-bundles">
+                    <span className="menu-title">RECENT METADATA · LOCAL ONLY</span>
+                    {recentBundles.map(item => <div className="recent-bundle" key={`${item.name}:${item.commit}`}><span><b>{item.name}</b><small>{item.language} · {item.commit}</small></span><em>{item.flows} flows</em></div>)}
+                  </div>
+                )}
+                <button type="button" className="upload-action" onClick={() => { onUpload(); trackEvent('bundle_upload_started') }}><span>Load another bundle</span><span className="button-icon"><Icon name="upload" size={14} /></span></button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+    </div>
+  )
 }
