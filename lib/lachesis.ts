@@ -94,8 +94,8 @@ function normalizeStep(raw:any):Step {
 }
 
 function normalizePathMetadata(raw:any) {
-  const sourceNodeId = raw?.source_node ?? raw?.sourceNode ?? raw?.source
-  const sinkNodeId = raw?.sink_node ?? raw?.sinkNode ?? raw?.sink
+  const sourceNodeId = raw?.source_node ?? raw?.sourceNode ?? raw?.source_id
+  const sinkNodeId = raw?.sink_node ?? raw?.sinkNode ?? raw?.sink_id
   return {
     description: raw?.description == null ? raw?.summary == null ? undefined : String(raw.summary) : String(raw.description),
     sourceNodeId: sourceNodeId == null ? undefined : String(sourceNodeId),
