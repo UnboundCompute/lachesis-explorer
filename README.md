@@ -55,11 +55,19 @@ source.
 
 ## Run locally
 
-Requirements: Node.js 20+ and npm (pnpm is also supported by the workspace configuration).
+Requirements: Node.js 20+ and npm. The repository also ships a pnpm lockfile; use Corepack when you
+want to reproduce the CI install exactly.
 
 ```bash
 npm install
 npm run dev
+```
+
+Or with the CI-aligned package manager:
+
+```bash
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). For a production build:
