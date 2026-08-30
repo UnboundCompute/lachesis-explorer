@@ -376,16 +376,7 @@ export function OverviewView({
                       <g
                         key={node.id}
                         className={`topology-node kind-${node.kind}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`Select ${node.label || node.id}`}
                         onClick={select}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            select();
-                          }
-                        }}
                       >
                         <circle cx={p.x} cy={p.y} r="24" />
                         <text x={p.x} y={p.y + 4} textAnchor="middle">
