@@ -277,35 +277,6 @@ export function HomeView({
         </li>
       </ol>
 
-      <section className="briefing-questions" aria-labelledby="briefing-questions-title">
-        <div>
-          <span className="panel-label" id="briefing-questions-title">START WITH A QUESTION</span>
-          <p>Choose the kind of understanding you need first.</p>
-        </div>
-        <div className="question-list">
-          <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
-            <b>Where does a value go?</b>
-            <small>{graphFocus ? "Trace a value through its handoffs." : "No value paths in this bundle."}</small>
-            <Icon name="arrow" size={12} />
-          </button>
-          <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
-            <b>What calls this code?</b>
-            <small>{firstEntry ? "Walk a request from entrypoint to effect." : "No request paths in this bundle."}</small>
-            <Icon name="arrow" size={12} />
-          </button>
-          <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
-            <b>What converges here?</b>
-            <small>{firstSink ? "Compare paths that reach one boundary." : "No boundary nodes in this bundle."}</small>
-            <Icon name="arrow" size={12} />
-          </button>
-          <button type="button" onClick={() => onView("map")}>
-            <b>How is it connected?</b>
-            <small>Survey modules, relationships, and shape.</small>
-            <Icon name="arrow" size={12} />
-          </button>
-        </div>
-      </section>
-
       {loadState.message && (
         <p
           className={`briefing-notice ${loadState.type}`}
@@ -618,6 +589,35 @@ export function HomeView({
           )}
         </aside>
       </div>
+
+      <section className="briefing-questions" aria-labelledby="briefing-questions-title">
+        <div>
+          <span className="panel-label" id="briefing-questions-title">LOOK AT IT ANOTHER WAY</span>
+          <p>Choose a different question when the suggested path is not the one you need.</p>
+        </div>
+        <div className="question-list">
+          <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
+            <b>Where does a value go?</b>
+            <small>{graphFocus ? "Trace a value through its handoffs." : "No value paths in this bundle."}</small>
+            <Icon name="arrow" size={12} />
+          </button>
+          <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
+            <b>What calls this code?</b>
+            <small>{firstEntry ? "Walk a request from entrypoint to effect." : "No request paths in this bundle."}</small>
+            <Icon name="arrow" size={12} />
+          </button>
+          <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
+            <b>What converges here?</b>
+            <small>{firstSink ? "Compare paths that reach one boundary." : "No boundary nodes in this bundle."}</small>
+            <Icon name="arrow" size={12} />
+          </button>
+          <button type="button" onClick={() => onView("map")}>
+            <b>How is it connected?</b>
+            <small>Survey modules, relationships, and shape.</small>
+            <Icon name="arrow" size={12} />
+          </button>
+        </div>
+      </section>
 
       <section className="bundle-reading">
         <div className="reading-heading">
