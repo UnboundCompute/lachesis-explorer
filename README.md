@@ -41,9 +41,9 @@ not required to use the graph. A useful first pass is:
 3. Open the source inspector for the selected symbol to see its signature, module, relationships, and
    evidence before forming a conclusion.
 
-The Briefing, Investigate, Explore, and Compare lenses are different views over the same bundle. They
-do not create new evidence; they help you move from a high-signal path to the underlying graph and
-source.
+The Briefing, Value flow, Request path, Graph, Convergence, and Revision diff views are different
+lenses over the same bundle. They do not create new evidence; they help you move from a high-signal
+path to the underlying graph and source.
 
 ### Keyboard workflow
 
