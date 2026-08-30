@@ -426,6 +426,7 @@ export function OverviewView({
                         tabIndex={0}
                         aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}, ${node.file}:${node.line}`}
                       >
+                        <title>{node.label || node.id}</title>
                         <circle cx={p.x} cy={p.y} r="24" />
                         <text x={p.x} y={p.y + 4} textAnchor="middle">
                           {labelIndex(node)}
