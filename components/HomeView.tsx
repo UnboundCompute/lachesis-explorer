@@ -34,7 +34,11 @@ const statusRank: Record<string, number> = {
   verified: 2,
   refuted: 3,
 };
-type QueueFilter = "all" | "lead" | "inconclusive" | "refuted" | "verified";
+type QueueFilter = "all" | "lead" | "reported" | "inconclusive" | "refuted" | "verified";
+
+function evidenceStatus(evidence?: Evidence) {
+  return evidence?.status ?? (evidence ? "reported" : "lead");
+}
 
 function sinkFor(flow: Flow, app: App): Node | undefined {
   const sinkStep = [...flow.steps]
@@ -84,8 +88,8 @@ export function HomeView({
         }))
         .sort(
           (a, b) =>
-            (statusRank[a.evidence?.status ?? "lead"] ?? 4) -
-            (statusRank[b.evidence?.status ?? "lead"] ?? 4),
+            (statusRank[evidenceStatus(a.evidence)] ?? 4) -
+            (statusRank[evidenceStatus(b.evidence)] ?? 4),
         ),
     [app],
   );
@@ -105,7 +109,7 @@ export function HomeView({
       queueFilter === "all"
         ? findings
         : findings.filter(
-            (item) => (item.evidence?.status ?? "lead") === queueFilter,
+            (item) => evidenceStatus(item.evidence) === queueFilter,
           ),
     [findings, queueFilter],
   );
@@ -120,7 +124,10 @@ export function HomeView({
       }))
     : visibleFindings;
   const leadCount = findings.filter(
-    (item) => item.evidence?.status === "lead" || !item.evidence?.status,
+    (item) => evidenceStatus(item.evidence) === "lead",
+  ).length;
+  const reportedCount = findings.filter(
+    (item) => evidenceStatus(item.evidence) === "reported",
   ).length;
   const unresolvedCount = findings.filter(
     (item) => item.evidence?.status === "inconclusive",
@@ -131,7 +138,7 @@ export function HomeView({
   const filterCount = (filter: QueueFilter) =>
     filter === "all"
       ? findings.length
-      : findings.filter((item) => (item.evidence?.status ?? "lead") === filter)
+      : findings.filter((item) => evidenceStatus(item.evidence) === filter)
           .length;
   const dynamicCount = app.edges.filter((edge) => edge.dynamic).length;
   const incompletePaths = app.entries.filter(
@@ -141,6 +148,8 @@ export function HomeView({
   const title =
     leadCount || unresolvedCount
       ? `${leadCount} lead${leadCount === 1 ? "" : "s"} and ${unresolvedCount} unresolved path${unresolvedCount === 1 ? "" : "s"} deserve review.`
+      : reportedCount
+        ? `${reportedCount} reported path${reportedCount === 1 ? " is" : "s are"} ready to inspect.`
       : metadataOnly
         ? "Security metadata is present, but no traceable witness paths are available."
         : graphOnly
@@ -481,7 +490,7 @@ export function HomeView({
           {!graphOnly && !metadataOnly && (
             <div className="queue-filters" aria-label="Filter evidence queue">
               {(
-                ["all", "lead", "inconclusive", "refuted", "verified"] as QueueFilter[]
+                ["all", "lead", "reported", "inconclusive", "refuted", "verified"] as QueueFilter[]
               ).map((filter) => (
                 <button
                   type="button"
@@ -494,6 +503,8 @@ export function HomeView({
                     ? "All"
                     : filter === "lead"
                       ? "Open"
+                      : filter === "reported"
+                        ? "Reported"
                       : filter === "inconclusive"
                         ? "Unresolved"
                     : filter === "refuted"
@@ -562,12 +573,16 @@ export function HomeView({
                 {unresolvedCount} unresolved
               </span>
               <span>
+                <i className="reported-dot" />
+                {reportedCount} reported
+              </span>
+              <span>
                 <i className="refuted-dot" />
                 {refutedCount} refuted
               </span>
               <span>
                 <i className="verified-dot" />
-                {findings.filter((item) => item.evidence?.status === "verified").length} verified
+                {findings.filter((item) => evidenceStatus(item.evidence) === "verified").length} verified
               </span>
             </div>
           )}
