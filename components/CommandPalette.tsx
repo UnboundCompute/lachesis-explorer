@@ -78,27 +78,37 @@ export function CommandPalette({
           meta: `Symbol · ${node.kind} · ${node.file}:${node.line} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
           run: () => onNode(node.id),
         })),
-        ...app.files.map((file) => ({
-          id: `file-${file.id}`,
-          label: file.path,
-          meta: `File · ${file.lines ?? "?"} lines`,
-          run: () =>
-            onNode(app.nodes.find((node) => node.file === file.path)?.id ?? ""),
-        })),
-        ...app.modules.map((module) => ({
-          id: `module-${module.id}`,
-          label: module.name,
-          meta: `Module · ${module.path ?? "graph group"}`,
-          run: () =>
-            onNode(
-              app.nodes.find(
-                (node) =>
-                  module.nodeIds?.includes(node.id) ||
-                  node.module === module.id ||
-                  node.module === module.name,
-              )?.id ?? "",
-            ),
-        })),
+        ...app.files.flatMap((file) => {
+          const node = app.nodes.find((item) => item.file === file.path);
+          return node
+            ? [
+                {
+                  id: `file-${file.id}`,
+                  label: file.path,
+                  meta: `File · ${file.lines ?? "?"} lines`,
+                  run: () => onNode(node.id),
+                },
+              ]
+            : [];
+        }),
+        ...app.modules.flatMap((module) => {
+          const node = app.nodes.find(
+            (item) =>
+              module.nodeIds?.includes(item.id) ||
+              item.module === module.id ||
+              item.module === module.name,
+          );
+          return node
+            ? [
+                {
+                  id: `module-${module.id}`,
+                  label: module.name,
+                  meta: `Module · ${module.path ?? "graph group"}`,
+                  run: () => onNode(node.id),
+                },
+              ]
+            : [];
+        }),
         ...app.nodes
           .filter(
             (node) =>
