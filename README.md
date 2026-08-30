@@ -50,7 +50,7 @@ The explorer ships with two downloadable, explicitly synthetic fixtures: [`demo-
 
 The preferred contract is `lachesis-explorer-bundle` `2.0`: a graph-first snapshot with optional `paths` and an optional `security.findings` overlay. The importer maps security evidence into the security lenses without making findings a prerequisite for code exploration. The existing `1.0` security envelope and earlier flow-centric shape remain available through backward-compatible adapters.
 
-The full graph-first contract is documented in [`docs/GRAPH_EXPLORER_CONTRACT.md`](docs/GRAPH_EXPLORER_CONTRACT.md). It defines stable graph entities, source locations, hierarchy, path projections, capabilities, coverage, and limitations.
+The full graph-first contract is documented in [`docs/GRAPH_EXPLORER_CONTRACT.md`](docs/GRAPH_EXPLORER_CONTRACT.md), with a machine-readable v2 schema at [`docs/GRAPH_EXPLORER_BUNDLE.schema.json`](docs/GRAPH_EXPLORER_BUNDLE.schema.json). It defines stable graph entities, source locations, hierarchy, path projections, capabilities, coverage, and limitations.
 
 At minimum, a `2.0` bundle needs `schema_version`, `graph.nodes`, and may omit paths and findings entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional fields include:
 
