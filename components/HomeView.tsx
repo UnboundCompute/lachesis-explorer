@@ -600,7 +600,7 @@ export function HomeView({
                   <b>{item.flow.name}</b>
                   <small>
                     {graphOnly
-                      ? `${item.flow.steps.length} connected symbols · ${pathLocation(item.flow, app)}`
+                      ? `${pathKindLabel(item.flow)} · ${item.flow.steps.length} symbols · ${pathLocation(item.flow, app)}`
                       : `${item.evidence?.confidence ?? "bundle"} confidence · ${item.flow.steps.length} steps`}
                   </small>
                   {graphOnly && <small className="queue-row-context">{flowContext(item.flow, app)}</small>}
