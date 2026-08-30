@@ -219,8 +219,8 @@ export function HomeView({
         ? "Security metadata is present, but no traceable witness paths are available."
         : graphOnly
         ? graphFocus
-          ? "Follow a path through the code."
-          : "Explore the relationships in this codebase."
+          ? "Understand this code by following one path."
+          : "Explore how this code is connected."
         : "No open evidence paths in this bundle.";
 
   return (
@@ -455,7 +455,7 @@ export function HomeView({
               )}
               <p className="priority-summary">
                 {graphFocus.steps.length > 1
-                  ? `This bundled graph path connects ${graphFocus.steps.length} symbols. Follow it to see how the code relates before making an interpretation.`
+                  ? `This bundled ${pathKindLabel(graphFocus)} connects ${graphFocus.steps.length} symbols. Open it to inspect each relationship and its exact source location.`
                   : "This bundle contains one symbol for this path. Open it to inspect its source and relationships in the surrounding graph."}
               </p>
               <div className="judgment-row">
@@ -478,7 +478,7 @@ export function HomeView({
                     onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")
                   }
                 >
-                  Trace this path{" "}
+                  Start with this path{" "}
                   <span className="action-orb">
                     <Icon name="arrow" size={13} />
                   </span>
