@@ -256,8 +256,9 @@ export function TraceView({
                   flow.id === item.id ? "node-row selected" : "node-row"
                 }
                 onClick={() => {
+                  const orderedSteps = direction === "forward" ? [...item.steps].reverse() : item.steps;
                   setFlowId(item.id);
-                  setStepId(item.steps[0]?.node_id ?? "");
+                  setStepId(orderedSteps[0]?.node_id ?? "");
                   onPositionChange?.(0);
                   onInspectorOpen();
                   onRecord(
