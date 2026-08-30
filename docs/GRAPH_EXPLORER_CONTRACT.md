@@ -78,9 +78,11 @@ because it cannot be traversed. When supplied, path IDs must be non-empty and
 unique within their collection; finding IDs follow the same rule within
 `security.findings`, and must not conflict with a value-path ID. Either path
 collection may be omitted when the exporter has no corresponding projection.
-Steps and hops may also provide an `id` that is stable and unique within that
+Steps and hops should provide an `id` that is stable and unique within that
 path. This occurrence identity lets clients distinguish repeated visits to the
-same graph node; `node_id` remains the canonical graph-entity reference.
+same graph node; `node_id` remains the canonical graph-entity reference. The
+field remains optional when reading older bundles, with the Explorer deriving a
+deterministic fallback.
 
 `security.findings` contains the existing Lachesis finding envelopes. Each
 finding should reference graph node and edge IDs where possible. A bundle with

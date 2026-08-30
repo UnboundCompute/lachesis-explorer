@@ -52,18 +52,18 @@
   "paths": {
     "requests": [
       {"id": "request.search", "entry": "POST /api/search", "entry_node": "route.search", "hops": [
-        {"node_id": "route.search", "edge_label": "calls", "caption": "receives request"},
-        {"node_id": "parse.query", "edge_label": "calls", "caption": "parses input"},
-        {"node_id": "normalize.query", "edge_label": "calls", "caption": "normalizes query"},
-        {"node_id": "search.service", "edge_label": "calls", "caption": "runs search"},
-        {"node_id": "db.products", "edge_label": "queries", "caption": "reads catalog"}
+        {"id": "request.search.hop.01", "node_id": "route.search", "edge_label": "calls", "caption": "receives request"},
+        {"id": "request.search.hop.02", "node_id": "parse.query", "edge_label": "calls", "caption": "parses input"},
+        {"id": "request.search.hop.03", "node_id": "normalize.query", "edge_label": "calls", "caption": "normalizes query"},
+        {"id": "request.search.hop.04", "node_id": "search.service", "edge_label": "calls", "caption": "runs search"},
+        {"id": "request.search.hop.05", "node_id": "db.products", "edge_label": "queries", "caption": "reads catalog"}
       ]}
     ],
     "values": [
       {"id": "value.search-query", "name": "search query", "steps": [
-        {"node_id": "parse.query", "role": "source"},
-        {"node_id": "normalize.query", "role": "transforms"},
-        {"node_id": "search.query", "role": "used by"}
+        {"id": "value.search-query.step.01", "node_id": "parse.query", "role": "source"},
+        {"id": "value.search-query.step.02", "node_id": "normalize.query", "role": "transforms"},
+        {"id": "value.search-query.step.03", "node_id": "search.query", "role": "used by"}
       ]}
     ]
   },
