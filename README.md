@@ -56,20 +56,15 @@ path to the underlying graph and source.
 
 ## Run locally
 
-Requirements: Node.js 20+ and npm. The repository also ships a pnpm lockfile; use Corepack when you
-want to reproduce the CI install exactly.
-
-```bash
-npm install
-npm run dev
-```
-
-Or with the CI-aligned package manager:
+Requirements: Node.js 20+ and pnpm 10 via Corepack. The repository’s checked-in lockfile and CI use
+pnpm; npm remains a supported fallback when you do not need a frozen CI install.
 
 ```bash
 corepack pnpm install --frozen-lockfile
 corepack pnpm dev
 ```
+
+With npm, use `npm install` followed by `npm run dev`.
 
 Open [http://localhost:3000](http://localhost:3000). For a production build:
 
