@@ -430,6 +430,7 @@ export function TraceView({
       {inspectorOpen && (
         <NodeInspector
           node={selected}
+          contextRole={items[selectedIndex]?.label}
           app={app}
           onFlow={onFlow}
           onEntry={onEntry}

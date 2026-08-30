@@ -24,13 +24,14 @@ const descriptions: Record<string, string> = {
 };
 type Props = {
   node: Node;
+  contextRole?: string;
   onClose: () => void;
   app?: App;
   onFlow?: (flowId: string, nodeId: string) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
 };
 
-export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
+export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry }: Props) {
   const inspectorRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
@@ -91,6 +92,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
           <i />
           {node.kind}
         </span>
+        {contextRole && <span className={`path-role role-${contextRole.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{contextRole}</span>}
         <span className="node-identity" title={`Graph ID: ${node.id}`}>
           ID · {node.id.length > 10 ? `…${node.id.slice(-8)}` : node.id}
         </span>
