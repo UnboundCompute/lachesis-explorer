@@ -14,6 +14,7 @@ import { InvestigationContext } from "../components/InvestigationContext";
 import { ResourceLinks } from "../components/ResourceLinks";
 import { Icon } from "../components/Icon";
 import { CommandPalette } from "../components/CommandPalette";
+import { ShortcutHelp } from "../components/ShortcutHelp";
 import {
   InvestigationTrail,
   type InvestigationEvent,
@@ -101,7 +102,9 @@ export default function Page() {
   const [isDemo, setIsDemo] = useState(true);
   const [dragActive, setDragActive] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const commandOpenerRef = useRef<HTMLElement | null>(null);
+  const helpOpenerRef = useRef<HTMLElement | null>(null);
   const [focusNodeId, setFocusNodeId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [recentBundles, setRecentBundles] = useState<RecentBundle[]>([]);
@@ -114,6 +117,7 @@ export default function Page() {
   const pendingLink = useRef<PendingLink | null>(null);
   const importBusy = useRef(false);
   const urlReady = useRef(false);
+  const closeHelp = useCallback(() => setHelpOpen(false), []);
 
   const record = useCallback(
     (action: string, target: string, detail: string) =>
@@ -336,13 +340,20 @@ export default function Page() {
         setCommandOpen((open) => !open);
         return;
       }
+      if (event.key === "?" && !editing && !commandOpen && !menu) {
+        event.preventDefault();
+        helpOpenerRef.current = document.activeElement as HTMLElement | null;
+        setHelpOpen(true);
+        return;
+      }
       if (event.key === "Escape") {
         const trailOpen = Boolean(
           document.querySelector('[role="dialog"][aria-label="Investigation trail"]'),
         );
         setCommandOpen(false);
+        setHelpOpen(false);
         setMenu(false);
-        if (!commandOpen && !menu && !trailOpen) setInspectorOpen(false);
+        if (!commandOpen && !helpOpen && !menu && !trailOpen) setInspectorOpen(false);
         dragDepth.current = 0;
         setDragActive(false);
         return;
@@ -371,7 +382,7 @@ export default function Page() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [view, flowId, record, commandOpen, menu]);
+  }, [view, flowId, record, commandOpen, helpOpen, menu]);
 
   function changeView(next: View) {
     if (next !== view && urlReady.current) {
@@ -736,6 +747,9 @@ export default function Page() {
           }}
         />
       )}
+      {helpOpen && (
+        <ShortcutHelp opener={helpOpenerRef.current} onClose={closeHelp} />
+      )}
       {dragActive && (
         <div className="drop-overlay" role="presentation">
           <div>
@@ -963,7 +977,7 @@ export default function Page() {
         <span>
           Shortcuts: <b>⌘K</b> jump · <b>/</b> search · <b>← →</b> direction ·{" "}
           <b>[ ]</b> step ·{" "}
-          <b>Esc</b> close
+          <b>Esc</b> close · <button className="footer-help" type="button" onClick={() => { helpOpenerRef.current = document.activeElement as HTMLElement | null; setHelpOpen(true); }}> <b>?</b> keyboard help</button>
         </span>
         <span className="footer-brand">Lachesis · graph reader</span>
       </footer>
