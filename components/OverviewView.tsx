@@ -145,6 +145,17 @@ export function OverviewView({
       : null,
     app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
   ].filter(Boolean) as { label: string; query: string }[];
+  useEffect(() => {
+    if (
+      inspectorOpen &&
+      visible.length > 0 &&
+      !visible.some((node) => node.id === selectedId)
+    ) {
+      const nextId = visible[0].id;
+      setSelectedId(nextId);
+      onFocusNode?.(nextId);
+    }
+  }, [inspectorOpen, onFocusNode, selectedId, visible]);
   const visibleIds = new Set(visible.map((node) => node.id));
   const edges = app.edges.filter(
     (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
