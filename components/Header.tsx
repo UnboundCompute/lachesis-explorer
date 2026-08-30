@@ -99,7 +99,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Lachesis Explorer home" onClick={event => { event.preventDefault(); choose('home') }}>
           <span className="brand-mark"><i /><i /><i /></span>
-          <span><b>Lachesis</b><small>evidence explorer</small></span>
+          <span><b>Lachesis</b><small>graph explorer</small></span>
         </a>
         <nav className="nav-tabs" aria-label="Primary analysis lenses">
           {primary.map(item => (
