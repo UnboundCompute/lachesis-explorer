@@ -28,10 +28,18 @@ function matches(node: Node, query: string, app: App) {
       const [key, ...rest] = term.split(":");
       const value = rest.join(":");
       if (rest.length) {
-        if (key === "kind") return node.kind.includes(value);
+        if (key === "kind") return node.kind.toLowerCase().includes(value);
         if (key === "file") return node.file.toLowerCase().includes(value);
+        if (key === "module")
+          return node.module?.toLowerCase().includes(value) ?? false;
+        if (key === "symbol" || key === "name")
+          return [node.label, node.qualifiedName, node.id].some((item) =>
+            item?.toLowerCase().includes(value),
+          );
         if (key === "has" && value === "mcp")
-          return app.mcp.some((item) => item.for === node.id);
+          return app.mcp.some(
+            (item) => item.for === node.id || item.node_ids?.includes(node.id),
+          );
         if (key === "edge")
           return app.edges.some(
             (edge) =>
