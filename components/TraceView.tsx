@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { App, Flow } from "../lib/lachesis";
 import { indirectionCount } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
@@ -91,6 +91,13 @@ export function TraceView({
   onEntry,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
+  const [selectedPosition, setSelectedPosition] = useState(0);
+  useEffect(() => {
+    if (!flow) return;
+    const ordered = direction === "backward" ? flow.steps : [...flow.steps].reverse();
+    const position = ordered.findIndex((step) => step.node_id === stepId);
+    setSelectedPosition(position >= 0 ? position : 0);
+  }, [flowId, direction]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -155,11 +162,14 @@ export function TraceView({
   }));
   const selectedIndex = Math.max(
     0,
-    items.findIndex((item) => item.id === stepId),
+    items[selectedPosition]?.id === stepId
+      ? selectedPosition
+      : items.findIndex((item) => item.id === stepId),
   );
   function moveStep(delta: number) {
     const next = items[selectedIndex + delta];
     if (!next) return;
+    setSelectedPosition(selectedIndex + delta);
     setStepId(next.id);
     onInspectorOpen();
     onRecord(
@@ -336,8 +346,10 @@ export function TraceView({
         <PathCanvas
           items={items}
           selectedId={stepId}
-          onSelect={(id) => {
+          selectedIndex={selectedIndex}
+          onSelect={(id, index) => {
             const node = app.nodes.find((item) => item.id === id);
+            setSelectedPosition(index);
             setStepId(id);
             onInspectorOpen();
             if (node)
