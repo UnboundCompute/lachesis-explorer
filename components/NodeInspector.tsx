@@ -27,6 +27,7 @@ type Props = {
 
 export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const location = `${node.file}:${node.line}${node.column ? `:${node.column}` : ""}`;
   const range =
     node.endLine && node.endLine !== node.line
@@ -51,10 +52,29 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
     (edge) => edge.source === node.id,
   ).length;
   async function copyLocation() {
-    await navigator.clipboard?.writeText(location);
-    setCopied(true);
-    trackEvent("source_location_copied");
-    window.setTimeout(() => setCopied(false), 1200);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(location);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = location;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        const copiedWithFallback = document.execCommand("copy");
+        input.remove();
+        if (!copiedWithFallback) throw new Error("Clipboard fallback failed");
+      }
+      setCopyError(false);
+      setCopied(true);
+      trackEvent("source_location_copied");
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+      setCopyError(true);
+    }
   }
   return (
     <aside className="detail-panel">
@@ -90,7 +110,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
           </span>
           <button onClick={copyLocation} aria-label="Copy source location">
             <Icon name="code" size={12} />
-            {copied ? "Copied" : "Copy"}
+            {copied ? "Copied" : copyError ? "Retry" : "Copy"}
           </button>
         </div>
         <pre className="source-code">
