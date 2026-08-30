@@ -15,6 +15,7 @@ type Props = {
   onUpload: () => void;
   onLoadSample: () => void;
   onView: (view: "map" | "investigate" | "trace" | "journey") => void;
+  direction: "backward" | "forward";
   onFlow: (flowId: string, nodeId: string) => void;
   onSink: (sinkId: string) => void;
   onEntry: (entryIndex: number, hopId: string) => void;
@@ -80,6 +81,7 @@ export function HomeView({
   onUpload,
   onLoadSample,
   onView,
+  direction,
   onFlow,
   onSink,
   onEntry,
@@ -548,7 +550,7 @@ export function HomeView({
                 aria-label={`Select ${item.flow.name}`}
                 onClick={() =>
                   graphOnly
-                    ? onFlow(item.flow.id, item.flow.sourceNodeId ?? item.flow.steps[0]?.node_id ?? "")
+                    ? onFlow(item.flow.id, direction === "forward" ? item.flow.steps.at(-1)?.node_id ?? "" : item.flow.sourceNodeId ?? item.flow.steps[0]?.node_id ?? "")
                     : setSelectedId(item.flow.id)
                 }
               >

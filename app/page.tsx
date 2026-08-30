@@ -826,6 +826,7 @@ export default function Page() {
           onUpload={() => fileRef.current?.click()}
           onLoadSample={loadCodeSample}
           onView={(next) => changeView(next)}
+          direction={direction}
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
             setFlowId(nextFlow);
