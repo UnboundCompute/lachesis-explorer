@@ -351,13 +351,24 @@ export default function Page() {
         return;
       }
       if (event.key === "Escape") {
+        const inspectorHasFocus = Boolean(
+          (document.activeElement as HTMLElement | null)?.closest(
+            ".detail-panel",
+          ),
+        );
         const trailOpen = Boolean(
           document.querySelector('[role="dialog"][aria-label="Investigation trail"]'),
         );
         setCommandOpen(false);
         setHelpOpen(false);
         setMenu(false);
-        if (!commandOpen && !helpOpen && !menu && !trailOpen) setInspectorOpen(false);
+        if (!commandOpen && !helpOpen && !menu && !trailOpen) {
+          setInspectorOpen(false);
+          if (inspectorHasFocus)
+            window.requestAnimationFrame(() =>
+              document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus(),
+            );
+        }
         dragDepth.current = 0;
         setDragActive(false);
         return;
