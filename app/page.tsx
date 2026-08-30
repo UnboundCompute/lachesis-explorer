@@ -76,6 +76,17 @@ function positionForEntry(app: App, entryIndex: number, nodeId: string) {
   return position >= 0 ? position : 0;
 }
 
+function isSinkNode(app: App, nodeId: string) {
+  return app.nodes.some(
+    (node) =>
+      node.id === nodeId &&
+      (node.kind === "sink" ||
+        app.flows.some((flow) =>
+          flow.steps.some((step) => step.node_id === nodeId && step.role === "sink"),
+        )),
+  );
+}
+
 export default function Page() {
   const [view, setView] = useState<View>("home");
   const [direction, setDirection] = useState<"backward" | "forward">(
@@ -248,7 +259,7 @@ export default function Page() {
     if (
       link.sink &&
       starter.nodes.some(
-        (node) => node.id === link.sink && node.kind === "sink",
+        (node) => node.id === link.sink && isSinkNode(starter, node.id),
       )
     )
       setSinkId(link.sink);
@@ -321,7 +332,7 @@ export default function Page() {
         }
       }
       const linkedSink = params.get("sink");
-      if (linkedSink && app.nodes.some((node) => node.id === linkedSink && node.kind === "sink"))
+      if (linkedSink && isSinkNode(app, linkedSink))
         setSinkId(linkedSink);
       const linkedNode = params.get("node");
       if (nextView === "map" && linkedNode && app.nodes.some((node) => node.id === linkedNode))

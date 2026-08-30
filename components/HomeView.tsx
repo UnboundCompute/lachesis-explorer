@@ -93,7 +93,13 @@ export function HomeView({
   const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
   const graphFocus = app.flows[0];
   const firstEntry = app.entries[0];
-  const firstSink = app.nodes.find((node) => node.kind === "sink");
+  const firstSink = app.nodes.find(
+    (node) =>
+      node.kind === "sink" ||
+      app.flows.some((flow) =>
+        flow.steps.some((step) => step.node_id === node.id && step.role === "sink"),
+      ),
+  );
   const visibleFindings = useMemo(
     () =>
       queueFilter === "all"

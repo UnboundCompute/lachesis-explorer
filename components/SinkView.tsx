@@ -29,7 +29,7 @@ export function SinkView({
       app.nodes.filter(
         (node) =>
           node.kind === "sink" ||
-          app.findings.some((flow) =>
+          app.flows.some((flow) =>
             flow.steps.some(
               (step) => step.node_id === node.id && step.role === "sink",
             ),
@@ -69,7 +69,7 @@ export function SinkView({
         </button>
       </section>
     );
-  const flows = app.findings.filter((flow) =>
+  const flows = app.flows.filter((flow) =>
     flow.steps.some((step) => step.node_id === sink.id),
   );
   const flowNodes = new Set(
@@ -94,7 +94,7 @@ export function SinkView({
       onRecord(
         "Focused sink",
         next.label || next.id,
-        `${app.findings.filter((flow) => flow.steps.some((step) => step.node_id === id)).length} value flows`,
+        `${app.flows.filter((flow) => flow.steps.some((step) => step.node_id === id)).length} value flows`,
       );
       trackEvent("sink_selected");
     }
@@ -121,7 +121,7 @@ export function SinkView({
         </div>
         <div className="sink-list">
           {sinks.map((item) => {
-            const count = app.findings.filter((flow) =>
+            const count = app.flows.filter((flow) =>
               flow.steps.some((step) => step.node_id === item.id),
             ).length;
             return (

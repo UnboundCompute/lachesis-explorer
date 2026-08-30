@@ -124,7 +124,7 @@ export function CommandPalette({
           .filter(
             (node) =>
               node.kind === "sink" ||
-              app.findings.some((flow) =>
+              app.flows.some((flow) =>
                 flow.steps.some(
                   (step) => step.node_id === node.id && step.role === "sink",
                 ),
