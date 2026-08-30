@@ -129,7 +129,7 @@ export function TraceView({
       ? position
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
-  }, [app, flowId, direction, position, selectedPosition]);
+  }, [app, flowId, direction, position, selectedPosition, stepId]);
   useEffect(() => {
     selectedFlowRef.current?.scrollIntoView({ block: "nearest" });
   }, [flowId, query]);

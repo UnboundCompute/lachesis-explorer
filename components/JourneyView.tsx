@@ -51,7 +51,7 @@ export function JourneyView({
       ? position
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
-  }, [app, entryIndex, position]);
+  }, [app, entryIndex, hopId, position]);
   useEffect(() => {
     selectedHopRef.current?.scrollIntoView({ block: "nearest" });
   }, [entryIndex, selectedPosition, hopId]);
