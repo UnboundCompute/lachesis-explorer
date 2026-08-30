@@ -167,7 +167,9 @@ export function JourneyView({
           PATH NODES <span>{entry.hops.length}</span>
         </div>
         <div className="hop-list">
-          {entry.hops.map((hop, index) => (
+          {entry.hops.map((hop, index) => {
+            const rowNode = app.nodes.find((item) => item.id === hop.node_id);
+            return (
             <button
               key={`${index}-${hop.node_id}`}
               ref={selectedIndex === index ? selectedHopRef : undefined}
@@ -192,10 +194,14 @@ export function JourneyView({
               </span>
               <span>
                 <b>{hop.edge_label}</b>
-                <small>{hop.caption}</small>
+                <small>{hop.caption || "Relationship not reported"}</small>
+                <small className="node-row-context">
+                  {rowNode?.file || "Source unavailable"}:{rowNode?.line || "—"}
+                </small>
               </span>
             </button>
-          ))}
+            );
+          })}
         </div>
       </aside>
       <main className="main-panel">
