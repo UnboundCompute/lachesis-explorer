@@ -19,7 +19,7 @@ import {
   InvestigationTrail,
   type InvestigationEvent,
 } from "../components/InvestigationTrail";
-import { starter, normalize, type App } from "../lib/lachesis";
+import { starter, normalize, type App, type Flow } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
@@ -74,6 +74,18 @@ function positionForEntry(app: App, entryIndex: number, nodeId: string) {
   if (!entry) return 0;
   const position = entry.hops.findIndex((hop) => hop.node_id === nodeId);
   return position >= 0 ? position : 0;
+}
+
+function recommendedFlow(flows: Flow[]) {
+  return [...flows].sort((a, b) => {
+    const score = (flow: Flow) => {
+      const roles = flow.steps.map((step) => step.role.trim().toLowerCase());
+      const hasSource = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin"].includes(role));
+      const hasSink = Boolean(flow.sinkNodeId) || roles.includes("sink");
+      return (flow.steps.length > 1 ? 100 : 0) + (hasSource ? 20 : 0) + (hasSink ? 20 : 0) + flow.steps.length;
+    };
+    return score(b) - score(a);
+  })[0];
 }
 
 function isSinkNode(app: App, nodeId: string) {
@@ -456,7 +468,7 @@ export default function Page() {
             ),
           ),
       )?.id ?? "";
-    const firstFlow = next.flows[0];
+    const firstFlow = recommendedFlow(next.flows);
     setApp(next);
     setCompareApp(null);
     setFlowId(firstFlow?.id ?? "");
