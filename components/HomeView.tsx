@@ -32,7 +32,7 @@ const statusRank: Record<string, number> = {
   verified: 2,
   refuted: 3,
 };
-type QueueFilter = "all" | "lead" | "inconclusive" | "refuted";
+type QueueFilter = "all" | "lead" | "inconclusive" | "refuted" | "verified";
 
 function sinkFor(flow: Flow, app: App): Node | undefined {
   const sinkStep = [...flow.steps]
@@ -393,7 +393,7 @@ export function HomeView({
           {!graphOnly && (
             <div className="queue-filters" aria-label="Filter evidence queue">
               {(
-                ["all", "lead", "inconclusive", "refuted"] as QueueFilter[]
+                ["all", "lead", "inconclusive", "refuted", "verified"] as QueueFilter[]
               ).map((filter) => (
                 <button
                   type="button"
@@ -408,7 +408,9 @@ export function HomeView({
                       ? "Open"
                       : filter === "inconclusive"
                         ? "Unresolved"
-                        : "Refuted"}{" "}
+                    : filter === "refuted"
+                      ? "Refuted"
+                      : "Verified"}{" "}
                   <span>{filterCount(filter)}</span>
                 </button>
               ))}
@@ -472,6 +474,10 @@ export function HomeView({
               <span>
                 <i className="refuted-dot" />
                 {refutedCount} refuted
+              </span>
+              <span>
+                <i className="verified-dot" />
+                {findings.filter((item) => item.evidence?.status === "verified").length} verified
               </span>
             </div>
           )}
