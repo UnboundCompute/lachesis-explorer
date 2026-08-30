@@ -587,6 +587,7 @@ export default function Page() {
           onInspectorOpen={() => setInspectorOpen(true)}
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
+          onView={(next: "journey" | "map") => changeView(next)}
         />
       )}
       {view === "journey" && (

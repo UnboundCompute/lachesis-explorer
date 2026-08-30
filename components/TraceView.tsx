@@ -20,6 +20,7 @@ type Props = {
   onInspectorOpen: () => void;
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
+  onView: (view: "journey" | "map") => void;
 };
 function matchesFlow(app: App, flow: Flow, query: string) {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -76,6 +77,7 @@ export function TraceView({
   onInspectorOpen,
   onInspectorClose,
   onRecord,
+  onView,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   if (!flow)
@@ -87,8 +89,23 @@ export function TraceView({
         <h2>No paths in this bundle</h2>
         <p>
           This bundle contains graph structure, but no graph paths were
-          included for tracing.
+          included for tracing.{" "}
+          {app.entries.length
+            ? "Follow a request path instead."
+            : "Open the system map to inspect its structure."}
         </p>
+        <button
+          className="context-upload"
+          type="button"
+          onClick={() => onView(app.entries.length ? "journey" : "map")}
+        >
+          <span>
+            {app.entries.length ? "Open request paths" : "Open system map"}
+          </span>
+          <span className="button-icon">
+            <Icon name="arrow" size={14} />
+          </span>
+        </button>
       </section>
     );
   const selected = app.nodes.find((node) => node.id === stepId) ?? app.nodes[0];
