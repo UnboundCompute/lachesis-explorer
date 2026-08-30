@@ -262,6 +262,8 @@ function normalizeGraphV2(raw:any):App {
   if(brokenStep)throw new Error(`A path references missing node "${brokenStep.node_id}".`)
   const brokenEndpoint=allFlows.flatMap(flow=>[flow.sourceNodeId,flow.sinkNodeId].filter(Boolean) as string[]).find(nodeId=>!ids.has(nodeId))
   if(brokenEndpoint)throw new Error(`A path endpoint references missing node "${brokenEndpoint}".`)
+  const detachedEndpoint=allFlows.find(flow=>[flow.sourceNodeId,flow.sinkNodeId].filter(Boolean).some(nodeId=>!flow.steps.some(step=>step.node_id===nodeId)))
+  if(detachedEndpoint)throw new Error(`Path "${detachedEndpoint.name}" declares an endpoint outside its step sequence.`)
   const brokenEntry=entries.flatMap(entry=>entry.hops).find(hop=>!ids.has(hop.node_id))
   if(brokenEntry)throw new Error(`An entrypoint references missing node "${brokenEntry.node_id}".`)
   const brokenEdge=explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))

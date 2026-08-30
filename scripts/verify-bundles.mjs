@@ -110,10 +110,12 @@ function verify(file, bundle) {
         if (kind === "values") valuePathIds.add(pathId);
       }
       validateNodes(file, ids, path.steps ?? path.hops ?? [], `paths.${kind}[${pathIndex}]`);
+      const pathNodeIds = (path.steps ?? path.hops ?? []).map((item) => String(item?.node_id ?? item?.nodeId ?? item?.node ?? ""));
       const entryNode = path.entry_node ?? path.entryNode;
       if (entryNode != null && !ids.has(String(entryNode))) fail(file, `paths.${kind}[${pathIndex}] entry_node references a missing node`);
       for (const endpoint of [path.source_node, path.sink_node]) {
         if (endpoint != null && !ids.has(String(endpoint))) fail(file, `paths.${kind}[${pathIndex}] endpoint references a missing node`);
+        if (endpoint != null && !pathNodeIds.includes(String(endpoint))) fail(file, `paths.${kind}[${pathIndex}] endpoint is outside its path sequence`);
       }
     }
   }

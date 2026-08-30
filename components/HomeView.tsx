@@ -38,9 +38,11 @@ function sinkFor(flow: Flow, app: App): Node | undefined {
   const sinkStep = [...flow.steps]
     .reverse()
     .find((step) => step.role === "sink");
-  return app.nodes.find(
-    (node) => node.id === (sinkStep?.node_id ?? flow.steps.at(-1)?.node_id),
-  );
+  return app.nodes.find((node) => node.id === (flow.sinkNodeId ?? sinkStep?.node_id ?? flow.steps.at(-1)?.node_id));
+}
+
+function sourceFor(flow: Flow, app: App): Node | undefined {
+  return app.nodes.find((node) => node.id === (flow.sourceNodeId ?? flow.steps[0]?.node_id));
 }
 
 function EvidenceState({ evidence }: { evidence?: Evidence }) {
@@ -288,9 +290,7 @@ export function HomeView({
                 <span>
                   <small>Source</small>
                   <b>
-                    {app.nodes.find(
-                      (node) => node.id === priority.flow.steps[0]?.node_id,
-                    )?.label ?? "Unknown source"}
+                    {sourceFor(priority.flow, app)?.label ?? "Unknown source"}
                   </b>
                 </span>
                 <i>
@@ -331,7 +331,7 @@ export function HomeView({
               <div className="priority-actions">
                 <button
                   onClick={() =>
-                    onFlow(priority.flow.id, priority.flow.steps[0].node_id)
+                    onFlow(priority.flow.id, priority.flow.sourceNodeId ?? priority.flow.steps[0].node_id)
                   }
                 >
                   Trace this witness{" "}
@@ -362,7 +362,7 @@ export function HomeView({
                   <small>Starts at</small>
                   <b>
                     {app.nodes.find(
-                      (node) => node.id === graphFocus.steps[0]?.node_id,
+                      (node) => node.id === (graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id),
                     )?.label ?? "Unknown symbol"}
                   </b>
                 </span>
@@ -373,7 +373,7 @@ export function HomeView({
                   <small>Reaches</small>
                   <b>
                     {app.nodes.find(
-                      (node) => node.id === graphFocus.steps.at(-1)?.node_id,
+                      (node) => node.id === (graphFocus.sinkNodeId ?? graphFocus.steps.at(-1)?.node_id),
                     )?.label ?? "Unknown symbol"}
                   </b>
                 </span>

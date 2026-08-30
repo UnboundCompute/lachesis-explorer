@@ -164,12 +164,8 @@ export function TraceView({
   const steps =
     direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const evidence = app.mcp.find((item) => item.for === flow.id);
-  const firstNode = app.nodes.find(
-    (node) => node.id === flow.steps[0]?.node_id,
-  );
-  const lastNode = app.nodes.find(
-    (node) => node.id === flow.steps.at(-1)?.node_id,
-  );
+  const firstNode = app.nodes.find((node) => node.id === (flow.sourceNodeId ?? flow.steps[0]?.node_id));
+  const lastNode = app.nodes.find((node) => node.id === (flow.sinkNodeId ?? flow.steps.at(-1)?.node_id));
   const indirectSteps = flow.steps.filter(
     (step) => step.edge?.alias || step.edge?.dynamic,
   ).length;
