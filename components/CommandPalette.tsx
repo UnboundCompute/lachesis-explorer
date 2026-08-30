@@ -28,6 +28,11 @@ export function CommandPalette({
   const normalized = query.trim().toLowerCase();
   const dialogRef = useRef<HTMLElement>(null);
   const activeOptionRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    openerRef.current = document.activeElement as HTMLElement | null;
+    return () => openerRef.current?.focus();
+  }, []);
   const commands = useMemo(
     () =>
       [
