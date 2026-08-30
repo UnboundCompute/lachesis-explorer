@@ -67,6 +67,15 @@ function normalizeEntries(rawPaths:unknown,nodes:Node[]):Entry[]{
 export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entry[]): GraphEdge[] {
   const collected = new Map<string,GraphEdge>()
   const ids = new Map<string,string>()
+  const reservedIds = new Set(explicit.map(seed => seed.id?.trim()).filter(Boolean) as string[])
+  const usedIds = new Set<string>()
+  let generatedId = 1
+  function nextId() {
+    while (reservedIds.has(`edge_${generatedId}`) || usedIds.has(`edge_${generatedId}`)) generatedId += 1
+    const id = `edge_${generatedId}`
+    generatedId += 1
+    return id
+  }
   function include(seed:EdgeSeed) {
     if (!seed.source || !seed.target) return
     const key=[seed.source,seed.target,seed.relation,seed.alias?'alias':'exact',seed.dynamic?'dynamic':'static'].join('|')
@@ -74,7 +83,9 @@ export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entr
     if(requestedId){const previousKey=ids.get(requestedId);if(previousKey&&previousKey!==key)throw new Error(`Duplicate graph edge ID "${requestedId}".`);ids.set(requestedId,key)}
     const current=collected.get(key)
     if(current){if(!current.origins.includes(seed.origin))current.origins.push(seed.origin);if(seed.flow_id&&!current.flow_ids.includes(seed.flow_id))current.flow_ids.push(seed.flow_id);if(seed.entry_id&&!current.entry_ids.includes(seed.entry_id))current.entry_ids.push(seed.entry_id);if(!current.confidence&&seed.confidence)current.confidence=seed.confidence;for(const limitation of seed.limitations??[])if(!current.limitations?.includes(limitation))(current.limitations??=[]).push(limitation);return}
-    collected.set(key,{id:seed.id||`edge_${collected.size+1}`,source:seed.source,target:seed.target,relation:seed.relation||'connects',alias:seed.alias,dynamic:seed.dynamic,confidence:seed.confidence,limitations:seed.limitations,origins:[seed.origin],flow_ids:seed.flow_id?[seed.flow_id]:[],entry_ids:seed.entry_id?[seed.entry_id]:[]})
+    const id = seed.id || nextId()
+    usedIds.add(id)
+    collected.set(key,{id,source:seed.source,target:seed.target,relation:seed.relation||'connects',alias:seed.alias,dynamic:seed.dynamic,confidence:seed.confidence,limitations:seed.limitations,origins:[seed.origin],flow_ids:seed.flow_id?[seed.flow_id]:[],entry_ids:seed.entry_id?[seed.entry_id]:[]})
   }
   explicit.forEach(include)
   flows.forEach(flow=>flow.steps.slice(1).forEach((step,index)=>include({source:flow.steps[index].node_id,target:step.node_id,relation:step.role||'flows to',alias:Boolean(step.edge?.alias),dynamic:Boolean(step.edge?.dynamic),confidence:step.edge?.confidence,limitations:step.edge?.limitations,origin:'value-flow',flow_id:flow.id})))

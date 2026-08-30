@@ -50,7 +50,10 @@ Edges use a semantic `kind` such as `calls`, `imports`, `reads`, `writes`,
 `alias`, `confidence`, and `limitations` describe the relationship without
 turning it into a security verdict. `confidence` is exporter-defined text
 (for example, `high`, `medium`, or `low`); `limitations` is an array of
-human-readable caveats. The same optional uncertainty fields may appear on a
+human-readable caveats. An exporter-provided edge `id` must be non-empty and
+unique within `graph.edges`; the Explorer also guarantees that IDs it derives
+from path projections cannot collide with those explicit IDs. The same
+optional uncertainty fields may appear on a
 path step or request-path hop when the path projection has more specific
 context than the underlying edge.
 

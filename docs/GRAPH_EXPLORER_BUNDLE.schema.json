@@ -73,7 +73,7 @@
       "type": "object",
       "required": ["source", "target"],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1, "description": "Stable edge identity; must be unique within graph.edges when supplied." },
         "source": { "type": "string", "minLength": 1 },
         "target": { "type": "string", "minLength": 1 },
         "kind": { "type": "string" },
