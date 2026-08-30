@@ -1,0 +1,229 @@
+{
+  "format": "lachesis-explorer-bundle",
+  "schema_version": "1.0",
+  "meta": {
+    "repo": "demo/atlas-commerce",
+    "lang": "typescript",
+    "commit": "9f6c2ad",
+    "loc": 28416,
+    "generated_at": "2026-08-30T06:30:00Z",
+    "fixture": true
+  },
+  "evidence_manifest": {
+    "format": "lachesis-evidence",
+    "schema_version": 1,
+    "finding_schema_version": "0.1",
+    "analysis_projection": "security-paths",
+    "repository": "demo/atlas-commerce",
+    "commit_sha": "9f6c2ad",
+    "engine_sha": "fixture-engine-0.1.7",
+    "catalog_sha": "fixture-atropos-1.7.1",
+    "toolchain_fingerprint": "synthetic-typescript-fixture",
+    "sarif": {
+      "path": "fixture/results.sarif",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "results": 3,
+      "active_results": 3,
+      "suppressed_results": 0,
+      "levels": { "warning": 2, "note": 1 },
+      "baseline_removed": 0,
+      "baseline_removed_fingerprints": []
+    },
+    "finding_lifecycle": {
+      "state": "initial",
+      "observed_finding_ids": [
+        "1111111111111111111111111111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222222222222222222222222222",
+        "3333333333333333333333333333333333333333333333333333333333333333"
+      ],
+      "new_finding_ids": [
+        "1111111111111111111111111111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222222222222222222222222222",
+        "3333333333333333333333333333333333333333333333333333333333333333"
+      ],
+      "active_finding_ids": [],
+      "resolved_finding_ids": []
+    }
+  },
+  "graph": {
+    "nodes": [
+      { "id": "route.search", "kind": "route", "file": "src/routes/search.ts", "line": 18, "column": 1, "label": "POST /api/search", "snippet": "router.post('/api/search', requireSession, searchProducts)" },
+      { "id": "guard.session", "kind": "guard", "file": "src/auth/session.ts", "line": 41, "column": 3, "label": "requireSession", "snippet": "if (!request.session?.userId) throw unauthorized()" },
+      { "id": "source.query", "kind": "source", "file": "src/routes/search.ts", "line": 24, "column": 9, "label": "request.body.query", "snippet": "const query = request.body.query" },
+      { "id": "transform.normalize", "kind": "call", "file": "src/search/normalize.ts", "line": 12, "column": 10, "label": "normalizeSearch(query)", "snippet": "return query.trim().replace(/\\s+/g, ' ')" },
+      { "id": "service.search", "kind": "service", "file": "src/search/service.ts", "line": 67, "column": 5, "label": "catalog.search(normalized)", "snippet": "return catalog.search(normalized, filters)" },
+      { "id": "transform.sql", "kind": "call", "file": "src/db/catalog.ts", "line": 103, "column": 7, "label": "buildSearchSql(term)", "snippet": "const sql = `SELECT * FROM products WHERE name LIKE '%${term}%'`" },
+      { "id": "sink.sql", "kind": "sink", "file": "src/db/catalog.ts", "line": 108, "column": 10, "label": "database.raw(sql)", "snippet": "return database.raw(sql)" },
+
+      { "id": "route.export", "kind": "route", "file": "src/routes/export.ts", "line": 21, "column": 1, "label": "POST /api/reports/export", "snippet": "router.post('/api/reports/export', requireAnalyst, exportReport)" },
+      { "id": "guard.role", "kind": "guard", "file": "src/auth/roles.ts", "line": 29, "column": 3, "label": "requireAnalyst", "snippet": "assertRole(request.actor, ['analyst', 'admin'])" },
+      { "id": "source.template", "kind": "source", "file": "src/routes/export.ts", "line": 28, "column": 9, "label": "request.body.template", "snippet": "const template = request.body.template" },
+      { "id": "service.export", "kind": "service", "file": "src/reports/exporter.ts", "line": 54, "column": 5, "label": "exporter.render(template)", "snippet": "return workers[format].render(template, data)" },
+      { "id": "dispatch.worker", "kind": "call", "file": "src/reports/workers.ts", "line": 34, "column": 12, "label": "workers[format]", "snippet": "const worker = workers[format]" },
+      { "id": "transform.command", "kind": "call", "file": "src/reports/pdf.ts", "line": 73, "column": 7, "label": "buildRendererCommand(template)", "snippet": "const command = buildRendererCommand(template, outputPath)" },
+      { "id": "sink.exec", "kind": "sink", "file": "src/reports/pdf.ts", "line": 79, "column": 5, "label": "execFile(command)", "snippet": "await execFile(command.binary, command.args)" },
+
+      { "id": "route.webhook", "kind": "route", "file": "src/routes/webhooks.ts", "line": 15, "column": 1, "label": "POST /api/webhooks/test", "snippet": "router.post('/api/webhooks/test', requireAdmin, testWebhook)" },
+      { "id": "guard.admin", "kind": "guard", "file": "src/auth/roles.ts", "line": 47, "column": 3, "label": "requireAdmin", "snippet": "assertRole(request.actor, ['admin'])" },
+      { "id": "source.webhookUrl", "kind": "source", "file": "src/routes/webhooks.ts", "line": 22, "column": 9, "label": "request.body.url", "snippet": "const targetUrl = request.body.url" },
+      { "id": "guard.allowlist", "kind": "guard", "file": "src/webhooks/policy.ts", "line": 38, "column": 3, "label": "assertAllowedWebhookHost", "snippet": "if (!allowedHosts.has(url.hostname)) throw forbidden()" },
+      { "id": "service.webhook", "kind": "service", "file": "src/webhooks/test.ts", "line": 61, "column": 5, "label": "webhookClient.send(targetUrl)", "snippet": "return webhookClient.send(targetUrl, samplePayload)" },
+      { "id": "sink.http", "kind": "sink", "file": "src/http/client.ts", "line": 92, "column": 12, "label": "fetch(targetUrl)", "snippet": "return fetch(targetUrl, requestOptions)" }
+    ],
+    "edges": [
+      { "source": "route.search", "target": "guard.session", "kind": "middleware" },
+      { "source": "guard.session", "target": "source.query", "kind": "controls" },
+      { "source": "source.query", "target": "transform.normalize", "kind": "value-flow" },
+      { "source": "transform.normalize", "target": "service.search", "kind": "argument", "alias": true },
+      { "source": "service.search", "target": "transform.sql", "kind": "call" },
+      { "source": "transform.sql", "target": "sink.sql", "kind": "argument" },
+
+      { "source": "route.export", "target": "guard.role", "kind": "middleware" },
+      { "source": "guard.role", "target": "source.template", "kind": "controls" },
+      { "source": "source.template", "target": "service.export", "kind": "argument" },
+      { "source": "service.export", "target": "dispatch.worker", "kind": "dispatch", "dynamic": true },
+      { "source": "dispatch.worker", "target": "transform.command", "kind": "possible-call", "dynamic": true },
+      { "source": "transform.command", "target": "sink.exec", "kind": "argument" },
+
+      { "source": "route.webhook", "target": "guard.admin", "kind": "middleware" },
+      { "source": "guard.admin", "target": "source.webhookUrl", "kind": "controls" },
+      { "source": "source.webhookUrl", "target": "guard.allowlist", "kind": "value-flow" },
+      { "source": "guard.allowlist", "target": "service.webhook", "kind": "guarded-flow" },
+      { "source": "service.webhook", "target": "sink.http", "kind": "call" }
+    ],
+    "callpaths": [
+      {
+        "id": "request.search",
+        "entry": "POST /api/search",
+        "entry_node": "route.search",
+        "hops": [
+          { "node_id": "route.search", "edge_label": "route", "caption": "Accepts the product-search request" },
+          { "node_id": "guard.session", "edge_label": "middleware", "caption": "Requires an authenticated session" },
+          { "node_id": "source.query", "edge_label": "handler", "caption": "Reads the search term" },
+          { "node_id": "service.search", "edge_label": "service", "caption": "Delegates catalog lookup" },
+          { "node_id": "sink.sql", "edge_label": "repository", "caption": "Executes the constructed query" }
+        ],
+        "layout": [
+          { "node_id": "route.search", "x": 72, "y": 110 },
+          { "node_id": "guard.session", "x": 210, "y": 110 },
+          { "node_id": "source.query", "x": 348, "y": 110 },
+          { "node_id": "service.search", "x": 486, "y": 110 },
+          { "node_id": "sink.sql", "x": 624, "y": 110 }
+        ]
+      },
+      {
+        "id": "request.export",
+        "entry": "POST /api/reports/export",
+        "entry_node": "route.export",
+        "hops": [
+          { "node_id": "route.export", "edge_label": "route", "caption": "Accepts the export request" },
+          { "node_id": "guard.role", "edge_label": "middleware", "caption": "Requires analyst access" },
+          { "node_id": "source.template", "edge_label": "handler", "caption": "Reads the requested template" },
+          { "node_id": "service.export", "edge_label": "service", "caption": "Selects an export worker" },
+          { "node_id": "dispatch.worker", "edge_label": "dynamic dispatch", "caption": "Worker target remains conservative" },
+          { "node_id": "sink.exec", "edge_label": "process", "caption": "Starts the renderer process" }
+        ]
+      },
+      {
+        "id": "request.webhook",
+        "entry": "POST /api/webhooks/test",
+        "entry_node": "route.webhook",
+        "hops": [
+          { "node_id": "route.webhook", "edge_label": "route", "caption": "Accepts a webhook test" },
+          { "node_id": "guard.admin", "edge_label": "middleware", "caption": "Requires administrator access" },
+          { "node_id": "source.webhookUrl", "edge_label": "handler", "caption": "Reads the target URL" },
+          { "node_id": "guard.allowlist", "edge_label": "policy", "caption": "Rejects hosts outside the allowlist" },
+          { "node_id": "sink.http", "edge_label": "client", "caption": "Sends the test request" }
+        ]
+      }
+    ]
+  },
+  "findings": [
+    {
+      "schema_version": "0.1",
+      "finding_id": "1111111111111111111111111111111111111111111111111111111111111111",
+      "status": "lead",
+      "lifecycle_state": "new",
+      "analysis": {
+        "projection": "security-paths",
+        "confidence": "high",
+        "limitations": ["The normalizer trims whitespace but is not a SQL escaping model."]
+      },
+      "locations": [
+        { "role": "source", "symbol": "request.body.query", "file": "src/routes/search.ts", "line": 24 },
+        { "role": "sink", "symbol": "database.raw", "file": "src/db/catalog.ts", "line": 108 }
+      ],
+      "witness": {
+        "steps": [
+          { "node_id": "source.query", "role": "origin", "note": "Request-controlled search term" },
+          { "node_id": "transform.normalize", "role": "transform", "note": "Whitespace normalization", "edge": { "alias": false, "dynamic": false } },
+          { "node_id": "service.search", "role": "call", "note": "Value crosses the catalog service boundary", "edge": { "alias": true, "dynamic": false } },
+          { "node_id": "transform.sql", "role": "transform", "note": "Value is interpolated into a query" },
+          { "node_id": "sink.sql", "role": "sink", "note": "Constructed SQL reaches raw execution" }
+        ],
+        "guards": {
+          "verdict": "not-observed",
+          "items": [],
+          "note": "Authentication is present on the request path, but no query-safety guard is observed on this value path."
+        }
+      }
+    },
+    {
+      "schema_version": "0.1",
+      "finding_id": "2222222222222222222222222222222222222222222222222222222222222222",
+      "status": "inconclusive",
+      "lifecycle_state": "new",
+      "analysis": {
+        "projection": "security-paths",
+        "confidence": "medium",
+        "limitations": ["The export worker is selected through a dynamic property lookup.", "Only the PDF worker is represented in this bounded witness."]
+      },
+      "locations": [
+        { "role": "source", "symbol": "request.body.template", "file": "src/routes/export.ts", "line": 28 },
+        { "role": "sink", "symbol": "execFile", "file": "src/reports/pdf.ts", "line": 79 }
+      ],
+      "witness": {
+        "steps": [
+          { "node_id": "source.template", "role": "origin", "note": "Requested report template" },
+          { "node_id": "service.export", "role": "call", "note": "Template enters export service" },
+          { "node_id": "dispatch.worker", "role": "dispatch", "note": "Worker lookup is conservative", "edge": { "alias": false, "dynamic": true } },
+          { "node_id": "transform.command", "role": "transform", "note": "Renderer command is assembled" },
+          { "node_id": "sink.exec", "role": "sink", "note": "Command reaches process execution" }
+        ],
+        "guards": {
+          "verdict": "unknown",
+          "items": [{ "node_id": "guard.role", "effect": "request authorization only" }],
+          "note": "Role authorization is observed; command argument safety is unresolved."
+        }
+      }
+    },
+    {
+      "schema_version": "0.1",
+      "finding_id": "3333333333333333333333333333333333333333333333333333333333333333",
+      "status": "refuted",
+      "lifecycle_state": "new",
+      "analysis": {
+        "projection": "security-paths",
+        "confidence": "high",
+        "limitations": []
+      },
+      "locations": [
+        { "role": "source", "symbol": "request.body.url", "file": "src/routes/webhooks.ts", "line": 22 },
+        { "role": "sink", "symbol": "fetch", "file": "src/http/client.ts", "line": 92 }
+      ],
+      "witness": {
+        "steps": [
+          { "node_id": "source.webhookUrl", "role": "origin", "note": "Administrator-provided URL" },
+          { "node_id": "guard.allowlist", "role": "guard", "note": "Hostname must be explicitly allowlisted" },
+          { "node_id": "service.webhook", "role": "call", "note": "Validated URL enters the HTTP client" },
+          { "node_id": "sink.http", "role": "sink", "note": "Request is sent only after policy validation" }
+        ],
+        "guards": {
+          "verdict": "effective",
+          "items": [{ "node_id": "guard.allowlist", "effect": "rejects non-allowlisted hostnames" }],
+          "note": "The bundled witness includes an effective hostname allowlist before the network sink."
+        }
+      }
+    }
+  ]
+}

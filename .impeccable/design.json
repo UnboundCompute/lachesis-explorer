@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-30T15:21:12Z",
+  "title": "Design System: Lachesis Explorer",
+  "extensions": {
+    "colorMeta": {
+      "canvas": { "role": "neutral", "displayName": "Mineral Canvas", "canonical": "#07100d", "tonalRamp": ["#06100c", "#0d1a15", "#172c24", "#315246", "#71877d", "#a5b7af", "#d2ded8", "#f1f4f1"] },
+      "evidence-green": { "role": "primary", "displayName": "Evidence Green", "canonical": "#58d6a1", "tonalRamp": ["#09271c", "#153b2d", "#1f5b43", "#2d815f", "#41ad80", "#58d6a1", "#9be9c9", "#def8ed"] },
+      "exact-cyan": { "role": "secondary", "displayName": "Exact Cyan", "canonical": "#70cfe2", "tonalRamp": ["#102a30", "#12333a", "#1d5260", "#287589", "#429caf", "#70cfe2", "#aee7f0", "#e5f8fb"] },
+      "dynamic-amber": { "role": "tertiary", "displayName": "Dynamic Amber", "canonical": "#e4b464", "tonalRamp": ["#2a1d0d", "#392a14", "#60451d", "#896327", "#b7873c", "#e4b464", "#efd29f", "#fbf0dc"] },
+      "sink-coral": { "role": "tertiary", "displayName": "Sink Coral", "canonical": "#f07868", "tonalRamp": ["#2c1412", "#3b1d19", "#632b25", "#913c33", "#bd5548", "#f07868", "#f5ada4", "#fde4e1"] },
+      "alias-violet": { "role": "tertiary", "displayName": "Alias Violet", "canonical": "#b5a5e8", "tonalRamp": ["#1c1830", "#292440", "#443b69", "#64578f", "#8978bd", "#b5a5e8", "#d2c9f1", "#f0edfb"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Instrument Display", "purpose": "Repository context, review counts, and selected evidence." },
+      "body": { "displayName": "Operational Sans", "purpose": "Explanations and sustained reading." },
+      "label": { "displayName": "Evidence Mono", "purpose": "Graph identifiers, locations, states, and measurements." }
+    },
+    "shadows": [
+      { "name": "ambient-shell", "value": "0 22px 70px rgba(0,0,0,.16)", "purpose": "The briefing instrument shell and floating transient surfaces." }
+    ],
+    "motion": [
+      { "name": "instrument-ease", "value": "cubic-bezier(.22,.76,.18,1)", "purpose": "Controls, queue movement, and the witness-line reveal." }
+    ],
+    "breakpoints": [
+      { "name": "compact-desktop", "value": "1040px" },
+      { "name": "mobile", "value": "760px" },
+      { "name": "small-mobile", "value": "500px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Evidence-green action with a nested directional control.",
+      "html": "<button class=\"ds-primary\"><span>Trace this witness</span><span class=\"ds-orb\"><svg viewBox=\"0 0 24 24\"><path d=\"M5 19 19 5M9 5h10v10\"/></svg></span></button>",
+      "css": ".ds-primary{min-height:42px;padding:5px 6px 5px 14px;display:flex;align-items:center;gap:16px;border:0;border-radius:10px;background:var(--brand,#58d6a1);color:#07100d;font:800 9px monospace}.ds-orb{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(7,16,13,.12)}.ds-orb svg{width:14px;fill:none;stroke:currentColor;stroke-width:1.6}.ds-primary:hover{transform:translateY(-2px)}.ds-primary:focus-visible{outline:2px solid var(--cyan,#70cfe2);outline-offset:3px}"
+    },
+    {
+      "name": "Finding State",
+      "kind": "chip",
+      "description": "Compact status label whose color always accompanies text.",
+      "html": "<span class=\"ds-state\"><i></i>Review first</span>",
+      "css": ".ds-state{display:inline-flex;align-items:center;gap:6px;padding:5px 7px;border-radius:999px;background:#392a14;color:#e4b464;font:700 7px monospace;text-transform:uppercase}.ds-state i{width:5px;height:5px;border-radius:50%;background:currentColor}"
+    },
+    {
+      "name": "Evidence Queue Row",
+      "kind": "custom",
+      "description": "A dense, directly actionable evidence record.",
+      "html": "<button class=\"ds-row\"><span>01</span><strong>request.body.query → database.raw</strong><small>high confidence · 5 steps</small></button>",
+      "css": ".ds-row{width:100%;padding:14px 11px;display:grid;grid-template-columns:24px 1fr;gap:5px 10px;border:0;border-radius:10px;background:#11231c;color:#e9f1ed;text-align:left}.ds-row span,.ds-row small{color:#71877d;font:7px monospace}.ds-row span{grid-row:1/3}.ds-row strong{font:9px monospace}.ds-row:focus-visible{outline:2px solid #70cfe2;outline-offset:3px}"
+    },
+    {
+      "name": "Source Field",
+      "kind": "input",
+      "description": "Compact mineral well for graph-oriented text.",
+      "html": "<label class=\"ds-field\"><span>Filter graph</span><input placeholder=\"kind:sink edge:dynamic\" /></label>",
+      "css": ".ds-field{display:grid;gap:7px;color:#71877d;font:700 8px monospace;text-transform:uppercase}.ds-field input{padding:10px;border:1px solid #21382f;border-radius:9px;background:#07100d;color:#e9f1ed;font:9px monospace}.ds-field input:focus-visible{outline:2px solid #70cfe2;outline-offset:3px}"
+    },
+    {
+      "name": "Lens Navigation",
+      "kind": "nav",
+      "description": "Quiet analysis lenses with one evidence-green active state.",
+      "html": "<nav class=\"ds-nav\"><button class=\"active\">Briefing<small>Start here</small></button><button>Investigate<small>Find convergence</small></button></nav>",
+      "css": ".ds-nav{display:flex;gap:3px;padding:8px;border-radius:16px;background:#0a1511}.ds-nav button{padding:9px 13px;border:0;border-radius:11px;background:transparent;color:#71877d;text-align:left;font:700 11px sans-serif}.ds-nav small{display:block;margin-top:3px;font-size:9px}.ds-nav button.active{background:#153b2d;color:#7ae4b8}.ds-nav button:focus-visible{outline:2px solid #70cfe2;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Forensic Mineral Workbench",
+    "overview": "A precise evidence instrument built from dark mineral surfaces, sparse luminous signals, compact technical labels, and clearly bounded working areas. Semantic state carries the strongest color.",
+    "keyCharacteristics": ["Dark-first and locally operated", "Task-first evidence hierarchy", "Semantic color reinforced by labels", "Compact controls around a wide evidence canvas"],
+    "rules": [
+      { "name": "The Evidence Rule", "body": "Cyan, amber, coral, and violet retain fixed analytical meanings and never act as interchangeable decoration.", "section": "colors" }
+    ],
+    "dos": ["Do state whether evidence and layouts are exact, bundled, or derived.", "Do keep status, confidence, guard verdict, and limitations independently readable."],
+    "donts": ["Don't fabricate graph content, evidence, paths, or counts.", "Don't use semantic colors as decoration."]
+  }
+}
