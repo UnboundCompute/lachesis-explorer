@@ -86,6 +86,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and review c
 
 ```bash
 npm run check
+npm run verify:bundles
 ```
 
 Please keep the JSON contract stable, keep evidence grounded in bundle data, and include a short note about responsive behavior when changing UI.
