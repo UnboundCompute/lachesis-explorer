@@ -159,7 +159,7 @@ export function HomeView({
           </p>
         </div>
         <div className="briefing-actions">
-          <button className="load-bundle-action" onClick={onUpload}>
+          <button className="load-bundle-action" onClick={onUpload} disabled={loadState.type === "loading"} aria-busy={loadState.type === "loading"}>
             <span>
               <Icon name="upload" size={16} />
               <b>
@@ -188,6 +188,7 @@ export function HomeView({
               <button
                 className="download-fixture sample-load"
                 type="button"
+                disabled={loadState.type === "loading"}
                 onClick={onLoadSample}
               >
                 Load code graph sample <Icon name="arrow" size={12} />

@@ -23,7 +23,7 @@ body{margin:0;background:var(--canvas);color:var(--ink);font-family:Söhne,"Aven
 body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 18% -10%,color-mix(in srgb,var(--brand) 10%,transparent),transparent 34rem),radial-gradient(circle at 92% 10%,color-mix(in srgb,var(--cyan) 7%,transparent),transparent 30rem);opacity:.8;z-index:0}
 html[data-theme='light'] body::before{opacity:.35}
 button,input,select{font:inherit}button{cursor:pointer}::selection{background:var(--brand);color:#06100c}
-button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.58}
 *{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
 .app-shell{position:relative;z-index:1;min-height:100dvh;padding-top:18px}
 .topbar-wrap{position:sticky;top:14px;z-index:20;padding:0 18px}

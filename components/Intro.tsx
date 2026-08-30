@@ -99,7 +99,7 @@ export function Intro({
           {indexed.toLocaleString()} indexed
           {app.coverage.limitations.length ? " · limited projection" : ""}
         </span>
-        <button className="context-upload" onClick={onUpload}>
+        <button className="context-upload" onClick={onUpload} disabled={loadState.type === "loading"} aria-busy={loadState.type === "loading"}>
           <span>
             {loadState.type === "loading"
               ? "Reading bundle…"
