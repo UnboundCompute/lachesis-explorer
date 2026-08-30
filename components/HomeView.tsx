@@ -14,6 +14,7 @@ type Props = {
   loadState: LoadState;
   onUpload: () => void;
   onLoadSample: () => void;
+  onLoadSecuritySample: () => void;
   onView: (view: "map" | "investigate" | "trace" | "journey") => void;
   direction: "backward" | "forward";
   onFlow: (flowId: string, nodeId: string) => void;
@@ -100,6 +101,7 @@ export function HomeView({
   loadState,
   onUpload,
   onLoadSample,
+  onLoadSecuritySample,
   onView,
   direction,
   onFlow,
@@ -250,6 +252,14 @@ export function HomeView({
               <a className="download-fixture" href="/demo-bundle.json" download>
                 Download security sample <Icon name="arrow" size={12} />
               </a>
+              <button
+                className="download-fixture sample-load"
+                type="button"
+                disabled={loadState.type === "loading"}
+                onClick={onLoadSecuritySample}
+              >
+                Load security sample <Icon name="arrow" size={12} />
+              </button>
               <a
                 className="download-fixture"
                 href="/code-exploration-bundle.json"

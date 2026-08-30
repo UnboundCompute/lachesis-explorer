@@ -1,4 +1,4 @@
-import demoBundle from '../public/demo-bundle.json'
+import codeExplorationBundle from '../public/code-exploration-bundle.json'
 
 export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; signature?: string; documentation?: string; snippet: string }
 export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { relation?: string; alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
@@ -331,4 +331,4 @@ export function indirectionCount(flow: Flow, evidence?: Evidence) {
   return evidence?.indirections ?? flow.steps.filter(step => step.edge?.alias || step.edge?.dynamic).length
 }
 
-export const starter:App=normalize(demoBundle)
+export const starter:App=normalize(codeExplorationBundle)

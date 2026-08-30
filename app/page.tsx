@@ -125,7 +125,7 @@ export default function Page() {
   const [hopId, setHopId] = useState(starter.entries[0].hops[0].node_id);
   const [hopIndex, setHopIndex] = useState(0);
   const [sinkId, setSinkId] = useState(
-    starter.nodes.find((node) => node.kind === "sink")?.id ?? "",
+    recommendedSink(starter)?.id ?? "",
   );
   const [query, setQuery] = useState("");
   const [loadState, setLoadState] = useState<LoadState>({
@@ -633,6 +633,7 @@ export default function Page() {
       type: "loading",
       message: "Reading the code exploration sample…",
     });
+    setIsDemo(true);
     try {
       const response = await fetch("/code-exploration-bundle.json");
       if (!response.ok)
@@ -642,6 +643,30 @@ export default function Page() {
       setLoadState({
         type: "error",
         message: `${error instanceof Error ? error.message : "Could not load the code exploration sample"} The current bundle was kept.`,
+      });
+      trackEvent("bundle_load_failed");
+    } finally {
+      importBusy.current = false;
+    }
+  }
+
+  async function loadSecuritySample() {
+    if (importBusy.current) return;
+    importBusy.current = true;
+    setLoadState({
+      type: "loading",
+      message: "Reading the security sample…",
+    });
+    setIsDemo(true);
+    try {
+      const response = await fetch("/demo-bundle.json");
+      if (!response.ok)
+        throw new Error("The security sample could not be loaded.");
+      activate(normalize(await response.json()));
+    } catch (error) {
+      setLoadState({
+        type: "error",
+        message: `${error instanceof Error ? error.message : "Could not load the security sample"} The current bundle was kept.`,
       });
       trackEvent("bundle_load_failed");
     } finally {
@@ -825,6 +850,7 @@ export default function Page() {
           loadState={loadState}
           onUpload={() => fileRef.current?.click()}
           onLoadSample={loadCodeSample}
+          onLoadSecuritySample={loadSecuritySample}
           onView={(next) => changeView(next)}
           direction={direction}
           onFlow={(nextFlow, nextNode) => {
