@@ -103,8 +103,8 @@ function isSinkNode(app: App, nodeId: string) {
     (node) =>
       node.id === nodeId &&
       (node.kind === "sink" ||
-        app.flows.some((flow) =>
-          flow.steps.some((step) => step.node_id === nodeId && step.role === "sink"),
+          app.flows.some((flow) =>
+          flow.steps.some((step) => step.node_id === nodeId && step.role.trim().toLowerCase() === "sink"),
         )),
   );
 }

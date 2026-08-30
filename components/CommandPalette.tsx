@@ -141,7 +141,7 @@ export function CommandPalette({
               node.kind === "sink" ||
               app.flows.some((flow) =>
                 flow.steps.some(
-                  (step) => step.node_id === node.id && step.role === "sink",
+                  (step) => step.node_id === node.id && step.role.trim().toLowerCase() === "sink",
                 ),
               ),
           )

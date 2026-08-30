@@ -44,7 +44,7 @@ function evidenceStatus(evidence?: Evidence) {
 function sinkFor(flow: Flow, app: App): Node | undefined {
   const sinkStep = [...flow.steps]
     .reverse()
-    .find((step) => step.role === "sink");
+    .find((step) => step.role.trim().toLowerCase() === "sink");
   return app.nodes.find((node) => node.id === (flow.sinkNodeId ?? sinkStep?.node_id ?? flow.steps.at(-1)?.node_id));
 }
 
@@ -130,7 +130,7 @@ export function HomeView({
       (node) =>
         node.kind === "sink" ||
         app.flows.some((flow) =>
-          flow.steps.some((step) => step.node_id === node.id && step.role === "sink"),
+          flow.steps.some((step) => step.node_id === node.id && step.role.trim().toLowerCase() === "sink"),
         ),
     )
     .sort((a, b) => {
