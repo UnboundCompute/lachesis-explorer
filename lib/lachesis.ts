@@ -112,7 +112,7 @@ function normalizeBundleV1(raw: any): App {
     const loc=(f.locations??[]).map((l:any)=>l.symbol?`${l.symbol}${l.file?` (${l.file}${l.line?`:${l.line}`:''})`:''}`:'').filter(Boolean).join(' · ')
     const status=f.status==null?undefined:String(f.status)
     const summary=status==='refuted'?'A bundled guard refutes this candidate path.':status==='inconclusive'?'The witness reaches the boundary, but unresolved evidence prevents a conclusion.':'A source-to-sink witness is present and ready for review.'
-    return {for:id,verb:String(f.analysis?.projection??f.constructor??''),args:loc,result_summary:String(f.result_summary??f.objective??summary),nodes:node_ids.length,node_ids,indirections,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:f.constructor==null?'finding envelope':String(f.constructor),status,lifecycle:f.lifecycle_state==null?undefined:String(f.lifecycle_state),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}
+    return {for:id,verb:String(f.analysis?.projection??f.projection??'finding'),args:loc,result_summary:String(f.result_summary??f.objective??summary),nodes:node_ids.length,node_ids,indirections,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:String(f.origin??f.analysis?.origin??'finding envelope'),status,lifecycle:f.lifecycle_state==null?undefined:String(f.lifecycle_state),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}
   })
   const entries=normalizeEntries(raw.callpaths??graph.callpaths??[],nodes)
   const rawEdges = Array.isArray(graph.edges) ? graph.edges : []
