@@ -1,5 +1,25 @@
 'use client'
+
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { trackEvent } from '../lib/analytics'
-export function CodeBlock({children}:{children:string}) { const [copied,setCopied]=useState(false); return <div className="code-block"><pre><code>{children}</code></pre><button className="copy-button" onClick={()=>{navigator.clipboard?.writeText(children);setCopied(true);trackEvent('code_copied');setTimeout(()=>setCopied(false),1200)}}><Icon name="code" size={13}/>{copied?'Copied':'Copy'}</button></div> }
+
+type CopyState='idle'|'copied'|'failed'
+
+export function CodeBlock({children}:{children:string}) {
+  const [state,setState]=useState<CopyState>('idle')
+  async function copy(){
+    try{
+      if(!navigator.clipboard)throw new Error('Clipboard unavailable')
+      await navigator.clipboard.writeText(children)
+      setState('copied')
+      trackEvent('code_copied')
+    }catch{
+      setState('failed')
+      trackEvent('code_copy_failed')
+    }
+    window.setTimeout(()=>setState('idle'),1600)
+  }
+  const label=state==='copied'?'Copied':state==='failed'?'Copy failed':'Copy'
+  return <div className="code-block"><pre><code>{children}</code></pre><button type="button" className="copy-button" onClick={copy} aria-live="polite"><Icon name="code" size={13}/>{label}</button></div>
+}
