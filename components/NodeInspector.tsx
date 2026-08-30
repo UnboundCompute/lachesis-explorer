@@ -144,7 +144,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
                       type="button"
                       key={flow.id}
                       onClick={() =>
-                        onFlow(flow.id, flow.steps[0]?.node_id ?? node.id)
+                        onFlow(flow.id, node.id)
                       }
                     >
                       {flow.name}
@@ -166,7 +166,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
                       onClick={() =>
                         onEntry(
                           app.entries.findIndex((item) => item.id === entry.id),
-                          entry.hops[0]?.node_id ?? node.id,
+                          node.id,
                         )
                       }
                     >
