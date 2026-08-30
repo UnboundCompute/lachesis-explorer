@@ -110,7 +110,7 @@ export function OverviewView({
   const edges = app.edges.filter(
     (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
   );
-  const selected = visible.length
+  const selected = inspectorOpen && visible.length
     ? visible.find((node) => node.id === selectedId) ?? visible[0]
     : undefined;
   const focusActive = Boolean(inspectorOpen && selected);
@@ -195,7 +195,9 @@ export function OverviewView({
   }
   const summary = selected
     ? `${selected.label || selected.id} participates in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request path${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} normalized relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
-    : "";
+    : visible.length
+      ? "Select a node to reveal its source, connected paths, and nearby relationships."
+      : "";
   const visibleIndex = (node: Node) => visible.indexOf(node);
   const graphPos = (node: Node) => pos(Math.max(0, visibleIndex(node)));
   const graphHeight = Math.max(300, Math.ceil(visible.length / 4) * 92 + 110);
