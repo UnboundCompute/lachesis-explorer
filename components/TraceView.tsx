@@ -184,10 +184,13 @@ export function TraceView({
     direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const evidence = app.mcp.find((item) => item.for === flow.id);
   const securityPath = app.findings.some((finding) => finding.id === flow.id);
+  const primaryCodeKind = app.nodes.some((node) => node.kind === "function")
+    ? "function"
+    : app.nodes[0]?.kind || "node";
   const filterSuggestions = [
     app.findings.length > 0 || app.bundle.projection === "security projection"
       ? { label: "sink", query: "kind:sink" }
-      : { label: "functions", query: "kind:function" },
+      : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
     app.edges.some((edge) => edge.dynamic)
       ? { label: "dynamic", query: "edge:dynamic" }
       : null,

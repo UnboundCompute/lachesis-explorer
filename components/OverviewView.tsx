@@ -107,10 +107,13 @@ export function OverviewView({
     [app, query],
   );
   const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const primaryCodeKind = app.nodes.some((node) => node.kind === "function")
+    ? "function"
+    : app.nodes[0]?.kind || "node";
   const filterSuggestions = [
     securityMode
       ? { label: "sinks", query: "kind:sink" }
-      : { label: "functions", query: "kind:function" },
+      : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
     app.edges.some((edge) => edge.dynamic)
       ? { label: "dynamic", query: "edge:dynamic" }
       : null,
