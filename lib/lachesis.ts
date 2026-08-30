@@ -42,9 +42,14 @@ function normalizeKind(value: unknown) {
   return kind ? kind.replace(/[_\s]+/g, '-').toLowerCase() : 'node'
 }
 
-function flowRelation(step: Step) {
+function flowRelation(step: Step, pathKind = 'value-flow') {
   const role = step.role.trim().toLowerCase()
-  return normalizeRelation(step.edge?.relation ?? (['origin', 'source', 'sink', 'boundary'].includes(role) ? 'value flows to' : step.role || 'value flows to'))
+  const fallback = pathKind === 'call-path' || pathKind === 'callpath'
+    ? 'calls'
+    : pathKind === 'data-flow' || pathKind === 'dataflow'
+      ? 'data flows to'
+      : 'value flows to'
+  return normalizeRelation(step.edge?.relation ?? (['origin', 'source', 'sink', 'boundary', 'node'].includes(role) ? fallback : step.role || fallback))
 }
 
 function normalizeEvidence(raw: any): Evidence {
@@ -151,7 +156,7 @@ export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entr
     collected.set(key,{id,source:seed.source,target:seed.target,relation:seed.relation||'connects',alias:seed.alias,dynamic:seed.dynamic,confidence:seed.confidence,limitations:seed.limitations,origins:[seed.origin],flow_ids:seed.flow_id?[seed.flow_id]:[],entry_ids:seed.entry_id?[seed.entry_id]:[]})
   }
   explicit.forEach(include)
-  flows.forEach(flow=>flow.steps.slice(1).forEach((step,index)=>include({source:flow.steps[index].node_id,target:step.node_id,relation:flowRelation(step),alias:Boolean(step.edge?.alias),dynamic:Boolean(step.edge?.dynamic),confidence:step.edge?.confidence,limitations:step.edge?.limitations,origin:'value-flow',flow_id:flow.id})))
+  flows.forEach(flow=>flow.steps.slice(1).forEach((step,index)=>include({source:flow.steps[index].node_id,target:step.node_id,relation:flowRelation(step, flow.kind),alias:Boolean(step.edge?.alias),dynamic:Boolean(step.edge?.dynamic),confidence:step.edge?.confidence,limitations:step.edge?.limitations,origin:'value-flow',flow_id:flow.id})))
   entries.forEach(entry=>entry.hops.slice(1).forEach((hop,index)=>include({source:entry.hops[index].node_id,target:hop.node_id,relation:normalizeRelation(hop.edge_label||'calls'),alias:false,dynamic:false,confidence:hop.confidence,limitations:hop.limitations,origin:'request-path',entry_id:entry.id})))
   return [...collected.values()]
 }
