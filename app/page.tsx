@@ -541,6 +541,7 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
+            setStepIndex(0);
             setInspectorOpen(true);
             record("Opened graph path", nextFlow, "via command palette");
           }}
@@ -548,6 +549,7 @@ export default function Page() {
             setView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
+            setHopIndex(0);
             setInspectorOpen(true);
             record(
               "Opened request path",
@@ -610,6 +612,7 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
+            setStepIndex(0);
             setInspectorOpen(true);
             record("Opened priority witness", nextFlow, "from briefing");
           }}
@@ -622,6 +625,7 @@ export default function Page() {
             setView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
+            setHopIndex(0);
             setInspectorOpen(true);
             record(
               "Opened request path",
@@ -670,12 +674,14 @@ export default function Page() {
           onFlow={(nextFlow, nextNode) => {
             setFlowId(nextFlow);
             setStepId(nextNode);
+            setStepIndex(0);
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
             setView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
+            setHopIndex(0);
             setInspectorOpen(true);
           }}
         />
@@ -706,11 +712,13 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
+            setStepIndex(0);
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
             setEntryIndex(nextIndex);
             setHopId(nextHop);
+            setHopIndex(0);
             setInspectorOpen(true);
           }}
         />
@@ -725,6 +733,7 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
+            setStepIndex(0);
             setInspectorOpen(true);
           }}
           onView={(next) => changeView(next)}
@@ -742,6 +751,7 @@ export default function Page() {
             setView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
+            setStepIndex(0);
             setInspectorOpen(true);
             record("Opened connected graph path", nextFlow, "from system map");
           }}
@@ -749,6 +759,7 @@ export default function Page() {
             setView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
+            setHopIndex(0);
             setInspectorOpen(true);
             record(
               "Opened connected request path",
