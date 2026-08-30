@@ -141,6 +141,7 @@ export function OverviewView({ app, focusNodeId, onRecord }: Props) {
     : "";
   const visibleIndex = (node: Node) => visible.indexOf(node);
   const graphPos = (node: Node) => pos(Math.max(0, visibleIndex(node)));
+  const graphHeight = Math.max(300, Math.ceil(visible.length / 4) * 92 + 110);
   const labelIndex = (node: Node) =>
     String(Math.max(0, visibleIndex(node)) + 1).padStart(2, "0");
 
@@ -244,7 +245,12 @@ export function OverviewView({ app, focusNodeId, onRecord }: Props) {
             </div>
             {visible.length ? (
               <div className="topology-canvas">
-                <svg viewBox="0 0 760 300" aria-hidden="true" focusable="false">
+                <svg
+                  viewBox={`0 0 760 ${graphHeight}`}
+                  style={{ height: `${graphHeight}px` }}
+                  aria-hidden="true"
+                  focusable="false"
+                >
                   {edges.map((edge) => {
                     const source = visible.find(
                         (node) => node.id === edge.source,
