@@ -214,7 +214,10 @@ function normalizeGraphV2(raw:any):App {
   assertUniqueIds(findingFlows,'Security findings')
   const emptyValuePath=flows.find(flow=>flow.steps.length===0)
   if(emptyValuePath)throw new Error(`Value path "${emptyValuePath.name}" contains no steps.`)
-  const allFlows=[...flows,...findingFlows.filter(f=>f.steps.length>0&&!flows.some(existing=>existing.id===f.id))]
+  const valueIds=new Set(flows.map(flow=>flow.id))
+  const overlappingFinding=findingFlows.find(flow=>valueIds.has(flow.id))
+  if (overlappingFinding) throw new Error(`Security finding ID "${overlappingFinding.id}" conflicts with a value path ID.`)
+  const allFlows=[...flows,...findingFlows.filter(f=>f.steps.length>0)]
   assertUniqueIds(allFlows,'Graph paths')
   const entries=normalizeEntries(pathRequests,nodes)
   const emptyRequestPath=entries.find(entry=>entry.hops.length===0)

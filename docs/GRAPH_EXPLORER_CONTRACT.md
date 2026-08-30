@@ -75,8 +75,8 @@ item; an empty value path is invalid because it cannot be traversed. Every
 request path must contain at least one hop; an empty request path is invalid
 because it cannot be traversed. When supplied, path IDs must be non-empty and
 unique within their collection; finding IDs follow the same rule within
-`security.findings`. Either path collection may be omitted when the exporter
-has no corresponding projection.
+`security.findings`, and must not conflict with a value-path ID. Either path
+collection may be omitted when the exporter has no corresponding projection.
 
 `security.findings` contains the existing Lachesis finding envelopes. Each
 finding should reference graph node and edge IDs where possible. A bundle with

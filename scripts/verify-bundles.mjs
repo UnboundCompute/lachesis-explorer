@@ -80,6 +80,7 @@ function verify(file, bundle) {
   }
 
   const paths = bundle.paths ?? {};
+  const valuePathIds = new Set();
   for (const [kind, pathList] of Object.entries({ values: paths.values ?? graph.value_flows ?? graph.flows ?? [], requests: paths.requests ?? graph.request_paths ?? graph.callpaths ?? [] })) {
     if (!Array.isArray(pathList)) fail(file, `paths.${kind} must be an array`);
     const pathIds = new Set();
@@ -89,6 +90,7 @@ function verify(file, bundle) {
         if (!pathId) fail(file, `paths.${kind}[${pathIndex}].id must not be empty`);
         if (pathIds.has(pathId)) fail(file, `paths.${kind}[${pathIndex}] duplicates path ID ${pathId}`);
         pathIds.add(pathId);
+        if (kind === "values") valuePathIds.add(pathId);
       }
       validateNodes(file, ids, path.steps ?? path.hops ?? [], `paths.${kind}[${pathIndex}]`);
       const entryNode = path.entry_node ?? path.entryNode;
@@ -112,6 +114,7 @@ function verify(file, bundle) {
       const id = String(findingId);
       if (!id) fail(file, `findings[${index}] ID must not be empty`);
       if (findingIds.has(id)) fail(file, `findings[${index}] duplicates finding ID ${id}`);
+      if (valuePathIds.has(id)) fail(file, `findings[${index}] ID ${id} conflicts with a value path ID`);
       findingIds.add(id);
     }
     const witness = finding.witness?.steps;
