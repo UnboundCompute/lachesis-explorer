@@ -86,7 +86,7 @@ export function TraceView({
         </span>
         <h2>No paths in this bundle</h2>
         <p>
-          This bundle contains graph structure, but no value-flow paths were
+          This bundle contains graph structure, but no graph paths were
           included for tracing.
         </p>
       </section>
