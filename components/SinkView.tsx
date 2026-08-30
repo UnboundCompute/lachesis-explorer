@@ -13,6 +13,7 @@ type Props = {
   setSinkId: (id: string) => void;
   onOpenFlow: (flowId: string, nodeId: string) => void;
   onRecord: (action: string, target: string, detail: string) => void;
+  onView: (view: "trace" | "map") => void;
 };
 
 export function SinkView({
@@ -21,6 +22,7 @@ export function SinkView({
   setSinkId,
   onOpenFlow,
   onRecord,
+  onView,
 }: Props) {
   const sinks = useMemo(
     () =>
@@ -55,6 +57,16 @@ export function SinkView({
           A sink appears here only when a node is labeled <code>sink</code> or
           participates in a flow with the sink role.
         </p>
+        <button
+          className="context-upload"
+          type="button"
+          onClick={() => onView(app.flows.length ? "trace" : "map")}
+        >
+          <span>{app.flows.length ? "Open graph paths" : "Open system map"}</span>
+          <span className="button-icon">
+            <Icon name="arrow" size={14} />
+          </span>
+        </button>
       </section>
     );
   const flows = app.findings.filter((flow) =>

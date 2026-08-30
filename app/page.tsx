@@ -600,6 +600,7 @@ export default function Page() {
           onInspectorOpen={() => setInspectorOpen(true)}
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
+          onView={(next: "trace" | "map") => changeView(next)}
         />
       )}
       {view === "investigate" && (
@@ -614,6 +615,7 @@ export default function Page() {
             setStepId(nextNode);
             setInspectorOpen(true);
           }}
+          onView={(next) => changeView(next)}
         />
       )}
       {view === "map" && (

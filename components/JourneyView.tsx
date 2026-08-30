@@ -1,6 +1,7 @@
 "use client";
 import type { App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
+import { Icon } from "./Icon";
 import { PathCanvas, type PathItem } from "./PathCanvas";
 import { NodeInspector } from "./NodeInspector";
 import { EvidencePanel } from "./EvidencePanel";
@@ -14,6 +15,7 @@ type Props = {
   onInspectorOpen: () => void;
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
+  onView: (view: "trace" | "map") => void;
 };
 export function JourneyView({
   app,
@@ -25,6 +27,7 @@ export function JourneyView({
   onInspectorOpen,
   onInspectorClose,
   onRecord,
+  onView,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
   if (!entry)
@@ -32,9 +35,20 @@ export function JourneyView({
       <section className="workspace-empty">
         <h2>No request paths in this bundle</h2>
         <p>
-          Value flows are still available. Callpaths appear here when the bundle
-          includes them.
+          {app.flows.length
+            ? "Graph paths are still available. Open one to follow its symbols and relationships."
+            : "Open the system map to inspect the graph structure included in this bundle."}
         </p>
+        <button
+          className="context-upload"
+          type="button"
+          onClick={() => onView(app.flows.length ? "trace" : "map")}
+        >
+          <span>{app.flows.length ? "Open graph paths" : "Open system map"}</span>
+          <span className="button-icon">
+            <Icon name="arrow" size={14} />
+          </span>
+        </button>
       </section>
     );
   const selected = app.nodes.find((node) => node.id === hopId) ?? app.nodes[0];
