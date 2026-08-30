@@ -13,6 +13,9 @@
     "url": "https://github.com/UnboundCompute/lachesis-explorer/issues"
   },
   "author": "UnboundCompute",
+  "engines": {
+    "node": ">=20"
+  },
   "keywords": [
     "code-property-graph",
     "static-analysis",
