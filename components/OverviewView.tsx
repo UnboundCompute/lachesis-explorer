@@ -43,7 +43,14 @@ function matches(node: Node, query: string, app: App) {
                   : false),
           );
       }
-      return [node.id, node.label, node.file, node.kind]
+      return [
+        node.id,
+        node.label,
+        node.file,
+        node.kind,
+        node.qualifiedName,
+        node.module,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(term);

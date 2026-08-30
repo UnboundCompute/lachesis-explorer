@@ -75,7 +75,7 @@ export function CommandPalette({
         ...app.nodes.map((node) => ({
           id: `node-${node.id}`,
           label: node.label || node.id,
-          meta: `Symbol · ${node.kind} · ${node.file}:${node.line}`,
+          meta: `Symbol · ${node.kind} · ${node.file}:${node.line} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
           run: () => onNode(node.id),
         })),
         ...app.files.map((file) => ({
@@ -118,9 +118,7 @@ export function CommandPalette({
       ].filter(
         (command) =>
           !normalized ||
-            `${command.label} ${command.meta}`
-              .toLowerCase()
-              .includes(normalized),
+          `${command.label} ${command.meta}`.toLowerCase().includes(normalized),
       ),
     [app, normalized, onView, onFlow, onEntry, onSink, onNode],
   );
