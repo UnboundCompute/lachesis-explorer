@@ -431,7 +431,7 @@ export function TraceView({
           evidence={evidence}
           fallbackTool="reaches"
           fallbackArgs={flow.name}
-          fallbackSummary={`${steps.length} visible nodes in this graph path.`}
+          fallbackSummary={`${steps.length} visible ${securityPath ? "nodes" : "symbols"} in this graph path.`}
           nodeCount={steps.length}
           indirections={indirectionCount(flow, evidence)}
           variant={securityPath ? "evidence" : "path"}

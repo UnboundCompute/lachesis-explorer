@@ -89,7 +89,7 @@ export function CommandPalette({
             app.findings.some((finding) => finding.id === flow.id)
               ? "Security witness"
               : "Value path"
-          } · ${flow.steps.length} nodes · ${flowLocation(app, flow)}`,
+          } · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}`,
           run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
         })),
         ...app.entries.map((entry, index) => ({

@@ -164,7 +164,7 @@ export function JourneyView({
           ))}
         </select>
         <div className="panel-label hops-label">
-          PATH NODES <span>{entry.hops.length}</span>
+          PATH HOPS <span>{entry.hops.length}</span>
         </div>
         <div className="hop-list">
           {entry.hops.map((hop, index) => {
