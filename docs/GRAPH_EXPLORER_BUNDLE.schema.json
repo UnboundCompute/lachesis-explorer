@@ -19,9 +19,9 @@
       "type": "object",
       "required": ["repository", "language", "revision", "lines", "indexed_nodes"],
       "properties": {
-        "repository": { "type": "string" },
-        "language": { "type": "string" },
-        "revision": { "type": "string" },
+        "repository": { "type": "string", "minLength": 1 },
+        "language": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "minLength": 1 },
         "description": { "type": "string", "description": "Exporter-authored summary of what this graph projection represents." },
         "lines": { "type": "integer", "minimum": 0 },
         "indexed_nodes": { "type": "integer", "minimum": 0 },
@@ -56,17 +56,17 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "kind": { "type": "string", "minLength": 1 },
-        "file": { "type": "string" },
+        "file": { "type": "string", "minLength": 1 },
         "line": { "type": "integer", "minimum": 0 },
         "column": { "type": "integer", "minimum": 0 },
         "end_line": { "type": "integer", "minimum": 0 },
         "end_column": { "type": "integer", "minimum": 0 },
-        "label": { "type": "string" },
+        "label": { "type": "string", "minLength": 1 },
         "qualified_name": { "type": "string" },
         "module": { "type": "string" },
         "signature": { "type": "string" },
         "documentation": { "type": "string" },
-        "snippet": { "type": "string" }
+        "snippet": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": true
     },
@@ -108,8 +108,13 @@
       "type": "object",
       "required": ["steps"],
       "properties": {
-        "id": { "type": "string" },
+        "id": { "type": "string", "minLength": 1 },
         "name": { "type": "string" },
+        "description": { "type": "string" },
+        "source_node": { "type": "string", "minLength": 1 },
+        "sink_node": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } },
         "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
       },
       "additionalProperties": true
@@ -118,9 +123,13 @@
       "type": "object",
       "required": ["hops"],
       "properties": {
-        "id": { "type": "string" },
+        "id": { "type": "string", "minLength": 1 },
         "entry": { "type": "string" },
         "entry_node": { "type": "string" },
+        "kind": { "type": "string" },
+        "description": { "type": "string" },
+        "confidence": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } },
         "hops": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/hop" } }
       },
       "additionalProperties": true

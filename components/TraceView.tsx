@@ -287,6 +287,7 @@ export function TraceView({
             <h2>
               <code>{flow.name}</code>
             </h2>
+            {flow.description && <p className="path-description">{flow.description}</p>}
           </div>
           <div className="toolbar-actions">
             {!inspectorOpen && (

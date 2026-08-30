@@ -203,6 +203,7 @@ export function JourneyView({
           <div>
             <span className="panel-label">SELECTED REQUEST</span>
             <h2>{entry.label}</h2>
+            {entry.description && <p className="path-description">{entry.description}</p>}
           </div>
           <div className="toolbar-actions">
             {!inspectorOpen && (

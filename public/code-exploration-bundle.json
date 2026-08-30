@@ -51,7 +51,7 @@
   },
   "paths": {
     "requests": [
-      {"id": "request.search", "entry": "POST /api/search", "entry_node": "route.search", "hops": [
+      {"id": "request.search", "entry": "POST /api/search", "kind": "http", "description": "Follow the incoming search request from its route handler to the catalog query.", "entry_node": "route.search", "hops": [
         {"id": "request.search.hop.01", "node_id": "route.search", "edge_label": "calls", "caption": "receives request"},
         {"id": "request.search.hop.02", "node_id": "parse.query", "edge_label": "calls", "caption": "parses input"},
         {"id": "request.search.hop.03", "node_id": "normalize.query", "edge_label": "calls", "caption": "normalizes query"},
@@ -60,7 +60,7 @@
       ]}
     ],
     "values": [
-      {"id": "value.search-query", "name": "search query", "steps": [
+      {"id": "value.search-query", "name": "search query", "description": "See how request input is normalized before it reaches the query builder.", "source_node": "parse.query", "sink_node": "search.query", "confidence": "medium", "limitations": ["The fixture shows a bounded value projection, not runtime values."], "steps": [
         {"id": "value.search-query.step.01", "node_id": "parse.query", "role": "source"},
         {"id": "value.search-query.step.02", "node_id": "normalize.query", "role": "transforms"},
         {"id": "value.search-query.step.03", "node_id": "search.query", "role": "used by"}

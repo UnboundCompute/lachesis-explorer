@@ -302,7 +302,7 @@ export function HomeView({
                 </span>
               </div>
               <p className="priority-summary">
-                {priority.evidence?.result_summary ??
+                {priority.evidence?.result_summary ?? priority.flow.description ??
                   `${priority.flow.steps.length} bundled steps connect the selected source and boundary.`}
               </p>
               <div className="judgment-row">

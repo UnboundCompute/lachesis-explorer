@@ -78,6 +78,12 @@ because it cannot be traversed. When supplied, path IDs must be non-empty and
 unique within their collection; finding IDs follow the same rule within
 `security.findings`, and must not conflict with a value-path ID. Either path
 collection may be omitted when the exporter has no corresponding projection.
+
+Paths may include `description`, `confidence`, and `limitations` to give the
+reader exporter-authored context without turning the projection into a claim.
+`source_node` and `sink_node` are optional explicit endpoints; when present,
+they must reference graph node IDs. The Explorer uses this metadata for
+orientation and preserves the path sequence as the authoritative traversal.
 Steps and hops should provide an `id` that is stable and unique within that
 path. This occurrence identity lets clients distinguish repeated visits to the
 same graph node; `node_id` remains the canonical graph-entity reference. The

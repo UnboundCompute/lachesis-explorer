@@ -112,6 +112,9 @@ function verify(file, bundle) {
       validateNodes(file, ids, path.steps ?? path.hops ?? [], `paths.${kind}[${pathIndex}]`);
       const entryNode = path.entry_node ?? path.entryNode;
       if (entryNode != null && !ids.has(String(entryNode))) fail(file, `paths.${kind}[${pathIndex}] entry_node references a missing node`);
+      for (const endpoint of [path.source_node, path.sink_node]) {
+        if (endpoint != null && !ids.has(String(endpoint))) fail(file, `paths.${kind}[${pathIndex}] endpoint references a missing node`);
+      }
     }
   }
 
