@@ -71,6 +71,12 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
       setCopyError(true);
     }
   }
+  function closeInspector() {
+    onClose();
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus();
+    });
+  }
   return (
     <aside ref={inspectorRef} className="detail-panel">
       <div className="inspector-heading">
@@ -81,7 +87,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
         <span className="node-identity">{node.id}</span>
         <button
           className="inspector-close"
-          onClick={onClose}
+          onClick={closeInspector}
           aria-label="Close source inspector"
         >
           <Icon name="close" size={13} />
