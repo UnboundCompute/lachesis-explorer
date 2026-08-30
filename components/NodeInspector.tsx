@@ -239,8 +239,8 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
                     return (
                       <div className="relationship-item" key={edge.id}>
                         <span>
-                          {edge.source === node.id ? "→" : "←"}{" "}
-                          {edge.relation || "connected"} · {peer?.label || peerId}
+                          {edge.source === node.id ? "→ leads to" : "← receives from"}{" "}
+                          {peer?.label || peerId} · {edge.relation || "connected"}
                         </span>
                         {(edge.dynamic || edge.alias || edge.confidence) && (
                           <small className="relationship-signals">
