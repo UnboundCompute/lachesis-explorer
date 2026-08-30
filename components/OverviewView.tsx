@@ -436,6 +436,7 @@ export function OverviewView({
                   <span><i className="legend-exact" />exact relationship</span>
                   <span><i className="legend-alias" />alias relationship</span>
                   <span><i className="legend-dynamic" />dynamic relationship</span>
+                  <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
                 </div>
                 <div className="topology-node-list" aria-label="Graph nodes">
                   {visible.map((node) => {
