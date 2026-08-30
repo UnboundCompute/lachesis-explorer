@@ -10,6 +10,7 @@ import { SinkView } from '../components/SinkView'
 import { OverviewView } from '../components/OverviewView'
 import { CompareView } from '../components/CompareView'
 import { HomeView } from '../components/HomeView'
+import { InvestigationContext } from '../components/InvestigationContext'
 import { ResourceLinks } from '../components/ResourceLinks'
 import { Icon } from '../components/Icon'
 import { CommandPalette } from '../components/CommandPalette'
@@ -155,6 +156,7 @@ export default function Page() {
     {dragActive&&<div className="drop-overlay" role="presentation"><div><span className="drop-glyph"><Icon name="upload" size={22}/></span><b>Drop bundle.json to inspect</b><small>Your current bundle changes only after validation succeeds.</small></div></div>}
     {view!=='home'&&<Intro view={view==='compare'?'map':view as Exclude<View,'home'|'compare'>} app={app} loadState={loadState} isDemo={isDemo} onUpload={()=>fileRef.current?.click()}/>} 
     {view==='home'&&<HomeView app={app} isDemo={isDemo} onUpload={()=>fileRef.current?.click()} onView={next=>changeView(next)}/>} 
+    <InvestigationContext app={app} view={view} flowId={flowId} stepId={stepId} entryIndex={entryIndex} hopId={hopId} sinkId={sinkId}/>
     {view==='trace'&&<TraceView app={app} flowId={flowId} setFlowId={setFlowId} stepId={stepId} setStepId={setStepId} query={query} setQuery={setQuery} direction={direction} setDirection={setDirection} inspectorOpen={inspectorOpen} onInspectorOpen={()=>setInspectorOpen(true)} onInspectorClose={()=>setInspectorOpen(false)} onRecord={record}/>}
     {view==='journey'&&<JourneyView app={app} entryIndex={entryIndex} setEntryIndex={setEntryIndex} hopId={hopId} setHopId={setHopId} inspectorOpen={inspectorOpen} onInspectorOpen={()=>setInspectorOpen(true)} onInspectorClose={()=>setInspectorOpen(false)} onRecord={record}/>}
     {view==='investigate'&&<SinkView app={app} sinkId={sinkId} setSinkId={setSinkId} onRecord={record} onOpenFlow={(nextFlow,nextNode)=>{setView('trace');setFlowId(nextFlow);setStepId(nextNode);setInspectorOpen(true)}}/>}
