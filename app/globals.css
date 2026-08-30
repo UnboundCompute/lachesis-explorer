@@ -188,6 +188,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:760px){.node-list,.hop-list{max-height:320px}}
 .sink-list,.topology-node-list{max-height:min(520px,calc(100dvh - 320px));overflow-y:auto;overscroll-behavior:contain}
 @media(max-width:760px){.sink-list,.topology-node-list{max-height:320px}}
+@media(min-width:1041px){.detail-panel{position:sticky;top:100px;align-self:start;max-height:calc(100dvh - 120px);overflow-y:auto;overscroll-behavior:contain}}
 .topology-legend{display:flex;flex-wrap:wrap;gap:12px;padding:9px 12px;border-top:1px solid var(--line);color:var(--ink-3);font:8px var(--mono)}.topology-legend span{display:inline-flex;align-items:center;gap:6px}.topology-legend i{width:14px;height:2px;background:var(--line-strong)}.topology-legend .legend-alias{background:var(--violet)}.topology-legend .legend-dynamic{background:var(--amber);background-image:linear-gradient(90deg,var(--amber) 50%,transparent 50%);background-size:5px 100%}
 .topology-arrow{fill:var(--line-strong)}.topology-arrow-alias{fill:var(--violet)}.topology-arrow-dynamic{fill:var(--amber)}
 .path-arrow{fill:var(--line-strong)}.path-arrow-alias{fill:var(--violet)}.path-arrow-dynamic{fill:var(--amber)}
