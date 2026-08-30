@@ -1,7 +1,7 @@
 export type Node = { id: string; kind: string; file: string; line: number; label: string; snippet: string }
 export type Step = { node_id: string; role: string; note?: string; edge?: { alias?: boolean; dynamic?: boolean } }
 export type Flow = { id: string; name: string; steps: Step[] }
-export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; indirections?: number; confidence?: string; origin?: string }
+export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; node_ids?: string[]; indirections?: number; confidence?: string; origin?: string; status?: string; limitations?: string[]; guards?: any }
 export type LayoutPoint = { x: number; y: number }
 export type Hop = { node_id: string; edge_label: string; caption: string; layout?: LayoutPoint }
 export type Entry = { id: string; label: string; file: string; entry_node?: string; hops: Hop[]; hasLayout: boolean }
@@ -71,6 +71,9 @@ export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entr
 
 export function normalize(raw: any): App {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Bundle must be a JSON object.')
+  // bundle/1.0: findings are versioned envelopes. bundle/0.x (below) stays a
+  // permissive adapter for the flow-centric prototype format.
+  if (Array.isArray(raw.findings) || raw.format === 'lachesis-explorer-bundle') return normalizeBundleV1(raw)
   const source = raw.graph ?? raw
   if (!source || typeof source !== 'object') throw new Error('Expected a graph object in bundle.json.')
   const meta = raw.meta ?? source.meta ?? {}
@@ -104,6 +107,42 @@ export function normalize(raw: any): App {
   if (brokenEdge) throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,entries,mcp}
+}
+
+function normalizeBundleV1(raw: any): App {
+  const graph = raw.graph ?? {}
+  const manifest = raw.evidence_manifest ?? {}
+  const meta = raw.meta ?? {}
+  if (!Array.isArray(graph.nodes)) throw new Error('Expected graph.nodes to be an array.')
+  if (!Array.isArray(raw.findings)) throw new Error('Expected findings to be an array.')
+  const nodes:Node[] = graph.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')}))
+  const flows:Flow[] = raw.findings.map((f:any,i:number)=>{
+    const id=String(f.finding_id??f.id??`finding_${i}`)
+    const steps=Array.isArray(f.witness?.steps)?f.witness.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []
+    return {id,name:String(f.display_name??f.name??id),steps}
+  })
+  const mcp:Evidence[] = raw.findings.map((f:any,i:number)=>{
+    const id=String(f.finding_id??f.id??`finding_${i}`)
+    const steps=Array.isArray(f.witness?.steps)?f.witness.steps:[]
+    const node_ids=steps.map((s:any)=>String(s.node_id??s.nodeId??s.node??'')).filter(Boolean)
+    const indirections=steps.filter((s:any)=>s.edge?.alias||s.edge?.dynamic).length
+    const loc=(f.locations??[]).map((l:any)=>l.symbol?`${l.symbol}${l.file?` (${l.file}${l.line?`:${l.line}`:''})`:''}`:'').filter(Boolean).join(' · ')
+    return {for:id,verb:String(f.analysis?.projection??f.constructor??''),args:loc,result_summary:String(f.result_summary??f.objective??''),nodes:node_ids.length,node_ids,indirections,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:f.constructor==null?undefined:String(f.constructor),status:f.status==null?undefined:String(f.status),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}
+  })
+  const rawEdges = Array.isArray(graph.edges) ? graph.edges : []
+  const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),origin:'bundle'}))
+  if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
+  if (!flows.length) throw new Error('The bundle contains no findings.')
+  const ids = new Set(nodes.map((node:Node)=>node.id))
+  if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
+  const emptyFlow = flows.find((flow:Flow)=>flow.steps.length===0)
+  if (emptyFlow) throw new Error(`Finding "${emptyFlow.name}" contains no witness steps.`)
+  const brokenStep = flows.flatMap((flow:Flow)=>flow.steps).find((step:Step)=>!ids.has(step.node_id))
+  if (brokenStep) throw new Error(`A finding references missing node "${brokenStep.node_id}".`)
+  const brokenEdge = explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
+  if (brokenEdge) throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
+  const edges=deriveGraphEdges(explicitEdges,flows,[])
+  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,entries:[],mcp}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {
