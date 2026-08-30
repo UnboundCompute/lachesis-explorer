@@ -147,6 +147,15 @@ export function TraceView({
           <button onClick={() => setQuery("edge:alias")}>alias</button>
           <button onClick={() => setQuery("kind:sink")}>sink</button>
           <button onClick={() => setQuery("has:mcp")}>MCP</button>
+          {query && (
+            <button
+              type="button"
+              className="query-clear"
+              onClick={() => setQuery("")}
+            >
+              Clear
+            </button>
+          )}
         </div>
         <div className="node-list">
           {visible.length ? (
