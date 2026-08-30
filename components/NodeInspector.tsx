@@ -6,7 +6,7 @@ import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 
 const descriptions: Record<string, string> = {
-  sink: "Execution boundary or sensitive effect reached by this path.",
+  sink: "Execution boundary or external effect represented in the code graph.",
   route: "Request entrypoint represented in the code graph.",
   guard: "Control that checks identity, state, or authorization.",
   call: "A resolved call site connecting this path to another function.",
@@ -59,6 +59,11 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
     app?.edges.filter(
       (edge) => edge.source === node.id || edge.target === node.id,
     ) ?? [];
+  const securityContext = Boolean(
+    app?.findings.some((flow) =>
+      flow.steps.some((step) => step.node_id === node.id),
+    ),
+  );
   const incoming = relationships.filter(
     (edge) => edge.target === node.id,
   ).length;
@@ -154,7 +159,9 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
       <span className="panel-label">WHAT THIS NODE MEANS</span>
       <p className="detail-copy">
         {descriptions[node.kind] ||
-          "A node participating in the selected graph path."}
+          (contextRole
+            ? "A node participating in the selected graph path."
+            : "A node participating in the loaded code graph.")}
       </p>
       {node.documentation && (
         <div className="node-documentation">
@@ -174,7 +181,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
             this bundle.
           </p>
           <div className="inspector-context">
-            <span className="panel-label">CONNECTED EVIDENCE</span>
+            <span className="panel-label">{securityContext ? "CONNECTED EVIDENCE" : "CONNECTED CONTEXT"}</span>
             {flows.length > 0 && (
               <div>
                 <small>VALUE FLOWS</small>
@@ -265,7 +272,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
               </button>
             )}
             {!flows.length && !entries.length && !relationships.length && (
-              <p>No connected evidence records in this bundle.</p>
+              <p>{securityContext ? "No connected evidence records in this bundle." : "No connected paths or relationships in this bundle."}</p>
             )}
           </div>
         </>
