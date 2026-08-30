@@ -90,6 +90,8 @@ npm run check
 
 Please keep the JSON contract stable, keep evidence grounded in bundle data, and include a short note about responsive behavior when changing UI.
 
+Please report vulnerabilities privately according to [SECURITY.md](SECURITY.md); do not attach real repository bundles to public issues.
+
 ## Analytics
 
 The deployed app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. Events cover navigation and product interactions such as changing views, toggling theme, selecting a flow or callpath hop, loading a bundle, copying an install command, and opening a related resource.
