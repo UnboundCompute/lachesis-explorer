@@ -122,6 +122,7 @@ export function CommandPalette({
       ),
     [app, normalized, onView, onFlow, onEntry, onSink, onNode],
   );
+  const visibleCommands = commands.slice(0, 80);
   useEffect(() => setActive(0), [query]);
   function execute(command: (typeof commands)[number]) {
     command.run();
@@ -164,15 +165,17 @@ export function CommandPalette({
           }
           if (event.key === "ArrowDown") {
             event.preventDefault();
-            setActive((current) => Math.min(commands.length - 1, current + 1));
+            setActive((current) =>
+              Math.min(visibleCommands.length - 1, current + 1),
+            );
           }
           if (event.key === "ArrowUp") {
             event.preventDefault();
             setActive((current) => Math.max(0, current - 1));
           }
-          if (event.key === "Enter" && commands[active]) {
+          if (event.key === "Enter" && visibleCommands[active]) {
             event.preventDefault();
-            execute(commands[active]);
+            execute(visibleCommands[active]);
           }
         }}
       >
@@ -188,8 +191,8 @@ export function CommandPalette({
           <kbd>esc</kbd>
         </label>
         <div className="command-results">
-          {commands.length ? (
-            commands.map((command, index) => (
+          {visibleCommands.length ? (
+            visibleCommands.map((command, index) => (
               <button
                 key={command.id}
                 className={active === index ? "active" : ""}
@@ -208,6 +211,11 @@ export function CommandPalette({
             ))
           ) : (
             <p>No matching command.</p>
+          )}
+          {commands.length > visibleCommands.length && (
+            <p className="command-more">
+              Showing first 80 matches. Refine your search to find more.
+            </p>
           )}
         </div>
         <div className="command-footer">
