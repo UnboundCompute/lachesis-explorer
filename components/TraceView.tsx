@@ -115,7 +115,7 @@ export function TraceView({
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="sidebar">
-        <span className="panel-label">VALUES & SYMBOLS</span>
+        <span className="panel-label">GRAPH PATHS & SYMBOLS</span>
         <label className="search">
           <Icon name="search" size={15} />
           <input
@@ -155,8 +155,10 @@ export function TraceView({
                 <span>
                   <b>{item.name}</b>
                   <small>
-                    {item.steps.length} nodes · {indirectionCount(item)}{" "}
-                    indirect
+                    {app.findings.some((finding) => finding.id === item.id)
+                      ? "Security witness"
+                      : "Value path"} {" · "}
+                    {item.steps.length} nodes · {indirectionCount(item)} indirect
                   </small>
                 </span>
               </button>
@@ -169,13 +171,13 @@ export function TraceView({
         </div>
         <div className="sidebar-foot">
           <span className="tiny-dot" /> {visible.length} of {app.flows.length}{" "}
-          flows visible
+          graph paths visible
         </div>
       </aside>
       <main className="main-panel">
         <div className="toolbar">
           <div>
-            <span className="panel-label">SELECTED VALUE</span>
+            <span className="panel-label">SELECTED GRAPH PATH</span>
             <h2>
               <code>{flow.name}</code>
             </h2>
@@ -262,7 +264,7 @@ export function TraceView({
           evidence={evidence}
           fallbackTool="reaches"
           fallbackArgs={flow.name}
-          fallbackSummary={`${steps.length} visible nodes in this value-flow path.`}
+          fallbackSummary={`${steps.length} visible nodes in this graph path.`}
           nodeCount={steps.length}
           indirections={indirectionCount(flow, evidence)}
         />

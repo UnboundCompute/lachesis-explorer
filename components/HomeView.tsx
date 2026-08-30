@@ -318,14 +318,14 @@ export function HomeView({
                 </span>
               </div>
               <p className="priority-summary">
-                This bundled path connects {graphFocus.steps.length} symbols.
+                This bundled graph path connects {graphFocus.steps.length} symbols.
                 Follow it to see how the code relates before making an
                 interpretation.
               </p>
               <div className="judgment-row">
                 <div>
                   <small>Path type</small>
-                  <b>value flow</b>
+                  <b>value path</b>
                 </div>
                 <div>
                   <small>Relationships</small>
