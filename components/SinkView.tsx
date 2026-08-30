@@ -166,21 +166,25 @@ export function SinkView({
             aria-label="Investigation representation"
           >
             <button
+              type="button"
               className={mode === "field" ? "active" : ""}
+              aria-pressed={mode === "field"}
               onClick={() => setMode("field")}
             >
               <Icon name="target" size={13} />
               Convergence
             </button>
             <button
+              type="button"
               className={mode === "matrix" ? "active" : ""}
+              aria-pressed={mode === "matrix"}
               onClick={() => setMode("matrix")}
             >
               <Icon name="matrix" size={13} />
               Evidence matrix
             </button>
             {!inspectorOpen && (
-              <button onClick={() => setInspectorOpen(true)}>
+              <button type="button" onClick={() => setInspectorOpen(true)}>
                 <Icon name="code" size={13} />
                 Source
               </button>

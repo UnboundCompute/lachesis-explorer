@@ -346,7 +346,9 @@ export function TraceView({
             </div>
             <div className="segmented" aria-label="Trace direction">
               <button
+                type="button"
                 className={direction === "backward" ? "selected" : ""}
+                aria-pressed={direction === "backward"}
                 onClick={() => {
                   setDirection("backward");
                   onRecord("Changed direction", flow.name, "comes from");
@@ -358,7 +360,9 @@ export function TraceView({
                 comes from
               </button>
               <button
+                type="button"
                 className={direction === "forward" ? "selected" : ""}
+                aria-pressed={direction === "forward"}
                 onClick={() => {
                   setDirection("forward");
                   onRecord("Changed direction", flow.name, "goes to");

@@ -239,6 +239,7 @@ export function OverviewView({
               <button
                 type="button"
                 className={mode === "map" ? "active" : ""}
+                aria-pressed={mode === "map"}
                 onClick={() => setMode("map")}
               >
                 <Icon name="target" size={13} />
@@ -247,6 +248,7 @@ export function OverviewView({
               <button
                 type="button"
                 className={mode === "architecture" ? "active" : ""}
+                aria-pressed={mode === "architecture"}
                 onClick={() => setMode("architecture")}
               >
                 <Icon name="matrix" size={13} />
@@ -255,6 +257,7 @@ export function OverviewView({
               <button
                 type="button"
                 className={mode === "health" ? "active" : ""}
+                aria-pressed={mode === "health"}
                 onClick={() => setMode("health")}
               >
                 <Icon name="history" size={13} />
