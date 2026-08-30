@@ -180,7 +180,7 @@ export function CommandPalette({
           if (event.key === "ArrowDown") {
             event.preventDefault();
             setActive((current) =>
-              Math.min(visibleCommands.length - 1, current + 1),
+              Math.min(Math.max(0, visibleCommands.length - 1), current + 1),
             );
           }
           if (event.key === "ArrowUp") {
@@ -201,15 +201,22 @@ export function CommandPalette({
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Jump to a view, value, request, or sink…"
             aria-label="Search commands"
+            aria-controls="command-results"
+            aria-activedescendant={
+              visibleCommands[active] ? `command-option-${active}` : undefined
+            }
           />
           <kbd>esc</kbd>
         </label>
-        <div className="command-results">
+        <div className="command-results" id="command-results" role="listbox">
           {visibleCommands.length ? (
             visibleCommands.map((command, index) => (
               <button
                 key={command.id}
+                id={`command-option-${index}`}
+                role="option"
                 className={active === index ? "active" : ""}
+                aria-selected={active === index}
                 onMouseEnter={() => setActive(index)}
                 onClick={() => execute(command)}
               >
