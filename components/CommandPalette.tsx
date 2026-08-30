@@ -229,8 +229,8 @@ export function CommandPalette({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Jump to a view, value, request, or sink…"
-            aria-label="Search commands"
+            placeholder="Jump to a view, path, symbol, file, or boundary…"
+            aria-label="Search views, paths, symbols, files, and boundaries"
             aria-controls="command-results"
             aria-activedescendant={
               visibleCommands[active] ? `command-option-${active}` : undefined
