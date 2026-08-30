@@ -112,13 +112,19 @@ export function HomeView({
     [app.flows],
   );
   const firstEntry = app.entries[0];
-  const firstSink = app.nodes.find(
-    (node) =>
-      node.kind === "sink" ||
-      app.flows.some((flow) =>
-        flow.steps.some((step) => step.node_id === node.id && step.role === "sink"),
-      ),
-  );
+  const firstSink = [...app.nodes]
+    .filter(
+      (node) =>
+        node.kind === "sink" ||
+        app.flows.some((flow) =>
+          flow.steps.some((step) => step.node_id === node.id && step.role === "sink"),
+        ),
+    )
+    .sort((a, b) => {
+      const flowCount = (node: Node) => app.flows.filter((flow) => flow.steps.some((step) => step.node_id === node.id)).length;
+      const stepCount = (node: Node) => app.flows.reduce((total, flow) => total + flow.steps.filter((step) => step.node_id === node.id).length, 0);
+      return flowCount(b) - flowCount(a) || stepCount(b) - stepCount(a);
+    })[0];
   const visibleFindings = useMemo(
     () =>
       queueFilter === "all"

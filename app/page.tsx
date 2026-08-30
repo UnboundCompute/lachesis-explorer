@@ -88,6 +88,16 @@ function recommendedFlow(flows: Flow[]) {
   })[0];
 }
 
+function recommendedSink(app: App) {
+  return [...app.nodes]
+    .filter((node) => isSinkNode(app, node.id))
+    .sort((a, b) => {
+      const flowCount = (nodeId: string) => app.flows.filter((flow) => flow.steps.some((step) => step.node_id === nodeId)).length;
+      const stepCount = (nodeId: string) => app.flows.reduce((total, flow) => total + flow.steps.filter((step) => step.node_id === nodeId).length, 0);
+      return flowCount(b.id) - flowCount(a.id) || stepCount(b.id) - stepCount(a.id);
+    })[0];
+}
+
 function isSinkNode(app: App, nodeId: string) {
   return app.nodes.some(
     (node) =>
@@ -458,16 +468,7 @@ export default function Page() {
 
   function activate(next: App) {
     const pending = pendingLink.current;
-    const firstSink =
-      next.nodes.find(
-        (node) =>
-          node.kind === "sink" ||
-          next.flows.some((flow) =>
-            flow.steps.some(
-              (step) => step.node_id === node.id && step.role === "sink",
-            ),
-          ),
-      )?.id ?? "";
+    const firstSink = recommendedSink(next)?.id ?? "";
     const firstFlow = recommendedFlow(next.flows);
     setApp(next);
     setCompareApp(null);
