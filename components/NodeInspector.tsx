@@ -78,7 +78,10 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
     });
   }
   return (
-    <aside ref={inspectorRef} className="detail-panel">
+    <aside ref={inspectorRef} className="detail-panel" aria-label={`Source inspector for ${node.label || node.id}`}>
+      <p className="sr-only" aria-live="polite">
+        Selected {node.kind} {node.label || node.id}, source {location}.
+      </p>
       <div className="inspector-heading">
         <span className={`kind-badge kind-${node.kind}`}>
           <i />
