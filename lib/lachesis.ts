@@ -123,13 +123,14 @@ function normalizeBundleV1(raw: any): App {
   if (!Array.isArray(graph.nodes)) throw new Error('Expected graph.nodes to be an array.')
   if (!Array.isArray(raw.findings)) throw new Error('Expected findings to be an array.')
   const nodes:Node[] = graph.nodes.map(normalizeNode)
-  const flows:Flow[] = raw.findings.map((f:any,i:number)=>{
+  const findingFlows:Flow[] = raw.findings.map((f:any,i:number)=>{
     const id=String(f.finding_id??f.id??`finding_${i}`)
     const steps=Array.isArray(f.witness?.steps)?f.witness.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []
     const source=f.locations?.find((location:any)=>location.role==='source')?.symbol
     const sink=f.locations?.find((location:any)=>location.role==='sink')?.symbol
     return {id,name:String(f.display_name??f.name??((source&&sink)?`${source} → ${sink}`:sink??source??id)),steps}
   })
+  const flows = findingFlows.filter(flow=>flow.steps.length>0)
   const mcp:Evidence[] = raw.findings.map((f:any,i:number)=>{
     const id=String(f.finding_id??f.id??`finding_${i}`)
     const steps=Array.isArray(f.witness?.steps)?f.witness.steps:[]
@@ -146,8 +147,6 @@ function normalizeBundleV1(raw: any): App {
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
   const ids = new Set(nodes.map((node:Node)=>node.id))
   if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
-  const emptyFlow = flows.find((flow:Flow)=>flow.steps.length===0)
-  if (emptyFlow) throw new Error(`Finding "${emptyFlow.name}" contains no witness steps.`)
   const brokenStep = flows.flatMap((flow:Flow)=>flow.steps).find((step:Step)=>!ids.has(step.node_id))
   if (brokenStep) throw new Error(`A finding references missing node "${brokenStep.node_id}".`)
   const brokenHop=entries.flatMap(entry=>entry.hops).find(hop=>!ids.has(hop.node_id))
