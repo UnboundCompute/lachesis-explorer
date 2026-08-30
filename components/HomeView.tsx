@@ -85,7 +85,7 @@ export function HomeView({
         ),
     [app],
   );
-  const graphOnly = findings.length === 0 && app.flows.length > 0;
+  const graphOnly = findings.length === 0 && app.nodes.length > 0;
   const graphFocus = app.flows[0];
   const visibleFindings = useMemo(
     () =>
@@ -350,6 +350,23 @@ export function HomeView({
                 <button onClick={() => onView("map")}>Open full graph</button>
               </div>
             </>
+          ) : graphOnly ? (
+            <div className="briefing-empty">
+              <h2>Graph structure is ready to explore</h2>
+              <p>
+                This bundle includes {app.nodes.length} nodes and{" "}
+                {app.edges.length} relationships, but no value-flow paths were
+                included.
+              </p>
+              <div className="priority-actions">
+                <button onClick={() => onView("map")}>
+                  Open full graph{" "}
+                  <span className="action-orb">
+                    <Icon name="arrow" size={13} />
+                  </span>
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="briefing-empty">
               <h2>No witness paths available</h2>
@@ -436,7 +453,9 @@ export function HomeView({
           {!visibleFindings.length && (
             <p className="queue-empty">
               {graphOnly
-                ? "Security findings were not included; explore the graph paths instead."
+                ? graphFocus
+                  ? "Security findings were not included; explore the graph paths instead."
+                  : "No paths were included; open the full graph to browse its structure."
                 : "No findings match this filter."}
             </p>
           )}
