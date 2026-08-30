@@ -39,6 +39,9 @@ function verify(file, bundle) {
   if (ids.size !== graph.nodes.length || ids.has("")) fail(file, "graph nodes must have unique non-empty IDs");
   if (schemaVersion === "2.0") {
     graph.nodes.forEach((node, index) => requireFields(file, node, ["id", "kind", "file", "line", "label", "snippet"], `graph.nodes[${index}]`));
+    const coverage = graph.coverage;
+    if (coverage?.included_nodes != null && Number(coverage.included_nodes) !== graph.nodes.length) fail(file, "graph.coverage.included_nodes must match graph.nodes.length");
+    if (coverage?.indexed_nodes != null && Number(coverage.indexed_nodes) < Number(coverage.included_nodes ?? graph.nodes.length)) fail(file, "graph.coverage.indexed_nodes cannot be less than included_nodes");
   }
   if (graph.edges != null && !Array.isArray(graph.edges)) fail(file, "graph.edges must be an array");
 

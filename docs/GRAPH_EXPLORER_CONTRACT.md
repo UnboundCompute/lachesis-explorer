@@ -81,7 +81,9 @@ but are not exposed as traceable paths until a witness is available.
 `indexed_nodes` describes the analyzed repository/index. The number of nodes in
 `graph.nodes` describes the graph material included in this artifact. These
 must remain separate so a projected security graph is not mistaken for a
-complete repository graph.
+complete repository graph. When present, `coverage.included_nodes` must equal
+the number of nodes in `graph.nodes`, and `coverage.indexed_nodes` must be at
+least that large.
 
 `coverage.scope`, `coverage.limitations`, and `graph.capabilities` make missing
 language constructs, unresolved calls, omitted dependencies, and projections
