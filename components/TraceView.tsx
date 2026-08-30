@@ -278,7 +278,7 @@ export function TraceView({
                       : app.mcp.some((evidence) => evidence.for === item.id)
                         ? "Bundle-backed value path"
                       : "Value path"} {" · "}
-                    {item.steps.length} nodes · {indirectionCount(item)} indirect
+                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} indirect · {flowLocation(app, item)}
                   </small>
                   <small className="node-row-context">
                     {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary ?? flowLocation(app, item)}

@@ -68,6 +68,15 @@ function flowContext(flow: Flow, app: App) {
   return nodes.length === 1 ? location(nodes[0]!) : `${location(nodes[0]!)} → ${location(nodes.at(-1)!)}`;
 }
 
+function pathLocation(flow: Flow, app: App) {
+  const nodes = flow.steps
+    .map((step) => app.nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean);
+  if (!nodes.length) return "source location unavailable";
+  const location = (node: (typeof app.nodes)[number]) => `${node.file || "source unavailable"}:${node.line || "—"}`;
+  return nodes.length === 1 ? location(nodes[0]!) : `${location(nodes[0]!)} → ${location(nodes.at(-1)!)}`;
+}
+
 function recommendationScore(flow: Flow) {
   const roles = flow.steps.map((step) => step.role.trim().toLowerCase());
   const hasSource = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin"].includes(role));
@@ -564,9 +573,10 @@ export function HomeView({
                   <b>{item.flow.name}</b>
                   <small>
                     {graphOnly
-                      ? `${item.flow.steps.length} connected symbols · ${flowContext(item.flow, app)}`
+                      ? `${item.flow.steps.length} connected symbols · ${pathLocation(item.flow, app)}`
                       : `${item.evidence?.confidence ?? "bundle"} confidence · ${item.flow.steps.length} steps`}
                   </small>
+                  {graphOnly && <small className="queue-row-context">{flowContext(item.flow, app)}</small>}
                 </span>
                 {!graphOnly && <EvidenceState evidence={item.evidence} />}
                 <Icon name="arrow" size={12} />
