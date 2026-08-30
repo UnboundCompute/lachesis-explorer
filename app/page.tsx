@@ -9,6 +9,7 @@ import { TraceView } from '../components/TraceView'
 import { SinkView } from '../components/SinkView'
 import { OverviewView } from '../components/OverviewView'
 import { CompareView } from '../components/CompareView'
+import { HomeView } from '../components/HomeView'
 import { ResourceLinks } from '../components/ResourceLinks'
 import { Icon } from '../components/Icon'
 import { CommandPalette } from '../components/CommandPalette'
@@ -16,14 +17,14 @@ import { InvestigationTrail, type InvestigationEvent } from '../components/Inves
 import { starter, normalize, type App } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
 
-type View = 'trace' | 'journey' | 'investigate' | 'map' | 'compare' | 'install'
+type View = 'home' | 'trace' | 'journey' | 'investigate' | 'map' | 'compare' | 'install'
 type LoadState = {type:'idle'|'loading'|'success'|'error';message:string}
 type PendingLink = {view?:string;flow?:string;node?:string;direction?:string;entry?:string;hop?:string;sink?:string}
 
-const viewLabels:Record<View,string>={trace:'Value flow',journey:'Request path',investigate:'Sink field',map:'System map',compare:'Revision diff',install:'Local workflow'}
+const viewLabels:Record<View,string>={home:'Briefing',trace:'Value flow',journey:'Request path',investigate:'Sink field',map:'System map',compare:'Revision diff',install:'Local workflow'}
 
 export default function Page() {
-  const [view,setView]=useState<View>('trace')
+  const [view,setView]=useState<View>('home')
   const [direction,setDirection]=useState<'backward'|'forward'>('backward')
   const [app,setApp]=useState<App>(starter)
   const [compareApp,setCompareApp]=useState<App|null>(null)
@@ -65,7 +66,7 @@ export default function Page() {
       setUrlReady(true)
       return
     }
-    if(link.view==='trace'||link.view==='journey'||link.view==='investigate'||link.view==='map'||link.view==='compare'||link.view==='install')setView(link.view)
+    if(link.view==='home'||link.view==='trace'||link.view==='journey'||link.view==='investigate'||link.view==='map'||link.view==='compare'||link.view==='install')setView(link.view)
     const flow=starter.flows.find(item=>item.id===link.flow)
     if(flow){setFlowId(flow.id);if(link.node&&flow.steps.some(step=>step.node_id===link.node))setStepId(link.node)}
     const index=starter.entries.findIndex(item=>item.id===link.entry)
@@ -118,7 +119,7 @@ export default function Page() {
     setApp(next);setFlowId(next.flows[0].id);setStepId(next.flows[0].steps[0].node_id);setEntryIndex(0);setHopId(next.entries[0]?.hops[0]?.node_id??next.nodes[0].id);setSinkId(firstSink)
     let restored=false
     if(pending){
-      if(pending.view==='trace'||pending.view==='journey'||pending.view==='investigate'||pending.view==='map'||pending.view==='compare'||pending.view==='install')setView(pending.view)
+      if(pending.view==='home'||pending.view==='trace'||pending.view==='journey'||pending.view==='investigate'||pending.view==='map'||pending.view==='compare'||pending.view==='install')setView(pending.view)
       const linkedFlow=next.flows.find(flow=>flow.id===pending.flow)
       if(linkedFlow){setFlowId(linkedFlow.id);setStepId(pending.node&&linkedFlow.steps.some(step=>step.node_id===pending.node)?pending.node:linkedFlow.steps[0].node_id);restored=true}
       const linkedEntry=next.entries.findIndex(entry=>entry.id===pending.entry)
@@ -152,7 +153,8 @@ export default function Page() {
     <input ref={compareFileRef} type="file" accept=".json,application/json" hidden onChange={event=>uploadComparison(event.target.files?.[0])}/>
     {commandOpen&&<CommandPalette app={app} onClose={()=>setCommandOpen(false)} onView={changeView} onFlow={(nextFlow,nextNode)=>{setView('trace');setFlowId(nextFlow);setStepId(nextNode);setInspectorOpen(true);record('Opened value flow',nextFlow,'via command palette')}} onEntry={(nextIndex,nextHop)=>{setView('journey');setEntryIndex(nextIndex);setHopId(nextHop);setInspectorOpen(true);record('Opened request path',app.entries[nextIndex]?.label??'Unknown entry','via command palette')}} onSink={nextSink=>{setView('investigate');setSinkId(nextSink);record('Focused sink',app.nodes.find(node=>node.id===nextSink)?.label??nextSink,'via command palette')}}/>}
     {dragActive&&<div className="drop-overlay" role="presentation"><div><span className="drop-glyph"><Icon name="upload" size={22}/></span><b>Drop bundle.json to inspect</b><small>Your current bundle changes only after validation succeeds.</small></div></div>}
-    <Intro view={view==='compare'?'map':view} app={app} loadState={loadState} isDemo={isDemo} onUpload={()=>fileRef.current?.click()}/>
+    {view!=='home'&&<Intro view={view==='compare'?'map':view as Exclude<View,'home'|'compare'>} app={app} loadState={loadState} isDemo={isDemo} onUpload={()=>fileRef.current?.click()}/>} 
+    {view==='home'&&<HomeView app={app} isDemo={isDemo} onUpload={()=>fileRef.current?.click()} onView={next=>changeView(next)}/>} 
     {view==='trace'&&<TraceView app={app} flowId={flowId} setFlowId={setFlowId} stepId={stepId} setStepId={setStepId} query={query} setQuery={setQuery} direction={direction} setDirection={setDirection} inspectorOpen={inspectorOpen} onInspectorOpen={()=>setInspectorOpen(true)} onInspectorClose={()=>setInspectorOpen(false)} onRecord={record}/>}
     {view==='journey'&&<JourneyView app={app} entryIndex={entryIndex} setEntryIndex={setEntryIndex} hopId={hopId} setHopId={setHopId} inspectorOpen={inspectorOpen} onInspectorOpen={()=>setInspectorOpen(true)} onInspectorClose={()=>setInspectorOpen(false)} onRecord={record}/>}
     {view==='investigate'&&<SinkView app={app} sinkId={sinkId} setSinkId={setSinkId} onRecord={record} onOpenFlow={(nextFlow,nextNode)=>{setView('trace');setFlowId(nextFlow);setStepId(nextNode);setInspectorOpen(true)}}/>}
