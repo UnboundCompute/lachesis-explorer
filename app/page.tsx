@@ -238,8 +238,12 @@ export default function Page() {
         return;
       }
       if (event.key === "Escape") {
+        const trailOpen = Boolean(
+          document.querySelector('[role="dialog"][aria-label="Investigation trail"]'),
+        );
         setCommandOpen(false);
         setMenu(false);
+        if (!commandOpen && !menu && !trailOpen) setInspectorOpen(false);
         dragDepth.current = 0;
         setDragActive(false);
         return;
@@ -268,7 +272,7 @@ export default function Page() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [view, flowId, record]);
+  }, [view, flowId, record, commandOpen, menu]);
 
   function changeView(next: View) {
     setView(next);
