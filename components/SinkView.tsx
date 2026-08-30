@@ -38,6 +38,7 @@ export function SinkView({
     [app],
   );
   const sink = sinks.find((node) => node.id === sinkId) ?? sinks[0];
+  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
   const [mode, setMode] = useState<"field" | "matrix">("field");
   const [selectedId, setSelectedId] = useState(
     sink?.id ?? app.nodes[0]?.id ?? "",
@@ -147,7 +148,7 @@ export function SinkView({
         <div className="sink-rail-note">
           <Icon name="target" size={14} />
           <p>
-            Sink-first mode begins at an execution boundary and reveals every
+            Boundary-first mode begins at an execution boundary and reveals every
             bundled value flow that reaches it.
           </p>
         </div>
@@ -155,7 +156,7 @@ export function SinkView({
       <main className="sink-main">
         <header className="sink-heading">
           <div>
-            <span className="context-kicker">SINK-FIRST INVESTIGATION</span>
+            <span className="context-kicker">{securityMode ? "SINK-FIRST INVESTIGATION" : "BOUNDARY CONVERGENCE"}</span>
             <h2>{sink.label || sink.id}</h2>
             <p>
               {sink.file}:{sink.line}
@@ -181,7 +182,7 @@ export function SinkView({
               onClick={() => setMode("matrix")}
             >
               <Icon name="matrix" size={13} />
-              Evidence matrix
+              {securityMode ? "Evidence matrix" : "Path matrix"}
             </button>
             {!inspectorOpen && (
               <button type="button" onClick={() => setInspectorOpen(true)}>
@@ -226,6 +227,7 @@ export function SinkView({
             app={app}
             flows={flows}
             sinkId={sink.id}
+            securityMode={securityMode}
             onOpenFlow={(flowId, nodeId, position) => {
               onRecord(
                 "Opened value flow",
