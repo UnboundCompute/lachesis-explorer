@@ -116,6 +116,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .download-fixture{display:inline-flex;align-items:center;justify-content:center;gap:8px;color:var(--ink-3);font:8px var(--mono);text-decoration:none;text-underline-offset:4px}
 .download-fixture:hover{color:var(--brand);text-decoration:underline}
 .sample-load{border:0;background:transparent;cursor:pointer}
+.coverage-note{display:flex;align-items:center;gap:7px;grid-column:1/-1;color:var(--ink-3);font:8px var(--mono)}.coverage-note i{width:6px;height:6px;border-radius:50%;background:var(--amber)}
 .fixture-links{display:flex;flex-direction:column;gap:5px}
 .triage-board{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:8px;padding:7px;border:1px solid color-mix(in srgb,var(--line-strong) 72%,transparent);border-radius:18px;background:color-mix(in srgb,var(--surface-2) 74%,var(--canvas));box-shadow:0 22px 70px rgba(0,0,0,.16)}
 .priority-investigation,.evidence-queue{min-width:0;border-radius:13px;background:var(--surface)}
