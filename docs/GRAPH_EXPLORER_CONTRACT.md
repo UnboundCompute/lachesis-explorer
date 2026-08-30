@@ -49,6 +49,9 @@ rather than loaded as a successful snapshot.
 Every node has a stable `id`, semantic `kind`, display `label`, source
 location, and optional `qualified_name`, `module`, `signature`,
 `documentation`, and `snippet`. Locations may include an end line and column.
+Kinds are treated as case-insensitive semantic labels; new exporters should
+prefer lowercase kebab-case values such as `function`, `call`, `expression`,
+and `source-sink`.
 
 Edges use a semantic `kind` such as `calls`, `imports`, `reads`, `writes`,
 `returns`, `implements`, `inherits`, `data-flow`, or `controls`. `dynamic`,

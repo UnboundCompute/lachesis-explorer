@@ -37,6 +37,11 @@ function normalizeRelation(value: unknown) {
   return relation ? relation.replace(/[_-]+/g, ' ').toLowerCase() : 'connects'
 }
 
+function normalizeKind(value: unknown) {
+  const kind = String(value ?? 'node').trim()
+  return kind ? kind.replace(/[_\s]+/g, '-').toLowerCase() : 'node'
+}
+
 function flowRelation(step: Step) {
   const role = step.role.trim().toLowerCase()
   return normalizeRelation(step.edge?.relation ?? (['origin', 'source', 'sink', 'boundary'].includes(role) ? 'value flows to' : step.role || 'value flows to'))
@@ -62,7 +67,7 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
 }
 
 function normalizeNode(n:any,i:number):Node {
-  return {id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end.column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??n.label??n.name??'')}
+  return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end.column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??n.label??n.name??'')}
 }
 
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }
@@ -90,7 +95,7 @@ function assertEvidenceNodes(items:Evidence[], ids:Set<string>) {
 }
 function normalizeStep(raw:any):Step {
   const id=raw?.occurrence_id??raw?.step_id??raw?.id
-  return {id:id==null?undefined:String(id),node_id:String(raw?.node_id??raw?.nodeId??raw?.node??raw?.id??''),role:String(raw?.role??'node'),note:raw?.note,edge:raw?.edge}
+  return {id:id==null?undefined:String(id),node_id:String(raw?.node_id??raw?.nodeId??raw?.node??raw?.id??''),role:String(raw?.role??'node').trim().replace(/[_-]+/g,' ').toLowerCase(),note:raw?.note,edge:raw?.edge}
 }
 
 function normalizePathMetadata(raw:any) {
@@ -112,7 +117,7 @@ function normalizeEntries(rawPaths:unknown,nodes:Node[]):Entry[]{
   const entries=rawPaths.map((e:any,i:number)=>{
     const rawHops=Array.isArray(e.hops)?e.hops:[]
     const entryNode=String(e.entry_node??e.entryNode??rawHops[0]?.node_id??'')
-    const hops=rawHops.map((h:any,j:number)=>({id:(h.occurrence_id??h.hop_id??h.id)==null?undefined:String(h.occurrence_id??h.hop_id??h.id),node_id:String(h.node_id??h.nodeId??h.node??h.id??''),edge_label:String(h.edge_label??h.label??''),caption:String(h.caption??''),confidence:h.confidence==null?undefined:String(h.confidence),limitations:Array.isArray(h.limitations)?h.limitations.map(String):undefined,layout:pointFor(e.layout,String(h.node_id??h.nodeId??h.node??h.id??''),j)}))
+    const hops=rawHops.map((h:any,j:number)=>({id:(h.occurrence_id??h.hop_id??h.id)==null?undefined:String(h.occurrence_id??h.hop_id??h.id),node_id:String(h.node_id??h.nodeId??h.node??h.id??''),edge_label:normalizeRelation(h.edge_label??h.label??'calls'),caption:String(h.caption??''),confidence:h.confidence==null?undefined:String(h.confidence),limitations:Array.isArray(h.limitations)?h.limitations.map(String):undefined,layout:pointFor(e.layout,String(h.node_id??h.nodeId??h.node??h.id??''),j)}))
     const firstNode=nodes.find(node=>node.id===entryNode)
     const metadata=normalizePathMetadata(e)
     return {id:String(e.id??e.callpath_id??`callpath_${i}`),label:String(e.entry??e.label??''),file:firstNode?`${firstNode.file}:${firstNode.line}`:'',entry_node:entryNode,hops,hasLayout:hops.length>0&&hops.every((hop:Hop)=>hop.layout!==undefined),description:metadata.description,kind:e.kind==null?undefined:String(e.kind),confidence:metadata.confidence,limitations:metadata.limitations}
