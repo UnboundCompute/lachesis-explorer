@@ -113,6 +113,7 @@
       "required": ["steps"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1, "description": "Exporter-defined path purpose, such as value-flow or data-flow; not a security verdict." },
         "name": { "type": "string" },
         "description": { "type": "string" },
         "source_node": { "type": "string", "minLength": 1 },

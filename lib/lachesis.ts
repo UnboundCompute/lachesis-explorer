@@ -2,7 +2,7 @@ import codeExplorationBundle from '../public/code-exploration-bundle.json'
 
 export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; signature?: string; documentation?: string; snippet: string }
 export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { relation?: string; alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
-export type Flow = { id: string; name: string; steps: Step[]; description?: string; sourceNodeId?: string; sinkNodeId?: string; confidence?: string; limitations?: string[] }
+export type Flow = { id: string; name: string; steps: Step[]; kind?: string; description?: string; sourceNodeId?: string; sinkNodeId?: string; confidence?: string; limitations?: string[] }
 export type GuardEvidence = { verdict?: string; note?: string; items?: {node_id?:string;effect?:string}[] }
 export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; node_ids?: string[]; indirections?: number; confidence?: string; origin?: string; status?: string; lifecycle?: string; limitations?: string[]; guards?: GuardEvidence }
 export type LayoutPoint = { x: number; y: number }
@@ -172,7 +172,7 @@ export function normalize(raw: any): App {
   if (!Array.isArray(source.nodes)) throw new Error('Expected graph.nodes to be an array.')
   if (!Array.isArray(source.flows)) throw new Error('Expected graph.flows to be an array.')
   const nodes = source.nodes.map(normalizeNode)
-  const flows = source.flows.map((f:any,i:number)=>{const id=String(f.id??`flow_${i}`);return {id,name:String(f.value??f.name??id),steps:Array.isArray(f.steps)?f.steps.map(normalizeStep) : [],...normalizePathMetadata(f)}})
+  const flows = source.flows.map((f:any,i:number)=>{const id=String(f.id??`flow_${i}`);return {id,name:String(f.value??f.name??id),kind:String(f.kind??f.path_kind??'value-flow'),steps:Array.isArray(f.steps)?f.steps.map(normalizeStep) : [],...normalizePathMetadata(f)}})
   assertUniqueIds(flows,'Graph paths')
   const entries=normalizeEntries(raw.callpaths??source.callpaths??[],nodes)
   const rawMcp = raw.mcp ?? source.mcp
@@ -210,7 +210,7 @@ function normalizeBundleV1(raw: any): App {
     const steps=Array.isArray(f.witness?.steps)?f.witness.steps.map(normalizeStep) : []
     const source=f.locations?.find((location:any)=>location.role==='source')?.symbol
     const sink=f.locations?.find((location:any)=>location.role==='sink')?.symbol
-    return {id,name:String(f.display_name??f.name??((source&&sink)?`${source} → ${sink}`:sink??source??id)),steps,...normalizePathMetadata(f)}
+    return {id,name:String(f.display_name??f.name??((source&&sink)?`${source} → ${sink}`:sink??source??id)),kind:'security-witness',steps,...normalizePathMetadata(f)}
   })
   assertUniqueIds(findingFlows,'Security findings')
   const flows = findingFlows.filter(flow=>flow.steps.length>0)
@@ -279,8 +279,8 @@ function normalizeGraphV2(raw:any):App {
   const pathRequests=raw.paths?.requests??raw.paths?.request_paths??graph.request_paths??raw.callpaths??[]
   const findings=raw.security?.findings??raw.findings??[]
   const flowRaw=Array.isArray(pathValues)?pathValues:[]
-  const flows:Flow[]=flowRaw.map((f:any,i:number)=>{const id=String(f.id??f.finding_id??`value_flow_${i}`);return {id,name:String(f.name??f.value??f.display_name??id),steps:Array.isArray(f.steps)?f.steps.map(normalizeStep):[],...normalizePathMetadata(f)}})
-  const findingFlows:Flow[]=Array.isArray(findings)?findings.map((f:any,i:number)=>{const id=String(f.finding_id??f.id??`finding_${i}`);return {id,name:String(f.display_name??f.name??id),steps:Array.isArray(f.witness?.steps)?f.witness.steps.map(normalizeStep):[],...normalizePathMetadata(f)}}):[]
+  const flows:Flow[]=flowRaw.map((f:any,i:number)=>{const id=String(f.id??f.finding_id??`value_flow_${i}`);return {id,name:String(f.name??f.value??f.display_name??id),kind:String(f.kind??f.path_kind??'value-flow'),steps:Array.isArray(f.steps)?f.steps.map(normalizeStep):[],...normalizePathMetadata(f)}})
+  const findingFlows:Flow[]=Array.isArray(findings)?findings.map((f:any,i:number)=>{const id=String(f.finding_id??f.id??`finding_${i}`);return {id,name:String(f.display_name??f.name??id),kind:'security-witness',steps:Array.isArray(f.witness?.steps)?f.witness.steps.map(normalizeStep):[],...normalizePathMetadata(f)}}):[]
   flows.forEach((flow)=>assertUniqueOccurrenceIds(flow.steps,`Value path ${flow.id}`))
   findingFlows.forEach((flow)=>assertUniqueOccurrenceIds(flow.steps,`Security finding ${flow.id}`))
   assertUniqueIds(findingFlows,'Security findings')

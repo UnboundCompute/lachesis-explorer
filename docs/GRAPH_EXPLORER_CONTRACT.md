@@ -96,8 +96,12 @@ unique within their collection; finding IDs follow the same rule within
 `security.findings`, and must not conflict with a value-path ID. Either path
 collection may be omitted when the exporter has no corresponding projection.
 
-Paths may include `description`, `confidence`, and `limitations` to give the
-reader exporter-authored context without turning the projection into a claim.
+Paths may include `kind`, `description`, `confidence`, and `limitations` to
+give the reader exporter-authored context without turning the projection into
+a claim. `kind` is a display and filtering hint, not a security verdict;
+recommended values include `value-flow`, `call-path`, `data-flow`, and
+`security-witness`. The collection still determines the default traversal
+surface (`paths.values` or `paths.requests`).
 `source_node` and `sink_node` are optional explicit endpoints; when present,
 they must reference graph node IDs. The Explorer uses this metadata for
 orientation and preserves the path sequence as the authoritative traversal.

@@ -56,6 +56,8 @@ function matchesFlow(app: App, flow: Flow, query: string) {
         return nodes.some((node) => node?.file.toLowerCase().includes(value));
       if (key === "has" && value === "mcp")
         return app.mcp.some((item) => item.for === flow.id);
+      if (key === "path")
+        return flow.kind?.toLowerCase().includes(value) ?? false;
       if (key === "role")
         return flow.steps.some((step) =>
           step.role.toLowerCase().includes(value),
@@ -72,6 +74,15 @@ function matchesFlow(app: App, flow: Flow, query: string) {
       .toLowerCase();
     return haystack.includes(term);
   });
+}
+
+function pathKindLabel(flow: Flow, securityPath: boolean) {
+  if (securityPath) return "Security witness";
+  const kind = flow.kind?.trim().toLowerCase();
+  if (kind === "call-path" || kind === "callpath") return "Call path";
+  if (kind === "data-flow" || kind === "dataflow") return "Data flow";
+  if (kind === "value-flow" || kind === "valueflow") return "Value path";
+  return flow.kind?.trim() || "Graph path";
 }
 
 function flowLocation(app: App, flow: Flow) {
@@ -304,8 +315,8 @@ export function TraceView({
                     {app.findings.some((finding) => finding.id === item.id)
                       ? "Security witness"
                       : app.mcp.some((evidence) => evidence.for === item.id)
-                        ? "Bundle-backed value path"
-                      : "Value path"} {" · "}
+                        ? `Bundle-backed ${pathKindLabel(item, false).toLowerCase()}`
+                      : pathKindLabel(item, false)} {" · "}
                     {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "non-direct"} · {flowLocation(app, item)}
                   </small>
                   <small className="node-row-context">

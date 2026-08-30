@@ -60,7 +60,7 @@
       ]}
     ],
     "values": [
-      {"id": "value.search-query", "name": "search query", "description": "See how request input is normalized before it reaches the catalog query boundary.", "source_node": "parse.query", "sink_node": "db.products", "confidence": "medium", "limitations": ["The fixture shows a bounded value projection, not runtime values."], "steps": [
+      {"id": "value.search-query", "kind": "value-flow", "name": "search query", "description": "See how request input is normalized before it reaches the catalog query boundary.", "source_node": "parse.query", "sink_node": "db.products", "confidence": "medium", "limitations": ["The fixture shows a bounded value projection, not runtime values."], "steps": [
         {"id": "value.search-query.step.01", "node_id": "parse.query", "role": "source"},
         {"id": "value.search-query.step.02", "node_id": "normalize.query", "role": "transforms"},
         {"id": "value.search-query.step.03", "node_id": "search.query", "role": "used by"},

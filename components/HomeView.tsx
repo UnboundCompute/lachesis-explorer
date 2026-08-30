@@ -91,6 +91,14 @@ function recommendationScore(flow: Flow) {
   return (flow.steps.length > 1 ? 100 : 0) + (hasSource ? 20 : 0) + (hasSink ? 20 : 0) + flow.steps.length;
 }
 
+function pathKindLabel(flow: Flow) {
+  const kind = flow.kind?.trim().toLowerCase();
+  if (kind === "call-path" || kind === "callpath") return "call path";
+  if (kind === "data-flow" || kind === "dataflow") return "data flow";
+  if (kind === "value-flow" || kind === "valueflow") return "value path";
+  return flow.kind?.trim() || "graph path";
+}
+
 function EvidenceState({ evidence }: { evidence?: Evidence }) {
   const status = evidence?.status ?? (evidence ? "reported" : "lead");
   return (
@@ -453,7 +461,7 @@ export function HomeView({
               <div className="judgment-row">
                 <div>
                   <small>Path type</small>
-                  <b>value path</b>
+                  <b>{pathKindLabel(graphFocus)}</b>
                 </div>
                 <div>
                   <small>Relationships</small>
