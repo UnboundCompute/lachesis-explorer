@@ -233,5 +233,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .graph-legend::after{content:'Select a node · arrows show direction';margin-left:auto;color:var(--ink-2)}
 .topology-node{cursor:pointer}.topology-node circle{transition:fill 240ms var(--ease),stroke 240ms var(--ease),transform 240ms var(--ease);transform-box:fill-box;transform-origin:center}.topology-node:hover circle{stroke:var(--cyan);transform:scale(1.06)}
 .bundle-mode{color:var(--ink-3);font:700 8px var(--mono);text-transform:uppercase}
+.context-meta{flex-wrap:wrap}
 .edge-caption.exact{fill:var(--ink-3)}
 .convergence-edge-label{pointer-events:none;font:8px var(--mono);text-transform:uppercase}.convergence-edge-label.exact{fill:var(--ink-3)}.convergence-edge-label.alias{fill:var(--violet)}.convergence-edge-label.dynamic{fill:var(--amber)}
