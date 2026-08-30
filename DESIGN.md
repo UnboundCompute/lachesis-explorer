@@ -182,6 +182,8 @@ Sans-serif copy keeps the shell calm and readable. Monospace type identifies sou
 
 The desktop workspace is a three-part evidence bench: a 244px selector rail, a fluid canvas, and a 260px source inspector. Closing the inspector expands the canvas. At 1040px the inspector becomes a full-width row; at 760px all regions stack, preserving the inspector below the canvas. Containers cap at 1440px with 30px desktop and 16px mobile gutters.
 
+The briefing surface uses an asymmetric triage board: one dominant witness and a narrower ordered evidence queue. Its first viewport answers “what needs review?” before presenting graph-wide metrics. Below 1040px the queue becomes a horizontal set, then a single readable stack below 760px.
+
 Spacing is intentionally compact. Use 8px gaps between adjacent panels, 12px for controls, 20–22px inside working panels, and 30px for outer section gutters.
 
 ## Elevation & Depth
@@ -214,6 +216,14 @@ Navigation is a compact set of analysis lenses with a quiet default and green ac
 
 Nodes are keyboard-selectable circles with stable numbering. Exact edges are solid neutral lines, aliases use violet dashes, dynamic edges use amber dots, and sinks receive coral outlines. Fit and Reset change only the viewport, never graph evidence.
 
+### Evidence Queue
+
+The briefing ranks finding envelopes by review state: leads first, then inconclusive, verified, and refuted evidence. Status, confidence, guards, and limitations are separate fields and must never be collapsed into one risk score. The primary witness pairs a source-to-boundary rail with a direct trace action; alternate findings remain one click away.
+
+### Evidence Capsule
+
+Evidence capsules show provenance, confidence, witness size, guard observations, and every bundled limitation. Lead uses amber, unresolved evidence uses violet, effective guards use green, and exact evidence uses cyan. These colors reinforce explicit labels rather than replacing them.
+
 ### Sink Field
 
 Sink-first investigation uses coral sparingly as a boundary signal. The convergence field merges shared nodes across value flows, while the evidence matrix exposes the same facts in a comparison-friendly form. Request overlap must always be labeled as overlap rather than reachability.
@@ -225,6 +235,8 @@ The fixed Trail control opens a right-side provenance drawer. Events remain loca
 ## Do's and Don'ts
 
 - Do state whether evidence and layouts are exact, bundled, or derived.
+- Do label synthetic fixtures at the bundle level and keep their status vocabulary identical to production evidence.
+- Do keep status, confidence, lifecycle, guard verdict, and limitations independently readable.
 - Do keep source context one selection or command away.
 - Do preserve visible focus, reduced motion, and non-color state cues.
 - Don't introduce generic blue dashboard accents, glass cards, or decorative gradients inside working panels.

@@ -40,7 +40,11 @@ npm run start
 
 ## Bundle format
 
-The explorer accepts the Lachesis bundle shape and preserves the graph data rather than inventing results. At minimum, a bundle needs `graph.nodes` and `graph.flows`. Optional fields include:
+The explorer ships with a downloadable, explicitly synthetic [`demo-bundle.json`](public/demo-bundle.json). It exercises competing review states, guard evidence, limitations, dynamic dispatch, request paths, and partial layout so UI work can continue before the production exporter is finalized.
+
+The preferred temporary contract is `lachesis-explorer-bundle` `1.0`: a graph snapshot plus versioned `findings` envelopes and an evidence manifest. The importer maps that evidence into the UI without converting a lead into a vulnerability verdict. The earlier flow-centric shape remains available as a permissive `bundle/0.x` adapter.
+
+At minimum, a legacy bundle needs `graph.nodes` and `graph.flows`. Optional fields include:
 
 ```json
 {
@@ -56,6 +60,8 @@ The explorer accepts the Lachesis bundle shape and preserves the graph data rath
 ```
 
 Edges may use `source`/`target` (or `from`/`to`), a relationship `kind`, and optional `alias` or `dynamic` flags. When explicit edges are absent, Explorer derives clearly attributed relationships from flow and callpath sequences. Callpaths may provide `entry_node`, `hops`, and a `layout`. MCP evidence supports `tool` (or the legacy `verb`), object `args`, `result_summary`, `nodes`, `indirections`, and `hops`. The importer accepts both the current and compatible legacy field names where practical.
+
+The `1.0` fixture follows the individual finding semantics documented in the monorepo’s `docs/OSS_EVIDENCE_CONTRACT.md`: status, confidence, guards, and limitations remain separate concepts. It is a UX fixture, not a promise that the final engine export will retain every wrapper field unchanged.
 
 ## Project structure
 

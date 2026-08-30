@@ -1,40 +1,17 @@
-export type Node = { id: string; kind: string; file: string; line: number; label: string; snippet: string }
+import demoBundle from '../public/demo-bundle.json'
+
+export type Node = { id: string; kind: string; file: string; line: number; column?: number; label: string; snippet: string }
 export type Step = { node_id: string; role: string; note?: string; edge?: { alias?: boolean; dynamic?: boolean } }
 export type Flow = { id: string; name: string; steps: Step[] }
-export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; node_ids?: string[]; indirections?: number; confidence?: string; origin?: string; status?: string; limitations?: string[]; guards?: any }
+export type GuardEvidence = { verdict?: string; note?: string; items?: {node_id?:string;effect?:string}[] }
+export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; node_ids?: string[]; indirections?: number; confidence?: string; origin?: string; status?: string; lifecycle?: string; limitations?: string[]; guards?: GuardEvidence }
 export type LayoutPoint = { x: number; y: number }
 export type Hop = { node_id: string; edge_label: string; caption: string; layout?: LayoutPoint }
 export type Entry = { id: string; label: string; file: string; entry_node?: string; hops: Hop[]; hasLayout: boolean }
 export type EdgeOrigin = 'bundle' | 'value-flow' | 'request-path'
 export type GraphEdge = { id:string; source:string; target:string; relation:string; alias:boolean; dynamic:boolean; origins:EdgeOrigin[]; flow_ids:string[]; entry_ids:string[] }
-export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; entries: Entry[]; mcp: Evidence[] }
-
-export const starterNodes: Node[] = [
-  { id:'n_api_42',kind:'assignment',file:'handlers/api.py',line:42,label:'data = request.json["q"]',snippet:'data = request.json["q"]' },
-  { id:'n_api_51',kind:'call',file:'handlers/api.py',line:51,label:'q = normalize(data)',snippet:'q = normalize(data)' },
-  { id:'n_db_88',kind:'call',file:'db/query.py',line:88,label:'sql = build(q)',snippet:'sql = build(q)' },
-  { id:'n_db_93',kind:'sink',file:'db/query.py',line:93,label:'cursor.execute(sql)',snippet:'cursor.execute(sql)' },
-  { id:'n_route_12',kind:'route',file:'routes.py',line:12,label:'@app.post("/api/search")',snippet:'@app.post("/api/search")' },
-  { id:'n_auth_30',kind:'guard',file:'mw/auth.py',line:30,label:'AuthMiddleware.process',snippet:'token = request.headers.get("Authorization")' },
-  { id:'n_svc_70',kind:'service',file:'services/search.py',line:70,label:'run_query(q)',snippet:'return repository.build_and_execute(q)' },
-  { id:'n_cache_18',kind:'assignment',file:'cache/keys.ts',line:18,label:'key = hash(query)',snippet:'const key = hash(query)' },
-]
-export const starterFlows: Flow[] = [
-  {id:'user_input',name:'user_input',steps:[{node_id:'n_api_42',role:'origin'},{node_id:'n_api_51',role:'transform',edge:{alias:true}},{node_id:'n_db_88',role:'transform'},{node_id:'n_db_93',role:'sink',edge:{dynamic:true}}]},
-  {id:'normalized_query',name:'normalized_query',steps:[{node_id:'n_api_51',role:'origin'},{node_id:'n_svc_70',role:'call',edge:{alias:true}},{node_id:'n_db_88',role:'transform'},{node_id:'n_db_93',role:'sink'}]},
-  {id:'sql_statement',name:'sql_statement',steps:[{node_id:'n_db_88',role:'origin'},{node_id:'n_db_93',role:'sink',edge:{dynamic:true}}]},
-  {id:'cache_key',name:'cache_key',steps:[{node_id:'n_api_51',role:'origin'},{node_id:'n_cache_18',role:'transform'}]},
-]
-const layout = (xs: number[]) => xs.map((x, i) => ({ node_id: ['n_route_12','n_auth_30','n_api_42','n_svc_70','n_db_88'][i], edge_label: ['route','middleware','handler','service','repository'][i], caption: ['route — accepts POST /api/search','guard — checks the request token','handler — reads the query value','service — delegates query execution','repository — builds the statement'][i], layout: {x, y: 110} }))
-export const starterEntries: Entry[] = [
-  {id:'cp_search',label:'POST /api/search',file:'routes.py:12',entry_node:'n_route_12',hasLayout:true,hops:layout([72,210,350,490,628])},
-  {id:'cp_suggestions',label:'GET /api/suggestions',file:'routes.py:28',entry_node:'n_route_12',hasLayout:true,hops:layout([72,286,500]).map((hop, i) => ({...hop, edge_label:['route','middleware','cache'][i], caption:['route — accepts GET /api/suggestions','guard — checks the request token','cache — derives a stable lookup key'][i], node_id:['n_route_12','n_auth_30','n_cache_18'][i]}))}
-]
-export const starterEvidence: Evidence[] = [
-  {for:'user_input',verb:'trace',args:'value="user_input"',result_summary:'reaches(cursor.execute) → sink found',hops:4,nodes:4,indirections:2,confidence:'exact',origin:'demo bundle'},
-  {for:'cp_search',verb:'cursor.exec',args:'/api/search',result_summary:'request path resolved',hops:5,nodes:5,indirections:0,confidence:'exact',origin:'demo bundle'}
-]
-export const starter: App = {name:'example/webapp',language:'python',commit:'a1b2c3d',lines:18432,nodes:starterNodes,edges:deriveGraphEdges([],starterFlows,starterEntries),flows:starterFlows,entries:starterEntries,mcp:starterEvidence}
+export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean }
+export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; entries: Entry[]; mcp: Evidence[]; bundle:BundleInfo }
 
 function formatArgs(args: unknown) {
   if (typeof args === 'string') return args
@@ -53,6 +30,17 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
 }
 
 type EdgeSeed = Omit<GraphEdge,'id'|'origins'|'flow_ids'|'entry_ids'> & {origin:EdgeOrigin;flow_id?:string;entry_id?:string}
+
+function normalizeEntries(rawPaths:unknown,nodes:Node[]):Entry[]{
+  if(!Array.isArray(rawPaths))return []
+  return rawPaths.map((e:any,i:number)=>{
+    const rawHops=Array.isArray(e.hops)?e.hops:[]
+    const entryNode=String(e.entry_node??e.entryNode??rawHops[0]?.node_id??'')
+    const hops=rawHops.map((h:any,j:number)=>({node_id:String(h.node_id??h.nodeId??h.id??''),edge_label:String(h.edge_label??h.label??''),caption:String(h.caption??''),layout:pointFor(e.layout,String(h.node_id??h.nodeId??h.id??''),j)}))
+    const firstNode=nodes.find(node=>node.id===entryNode)
+    return {id:String(e.id??e.callpath_id??`callpath_${i}`),label:String(e.entry??e.label??''),file:firstNode?`${firstNode.file}:${firstNode.line}`:'',entry_node:entryNode,hops,hasLayout:hops.length>0&&hops.every((hop:Hop)=>hop.layout!==undefined)}
+  })
+}
 
 export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entry[]): GraphEdge[] {
   const collected = new Map<string,GraphEdge>()
@@ -79,16 +67,9 @@ export function normalize(raw: any): App {
   const meta = raw.meta ?? source.meta ?? {}
   if (!Array.isArray(source.nodes)) throw new Error('Expected graph.nodes to be an array.')
   if (!Array.isArray(source.flows)) throw new Error('Expected graph.flows to be an array.')
-  const nodes = source.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')}))
+  const nodes = source.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),column:n.column==null?undefined:Number(n.column),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')}))
   const flows = source.flows.map((f:any,i:number)=>{const id=String(f.id??`flow_${i}`);return {id,name:String(f.value??f.name??id),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []}})
-  const rawPaths = raw.callpaths ?? source.callpaths ?? []
-  const entries = Array.isArray(rawPaths) ? rawPaths.map((e:any,i:number)=>{
-    const rawHops = Array.isArray(e.hops) ? e.hops : []
-    const entryNode = String(e.entry_node ?? e.entryNode ?? rawHops[0]?.node_id ?? '')
-    const hops = rawHops.map((h:any,j:number)=>({node_id:String(h.node_id??h.nodeId??h.id??''),edge_label:String(h.edge_label??h.label??''),caption:String(h.caption??''),layout:pointFor(e.layout, String(h.node_id??h.nodeId??h.id??''), j)}))
-    const firstNode = nodes.find((n: Node) => n.id === entryNode)
-    return {id:String(e.id??e.callpath_id??`callpath_${i}`),label:String(e.entry??e.label??''),file:firstNode ? `${firstNode.file}:${firstNode.line}` : '',entry_node:entryNode,hops,hasLayout:hops.length > 0 && hops.every((h: Hop) => h.layout !== undefined)}
-  }) : []
+  const entries=normalizeEntries(raw.callpaths??source.callpaths??[],nodes)
   const rawMcp = raw.mcp ?? source.mcp
   const mcp = Array.isArray(rawMcp) ? rawMcp.map((m:any)=>({for:String(m.for??m.flow??''),verb:String(m.tool??m.verb??''),args:formatArgs(m.args),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops),nodes:m.nodes==null?undefined:Number(m.nodes),indirections:m.indirections==null?undefined:Number(m.indirections),confidence:m.confidence==null?undefined:String(m.confidence),origin:m.origin==null?undefined:String(m.origin)})) : []
   const rawEdges = Array.isArray(source.edges) ? source.edges : []
@@ -106,7 +87,7 @@ export function normalize(raw: any): App {
   const brokenEdge = explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
   if (brokenEdge) throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
-  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,entries,mcp}
+  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,entries,mcp,bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture)}}
 }
 
 function normalizeBundleV1(raw: any): App {
@@ -115,11 +96,13 @@ function normalizeBundleV1(raw: any): App {
   const meta = raw.meta ?? {}
   if (!Array.isArray(graph.nodes)) throw new Error('Expected graph.nodes to be an array.')
   if (!Array.isArray(raw.findings)) throw new Error('Expected findings to be an array.')
-  const nodes:Node[] = graph.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')}))
+  const nodes:Node[] = graph.nodes.map((n:any,i:number)=>({id:String(n.id??n.node_id??`node_${i}`),kind:String(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??0),column:n.column==null?undefined:Number(n.column),label:String(n.label??n.name??n.code??''),snippet:String(n.snippet??n.code??n.label??n.name??'')}))
   const flows:Flow[] = raw.findings.map((f:any,i:number)=>{
     const id=String(f.finding_id??f.id??`finding_${i}`)
     const steps=Array.isArray(f.witness?.steps)?f.witness.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []
-    return {id,name:String(f.display_name??f.name??id),steps}
+    const source=f.locations?.find((location:any)=>location.role==='source')?.symbol
+    const sink=f.locations?.find((location:any)=>location.role==='sink')?.symbol
+    return {id,name:String(f.display_name??f.name??((source&&sink)?`${source} → ${sink}`:sink??source??id)),steps}
   })
   const mcp:Evidence[] = raw.findings.map((f:any,i:number)=>{
     const id=String(f.finding_id??f.id??`finding_${i}`)
@@ -127,8 +110,11 @@ function normalizeBundleV1(raw: any): App {
     const node_ids=steps.map((s:any)=>String(s.node_id??s.nodeId??s.node??'')).filter(Boolean)
     const indirections=steps.filter((s:any)=>s.edge?.alias||s.edge?.dynamic).length
     const loc=(f.locations??[]).map((l:any)=>l.symbol?`${l.symbol}${l.file?` (${l.file}${l.line?`:${l.line}`:''})`:''}`:'').filter(Boolean).join(' · ')
-    return {for:id,verb:String(f.analysis?.projection??f.constructor??''),args:loc,result_summary:String(f.result_summary??f.objective??''),nodes:node_ids.length,node_ids,indirections,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:f.constructor==null?undefined:String(f.constructor),status:f.status==null?undefined:String(f.status),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}
+    const status=f.status==null?undefined:String(f.status)
+    const summary=status==='refuted'?'A bundled guard refutes this candidate path.':status==='inconclusive'?'The witness reaches the boundary, but unresolved evidence prevents a conclusion.':'A source-to-sink witness is present and ready for review.'
+    return {for:id,verb:String(f.analysis?.projection??f.constructor??''),args:loc,result_summary:String(f.result_summary??f.objective??summary),nodes:node_ids.length,node_ids,indirections,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:f.constructor==null?'finding envelope':String(f.constructor),status,lifecycle:f.lifecycle_state==null?undefined:String(f.lifecycle_state),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}
   })
+  const entries=normalizeEntries(raw.callpaths??graph.callpaths??[],nodes)
   const rawEdges = Array.isArray(graph.edges) ? graph.edges : []
   const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),origin:'bundle'}))
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
@@ -139,12 +125,16 @@ function normalizeBundleV1(raw: any): App {
   if (emptyFlow) throw new Error(`Finding "${emptyFlow.name}" contains no witness steps.`)
   const brokenStep = flows.flatMap((flow:Flow)=>flow.steps).find((step:Step)=>!ids.has(step.node_id))
   if (brokenStep) throw new Error(`A finding references missing node "${brokenStep.node_id}".`)
+  const brokenHop=entries.flatMap(entry=>entry.hops).find(hop=>!ids.has(hop.node_id))
+  if(brokenHop)throw new Error(`A callpath references missing node "${brokenHop.node_id}".`)
   const brokenEdge = explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
   if (brokenEdge) throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
-  const edges=deriveGraphEdges(explicitEdges,flows,[])
-  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,entries:[],mcp}
+  const edges=deriveGraphEdges(explicitEdges,flows,entries)
+  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,entries,mcp,bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection:manifest.analysis_projection==null?undefined:String(manifest.analysis_projection),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture)}}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {
   return evidence?.indirections ?? flow.steps.filter(step => step.edge?.alias || step.edge?.dynamic).length
 }
+
+export const starter:App=normalize(demoBundle)

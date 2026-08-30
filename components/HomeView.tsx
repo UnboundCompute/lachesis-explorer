@@ -1,9 +1,96 @@
 'use client'
-import type { App } from '../lib/lachesis'
+
+import type { App, Evidence, Flow, Node } from '../lib/lachesis'
 import { Icon } from './Icon'
-type Props={app:App;isDemo:boolean;loadState:{type:'idle'|'loading'|'success'|'error';message:string};onUpload:()=>void;onView:(view:'map'|'investigate'|'trace'|'journey')=>void}
-export function HomeView({app,isDemo,loadState,onUpload,onView}:Props){
-  const sinks=app.nodes.filter(node=>node.kind==='sink'||app.flows.some(flow=>flow.steps.some(step=>step.node_id===node.id&&step.role==='sink')));const dynamic=app.edges.filter(edge=>edge.dynamic).length;const shared=app.nodes.map(node=>({node,count:app.flows.filter(flow=>flow.steps.some(step=>step.node_id===node.id)).length})).filter(item=>item.count>1).sort((a,b)=>b.count-a.count)[0];const incomplete=app.entries.filter(entry=>!entry.hasLayout).length;const lead=sinks[0]
-  const openUpload=()=>document.getElementById('bundle-upload')?.click()
-  return <section className="briefing-shell"><div className="briefing-hero"><div><span className="context-kicker">INVESTIGATION BRIEFING</span><h1>{isDemo?'Start with a bundle. Leave with a grounded lead.':'Your bundle is ready for inspection.'}</h1><p>Lachesis turns compiler-derived graph evidence into a focused investigation. Begin with the strongest signal, then open the underlying path and source.</p></div><label htmlFor="bundle-upload" tabIndex={0} role="button" onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openUpload()}}} className="briefing-upload"><Icon name="upload" size={15}/><span>{loadState.type==='loading'?'Reading bundle…':isDemo?'Load bundle.json':'Load another bundle'}</span><small>JSON bundle · processed locally</small></label></div>{loadState.message&&<p className={`briefing-notice ${loadState.type}`} role={loadState.type==='error'?'alert':'status'}><i/>{loadState.message}</p>}<div className="briefing-grid"><section className="briefing-lead"><span className="panel-label">RECOMMENDED LEAD</span>{lead?<><div className="lead-icon"><Icon name="target" size={18}/></div><h2>Inspect convergence at <strong>{lead.label||lead.id}</strong></h2><p>{app.flows.filter(flow=>flow.steps.some(step=>step.node_id===lead.id)).length} value flows reach this execution boundary. Compare their origins before making a claim.</p><button onClick={()=>onView('investigate')}>Open sink investigation <Icon name="arrow" size={13}/></button></>:<><h2>No sink evidence found yet.</h2><p>Load a generated bundle or explore the system map to understand what evidence is available.</p><button onClick={()=>onView('map')}>Open system map <Icon name="arrow" size={13}/></button></>}</section><section className="briefing-signals"><span className="panel-label">BUNDLE SIGNALS</span><div className="signal-grid"><button onClick={()=>onView('map')}><b>{app.nodes.length}</b><span>graph nodes</span></button><button onClick={()=>onView('trace')}><b>{app.flows.length}</b><span>value flows</span></button><button onClick={()=>onView('investigate')}><b>{sinks.length}</b><span>sinks</span></button><button onClick={()=>onView('map')}><b>{dynamic}</b><span>dynamic edges</span></button></div></section></div><section className="recipe-strip"><div><span className="panel-label">START WITH A QUESTION</span><p>Choose a familiar investigation goal. Lachesis will take you to the relevant evidence surface.</p></div><div className="recipe-list"><button onClick={()=>onView('investigate')}><b>Find paths to sinks</b><small>Trace every bundled value reaching an execution boundary.</small><Icon name="arrow" size={13}/></button><button onClick={()=>onView('map')}><b>Inspect graph shape</b><small>See relationships, modules, and shared choke points.</small><Icon name="arrow" size={13}/></button><button onClick={()=>onView('journey')}><b>Review request paths</b><small>Walk entrypoints and identify incomplete evidence.</small><Icon name="arrow" size={13}/></button></div></section><div className="briefing-bottom"><section><span className="panel-label">WHAT TO LOOK AT NEXT</span>{shared&&<button onClick={()=>onView('investigate')}><span className="step-number">01</span><span><b>Follow a shared choke point</b><small>{shared.node.label||shared.node.id} appears across {shared.count} value flows.</small></span><Icon name="arrow" size={13}/></button>}{incomplete>0&&<button onClick={()=>onView('journey')}><span className="step-number">02</span><span><b>Review incomplete request paths</b><small>{incomplete} path{incomplete===1?'':'s'} use derived or missing layout evidence.</small></span><Icon name="arrow" size={13}/></button>}</section><aside><span className="panel-label">ACTIVE BUNDLE</span><h3>{app.name||'Untitled bundle'}</h3><p>{app.language||'Unknown language'} · {app.commit||'no revision'} · {app.lines.toLocaleString()} lines</p><span className="local-badge"><i/>Processed locally</span></aside></div></section>
+
+type LoadState={type:'idle'|'loading'|'success'|'error';message:string}
+type Props={
+  app:App
+  isDemo:boolean
+  loadState:LoadState
+  onUpload:()=>void
+  onView:(view:'map'|'investigate'|'trace'|'journey')=>void
+  onFlow:(flowId:string,nodeId:string)=>void
+  onSink:(sinkId:string)=>void
+  onEntry:(entryIndex:number,hopId:string)=>void
+}
+
+const statusCopy:Record<string,string>={lead:'Review first',inconclusive:'Unresolved',refuted:'Guard observed',verified:'Verified'}
+const statusRank:Record<string,number>={lead:0,inconclusive:1,verified:2,refuted:3}
+
+function sinkFor(flow:Flow,app:App):Node|undefined{
+  const sinkStep=[...flow.steps].reverse().find(step=>step.role==='sink')
+  return app.nodes.find(node=>node.id===(sinkStep?.node_id??flow.steps.at(-1)?.node_id))
+}
+
+function EvidenceState({evidence}:{evidence?:Evidence}){
+  const status=evidence?.status??'lead'
+  return <span className={`finding-state state-${status}`}><i/>{statusCopy[status]??status}</span>
+}
+
+export function HomeView({app,isDemo,loadState,onUpload,onView,onFlow,onSink,onEntry}:Props){
+  const findings=app.flows.map(flow=>({flow,evidence:app.mcp.find(item=>item.for===flow.id),sink:sinkFor(flow,app)})).sort((a,b)=>(statusRank[a.evidence?.status??'lead']??4)-(statusRank[b.evidence?.status??'lead']??4))
+  const priority=findings[0]
+  const leadCount=findings.filter(item=>item.evidence?.status==='lead'||!item.evidence?.status).length
+  const unresolvedCount=findings.filter(item=>item.evidence?.status==='inconclusive').length
+  const refutedCount=findings.filter(item=>item.evidence?.status==='refuted').length
+  const dynamicCount=app.edges.filter(edge=>edge.dynamic).length
+  const incompletePaths=app.entries.filter(entry=>!entry.hasLayout).length
+  const guardVerdict=priority?.evidence?.guards?.verdict
+  const title=leadCount||unresolvedCount?`${leadCount} lead${leadCount===1?'':'s'} and ${unresolvedCount} unresolved path${unresolvedCount===1?'':'s'} deserve review.`:'No open evidence paths in this bundle.'
+
+  return <section className="investigation-briefing">
+    <header className="briefing-intro">
+      <div className="briefing-copy">
+        <div className="briefing-status-line"><span className={isDemo?'fixture-flag':'fixture-flag live'}><i/>{isDemo?'Synthetic working bundle':'Loaded local bundle'}</span><span>{app.bundle.projection??'graph evidence'} · contract {app.bundle.schemaVersion}</span></div>
+        <h1>{title}</h1>
+        <p>Start with the strongest witness, inspect what controls it, and keep uncertainty visible. Lachesis shows the path the bundle contains—not a vulnerability verdict.</p>
+      </div>
+      <div className="briefing-actions">
+        <button className="load-bundle-action" onClick={onUpload}><span><Icon name="upload" size={16}/><b>{loadState.type==='loading'?'Reading bundle…':'Load bundle.json'}</b><small>Processed only in this browser</small></span><span className="action-orb"><Icon name="arrow" size={14}/></span></button>
+        {isDemo&&<a className="download-fixture" href="/demo-bundle.json" download>Download this sample <Icon name="arrow" size={12}/></a>}
+      </div>
+    </header>
+
+    {loadState.message&&<p className={`briefing-notice ${loadState.type}`} role={loadState.type==='error'?'alert':'status'}><i/>{loadState.message}</p>}
+
+    <div className="triage-board">
+      <section className="priority-investigation">
+        <div className="priority-header"><span>Priority investigation</span>{priority&&<EvidenceState evidence={priority.evidence}/>}</div>
+        {priority?<>
+          <div className="priority-title"><span className="target-mark"><Icon name="target" size={18}/></span><div><h2>{priority.flow.name}</h2><p>{priority.sink?.file}:{priority.sink?.line}</p></div></div>
+          <div className="witness-route" aria-label="Witness summary">
+            <span><small>Source</small><b>{app.nodes.find(node=>node.id===priority.flow.steps[0]?.node_id)?.label??'Unknown source'}</b></span>
+            <i><span/></i>
+            <span><small>Boundary</small><b>{priority.sink?.label??'Unknown sink'}</b></span>
+          </div>
+          <p className="priority-summary">{priority.evidence?.result_summary??`${priority.flow.steps.length} bundled steps connect the selected source and boundary.`}</p>
+          <div className="judgment-row">
+            <div><small>Confidence</small><b>{priority.evidence?.confidence??'bundle'}</b></div>
+            <div><small>Guard verdict</small><b>{guardVerdict?.replace('-', ' ')??'not reported'}</b></div>
+            <div><small>Witness</small><b>{priority.flow.steps.length} steps</b></div>
+          </div>
+          {priority.evidence?.limitations?.[0]&&<p className="priority-limitation"><Icon name="spark" size={13}/><span><b>Known limit</b>{priority.evidence.limitations[0]}</span></p>}
+          <div className="priority-actions"><button onClick={()=>onFlow(priority.flow.id,priority.flow.steps[0].node_id)}>Trace this witness <span className="action-orb"><Icon name="arrow" size={13}/></span></button>{priority.sink&&<button onClick={()=>onSink(priority.sink!.id)}>Compare reaching paths</button>}</div>
+        </>:<div className="briefing-empty"><h2>No witness paths available</h2><p>Load a bundle containing finding witnesses or value flows to begin an investigation.</p></div>}
+      </section>
+
+      <aside className="evidence-queue">
+        <div className="queue-heading"><div><span>Evidence queue</span><small>Ordered by review state</small></div><b>{findings.length}</b></div>
+        <div className="queue-list">{findings.map((item,index)=><button key={item.flow.id} className={index===0?'active':''} onClick={()=>onFlow(item.flow.id,item.flow.steps[0].node_id)}><span className="queue-index">{String(index+1).padStart(2,'0')}</span><span className="queue-copy"><b>{item.flow.name}</b><small>{item.evidence?.confidence??'bundle'} confidence · {item.flow.steps.length} steps</small></span><EvidenceState evidence={item.evidence}/><Icon name="arrow" size={12}/></button>)}</div>
+        <div className="queue-foot"><span><i className="lead-dot"/>{leadCount} lead</span><span><i className="unknown-dot"/>{unresolvedCount} unresolved</span><span><i className="refuted-dot"/>{refutedCount} refuted</span></div>
+      </aside>
+    </div>
+
+    <section className="bundle-reading">
+      <div className="reading-heading"><div><h2>Read the bundle from another angle.</h2><p>The same evidence stays connected as you change lenses.</p></div><span>{app.name} · {app.commit}</span></div>
+      <div className="reading-grid">
+        <button onClick={()=>onView('investigate')}><span className="reading-metric">{new Set(findings.map(item=>item.sink?.id).filter(Boolean)).size}</span><span><b>Execution boundaries</b><small>Compare every value converging on a sink.</small></span><Icon name="arrow" size={13}/></button>
+        <button onClick={()=>onView('map')}><span className="reading-metric">{app.nodes.length}</span><span><b>Graph topology</b><small>{app.edges.length} relationships · {dynamicCount} dynamic.</small></span><Icon name="arrow" size={13}/></button>
+        <button onClick={()=>app.entries[0]?onEntry(0,app.entries[0].hops[0]?.node_id??''):onView('journey')}><span className="reading-metric">{app.entries.length}</span><span><b>Request paths</b><small>{incompletePaths?`${incompletePaths} use derived layout`:'All carry bundled layout'}.</small></span><Icon name="arrow" size={13}/></button>
+      </div>
+    </section>
+
+    <footer className="bundle-provenance"><div><span className="local-badge"><i/>Local-only inspection</span><span>{app.language} · {app.lines.toLocaleString()} indexed lines</span></div><div><span>Engine</span><b>{app.bundle.engine??'not reported'}</b><span>Catalog</span><b>{app.bundle.catalog??'not reported'}</b></div></footer>
+  </section>
 }
