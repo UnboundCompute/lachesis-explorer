@@ -20,6 +20,18 @@ function requireNonNegativeIntegers(file, value, fields, label) {
   }
 }
 
+function requireNonEmptyStrings(file, value, fields, label) {
+  for (const field of fields) {
+    if (typeof value?.[field] !== "string" || value[field].trim() === "")
+      fail(file, `${label}.${field} must be a non-empty string`);
+  }
+}
+
+function requireOptionalNonNegativeIntegers(file, value, fields, label) {
+  const present = fields.filter((field) => value?.[field] != null);
+  if (present.length) requireNonNegativeIntegers(file, value, present, label);
+}
+
 function validateNodes(file, ids, steps, label, { required = true } = {}) {
   if (!Array.isArray(steps)) fail(file, `${label} steps must be an array`);
   if (required && steps.length === 0) fail(file, `${label} must contain at least one step`);
@@ -64,6 +76,7 @@ function verify(file, bundle) {
   if (schemaVersion === "2.0") {
     requireFields(file, bundle, ["format", "schema_version", "meta", "graph"], "bundle");
     requireFields(file, bundle.meta, ["repository", "language", "revision", "lines", "indexed_nodes"], "meta");
+    requireNonEmptyStrings(file, bundle.meta, ["repository", "language", "revision"], "meta");
     requireNonNegativeIntegers(file, bundle.meta, ["lines", "indexed_nodes"], "meta");
   }
   const graph = bundle.graph;
@@ -72,7 +85,13 @@ function verify(file, bundle) {
   const ids = new Set(graph.nodes.map((node) => String(node.id ?? node.node_id ?? "")));
   if (ids.size !== graph.nodes.length || ids.has("")) fail(file, "graph nodes must have unique non-empty IDs");
   if (schemaVersion === "2.0") {
-    graph.nodes.forEach((node, index) => requireFields(file, node, ["id", "kind", "file", "line", "label", "snippet"], `graph.nodes[${index}]`));
+    graph.nodes.forEach((node, index) => {
+      const label = `graph.nodes[${index}]`;
+      requireFields(file, node, ["id", "kind", "file", "line", "label", "snippet"], label);
+      requireNonEmptyStrings(file, node, ["id", "kind", "file", "label", "snippet"], label);
+      requireNonNegativeIntegers(file, node, ["line"], label);
+      requireOptionalNonNegativeIntegers(file, node, ["column", "end_line", "end_column"], label);
+    });
     const coverage = graph.coverage;
     if (coverage?.included_nodes != null || coverage?.indexed_nodes != null)
       requireNonNegativeIntegers(file, coverage, ["included_nodes", "indexed_nodes"].filter((field) => coverage[field] != null), "graph.coverage");
