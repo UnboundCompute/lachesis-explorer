@@ -85,7 +85,8 @@ export function HomeView({
         ),
     [app],
   );
-  const graphOnly = findings.length === 0 && app.nodes.length > 0;
+  const metadataOnly = findings.length === 0 && app.mcp.length > 0;
+  const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
   const graphFocus = app.flows[0];
   const visibleFindings = useMemo(
     () =>
@@ -128,7 +129,9 @@ export function HomeView({
   const title =
     leadCount || unresolvedCount
       ? `${leadCount} lead${leadCount === 1 ? "" : "s"} and ${unresolvedCount} unresolved path${unresolvedCount === 1 ? "" : "s"} deserve review.`
-      : graphOnly
+      : metadataOnly
+        ? "Security metadata is present, but no traceable witness paths are available."
+        : graphOnly
         ? "Understand the code through its connected paths."
         : "No open evidence paths in this bundle.";
 
@@ -148,7 +151,9 @@ export function HomeView({
           </div>
           <h1>{title}</h1>
           <p>
-            {graphOnly
+            {metadataOnly
+              ? "This bundle includes security records without witness steps. Explore the graph structure while the exporter adds a traceable path."
+              : graphOnly
               ? "Start with a value flow or request path, then move through the symbols and relationships that make the behavior understandable."
               : "Start with the strongest witness, inspect what controls it, and keep uncertainty visible. Lachesis shows the path the bundle contains—not a vulnerability verdict."}
           </p>
@@ -350,6 +355,23 @@ export function HomeView({
                 <button onClick={() => onView("map")}>Open full graph</button>
               </div>
             </>
+          ) : metadataOnly ? (
+            <div className="briefing-empty">
+              <h2>Security metadata without a traceable path</h2>
+              <p>
+                {app.mcp.length} security record{app.mcp.length === 1 ? "" : "s"}{" "}
+                {app.mcp.length === 1 ? "is" : "are"} attached, but the bundle
+                does not include witness steps that can be inspected here.
+              </p>
+              <div className="priority-actions">
+                <button onClick={() => onView("map")}>
+                  Explore the graph{" "}
+                  <span className="action-orb">
+                    <Icon name="arrow" size={13} />
+                  </span>
+                </button>
+              </div>
+            </div>
           ) : graphOnly ? (
             <div className="briefing-empty">
               <h2>Graph structure is ready to explore</h2>
@@ -381,16 +403,18 @@ export function HomeView({
         <aside className="evidence-queue">
           <div className="queue-heading">
             <div>
-              <span>{graphOnly ? "Graph index" : "Evidence queue"}</span>
+              <span>{graphOnly ? "Graph index" : metadataOnly ? "Security metadata" : "Evidence queue"}</span>
               <small>
-                {graphOnly
+                {metadataOnly
+                  ? "Records without traceable witness steps"
+                  : graphOnly
                   ? "Paths available to explore"
                   : "Choose a lead to keep it in context"}
               </small>
             </div>
-            <b>{graphOnly ? app.flows.length : visibleFindings.length}</b>
+            <b>{graphOnly ? app.flows.length : metadataOnly ? app.mcp.length : visibleFindings.length}</b>
           </div>
-          {!graphOnly && (
+          {!graphOnly && !metadataOnly && (
             <div className="queue-filters" aria-label="Filter evidence queue">
               {(
                 ["all", "lead", "inconclusive", "refuted", "verified"] as QueueFilter[]
@@ -454,14 +478,16 @@ export function HomeView({
           </div>
           {!queueItems.length && (
             <p className="queue-empty">
-              {graphOnly
+              {metadataOnly
+                ? "These records need witness steps before they can be traced."
+                : graphOnly
                 ? graphFocus
                   ? "Security findings were not included; explore the graph paths instead."
                   : "No paths were included; open the full graph to browse its structure."
                 : "No findings match this filter."}
             </p>
           )}
-          {!graphOnly && (
+          {!graphOnly && !metadataOnly && (
             <div className="queue-foot">
               <span>
                 <i className="lead-dot" />
@@ -497,7 +523,9 @@ export function HomeView({
         <div className="reading-grid">
           <button
             onClick={() =>
-              graphOnly
+              metadataOnly
+                ? onView("map")
+                : graphOnly
                 ? graphFocus
                   ? onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "")
                   : onView("map")
@@ -505,15 +533,19 @@ export function HomeView({
             }
           >
             <span className="reading-metric">
-              {graphOnly
+              {metadataOnly
+                ? app.mcp.length
+                : graphOnly
                 ? app.flows.length
                 : new Set(findings.map((item) => item.sink?.id).filter(Boolean))
                     .size}
             </span>
             <span>
-              <b>{graphOnly ? "Graph paths" : "Execution boundaries"}</b>
+              <b>{metadataOnly ? "Security records" : graphOnly ? "Graph paths" : "Execution boundaries"}</b>
               <small>
-                {graphOnly && graphFocus
+                {metadataOnly
+                  ? "Open the graph while these records await traceable witness steps."
+                  : graphOnly && graphFocus
                   ? "Trace a bundled path through its connected symbols."
                   : graphOnly
                     ? "Open the graph to inspect its included structure."
