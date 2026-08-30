@@ -544,6 +544,20 @@ export function OverviewView({
               {app.edges.length
                 ? "Relationships are available for topology and convergence analysis."
                 : "No explicit or path-derived relationships were found."}
+              {app.coverage.capabilities.length > 0 && (
+                <div className="health-detail">
+                  <span>CAPABILITIES</span>
+                  <p>{app.coverage.capabilities.join(" · ")}</p>
+                </div>
+              )}
+              {app.coverage.limitations.length > 0 && (
+                <div className="health-detail health-limitations">
+                  <span>KNOWN LIMITATIONS</span>
+                  {app.coverage.limitations.map((limitation) => (
+                    <p key={limitation}><i />{limitation}</p>
+                  ))}
+                </div>
+              )}
               {app.entries.some((entry) => !entry.hasLayout) && (
                 <p>
                   <i />
