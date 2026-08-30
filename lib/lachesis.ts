@@ -24,6 +24,16 @@ function formatArgs(args: unknown) {
   return String(args)
 }
 
+function normalizeEvidence(raw: any): Evidence {
+  const nodeIds = Array.isArray(raw.nodes)
+    ? raw.nodes.map(String)
+    : Array.isArray(raw.node_ids)
+      ? raw.node_ids.map(String)
+      : undefined
+  const nodeCount = nodeIds?.length ?? (raw.nodes == null ? undefined : Number(raw.nodes))
+  return {for:String(raw.for??raw.flow??''),verb:String(raw.tool??raw.verb??''),args:formatArgs(raw.args),result_summary:String(raw.result_summary??''),hops:raw.hops==null?undefined:Number(raw.hops),nodes:Number.isFinite(nodeCount)?nodeCount:undefined,node_ids:nodeIds,indirections:raw.indirections==null?undefined:Number(raw.indirections),confidence:raw.confidence==null?undefined:String(raw.confidence),origin:raw.origin==null?undefined:String(raw.origin)}
+}
+
 function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoint | undefined {
   if (Array.isArray(rawLayout)) {
     const point = rawLayout.find((item: any) => String(item.node_id ?? item.nodeId ?? item.id ?? '') === nodeId) ?? rawLayout[index]
@@ -84,7 +94,7 @@ export function normalize(raw: any): App {
   const flows = source.flows.map((f:any,i:number)=>{const id=String(f.id??`flow_${i}`);return {id,name:String(f.value??f.name??id),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []}})
   const entries=normalizeEntries(raw.callpaths??source.callpaths??[],nodes)
   const rawMcp = raw.mcp ?? source.mcp
-  const mcp = Array.isArray(rawMcp) ? rawMcp.map((m:any)=>({for:String(m.for??m.flow??''),verb:String(m.tool??m.verb??''),args:formatArgs(m.args),result_summary:String(m.result_summary??''),hops:m.hops==null?undefined:Number(m.hops),nodes:m.nodes==null?undefined:Number(m.nodes),indirections:m.indirections==null?undefined:Number(m.indirections),confidence:m.confidence==null?undefined:String(m.confidence),origin:m.origin==null?undefined:String(m.origin)})) : []
+  const mcp = Array.isArray(rawMcp) ? rawMcp.map(normalizeEvidence) : []
   const rawEdges = Array.isArray(source.edges) ? source.edges : []
   const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),origin:'bundle'}))
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
