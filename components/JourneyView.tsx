@@ -204,6 +204,12 @@ export function JourneyView({
             <span className="panel-label">SELECTED REQUEST</span>
             <h2>{entry.label}</h2>
             {entry.description && <p className="path-description">{entry.description}</p>}
+            {(entry.confidence || entry.limitations?.length) && (
+              <p className="path-meta">
+                {entry.confidence && <span>{entry.confidence} confidence</span>}
+                {entry.limitations?.length ? <span>{entry.limitations.length} known limitation{entry.limitations.length === 1 ? "" : "s"}</span> : null}
+              </p>
+            )}
           </div>
           <div className="toolbar-actions">
             {!inspectorOpen && (

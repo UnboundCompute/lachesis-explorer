@@ -288,6 +288,12 @@ export function TraceView({
               <code>{flow.name}</code>
             </h2>
             {flow.description && <p className="path-description">{flow.description}</p>}
+            {(flow.confidence || flow.limitations?.length) && (
+              <p className="path-meta">
+                {flow.confidence && <span>{flow.confidence} confidence</span>}
+                {flow.limitations?.length ? <span>{flow.limitations.length} known limitation{flow.limitations.length === 1 ? "" : "s"}</span> : null}
+              </p>
+            )}
           </div>
           <div className="toolbar-actions">
             {!inspectorOpen && (
