@@ -674,6 +674,9 @@ export default function Page() {
           app={app}
           focusNodeId={focusNodeId}
           onRecord={record}
+          onShare={(nodeId) =>
+            copyInvestigationLink({ view: "map", node: nodeId })
+          }
           onFlow={(nextFlow, nextNode) => {
             setView("trace");
             setFlowId(nextFlow);

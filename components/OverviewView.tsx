@@ -12,6 +12,7 @@ type Props = {
   onRecord: (action: string, target: string, detail: string) => void;
   onFlow?: (flowId: string, nodeId: string) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
+  onShare?: (nodeId: string) => void;
 };
 const pos = (index: number) => ({
   x: 92 + (index % 4) * 178,
@@ -73,6 +74,7 @@ export function OverviewView({
   onRecord,
   onFlow,
   onEntry,
+  onShare,
 }: Props) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>("map");
@@ -200,6 +202,15 @@ export function OverviewView({
             </p>
           </div>
           <div className="overview-switch">
+            {selected && onShare && (
+              <button
+                type="button"
+                onClick={() => onShare(selected.id)}
+                aria-label="Copy link to selected graph node"
+              >
+                Copy link
+              </button>
+            )}
             <button
               type="button"
               className={mode === "map" ? "active" : ""}
