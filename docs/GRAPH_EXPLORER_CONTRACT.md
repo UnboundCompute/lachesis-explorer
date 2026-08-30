@@ -42,8 +42,12 @@ location, and optional `qualified_name`, `module`, `signature`,
 
 Edges use a semantic `kind` such as `calls`, `imports`, `reads`, `writes`,
 `returns`, `implements`, `inherits`, `data-flow`, or `controls`. `dynamic`,
-`confidence`, and `limitations` describe the relationship without turning it
-into a security verdict.
+`alias`, `confidence`, and `limitations` describe the relationship without
+turning it into a security verdict. `confidence` is exporter-defined text
+(for example, `high`, `medium`, or `low`); `limitations` is an array of
+human-readable caveats. The same optional uncertainty fields may appear on a
+path step or request-path hop when the path projection has more specific
+context than the underlying edge.
 
 Files and modules provide the hierarchy needed for progressive exploration:
 repository → package → module/file → symbol → path.

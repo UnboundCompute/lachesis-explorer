@@ -39,7 +39,7 @@
       {"source": "route.search", "target": "parse.query", "relation": "calls"},
       {"source": "parse.query", "target": "normalize.query", "relation": "calls"},
       {"source": "normalize.query", "target": "search.service", "relation": "calls"},
-      {"source": "search.service", "target": "search.query", "relation": "calls"},
+      {"source": "search.service", "target": "search.query", "relation": "calls", "confidence": "medium", "limitations": ["The query builder is represented as a bounded projection."]},
       {"source": "search.service", "target": "catalog.client", "relation": "uses"},
       {"source": "catalog.client", "target": "db.products", "relation": "queries"},
       {"source": "search.service", "target": "search.result", "relation": "returns"}

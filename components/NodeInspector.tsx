@@ -184,17 +184,21 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
                   const peerId =
                     edge.source === node.id ? edge.target : edge.source;
                   const peer = app.nodes.find((item) => item.id === peerId);
-                  return (
-                    <span key={edge.id}>
-                      {edge.source === node.id ? "→" : "←"}{" "}
-                      {edge.relation || "connected"} · {peer?.label || peerId}
-                      {edge.dynamic
-                        ? " · dynamic"
-                        : edge.alias
-                          ? " · alias"
+                    return (
+                      <span key={edge.id}>
+                        {edge.source === node.id ? "→" : "←"}{" "}
+                        {edge.relation || "connected"} · {peer?.label || peerId}
+                        {edge.dynamic
+                          ? " · dynamic"
+                          : edge.alias
+                            ? " · alias"
+                            : ""}
+                        {edge.confidence ? ` · ${edge.confidence} confidence` : ""}
+                        {edge.limitations?.length
+                          ? ` · ${edge.limitations[0]}`
                           : ""}
-                    </span>
-                  );
+                      </span>
+                    );
                 })}
               </div>
             )}

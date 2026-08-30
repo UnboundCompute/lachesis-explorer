@@ -67,7 +67,7 @@ At minimum, a `2.0` bundle needs `schema_version`, `graph.nodes`, and may omit p
 }
 ```
 
-Edges may use `source`/`target` (or `from`/`to`), a relationship `kind`, and optional `alias` or `dynamic` flags. When explicit edges are absent, Explorer derives clearly attributed relationships from flow and callpath sequences. Callpaths may provide `entry_node`, `hops`, and a `layout`. MCP evidence supports `tool` (or the legacy `verb`), object `args`, `result_summary`, `nodes`, `indirections`, and `hops`. The importer accepts both the current and compatible legacy field names where practical.
+Edges may use `source`/`target` (or `from`/`to`), a relationship `kind`, and optional `alias`, `dynamic`, `confidence`, or `limitations` metadata. The uncertainty fields are preserved in the source inspector so bounded or unresolved relationships remain explicit. When explicit edges are absent, Explorer derives clearly attributed relationships from flow and callpath sequences. Callpaths may provide `entry_node`, `hops`, and a `layout`. MCP evidence supports `tool` (or the legacy `verb`), object `args`, `result_summary`, `nodes`, `indirections`, and `hops`. The importer accepts both the current and compatible legacy field names where practical.
 
 The `1.0` fixture follows the individual finding semantics documented in the monorepo’s `docs/OSS_EVIDENCE_CONTRACT.md`: status, confidence, guards, and limitations remain separate concepts. It is a UX fixture, not a promise that the final engine export will retain every wrapper field unchanged.
 
