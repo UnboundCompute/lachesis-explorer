@@ -83,6 +83,8 @@ export function HomeView({
         ),
     [app],
   );
+  const graphOnly = findings.length === 0 && app.flows.length > 0;
+  const graphFocus = app.flows[0];
   const visibleFindings = useMemo(
     () =>
       queueFilter === "all"
@@ -95,6 +97,13 @@ export function HomeView({
   const priority =
     visibleFindings.find((item) => item.flow.id === selectedId) ??
     visibleFindings[0];
+  const queueItems = graphOnly
+    ? app.flows.map((flow) => ({
+        flow,
+        evidence: undefined,
+        sink: sinkFor(flow, app),
+      }))
+    : visibleFindings;
   const leadCount = findings.filter(
     (item) => item.evidence?.status === "lead" || !item.evidence?.status,
   ).length;
@@ -117,7 +126,9 @@ export function HomeView({
   const title =
     leadCount || unresolvedCount
       ? `${leadCount} lead${leadCount === 1 ? "" : "s"} and ${unresolvedCount} unresolved path${unresolvedCount === 1 ? "" : "s"} deserve review.`
-      : "No open evidence paths in this bundle.";
+      : graphOnly
+        ? "Understand the code through its connected paths."
+        : "No open evidence paths in this bundle.";
 
   return (
     <section className="investigation-briefing">
@@ -135,9 +146,9 @@ export function HomeView({
           </div>
           <h1>{title}</h1>
           <p>
-            Start with the strongest witness, inspect what controls it, and keep
-            uncertainty visible. Lachesis shows the path the bundle contains—not
-            a vulnerability verdict.
+            {graphOnly
+              ? "Start with a value flow or request path, then move through the symbols and relationships that make the behavior understandable."
+              : "Start with the strongest witness, inspect what controls it, and keep uncertainty visible. Lachesis shows the path the bundle contains—not a vulnerability verdict."}
           </p>
         </div>
         <div className="briefing-actions">
@@ -176,7 +187,9 @@ export function HomeView({
       <div className="triage-board">
         <section className="priority-investigation">
           <div className="priority-header">
-            <span>Priority investigation</span>
+            <span>
+              {graphOnly ? "Suggested starting path" : "Priority investigation"}
+            </span>
             {priority && <EvidenceState evidence={priority.evidence} />}
           </div>
           {priority ? (
@@ -254,6 +267,71 @@ export function HomeView({
                 )}
               </div>
             </>
+          ) : graphOnly && graphFocus ? (
+            <>
+              <div className="priority-title">
+                <span className="target-mark">
+                  <Icon name="code" size={18} />
+                </span>
+                <div>
+                  <h2>{graphFocus.name}</h2>
+                  <p>Suggested starting path · code understanding</p>
+                </div>
+              </div>
+              <div className="witness-route" aria-label="Path summary">
+                <span>
+                  <small>Starts at</small>
+                  <b>
+                    {app.nodes.find(
+                      (node) => node.id === graphFocus.steps[0]?.node_id,
+                    )?.label ?? "Unknown symbol"}
+                  </b>
+                </span>
+                <i>
+                  <span />
+                </i>
+                <span>
+                  <small>Reaches</small>
+                  <b>
+                    {app.nodes.find(
+                      (node) => node.id === graphFocus.steps.at(-1)?.node_id,
+                    )?.label ?? "Unknown symbol"}
+                  </b>
+                </span>
+              </div>
+              <p className="priority-summary">
+                This bundled path connects {graphFocus.steps.length} symbols.
+                Follow it to see how the code relates before making an
+                interpretation.
+              </p>
+              <div className="judgment-row">
+                <div>
+                  <small>Path type</small>
+                  <b>value flow</b>
+                </div>
+                <div>
+                  <small>Relationships</small>
+                  <b>{app.edges.length} normalized</b>
+                </div>
+                <div>
+                  <small>Evidence</small>
+                  <b>not supplied</b>
+                </div>
+              </div>
+              <div className="priority-actions">
+                <button
+                  onClick={() =>
+                    onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "")
+                  }
+                >
+                  Trace this path{" "}
+                  <span className="action-orb">
+                    <Icon name="arrow" size={13} />
+                  </span>
+                </button>
+                <button onClick={() => onView("map")}>Open full graph</button>
+              </div>
+            </>
           ) : (
             <div className="briefing-empty">
               <h2>No witness paths available</h2>
@@ -268,14 +346,20 @@ export function HomeView({
         <aside className="evidence-queue">
           <div className="queue-heading">
             <div>
-              <span>Evidence queue</span>
-              <small>Choose a lead to keep it in context</small>
+              <span>{graphOnly ? "Graph index" : "Evidence queue"}</span>
+              <small>
+                {graphOnly
+                  ? "Paths available to explore"
+                  : "Choose a lead to keep it in context"}
+              </small>
             </div>
-            <b>{visibleFindings.length}</b>
+            <b>{graphOnly ? app.flows.length : visibleFindings.length}</b>
           </div>
-          <div className="queue-filters" aria-label="Filter evidence queue">
-            {(["all", "lead", "inconclusive", "refuted"] as QueueFilter[]).map(
-              (filter) => (
+          {!graphOnly && (
+            <div className="queue-filters" aria-label="Filter evidence queue">
+              {(
+                ["all", "lead", "inconclusive", "refuted"] as QueueFilter[]
+              ).map((filter) => (
                 <button
                   type="button"
                   key={filter}
@@ -292,18 +376,28 @@ export function HomeView({
                         : "Refuted"}{" "}
                   <span>{filterCount(filter)}</span>
                 </button>
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          )}
           <div className="queue-list">
-            {visibleFindings.map((item, index) => (
+            {queueItems.map((item, index) => (
               <button
                 type="button"
                 key={item.flow.id}
-                className={item.flow.id === priority?.flow.id ? "active" : ""}
-                aria-pressed={item.flow.id === priority?.flow.id}
+                className={
+                  item.flow.id === (priority?.flow.id ?? graphFocus?.id)
+                    ? "active"
+                    : ""
+                }
+                aria-pressed={
+                  item.flow.id === (priority?.flow.id ?? graphFocus?.id)
+                }
                 aria-label={`Select ${item.flow.name}`}
-                onClick={() => setSelectedId(item.flow.id)}
+                onClick={() =>
+                  graphOnly
+                    ? onFlow(item.flow.id, item.flow.steps[0]?.node_id ?? "")
+                    : setSelectedId(item.flow.id)
+                }
               >
                 <span className="queue-index">
                   {String(index + 1).padStart(2, "0")}
@@ -311,32 +405,39 @@ export function HomeView({
                 <span className="queue-copy">
                   <b>{item.flow.name}</b>
                   <small>
-                    {item.evidence?.confidence ?? "bundle"} confidence ·{" "}
-                    {item.flow.steps.length} steps
+                    {graphOnly
+                      ? `${item.flow.steps.length} connected symbols`
+                      : `${item.evidence?.confidence ?? "bundle"} confidence · ${item.flow.steps.length} steps`}
                   </small>
                 </span>
-                <EvidenceState evidence={item.evidence} />
+                {!graphOnly && <EvidenceState evidence={item.evidence} />}
                 <Icon name="arrow" size={12} />
               </button>
             ))}
           </div>
           {!visibleFindings.length && (
-            <p className="queue-empty">No findings match this filter.</p>
+            <p className="queue-empty">
+              {graphOnly
+                ? "Security findings were not included; explore the graph paths instead."
+                : "No findings match this filter."}
+            </p>
           )}
-          <div className="queue-foot">
-            <span>
-              <i className="lead-dot" />
-              {leadCount} lead
-            </span>
-            <span>
-              <i className="unknown-dot" />
-              {unresolvedCount} unresolved
-            </span>
-            <span>
-              <i className="refuted-dot" />
-              {refutedCount} refuted
-            </span>
-          </div>
+          {!graphOnly && (
+            <div className="queue-foot">
+              <span>
+                <i className="lead-dot" />
+                {leadCount} lead
+              </span>
+              <span>
+                <i className="unknown-dot" />
+                {unresolvedCount} unresolved
+              </span>
+              <span>
+                <i className="refuted-dot" />
+                {refutedCount} refuted
+              </span>
+            </div>
+          )}
         </aside>
       </div>
 
