@@ -122,6 +122,8 @@ function verify(file, bundle) {
     if (!Array.isArray(pathList)) fail(file, `paths.${kind} must be an array`);
     const pathIds = new Set();
     for (const [pathIndex, path] of pathList.entries()) {
+      if (path.kind != null && (typeof path.kind !== "string" || path.kind.trim() === ""))
+        fail(file, `paths.${kind}[${pathIndex}].kind must be a non-empty string when supplied`);
       if (path.id != null) {
         const pathId = String(path.id);
         if (!pathId) fail(file, `paths.${kind}[${pathIndex}].id must not be empty`);
