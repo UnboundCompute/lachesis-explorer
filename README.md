@@ -34,8 +34,9 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 Explorer is a code-understanding surface first. Security findings can be layered on top, but they are
 not required to use the graph. A useful first pass is:
 
-1. Load a bundle and choose a question from the Briefing view: follow a value, inspect a caller, find
-   convergence, or understand the system shape.
+1. Load a bundle and start with the suggested path in Briefing, or choose a question when you already
+   know whether you want to follow a value, inspect a caller, find convergence, or understand the
+   system shape.
 2. Follow the highlighted path one step at a time. Each step is a graph relationship with source
    location and provenance, not a generated explanation.
 3. Open the source inspector for the selected symbol to see its signature, module, relationships, and
