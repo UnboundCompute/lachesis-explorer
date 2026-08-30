@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import type { App, Evidence, Flow, Node } from '../lib/lachesis'
 import { Icon } from './Icon'
 
@@ -17,6 +18,7 @@ type Props={
 
 const statusCopy:Record<string,string>={lead:'Review first',inconclusive:'Unresolved',refuted:'Guard observed',verified:'Verified'}
 const statusRank:Record<string,number>={lead:0,inconclusive:1,verified:2,refuted:3}
+type QueueFilter='all'|'lead'|'inconclusive'|'refuted'
 
 function sinkFor(flow:Flow,app:App):Node|undefined{
   const sinkStep=[...flow.steps].reverse().find(step=>step.role==='sink')
@@ -29,11 +31,16 @@ function EvidenceState({evidence}:{evidence?:Evidence}){
 }
 
 export function HomeView({app,isDemo,loadState,onUpload,onView,onFlow,onSink,onEntry}:Props){
-  const findings=app.flows.map(flow=>({flow,evidence:app.mcp.find(item=>item.for===flow.id),sink:sinkFor(flow,app)})).sort((a,b)=>(statusRank[a.evidence?.status??'lead']??4)-(statusRank[b.evidence?.status??'lead']??4))
-  const priority=findings[0]
+  const [selectedId,setSelectedId]=useState(app.flows[0]?.id??'')
+  const [queueFilter,setQueueFilter]=useState<QueueFilter>('all')
+  useEffect(()=>{setSelectedId(app.flows[0]?.id??'');setQueueFilter('all')},[app])
+  const findings=useMemo(()=>app.flows.map(flow=>({flow,evidence:app.mcp.find(item=>item.for===flow.id),sink:sinkFor(flow,app)})).sort((a,b)=>(statusRank[a.evidence?.status??'lead']??4)-(statusRank[b.evidence?.status??'lead']??4)),[app])
+  const visibleFindings=useMemo(()=>queueFilter==='all'?findings:findings.filter(item=>(item.evidence?.status??'lead')===queueFilter),[findings,queueFilter])
+  const priority=visibleFindings.find(item=>item.flow.id===selectedId)??visibleFindings[0]
   const leadCount=findings.filter(item=>item.evidence?.status==='lead'||!item.evidence?.status).length
   const unresolvedCount=findings.filter(item=>item.evidence?.status==='inconclusive').length
   const refutedCount=findings.filter(item=>item.evidence?.status==='refuted').length
+  const filterCount=(filter:QueueFilter)=>filter==='all'?findings.length:findings.filter(item=>(item.evidence?.status??'lead')===filter).length
   const dynamicCount=app.edges.filter(edge=>edge.dynamic).length
   const incompletePaths=app.entries.filter(entry=>!entry.hasLayout).length
   const guardVerdict=priority?.evidence?.guards?.verdict
@@ -76,8 +83,10 @@ export function HomeView({app,isDemo,loadState,onUpload,onView,onFlow,onSink,onE
       </section>
 
       <aside className="evidence-queue">
-        <div className="queue-heading"><div><span>Evidence queue</span><small>Ordered by review state</small></div><b>{findings.length}</b></div>
-        <div className="queue-list">{findings.map((item,index)=><button key={item.flow.id} className={index===0?'active':''} onClick={()=>onFlow(item.flow.id,item.flow.steps[0].node_id)}><span className="queue-index">{String(index+1).padStart(2,'0')}</span><span className="queue-copy"><b>{item.flow.name}</b><small>{item.evidence?.confidence??'bundle'} confidence · {item.flow.steps.length} steps</small></span><EvidenceState evidence={item.evidence}/><Icon name="arrow" size={12}/></button>)}</div>
+        <div className="queue-heading"><div><span>Evidence queue</span><small>Choose a lead to keep it in context</small></div><b>{visibleFindings.length}</b></div>
+        <div className="queue-filters" aria-label="Filter evidence queue">{(['all','lead','inconclusive','refuted'] as QueueFilter[]).map(filter=><button type="button" key={filter} className={queueFilter===filter?'active':''} aria-pressed={queueFilter===filter} onClick={()=>setQueueFilter(filter)}>{filter==='all'?'All':filter==='lead'?'Open':filter==='inconclusive'?'Unresolved':'Refuted'} <span>{filterCount(filter)}</span></button>)}</div>
+        <div className="queue-list">{visibleFindings.map((item,index)=><button type="button" key={item.flow.id} className={item.flow.id===priority?.flow.id?'active':''} aria-pressed={item.flow.id===priority?.flow.id} aria-label={`Select ${item.flow.name}`} onClick={()=>setSelectedId(item.flow.id)}><span className="queue-index">{String(index+1).padStart(2,'0')}</span><span className="queue-copy"><b>{item.flow.name}</b><small>{item.evidence?.confidence??'bundle'} confidence · {item.flow.steps.length} steps</small></span><EvidenceState evidence={item.evidence}/><Icon name="arrow" size={12}/></button>)}</div>
+        {!visibleFindings.length&&<p className="queue-empty">No findings match this filter.</p>}
         <div className="queue-foot"><span><i className="lead-dot"/>{leadCount} lead</span><span><i className="unknown-dot"/>{unresolvedCount} unresolved</span><span><i className="refuted-dot"/>{refutedCount} refuted</span></div>
       </aside>
     </div>
