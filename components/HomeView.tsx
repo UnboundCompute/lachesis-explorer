@@ -105,7 +105,7 @@ export function HomeView({
         ),
     [app],
   );
-  const metadataOnly = findings.length === 0 && app.mcp.length > 0;
+  const metadataOnly = findings.length === 0 && app.flows.length === 0 && app.mcp.length > 0;
   const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
   const graphFocus = useMemo(
     () => [...app.flows].sort((a, b) => recommendationScore(b) - recommendationScore(a))[0],
