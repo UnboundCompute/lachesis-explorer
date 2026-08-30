@@ -232,3 +232,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:500px){.help-backdrop{padding:8vh 10px 10px}.help-dialog{padding:18px}.help-dialog dl>div{grid-template-columns:125px minmax(0,1fr)}}
 .graph-legend::after{content:'Select a node · arrows show direction';margin-left:auto;color:var(--ink-2)}
 .topology-node{cursor:pointer}.topology-node circle{transition:fill 240ms var(--ease),stroke 240ms var(--ease),transform 240ms var(--ease);transform-box:fill-box;transform-origin:center}.topology-node:hover circle{stroke:var(--cyan);transform:scale(1.06)}
+.bundle-mode{color:var(--ink-3);font:700 8px var(--mono);text-transform:uppercase}

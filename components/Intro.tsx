@@ -20,6 +20,9 @@ export function Intro({
   onUpload: () => void;
 }) {
   const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const bundleMode = securityMode
+    ? "Security evidence projection"
+    : "Code exploration graph";
   const copy = {
     trace: [
       "Trace one value. See every handoff.",
@@ -78,6 +81,7 @@ export function Intro({
             <i />
             {isDemo ? "Demo bundle" : "Loaded bundle"}
           </span>
+          <span className="bundle-mode">{bundleMode}</span>
         </div>
         <h1>{copy[0]}</h1>
         <p>{copy[1]}</p>

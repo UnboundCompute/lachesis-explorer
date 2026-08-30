@@ -131,6 +131,9 @@ export function HomeView({
   );
   const metadataOnly = findings.length === 0 && app.flows.length === 0 && app.mcp.length > 0;
   const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
+  const bundleMode = app.findings.length > 0 || app.bundle.projection === "security projection"
+    ? "Security evidence projection"
+    : "Code exploration graph";
   const graphFocus = useMemo(
     () => [...app.flows].sort((a, b) => recommendationScore(b) - recommendationScore(a))[0],
     [app.flows],
@@ -216,7 +219,7 @@ export function HomeView({
               {isDemo ? "Synthetic working bundle" : "Loaded local bundle"}
             </span>
             <span>
-              {app.bundle.projection ?? "graph evidence"} · contract{" "}
+              {bundleMode} · contract{" "}
               {app.bundle.schemaVersion}
             </span>
           </div>
