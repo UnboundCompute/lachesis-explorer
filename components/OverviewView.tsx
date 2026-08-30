@@ -422,17 +422,14 @@ export function OverviewView({
                         >
                           {shorten(roles.join("/") || node.kind, 14)}
                         </text>
-                        {(selected?.id === node.id ||
-                          connectedIds.has(node.id)) && (
-                          <text
-                            className="topology-name"
-                            x={p.x}
-                            y={p.y + 52}
-                            textAnchor="middle"
-                          >
-                            {shorten(node.label || node.id)}
-                          </text>
-                        )}
+                        <text
+                          className="topology-name"
+                          x={p.x}
+                          y={p.y + 52}
+                          textAnchor="middle"
+                        >
+                          {shorten(node.label || node.id, 18)}
+                        </text>
                       </g>
                     );
                   })}
