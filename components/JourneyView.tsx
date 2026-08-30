@@ -156,34 +156,36 @@ export function JourneyView({
         <div className="panel-label hops-label">
           PATH NODES <span>{entry.hops.length}</span>
         </div>
+        <div className="hop-list">
           {entry.hops.map((hop, index) => (
-          <button
-            key={`${index}-${hop.node_id}`}
-            className={selectedIndex === index ? "hop-row selected" : "hop-row"}
-            onClick={() => {
-              const node = app.nodes.find((item) => item.id === hop.node_id);
-              setSelectedPosition(index);
-              onPositionChange?.(index);
-              setHopId(hop.node_id);
-              onInspectorOpen();
-              if (node)
-                onRecord(
-                  "Inspected request node",
-                  node.label || node.id,
-                  `${hop.edge_label} · ${node.file}:${node.line}`,
-                );
-              trackEvent("callpath_hop_selected");
-            }}
-          >
-            <span className="hop-index">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-            <span>
-              <b>{hop.edge_label}</b>
-              <small>{hop.caption}</small>
-            </span>
-          </button>
-        ))}
+            <button
+              key={`${index}-${hop.node_id}`}
+              className={selectedIndex === index ? "hop-row selected" : "hop-row"}
+              onClick={() => {
+                const node = app.nodes.find((item) => item.id === hop.node_id);
+                setSelectedPosition(index);
+                onPositionChange?.(index);
+                setHopId(hop.node_id);
+                onInspectorOpen();
+                if (node)
+                  onRecord(
+                    "Inspected request node",
+                    node.label || node.id,
+                    `${hop.edge_label} · ${node.file}:${node.line}`,
+                  );
+                trackEvent("callpath_hop_selected");
+              }}
+            >
+              <span className="hop-index">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span>
+                <b>{hop.edge_label}</b>
+                <small>{hop.caption}</small>
+              </span>
+            </button>
+          ))}
+        </div>
       </aside>
       <main className="main-panel">
         <div className="toolbar">
