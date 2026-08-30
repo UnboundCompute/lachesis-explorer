@@ -122,7 +122,7 @@ export function TraceView({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search or filter…"
-            aria-label="Filter value flows"
+            aria-label="Filter graph paths"
           />
         </label>
         <div className="filter-hints" aria-label="Suggested semantic filters">
@@ -144,7 +144,7 @@ export function TraceView({
                   setStepId(item.steps[0]?.node_id ?? "");
                   onInspectorOpen();
                   onRecord(
-                    "Opened value flow",
+                    "Opened graph path",
                     item.name,
                     `${item.steps.length} nodes`,
                   );
@@ -163,7 +163,7 @@ export function TraceView({
             ))
           ) : (
             <p className="list-empty">
-              No value flows match this semantic filter.
+              No graph paths match this semantic filter.
             </p>
           )}
         </div>

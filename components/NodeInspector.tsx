@@ -116,7 +116,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
           <div className="detail-rule" />
           <span className="panel-label">WHY IT IS INCLUDED</span>
           <p className="detail-copy">
-            This node is present in {flows.length} value flow
+            This node is present in {flows.length} graph path
             {flows.length === 1 ? "" : "s"}, {entries.length} request path
             {entries.length === 1 ? "" : "s"}, and {relationships.length}{" "}
             normalized relationship{relationships.length === 1 ? "" : "s"} in
@@ -218,7 +218,7 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
         {app && (
           <>
             <div>
-              <dt>Value flows</dt>
+              <dt>Graph paths</dt>
               <dd>{flows.length}</dd>
             </div>
             <div>

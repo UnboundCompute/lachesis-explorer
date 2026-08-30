@@ -156,7 +156,7 @@ export function OverviewView({
   const health = [
     { label: "Graph nodes", value: app.nodes.length },
     { label: "Relationships", value: app.edges.length },
-    { label: "Value flows", value: app.flows.length },
+    { label: "Graph paths", value: app.flows.length },
     { label: "Request paths", value: app.entries.length },
     { label: "MCP records", value: app.mcp.length },
     {
@@ -176,7 +176,7 @@ export function OverviewView({
       );
   }
   const summary = selected
-    ? `${selected.label || selected.id} participates in ${flowCount(selected.id)} value flow${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request path${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} normalized relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
+    ? `${selected.label || selected.id} participates in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request path${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} normalized relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
     : "";
   const visibleIndex = (node: Node) => visible.indexOf(node);
   const graphPos = (node: Node) => pos(Math.max(0, visibleIndex(node)));

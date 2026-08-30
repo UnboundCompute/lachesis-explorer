@@ -63,7 +63,7 @@ export function CommandPalette({
         ...app.flows.map((flow) => ({
           id: `flow-${flow.id}`,
           label: flow.name,
-          meta: `Value flow · ${flow.steps.length} nodes`,
+          meta: `Graph path · ${flow.steps.length} nodes`,
           run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
         })),
         ...app.entries.map((entry, index) => ({
