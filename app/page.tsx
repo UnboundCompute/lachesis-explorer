@@ -36,6 +36,8 @@ type PendingLink = {
   direction?: string;
   entry?: string;
   hop?: string;
+  stepOccurrence?: string;
+  hopOccurrence?: string;
   stepIndex?: number;
   hopIndex?: number;
   sink?: string;
@@ -50,6 +52,13 @@ const viewLabels: Record<View, string> = {
   compare: "Revision diff",
   install: "Local workflow",
 };
+
+function stepAtPosition(app: App, flowId: string, position: number, direction: "backward" | "forward") {
+  const flow = app.flows.find((item) => item.id === flowId);
+  if (!flow) return undefined;
+  const steps = direction === "forward" ? [...flow.steps].reverse() : flow.steps;
+  return steps[position];
+}
 
 export default function Page() {
   const [view, setView] = useState<View>("home");
@@ -143,6 +152,8 @@ export default function Page() {
       direction: params.get("direction") ?? undefined,
       entry: params.get("entry") ?? undefined,
       hop: params.get("hop") ?? undefined,
+      stepOccurrence: params.get("step_occurrence") ?? undefined,
+      hopOccurrence: params.get("hop_occurrence") ?? undefined,
       stepIndex: params.get("step_index") == null ? undefined : Number(params.get("step_index")),
       hopIndex: params.get("hop_index") == null ? undefined : Number(params.get("hop_index")),
       sink: params.get("sink") ?? undefined,
@@ -172,8 +183,14 @@ export default function Page() {
       if (link.node && flow.steps.some((step) => step.node_id === link.node))
         setStepId(link.node);
       const linkedSteps = link.direction === "forward" ? [...flow.steps].reverse() : flow.steps;
-      if (link.stepIndex != null && link.stepIndex >= 0 && link.stepIndex < linkedSteps.length && linkedSteps[link.stepIndex]?.node_id === link.node)
-        setStepIndex(link.stepIndex);
+      const occurrenceIndex = link.stepOccurrence
+        ? linkedSteps.findIndex((step) => step.id === link.stepOccurrence)
+        : -1;
+      const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.stepIndex ?? -1;
+      if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length && (!link.node || linkedSteps[linkedStepIndex]?.node_id === link.node)) {
+        setStepId(linkedSteps[linkedStepIndex].node_id);
+        setStepIndex(linkedStepIndex);
+      }
     }
     const index = starter.entries.findIndex((item) => item.id === link.entry);
     if (index >= 0) {
@@ -183,8 +200,14 @@ export default function Page() {
         starter.entries[index].hops.some((item) => item.node_id === link.hop)
       )
         setHopId(link.hop);
-      if (link.hopIndex != null && link.hopIndex >= 0 && link.hopIndex < starter.entries[index].hops.length && starter.entries[index].hops[link.hopIndex]?.node_id === link.hop)
-        setHopIndex(link.hopIndex);
+      const occurrenceIndex = link.hopOccurrence
+        ? starter.entries[index].hops.findIndex((hop) => hop.id === link.hopOccurrence)
+        : -1;
+      const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.hopIndex ?? -1;
+      if (linkedHopIndex >= 0 && linkedHopIndex < starter.entries[index].hops.length && (!link.hop || starter.entries[index].hops[linkedHopIndex]?.node_id === link.hop)) {
+        setHopId(starter.entries[index].hops[linkedHopIndex].node_id);
+        setHopIndex(linkedHopIndex);
+      }
     }
     if (
       link.sink &&
@@ -318,9 +341,15 @@ export default function Page() {
             ? pending.node
             : (linkedFlow.steps[0]?.node_id ?? ""),
         );
-        const linkedStepIndex = pending.stepIndex;
         const linkedSteps = pending.direction === "forward" ? [...linkedFlow.steps].reverse() : linkedFlow.steps;
-        setStepIndex(linkedStepIndex != null && linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length && linkedSteps[linkedStepIndex]?.node_id === pending.node ? linkedStepIndex : 0);
+        const occurrenceIndex = pending.stepOccurrence
+          ? linkedSteps.findIndex((step) => step.id === pending.stepOccurrence)
+          : -1;
+        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.stepIndex ?? -1;
+        if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length && (!pending.node || linkedSteps[linkedStepIndex]?.node_id === pending.node)) {
+          setStepId(linkedSteps[linkedStepIndex].node_id);
+          setStepIndex(linkedStepIndex);
+        }
         restored = true;
       }
       const linkedEntry = next.entries.findIndex(
@@ -336,8 +365,14 @@ export default function Page() {
             ? pending.hop
             : (next.entries[linkedEntry].hops[0]?.node_id ?? next.nodes[0].id),
         );
-        const linkedHopIndex = pending.hopIndex;
-        setHopIndex(linkedHopIndex != null && linkedHopIndex >= 0 && linkedHopIndex < next.entries[linkedEntry].hops.length && next.entries[linkedEntry].hops[linkedHopIndex]?.node_id === pending.hop ? linkedHopIndex : 0);
+        const occurrenceIndex = pending.hopOccurrence
+          ? next.entries[linkedEntry].hops.findIndex((hop) => hop.id === pending.hopOccurrence)
+          : -1;
+        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.hopIndex ?? -1;
+        if (linkedHopIndex >= 0 && linkedHopIndex < next.entries[linkedEntry].hops.length && (!pending.hop || next.entries[linkedEntry].hops[linkedHopIndex]?.node_id === pending.hop)) {
+          setHopId(next.entries[linkedEntry].hops[linkedHopIndex].node_id);
+          setHopIndex(linkedHopIndex);
+        }
         restored = true;
       }
       if (
@@ -675,6 +710,7 @@ export default function Page() {
               flow: flowId,
               node: stepId,
               direction,
+              step_occurrence: stepAtPosition(app, flowId, position, direction)?.id ?? "",
               step_index: String(position),
             })
           }
@@ -712,6 +748,7 @@ export default function Page() {
               view: "journey",
               entry: app.entries[entryIndex]?.id ?? "",
               hop: hopId,
+              hop_occurrence: app.entries[entryIndex]?.hops[position]?.id ?? "",
               hop_index: String(position),
             })
           }
