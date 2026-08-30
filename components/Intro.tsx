@@ -86,7 +86,7 @@ export function Intro({
           </div>
           <div>
             <dt>Source</dt>
-            <dd>{app.lines.toLocaleString()} lines</dd>
+            <dd>{app.lines > 0 ? `${app.lines.toLocaleString()} lines` : "Not reported"}</dd>
           </div>
           <div>
             <dt>Revision</dt>

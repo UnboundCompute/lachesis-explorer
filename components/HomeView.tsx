@@ -672,7 +672,7 @@ export function HomeView({
             Local-only inspection
           </span>
           <span>
-            {app.language} · {app.lines.toLocaleString()} indexed lines
+            {app.language} · {app.lines > 0 ? `${app.lines.toLocaleString()} indexed lines` : "line count not reported"}
           </span>
           <span className="coverage-note">
             <i />
