@@ -48,7 +48,19 @@ function sinkFor(flow: Flow, app: App): Node | undefined {
 }
 
 function sourceFor(flow: Flow, app: App): Node | undefined {
-  return app.nodes.find((node) => node.id === (flow.sourceNodeId ?? flow.steps[0]?.node_id));
+  const sourceStep = flow.steps.find((step) =>
+    ["source", "origin"].includes(step.role.trim().toLowerCase()),
+  );
+  return app.nodes.find(
+    (node) => node.id === (flow.sourceNodeId ?? sourceStep?.node_id ?? (flow.steps.length > 1 ? flow.steps[0]?.node_id : undefined)),
+  );
+}
+
+function recommendationScore(flow: Flow) {
+  const roles = flow.steps.map((step) => step.role.trim().toLowerCase());
+  const hasSource = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin"].includes(role));
+  const hasSink = Boolean(flow.sinkNodeId) || roles.includes("sink");
+  return (flow.steps.length > 1 ? 100 : 0) + (hasSource ? 20 : 0) + (hasSink ? 20 : 0) + flow.steps.length;
 }
 
 function EvidenceState({ evidence }: { evidence?: Evidence }) {
@@ -95,7 +107,10 @@ export function HomeView({
   );
   const metadataOnly = findings.length === 0 && app.mcp.length > 0;
   const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
-  const graphFocus = app.flows[0];
+  const graphFocus = useMemo(
+    () => [...app.flows].sort((a, b) => recommendationScore(b) - recommendationScore(a))[0],
+    [app.flows],
+  );
   const firstEntry = app.entries[0];
   const firstSink = app.nodes.find(
     (node) =>
@@ -378,9 +393,7 @@ export function HomeView({
                 <span>
                   <small>Starts at</small>
                   <b>
-                    {app.nodes.find(
-                      (node) => node.id === (graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id),
-                    )?.label ?? "Unknown symbol"}
+                    {sourceFor(graphFocus, app)?.label ?? "Source not reported"}
                   </b>
                 </span>
                 <i>
@@ -389,9 +402,7 @@ export function HomeView({
                 <span>
                   <small>Reaches</small>
                   <b>
-                    {app.nodes.find(
-                      (node) => node.id === (graphFocus.sinkNodeId ?? graphFocus.steps.at(-1)?.node_id),
-                    )?.label ?? "Unknown symbol"}
+                    {sinkFor(graphFocus, app)?.label ?? "Boundary not reported"}
                   </b>
                 </span>
               </div>
