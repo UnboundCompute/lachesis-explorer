@@ -58,7 +58,10 @@ path step or request-path hop when the path projection has more specific
 context than the underlying edge.
 
 Files and modules provide the hierarchy needed for progressive exploration:
-repository → package → module/file → symbol → path.
+repository → package → module/file → symbol → path. When modules or
+entrypoints list node IDs, every listed node must exist in `graph.nodes`; their
+IDs must also be unique within their respective collections so navigation
+targets remain deterministic.
 
 Entrypoints identify places a developer can start, including HTTP routes,
 CLI commands, jobs, event handlers, public APIs, and exported functions.

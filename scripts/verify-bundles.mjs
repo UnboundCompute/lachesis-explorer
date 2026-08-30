@@ -22,6 +22,24 @@ function validateNodes(file, ids, steps, label, { required = true } = {}) {
   }
 }
 
+function validateCatalog(file, ids, items, label) {
+  if (items == null) return;
+  if (!Array.isArray(items)) fail(file, `graph.${label} must be an array`);
+  const catalogIds = new Set();
+  for (const [index, item] of items.entries()) {
+    if (item.id != null) {
+      const id = String(item.id);
+      if (!id) fail(file, `graph.${label}[${index}].id must not be empty`);
+      if (catalogIds.has(id)) fail(file, `graph.${label}[${index}] duplicates ID ${id}`);
+      catalogIds.add(id);
+    }
+    for (const nodeId of item.node_ids ?? []) {
+      if (!ids.has(String(nodeId))) fail(file, `graph.${label}[${index}] references a missing node`);
+    }
+    if (item.node_id != null && !ids.has(String(item.node_id))) fail(file, `graph.${label}[${index}] references a missing node`);
+  }
+}
+
 function verify(file, bundle) {
   if (!bundle || typeof bundle !== "object" || Array.isArray(bundle)) fail(file, "bundle must be a JSON object");
   const schemaVersion = String(bundle.schema_version ?? "");
@@ -44,6 +62,9 @@ function verify(file, bundle) {
     if (coverage?.indexed_nodes != null && Number(coverage.indexed_nodes) < Number(coverage.included_nodes ?? graph.nodes.length)) fail(file, "graph.coverage.indexed_nodes cannot be less than included_nodes");
   }
   if (graph.edges != null && !Array.isArray(graph.edges)) fail(file, "graph.edges must be an array");
+  validateCatalog(file, ids, graph.files, "files");
+  validateCatalog(file, ids, graph.modules, "modules");
+  validateCatalog(file, ids, graph.entrypoints, "entrypoints");
 
   const edgeIds = new Set();
   for (const [index, edge] of (graph.edges ?? []).entries()) {

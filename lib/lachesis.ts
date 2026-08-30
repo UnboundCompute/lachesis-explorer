@@ -197,6 +197,14 @@ function normalizeGraphV2(raw:any):App {
   const files=normalizeFiles(graph.files)
   const modules=normalizeModules(graph.modules)
   const entrypoints=normalizeEntrypoints(graph.entrypoints)
+  assertUniqueIds(files,'Graph files')
+  assertUniqueIds(modules,'Graph modules')
+  assertUniqueIds(entrypoints,'Graph entrypoints')
+  const knownNodeIds=new Set(nodes.map(node=>node.id))
+  const brokenModule=modules.flatMap(module=>module.nodeIds??[]).find(nodeId=>!knownNodeIds.has(nodeId))
+  if (brokenModule) throw new Error(`A graph module references missing node "${brokenModule}".`)
+  const brokenEntrypoint=entrypoints.find(entrypoint=>entrypoint.nodeId&&!knownNodeIds.has(entrypoint.nodeId))
+  if (brokenEntrypoint) throw new Error(`Graph entrypoint "${brokenEntrypoint.id}" references missing node "${brokenEntrypoint.nodeId}".`)
   const pathValues=raw.paths?.values??graph.value_flows??raw.value_flows??[]
   const pathRequests=raw.paths?.requests??graph.request_paths??raw.callpaths??[]
   const findings=raw.security?.findings??raw.findings??[]
