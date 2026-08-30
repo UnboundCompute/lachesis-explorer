@@ -80,6 +80,7 @@ export default function Page() {
   const compareFileRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
   const pendingLink = useRef<PendingLink | null>(null);
+  const importBusy = useRef(false);
 
   const record = useCallback(
     (action: string, target: string, detail: string) =>
@@ -380,6 +381,8 @@ export default function Page() {
 
   async function upload(file?: File) {
     if (!file) return;
+    if (importBusy.current) return;
+    importBusy.current = true;
     setLoadState({ type: "loading", message: `Reading ${file.name}…` });
     try {
       const text = await file.text();
@@ -397,11 +400,14 @@ export default function Page() {
       });
       trackEvent("bundle_load_failed");
     } finally {
+      importBusy.current = false;
       setDragActive(false);
     }
   }
 
   async function loadCodeSample() {
+    if (importBusy.current) return;
+    importBusy.current = true;
     setLoadState({
       type: "loading",
       message: "Reading the code exploration sample…",
@@ -417,11 +423,15 @@ export default function Page() {
         message: `${error instanceof Error ? error.message : "Could not load the code exploration sample"} The current bundle was kept.`,
       });
       trackEvent("bundle_load_failed");
+    } finally {
+      importBusy.current = false;
     }
   }
 
   async function uploadComparison(file?: File) {
     if (!file) return;
+    if (importBusy.current) return;
+    importBusy.current = true;
     try {
       const raw = JSON.parse(await file.text());
       setCompareApp(normalize(raw));
@@ -439,6 +449,7 @@ export default function Page() {
       });
       trackEvent("comparison_bundle_load_failed");
     } finally {
+      importBusy.current = false;
       if (compareFileRef.current) compareFileRef.current.value = "";
     }
   }
