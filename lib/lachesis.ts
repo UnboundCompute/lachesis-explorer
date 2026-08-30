@@ -83,7 +83,10 @@ export function normalize(raw: any): App {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Bundle must be a JSON object.')
   // bundle/1.0: findings are versioned envelopes. bundle/0.x (below) stays a
   // permissive adapter for the flow-centric prototype format.
-  if (String(raw.schema_version ?? '') === '2.0') return normalizeGraphV2(raw)
+  if (String(raw.schema_version ?? '') === '2.0') {
+    if (String(raw.format ?? '') !== 'lachesis-explorer-bundle') throw new Error('Graph-first bundles must use format "lachesis-explorer-bundle".')
+    return normalizeGraphV2(raw)
+  }
   if (Array.isArray(raw.findings) || raw.format === 'lachesis-explorer-bundle') return normalizeBundleV1(raw)
   const source = raw.graph ?? raw
   if (!source || typeof source !== 'object') throw new Error('Expected a graph object in bundle.json.')
@@ -113,6 +116,7 @@ export function normalize(raw: any): App {
 }
 
 function normalizeBundleV1(raw: any): App {
+  if (raw.format != null && String(raw.format) !== 'lachesis-explorer-bundle') throw new Error('Finding bundles must use format "lachesis-explorer-bundle".')
   const graph = raw.graph ?? {}
   const manifest = raw.evidence_manifest ?? {}
   const meta = raw.meta ?? {}

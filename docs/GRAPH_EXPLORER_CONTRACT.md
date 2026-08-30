@@ -9,6 +9,11 @@ over the graph; they must not be required for graph exploration.
 Graph-first bundles use `format: "lachesis-explorer-bundle"` and
 `schema_version: "2.0"`.
 
+The format value is part of the envelope contract, not an informational
+label. A `2.0` bundle with another format value is invalid and must be
+rejected before it replaces the active bundle. The Explorer still accepts
+older flow-centric bundles through its compatibility adapter.
+
 ```json
 {
   "format": "lachesis-explorer-bundle",

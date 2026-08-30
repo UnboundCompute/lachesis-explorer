@@ -17,6 +17,11 @@ function validateNodes(file, ids, steps, label, { required = true } = {}) {
 
 function verify(file, bundle) {
   if (!bundle || typeof bundle !== "object" || Array.isArray(bundle)) fail(file, "bundle must be a JSON object");
+  const schemaVersion = String(bundle.schema_version ?? "");
+  const format = String(bundle.format ?? "");
+  if (format && format !== "lachesis-explorer-bundle") fail(file, "format must be lachesis-explorer-bundle");
+  if (schemaVersion && !["1.0", "2.0"].includes(schemaVersion)) fail(file, `unsupported schema_version ${schemaVersion}`);
+  if (schemaVersion === "2.0" && format !== "lachesis-explorer-bundle") fail(file, "2.0 bundles must declare format lachesis-explorer-bundle");
   const graph = bundle.graph;
   if (!graph || !Array.isArray(graph.nodes)) fail(file, "graph.nodes must be an array");
   const ids = new Set(graph.nodes.map((node) => String(node.id ?? node.node_id ?? "")));
@@ -53,7 +58,7 @@ function verify(file, bundle) {
     if (witness != null) validateNodes(file, ids, witness, `findings[${index}].witness`, { required: false });
   }
 
-  if (bundle.security != null && typeof bundle.security !== "object") fail(file, "security must be an object");
+  if (bundle.security != null && (typeof bundle.security !== "object" || Array.isArray(bundle.security))) fail(file, "security must be an object");
   console.log(`${file}: valid (${graph.nodes.length} nodes, ${(graph.edges ?? []).length} edges)`);
 }
 
