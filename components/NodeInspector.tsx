@@ -184,7 +184,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
             <span className="panel-label">{securityContext ? "CONNECTED EVIDENCE" : "CONNECTED CONTEXT"}</span>
             {flows.length > 0 && (
               <div>
-                <small>VALUE FLOWS</small>
+                <small>GRAPH PATHS</small>
                 {(showAllConnections ? flows : flows.slice(0, 4)).map((flow) =>
                   onFlow ? (
                     <button
