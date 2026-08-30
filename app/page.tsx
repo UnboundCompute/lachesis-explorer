@@ -267,6 +267,52 @@ export default function Page() {
   }, [app, direction, entryIndex, flowId, hopId, hopIndex, isDemo, sinkId, stepId, stepIndex, view]);
 
   useEffect(() => {
+    function restoreFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const nextView = params.get("view");
+      if (nextView && ["home", "trace", "journey", "investigate", "map", "compare", "install"].includes(nextView))
+        setView(nextView as View);
+      const linkedFlow = app.flows.find((item) => item.id === params.get("flow"));
+      if (linkedFlow) {
+        const linkedSteps = params.get("direction") === "forward" ? [...linkedFlow.steps].reverse() : linkedFlow.steps;
+        const occurrenceIndex = params.get("step_occurrence")
+          ? linkedSteps.findIndex((step) => step.id === params.get("step_occurrence"))
+          : -1;
+        const requestedIndex = params.get("step_index") == null ? -1 : Number(params.get("step_index"));
+        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex;
+        if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length) {
+          setFlowId(linkedFlow.id);
+          setStepId(linkedSteps[linkedStepIndex].node_id);
+          setStepIndex(linkedStepIndex);
+        }
+      }
+      const linkedEntry = app.entries.findIndex((item) => item.id === params.get("entry"));
+      if (linkedEntry >= 0) {
+        const hops = app.entries[linkedEntry].hops;
+        const occurrenceIndex = params.get("hop_occurrence")
+          ? hops.findIndex((hop) => hop.id === params.get("hop_occurrence"))
+          : -1;
+        const requestedIndex = params.get("hop_index") == null ? -1 : Number(params.get("hop_index"));
+        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex;
+        if (linkedHopIndex >= 0 && linkedHopIndex < hops.length) {
+          setEntryIndex(linkedEntry);
+          setHopId(hops[linkedHopIndex].node_id);
+          setHopIndex(linkedHopIndex);
+        }
+      }
+      const linkedSink = params.get("sink");
+      if (linkedSink && app.nodes.some((node) => node.id === linkedSink && node.kind === "sink"))
+        setSinkId(linkedSink);
+      const linkedNode = params.get("node");
+      if (nextView === "map" && linkedNode && app.nodes.some((node) => node.id === linkedNode))
+        setFocusNodeId(linkedNode);
+      setDirection(params.get("direction") === "forward" ? "forward" : "backward");
+    }
+    window.addEventListener("popstate", restoreFromUrl);
+    return () => window.removeEventListener("popstate", restoreFromUrl);
+  }, [app]);
+
+  useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
       const editing = target.matches(
