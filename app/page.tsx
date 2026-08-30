@@ -21,6 +21,7 @@ import {
 import { starter, normalize, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
+import { readLocal, removeLocal, writeLocal } from "../lib/storage";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -100,13 +101,13 @@ export default function Page() {
   );
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("lachesis-theme");
+    const stored = readLocal("lachesis-theme");
     if (stored === "light") setDark(false);
   }, []);
   useEffect(() => {
     try {
       const stored = JSON.parse(
-        window.localStorage.getItem("lachesis-recent-bundles") ?? "[]",
+        readLocal("lachesis-recent-bundles") ?? "[]",
       );
       if (Array.isArray(stored))
         setRecentBundles(
@@ -120,12 +121,12 @@ export default function Page() {
             .slice(0, 3),
         );
     } catch {
-      window.localStorage.removeItem("lachesis-recent-bundles");
+      removeLocal("lachesis-recent-bundles");
     }
   }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
-    window.localStorage.setItem("lachesis-theme", dark ? "dark" : "light");
+    writeLocal("lachesis-theme", dark ? "dark" : "light");
   }, [dark]);
 
   useEffect(() => {
@@ -362,7 +363,7 @@ export default function Page() {
             `${item.name}:${item.commit}` !== `${recent.name}:${recent.commit}`,
         ),
       ].slice(0, 3);
-      window.localStorage.setItem(
+      writeLocal(
         "lachesis-recent-bundles",
         JSON.stringify(updated),
       );
