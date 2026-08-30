@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { Icon } from "./Icon";
@@ -37,6 +37,12 @@ export function JourneyView({
   onEntry,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
+  const [selectedPosition, setSelectedPosition] = useState(0);
+  useEffect(() => {
+    if (!entry) return;
+    const position = entry.hops.findIndex((hop) => hop.node_id === hopId);
+    setSelectedPosition(position >= 0 ? position : 0);
+  }, [entryIndex]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -87,11 +93,14 @@ export function JourneyView({
   }));
   const selectedIndex = Math.max(
     0,
-    items.findIndex((item) => item.id === hopId),
+    items[selectedPosition]?.id === hopId
+      ? selectedPosition
+      : items.findIndex((item) => item.id === hopId),
   );
   function moveHop(delta: number) {
     const next = items[selectedIndex + delta];
     if (!next) return;
+    setSelectedPosition(selectedIndex + delta);
     setHopId(next.id);
     onInspectorOpen();
     onRecord(
@@ -137,12 +146,13 @@ export function JourneyView({
         <div className="panel-label hops-label">
           PATH NODES <span>{entry.hops.length}</span>
         </div>
-        {entry.hops.map((hop, index) => (
+          {entry.hops.map((hop, index) => (
           <button
             key={`${index}-${hop.node_id}`}
             className={hopId === hop.node_id ? "hop-row selected" : "hop-row"}
             onClick={() => {
               const node = app.nodes.find((item) => item.id === hop.node_id);
+              setSelectedPosition(index);
               setHopId(hop.node_id);
               onInspectorOpen();
               if (node)
@@ -240,8 +250,10 @@ export function JourneyView({
         <PathCanvas
           items={items}
           selectedId={hopId}
-          onSelect={(id) => {
+          selectedIndex={selectedIndex}
+          onSelect={(id, index) => {
             const node = app.nodes.find((item) => item.id === id);
+            setSelectedPosition(index);
             setHopId(id);
             onInspectorOpen();
             if (node)
