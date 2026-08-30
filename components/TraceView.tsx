@@ -22,6 +22,8 @@ type Props = {
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "journey" | "map") => void;
   onShare: () => void;
+  onFlow: (flowId: string, nodeId: string) => void;
+  onEntry: (entryIndex: number, nodeId: string) => void;
 };
 function matchesFlow(app: App, flow: Flow, query: string) {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -80,6 +82,8 @@ export function TraceView({
   onRecord,
   onView,
   onShare,
+  onFlow,
+  onEntry,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   if (!flow)
@@ -337,7 +341,13 @@ export function TraceView({
         />
       </main>
       {inspectorOpen && (
-        <NodeInspector node={selected} app={app} onClose={onInspectorClose} />
+        <NodeInspector
+          node={selected}
+          app={app}
+          onFlow={onFlow}
+          onEntry={onEntry}
+          onClose={onInspectorClose}
+        />
       )}
     </section>
   );

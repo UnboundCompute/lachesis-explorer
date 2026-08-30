@@ -17,6 +17,8 @@ type Props = {
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map") => void;
   onShare: () => void;
+  onFlow: (flowId: string, nodeId: string) => void;
+  onEntry: (entryIndex: number, nodeId: string) => void;
 };
 export function JourneyView({
   app,
@@ -30,6 +32,8 @@ export function JourneyView({
   onRecord,
   onView,
   onShare,
+  onFlow,
+  onEntry,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
   if (!entry)
@@ -246,7 +250,13 @@ export function JourneyView({
         />
       </main>
       {inspectorOpen && (
-        <NodeInspector node={selected} app={app} onClose={onInspectorClose} />
+        <NodeInspector
+          node={selected}
+          app={app}
+          onFlow={onFlow}
+          onEntry={onEntry}
+          onClose={onInspectorClose}
+        />
       )}
     </section>
   );

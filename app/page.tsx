@@ -631,6 +631,17 @@ export default function Page() {
               direction,
             })
           }
+          onFlow={(nextFlow, nextNode) => {
+            setFlowId(nextFlow);
+            setStepId(nextNode);
+            setInspectorOpen(true);
+          }}
+          onEntry={(nextIndex, nextHop) => {
+            setView("journey");
+            setEntryIndex(nextIndex);
+            setHopId(nextHop);
+            setInspectorOpen(true);
+          }}
         />
       )}
       {view === "journey" && (
@@ -652,6 +663,17 @@ export default function Page() {
               hop: hopId,
             })
           }
+          onFlow={(nextFlow, nextNode) => {
+            setView("trace");
+            setFlowId(nextFlow);
+            setStepId(nextNode);
+            setInspectorOpen(true);
+          }}
+          onEntry={(nextIndex, nextHop) => {
+            setEntryIndex(nextIndex);
+            setHopId(nextHop);
+            setInspectorOpen(true);
+          }}
         />
       )}
       {view === "investigate" && (
