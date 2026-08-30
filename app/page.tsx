@@ -95,7 +95,7 @@ export default function Page() {
     }else{
       ;['flow','node','direction','entry','hop','sink'].forEach(key=>url.searchParams.delete(key))
     }
-    window.history.replaceState(window.history.state,'',url)
+    if(window.history.state)window.history.replaceState(window.history.state,'',url)
   },[urlReady,pendingLocal,bundleScope,view,flowId,stepId,direction,entryIndex,hopId,sinkId,app.entries])
 
   useEffect(()=>{
