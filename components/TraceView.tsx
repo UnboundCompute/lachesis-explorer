@@ -73,6 +73,21 @@ function matchesFlow(app: App, flow: Flow, query: string) {
     return haystack.includes(term);
   });
 }
+
+function flowLocation(app: App, flow: Flow) {
+  const nodes = flow.steps
+    .map((step) => app.nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean);
+  const location = (node: (typeof app.nodes)[number]) =>
+    `${node.file || "source unavailable"}:${node.line || "—"}`;
+  if (!nodes.length) return "Source location unavailable";
+  const first = nodes[0]!;
+  const last = nodes[nodes.length - 1]!;
+  return first.id === last.id
+    ? location(first)
+    : `${location(first)} → ${location(last)}`;
+}
+
 export function TraceView({
   app,
   flowId,
@@ -261,6 +276,9 @@ export function TraceView({
                       ? "Security witness"
                       : "Value path"} {" · "}
                     {item.steps.length} nodes · {indirectionCount(item)} indirect
+                  </small>
+                  <small className="node-row-context">
+                    {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary ?? flowLocation(app, item)}
                   </small>
                 </span>
               </button>

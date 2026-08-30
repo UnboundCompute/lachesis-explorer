@@ -2,6 +2,8 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
+.node-row-context{color:var(--ink-2)!important}
+
 :root {
   --canvas:#07100d; --canvas-raised:#0a1511; --surface:#0d1a15; --surface-2:#11231c; --surface-3:#172c24;
   --ink:#e9f1ed; --ink-2:#a5b7af; --ink-3:#71877d; --ink-4:#536a5f; --line:#21382f; --line-strong:#315246;
