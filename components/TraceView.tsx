@@ -274,7 +274,13 @@ export function TraceView({
             <button
               type="button"
               key={suggestion.query}
-              onClick={() => setQuery(suggestion.query)}
+              onClick={() => {
+                setQuery(suggestion.query);
+                trackEvent("semantic_filter_applied", {
+                  surface: "trace",
+                  filter: suggestion.query.split(":", 1)[0] || "text",
+                });
+              }}
             >
               {suggestion.label}
             </button>
@@ -283,7 +289,10 @@ export function TraceView({
             <button
               type="button"
               className="query-clear"
-              onClick={() => setQuery("")}
+              onClick={() => {
+                setQuery("");
+                trackEvent("semantic_filter_cleared", { surface: "trace" });
+              }}
             >
               Clear
             </button>

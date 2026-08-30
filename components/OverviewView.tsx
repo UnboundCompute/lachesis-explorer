@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { App, Node } from "../lib/lachesis";
+import { trackEvent } from "../lib/analytics";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
 
@@ -341,7 +342,13 @@ export function OverviewView({
               <button
                 type="button"
                 key={suggestion.query}
-                onClick={() => setQuery(suggestion.query)}
+                onClick={() => {
+                  setQuery(suggestion.query);
+                  trackEvent("semantic_filter_applied", {
+                    surface: "topology",
+                    filter: suggestion.query.split(":", 1)[0] || "text",
+                  });
+                }}
               >
                 {suggestion.label}
               </button>
@@ -350,7 +357,10 @@ export function OverviewView({
               <button
                 type="button"
                 className="query-clear"
-                onClick={() => setQuery("")}
+                onClick={() => {
+                  setQuery("");
+                  trackEvent("semantic_filter_cleared", { surface: "topology" });
+                }}
               >
                 Clear
               </button>
