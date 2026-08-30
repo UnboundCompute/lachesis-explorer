@@ -271,7 +271,7 @@ export function OverviewView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Ask the graph: kind:sink file:db/ edge:dynamic"
+            placeholder="Filter nodes: kind:sink file:db/ edge:dynamic"
             aria-label="Filter graph nodes"
           />
           <div className="query-chips">
