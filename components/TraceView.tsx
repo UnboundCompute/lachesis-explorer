@@ -42,8 +42,12 @@ function matchesFlow(app: App, flow: Flow, query: string) {
             ? step.edge?.alias
             : value === "dynamic"
               ? step.edge?.dynamic
+              : value === "uncertain"
+                ? Boolean(step.edge?.confidence || step.edge?.limitations?.length)
               : false,
         );
+      if (key === "confidence")
+        return flow.steps.some((step) => step.edge?.confidence?.toLowerCase().includes(value));
       if (key === "kind")
         return nodes.some((node) => node?.kind.toLowerCase().includes(value));
       if (key === "file")
@@ -181,6 +185,7 @@ export function TraceView({
         <div className="filter-hints" aria-label="Suggested semantic filters">
           <button onClick={() => setQuery("edge:dynamic")}>dynamic</button>
           <button onClick={() => setQuery("edge:alias")}>alias</button>
+          <button onClick={() => setQuery("edge:uncertain")}>uncertain</button>
           <button onClick={() => setQuery("kind:sink")}>sink</button>
           <button onClick={() => setQuery("has:mcp")}>MCP</button>
           {query && (

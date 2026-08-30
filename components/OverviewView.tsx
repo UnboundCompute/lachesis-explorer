@@ -51,7 +51,15 @@ function matches(node: Node, query: string, app: App) {
                 ? edge.alias
                 : value === "dynamic"
                   ? edge.dynamic
+                  : value === "uncertain"
+                    ? Boolean(edge.confidence || edge.limitations?.length)
                   : false),
+          );
+        if (key === "confidence")
+          return app.edges.some(
+            (edge) =>
+              (edge.source === node.id || edge.target === node.id) &&
+              edge.confidence?.toLowerCase().includes(value),
           );
       }
       return [
@@ -253,6 +261,9 @@ export function OverviewView({
             </button>
             <button type="button" onClick={() => setQuery("edge:dynamic")}>
               dynamic
+            </button>
+            <button type="button" onClick={() => setQuery("edge:uncertain")}>
+              uncertain
             </button>
             <button type="button" onClick={() => setQuery("has:mcp")}>
               MCP
