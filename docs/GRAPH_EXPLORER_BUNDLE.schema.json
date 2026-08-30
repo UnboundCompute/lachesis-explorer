@@ -11,6 +11,7 @@
     "meta": { "$ref": "#/$defs/meta" },
     "graph": { "$ref": "#/$defs/graph" },
     "paths": { "$ref": "#/$defs/paths" },
+    "mcp": { "type": "array", "items": { "$ref": "#/$defs/mcp" } },
     "security": { "$ref": "#/$defs/security" }
   },
   "additionalProperties": true,
@@ -169,6 +170,26 @@
         "alias": { "type": "boolean" },
         "dynamic": { "type": "boolean" },
         "confidence": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "mcp": {
+      "type": "object",
+      "properties": {
+        "for": { "type": "string" },
+        "flow": { "type": "string" },
+        "tool": { "type": "string" },
+        "verb": { "type": "string" },
+        "args": {},
+        "result_summary": { "type": "string" },
+        "hops": { "type": "integer", "minimum": 0 },
+        "nodes": { "type": ["integer", "array"] },
+        "node_ids": { "type": "array", "items": { "type": "string" } },
+        "indirections": { "type": "integer", "minimum": 0 },
+        "confidence": { "type": "string" },
+        "origin": { "type": "string" },
+        "status": { "type": "string" },
         "limitations": { "type": "array", "items": { "type": "string" } }
       },
       "additionalProperties": true

@@ -121,8 +121,9 @@ function verify(file, bundle) {
     }
   }
 
-  if (bundle.mcp != null && !Array.isArray(bundle.mcp)) fail(file, "mcp must be an array");
-  for (const [index, record] of (bundle.mcp ?? []).entries()) {
+  const mcpRecords = bundle.mcp ?? graph.mcp;
+  if (mcpRecords != null && !Array.isArray(mcpRecords)) fail(file, "mcp must be an array");
+  for (const [index, record] of (mcpRecords ?? []).entries()) {
     for (const nodeId of (Array.isArray(record.nodes) ? record.nodes : record.node_ids ?? [])) {
       if (!ids.has(String(nodeId))) fail(file, `mcp[${index}] references a missing node`);
     }

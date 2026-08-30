@@ -39,7 +39,7 @@ function normalizeEvidence(raw: any): Evidence {
       ? raw.node_ids.map(String)
       : undefined
   const nodeCount = nodeIds?.length ?? (raw.nodes == null ? undefined : Number(raw.nodes))
-  return {for:String(raw.for??raw.flow??''),verb:String(raw.tool??raw.verb??''),args:formatArgs(raw.args),result_summary:String(raw.result_summary??''),hops:raw.hops==null?undefined:Number(raw.hops),nodes:Number.isFinite(nodeCount)?nodeCount:undefined,node_ids:nodeIds,indirections:raw.indirections==null?undefined:Number(raw.indirections),confidence:raw.confidence==null?undefined:String(raw.confidence),origin:raw.origin==null?undefined:String(raw.origin)}
+  return {for:String(raw.for??raw.flow??''),verb:String(raw.tool??raw.verb??''),args:formatArgs(raw.args),result_summary:String(raw.result_summary??''),hops:raw.hops==null?undefined:Number(raw.hops),nodes:Number.isFinite(nodeCount)?nodeCount:undefined,node_ids:nodeIds,indirections:raw.indirections==null?undefined:Number(raw.indirections),confidence:raw.confidence==null?undefined:String(raw.confidence),origin:raw.origin==null?undefined:String(raw.origin),status:raw.status==null?undefined:String(raw.status),limitations:Array.isArray(raw.limitations)?raw.limitations.map(String):undefined,guards:raw.guards}
 }
 
 function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoint | undefined {
@@ -280,7 +280,15 @@ function normalizeGraphV2(raw:any):App {
   if(brokenEntry)throw new Error(`An entrypoint references missing node "${brokenEntry.node_id}".`)
   const brokenEdge=explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
   if(brokenEdge)throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
-  const evidence:Evidence[]=Array.isArray(findings)?findings.map((f:any)=>{const id=String(f.finding_id??f.id??'');const steps=Array.isArray(f.witness?.steps)?f.witness.steps:[];const nodeIds=steps.map((s:any)=>String(s.node_id??s.nodeId??s.node??'')).filter(Boolean);const loc=(f.locations??[]).map((l:any)=>l.symbol?`${l.symbol}${l.file?` (${l.file}${l.line?`:${l.line}`:''})`:''}`:'').filter(Boolean).join(' · ');return {for:id,verb:String(f.analysis?.projection??f.projection??'finding'),args:loc,result_summary:String(f.result_summary??f.objective??'Security evidence attached to this graph path.'),nodes:nodeIds.length,node_ids:nodeIds,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:String(f.origin??f.analysis?.origin??'finding envelope'),status:f.status==null?undefined:String(f.status),lifecycle:f.lifecycle_state==null?undefined:String(f.lifecycle_state),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}}):[]
+  const findingEvidence:Evidence[]=Array.isArray(findings)?findings.map((f:any)=>{const id=String(f.finding_id??f.id??'');const steps=Array.isArray(f.witness?.steps)?f.witness.steps:[];const nodeIds=steps.map((s:any)=>String(s.node_id??s.nodeId??s.node??'')).filter(Boolean);const loc=(f.locations??[]).map((l:any)=>l.symbol?`${l.symbol}${l.file?` (${l.file}${l.line?`:${l.line}`:''})`:''}`:'').filter(Boolean).join(' · ');return {for:id,verb:String(f.analysis?.projection??f.projection??'finding'),args:loc,result_summary:String(f.result_summary??f.objective??'Security evidence attached to this graph path.'),nodes:nodeIds.length,node_ids:nodeIds,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:String(f.origin??f.analysis?.origin??'finding envelope'),status:f.status==null?undefined:String(f.status),lifecycle:f.lifecycle_state==null?undefined:String(f.lifecycle_state),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}}):[]
+  const rawMcp=raw.mcp??graph.mcp
+  const mcpEvidence:Array<Evidence>=Array.isArray(rawMcp)?rawMcp.map(normalizeEvidence):[]
+  const evidenceById=new Map<string,Evidence>()
+  mcpEvidence.forEach((item)=>{if(item.for)evidenceById.set(item.for,item)})
+  findingEvidence.forEach((item)=>{if(item.for&&!evidenceById.has(item.for))evidenceById.set(item.for,item)})
+  const evidence=[...evidenceById.values()]
+  const brokenMcp=evidence.flatMap(item=>item.node_ids??[]).find(nodeId=>!ids.has(nodeId))
+  if(brokenMcp)throw new Error(`MCP evidence references missing node "${brokenMcp}".`)
   const coverage=graph.coverage??{}
   const limitations=Array.isArray(coverage.limitations)?coverage.limitations.map(String):[]
   const capabilities=Array.isArray(graph.capabilities)?graph.capabilities.map(String):[]

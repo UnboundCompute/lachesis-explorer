@@ -102,6 +102,13 @@ zero findings remains valid and must present a clean security state rather
 than failing to load. Findings without witness steps may remain as metadata,
 but are not exposed as traceable paths until a witness is available.
 
+Top-level `mcp` records are an independent provenance layer and may be present
+even when `security.findings` is absent. Their `for`/`flow` value identifies the
+path or finding they explain, and their node references must resolve against
+`graph.nodes`. When a finding also produces derived evidence for the same ID,
+the explicit MCP record takes precedence. `graph.mcp` is accepted as a
+compatibility location for producers that keep all graph evidence together.
+
 ## Scope and completeness
 
 `indexed_nodes` describes the analyzed repository/index. The number of nodes in
