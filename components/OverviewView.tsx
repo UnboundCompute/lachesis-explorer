@@ -221,7 +221,7 @@ export function OverviewView({
             <h2>See the graph’s shape before following a path.</h2>
             <p>
               Explore normalized relationships, shared choke points, module
-              concentration, and bundle health from the evidence already
+              concentration, and bundle health from the graph data already
               present.
             </p>
           </div>
@@ -547,7 +547,7 @@ export function OverviewView({
               <span className="panel-label">SHARED CHOKE POINTS</span>
               <p>
                 Nodes repeated across flows and requests. This is concentration
-                evidence, not a risk score.
+                context, not a ranking.
               </p>
               {chokePoints.map((item) => (
                 <button
