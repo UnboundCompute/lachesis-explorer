@@ -184,6 +184,21 @@ export function TraceView({
     direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const evidence = app.mcp.find((item) => item.for === flow.id);
   const securityPath = app.findings.some((finding) => finding.id === flow.id);
+  const filterSuggestions = [
+    app.findings.length > 0 || app.bundle.projection === "security projection"
+      ? { label: "sink", query: "kind:sink" }
+      : { label: "functions", query: "kind:function" },
+    app.edges.some((edge) => edge.dynamic)
+      ? { label: "dynamic", query: "edge:dynamic" }
+      : null,
+    app.edges.some((edge) => edge.alias)
+      ? { label: "aliases", query: "edge:alias" }
+      : null,
+    app.edges.some((edge) => edge.confidence || edge.limitations?.length)
+      ? { label: "uncertain", query: "edge:uncertain" }
+      : null,
+    app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
+  ].filter(Boolean) as { label: string; query: string }[];
   const firstNode = app.nodes.find((node) => node.id === (flow.sourceNodeId ?? flow.steps[0]?.node_id));
   const lastNode = app.nodes.find((node) => node.id === (flow.sinkNodeId ?? flow.steps.at(-1)?.node_id));
   const indirectSteps = flow.steps.filter(
@@ -232,16 +247,20 @@ export function TraceView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search or filter…"
+            placeholder="Search paths: symbol, file, edge…"
             aria-label="Filter graph paths"
           />
         </label>
         <div className="filter-hints" aria-label="Suggested semantic filters">
-          <button onClick={() => setQuery("edge:dynamic")}>dynamic</button>
-          <button onClick={() => setQuery("edge:alias")}>alias</button>
-          <button onClick={() => setQuery("edge:uncertain")}>uncertain</button>
-          <button onClick={() => setQuery("kind:sink")}>sink</button>
-          <button type="button" onClick={() => setQuery("has:mcp")}>linked</button>
+          {filterSuggestions.map((suggestion) => (
+            <button
+              type="button"
+              key={suggestion.query}
+              onClick={() => setQuery(suggestion.query)}
+            >
+              {suggestion.label}
+            </button>
+          ))}
           {query && (
             <button
               type="button"

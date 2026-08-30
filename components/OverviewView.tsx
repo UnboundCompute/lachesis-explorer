@@ -106,6 +106,22 @@ export function OverviewView({
     () => app.nodes.filter((node) => matches(node, query, app)),
     [app, query],
   );
+  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const filterSuggestions = [
+    securityMode
+      ? { label: "sinks", query: "kind:sink" }
+      : { label: "functions", query: "kind:function" },
+    app.edges.some((edge) => edge.dynamic)
+      ? { label: "dynamic", query: "edge:dynamic" }
+      : null,
+    app.edges.some((edge) => edge.alias)
+      ? { label: "aliases", query: "edge:alias" }
+      : null,
+    app.edges.some((edge) => edge.confidence || edge.limitations?.length)
+      ? { label: "uncertain", query: "edge:uncertain" }
+      : null,
+    app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
+  ].filter(Boolean) as { label: string; query: string }[];
   const visibleIds = new Set(visible.map((node) => node.id));
   const edges = app.edges.filter(
     (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
@@ -273,22 +289,19 @@ export function OverviewView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter nodes: kind:sink file:db/ edge:dynamic"
+            placeholder="Filter nodes: symbol:query file:src/ edge:dynamic"
             aria-label="Filter graph nodes"
           />
           <div className="query-chips">
-            <button type="button" onClick={() => setQuery("kind:sink")}>
-              sinks
-            </button>
-            <button type="button" onClick={() => setQuery("edge:dynamic")}>
-              dynamic
-            </button>
-            <button type="button" onClick={() => setQuery("edge:uncertain")}>
-              uncertain
-            </button>
-            <button type="button" onClick={() => setQuery("has:mcp")}>
-              linked
-            </button>
+            {filterSuggestions.map((suggestion) => (
+              <button
+                type="button"
+                key={suggestion.query}
+                onClick={() => setQuery(suggestion.query)}
+              >
+                {suggestion.label}
+              </button>
+            ))}
             {query && (
               <button
                 type="button"
