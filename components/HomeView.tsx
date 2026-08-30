@@ -184,10 +184,12 @@ export function HomeView({
       ? `${leadCount} lead${leadCount === 1 ? "" : "s"} and ${unresolvedCount} unresolved path${unresolvedCount === 1 ? "" : "s"} deserve review.`
       : reportedCount
         ? `${reportedCount} reported path${reportedCount === 1 ? " is" : "s are"} ready to inspect.`
-      : metadataOnly
+        : metadataOnly
         ? "Security metadata is present, but no traceable witness paths are available."
         : graphOnly
-        ? "Understand the code through its connected paths."
+        ? graphFocus
+          ? "Follow a path through the code."
+          : "Explore the relationships in this codebase."
         : "No open evidence paths in this bundle.";
 
   return (
@@ -209,7 +211,10 @@ export function HomeView({
             {metadataOnly
               ? "This bundle includes security records without witness steps. Explore the graph structure while the exporter adds a traceable path."
               : graphOnly
-              ? app.bundle.description || "Start with a value flow or request path, then move through the symbols and relationships that make the behavior understandable."
+              ? app.bundle.description ||
+                (graphFocus
+                  ? "Start with a bundled path, then move through the symbols and relationships that make the behavior understandable."
+                  : "This bundle contains graph structure but no bundled paths. Open the graph to inspect its relationships directly.")
               : "Start with the strongest witness, inspect what controls it, and keep uncertainty visible. Lachesis shows the path the bundle contains—not a vulnerability verdict."}
           </p>
         </div>
@@ -258,7 +263,7 @@ export function HomeView({
           <span>01</span>
           <div>
             <b>Choose a path</b>
-            <small>Start with a value flow or request path.</small>
+            <small>{graphFocus ? "Start with a value flow or request path." : "Open the graph to inspect its relationships."}</small>
           </div>
         </li>
         <li>
