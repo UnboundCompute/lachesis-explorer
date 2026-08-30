@@ -66,13 +66,13 @@ export function CommandPalette({
         },
         {
           id: "view-investigate",
-          label: "Open sink-first investigation",
+          label: "Open convergence view",
           meta: "View",
           run: () => onView("investigate"),
         },
         {
           id: "view-map",
-          label: "Open system topology map",
+          label: "Open graph view",
           meta: "View",
           run: () => onView("map"),
         },

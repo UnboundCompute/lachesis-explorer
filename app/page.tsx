@@ -48,8 +48,8 @@ const viewLabels: Record<View, string> = {
   home: "Briefing",
   trace: "Value flow",
   journey: "Request path",
-  investigate: "Sink field",
-  map: "System map",
+  investigate: "Convergence",
+  map: "Graph",
   compare: "Revision diff",
   install: "Local workflow",
 };
