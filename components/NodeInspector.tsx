@@ -105,6 +105,12 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
         {descriptions[node.kind] ||
           "A node participating in the selected graph path."}
       </p>
+      {node.documentation && (
+        <div className="node-documentation">
+          <span className="panel-label">DOCUMENTATION</span>
+          <p>{node.documentation}</p>
+        </div>
+      )}
       {app && (
         <>
           <div className="detail-rule" />
