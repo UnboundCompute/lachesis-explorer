@@ -264,12 +264,14 @@ export default function Page() {
       trackEvent("investigation_link_copied", {
         view: params.view ?? "unknown",
       });
+      return true;
     } catch {
       setLoadState({
         type: "error",
         message:
           "Could not copy the link. Your browser may block clipboard access.",
       });
+      return false;
     }
   }
 

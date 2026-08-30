@@ -12,7 +12,7 @@ type Props = {
   onRecord: (action: string, target: string, detail: string) => void;
   onFlow?: (flowId: string, nodeId: string) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
-  onShare?: (nodeId: string) => void;
+  onShare?: (nodeId: string) => Promise<boolean>;
 };
 const pos = (index: number) => ({
   x: 92 + (index % 4) * 178,
@@ -86,6 +86,7 @@ export function OverviewView({
 }: Props) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>("map");
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
@@ -192,6 +193,12 @@ export function OverviewView({
   const graphHeight = Math.max(300, Math.ceil(visible.length / 4) * 92 + 110);
   const labelIndex = (node: Node) =>
     String(Math.max(0, visibleIndex(node)) + 1).padStart(2, "0");
+  async function shareNode() {
+    if (!selected || !onShare) return;
+    const copied = await onShare(selected.id);
+    setShareState(copied ? "copied" : "failed");
+    window.setTimeout(() => setShareState("idle"), 1800);
+  }
 
   return (
     <section
@@ -213,10 +220,11 @@ export function OverviewView({
               <button
                 type="button"
                 className="share-control"
-                onClick={() => onShare(selected.id)}
+                onClick={shareNode}
                 aria-label="Copy link to selected graph node"
+                aria-live="polite"
               >
-                Copy link
+                {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
               </button>
             )}
             <div className="overview-switch">

@@ -24,7 +24,7 @@ type Props = {
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "journey" | "map") => void;
-  onShare: (position: number) => void;
+  onShare: (position: number) => Promise<boolean>;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
 };
@@ -96,6 +96,7 @@ export function TraceView({
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const previousDirection = useRef(direction);
   useEffect(() => {
     if (!flow) return;
@@ -196,6 +197,11 @@ export function TraceView({
     );
     trackEvent("trace_step_navigated", { direction: delta > 0 ? "next" : "previous" });
   }
+  async function sharePath() {
+    const copied = await onShare(selectedIndex);
+    setShareState(copied ? "copied" : "failed");
+    window.setTimeout(() => setShareState("idle"), 1800);
+  }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="sidebar">
@@ -283,8 +289,8 @@ export function TraceView({
                 Show source
               </button>
             )}
-            <button className="inspector-reopen" type="button" onClick={() => onShare(selectedIndex)}>
-              Copy link
+            <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
+              {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
             </button>
             <div className="step-nav" aria-label="Path step navigation">
               <button

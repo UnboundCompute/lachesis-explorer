@@ -19,7 +19,7 @@ type Props = {
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map") => void;
-  onShare: (position: number) => void;
+  onShare: (position: number) => Promise<boolean>;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
 };
@@ -42,6 +42,7 @@ export function JourneyView({
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   useEffect(() => {
     if (!entry) return;
     const fallback = entry.hops.findIndex((hop) => hop.node_id === hopId);
@@ -121,6 +122,11 @@ export function JourneyView({
       direction: delta > 0 ? "next" : "previous",
     });
   }
+  async function sharePath() {
+    const copied = await onShare(selectedIndex);
+    setShareState(copied ? "copied" : "failed");
+    window.setTimeout(() => setShareState("idle"), 1800);
+  }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="journey-rail">
@@ -199,8 +205,8 @@ export function JourneyView({
                 Show source
               </button>
             )}
-            <button className="inspector-reopen" type="button" onClick={() => onShare(selectedIndex)}>
-              Copy link
+            <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
+              {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
             </button>
             <div className="step-nav" aria-label="Request path step navigation">
               <button
