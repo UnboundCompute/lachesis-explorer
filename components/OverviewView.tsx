@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { App, Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
@@ -8,6 +8,7 @@ import { NodeInspector } from "./NodeInspector";
 type Mode = "map" | "architecture" | "health";
 type Props = {
   app: App;
+  focusNodeId?: string;
   onRecord: (action: string, target: string, detail: string) => void;
 };
 const pos = (index: number) => ({
@@ -47,12 +48,18 @@ function matches(node: Node, query: string, app: App) {
     });
 }
 
-export function OverviewView({ app, onRecord }: Props) {
+export function OverviewView({ app, focusNodeId, onRecord }: Props) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>("map");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  useEffect(() => {
+    if (focusNodeId && app.nodes.some((node) => node.id === focusNodeId)) {
+      setSelectedId(focusNodeId);
+      setInspectorOpen(true);
+    }
+  }, [app, focusNodeId]);
   const visible = useMemo(
     () => app.nodes.filter((node) => matches(node, query, app)),
     [app, query],
@@ -341,7 +348,10 @@ export function OverviewView({ app, onRecord }: Props) {
                   >
                     <div>
                       <b>{module.name}</b>
-                      <small>{module.path || "Module"} · {module.nodes.length} symbols</small>
+                      <small>
+                        {module.path || "Module"} · {module.nodes.length}{" "}
+                        symbols
+                      </small>
                     </div>
                     <span>
                       <i
@@ -354,16 +364,32 @@ export function OverviewView({ app, onRecord }: Props) {
                   </button>
                   {expandedModule === module.id && (
                     <div className="module-symbols">
-                      {[...new Set(module.nodes.map((node) => node.file || "Unknown file"))].map((file) => (
+                      {[
+                        ...new Set(
+                          module.nodes.map(
+                            (node) => node.file || "Unknown file",
+                          ),
+                        ),
+                      ].map((file) => (
                         <div className="module-file" key={file}>
                           <span>{file}</span>
-                          {module.nodes.filter((node) => (node.file || "Unknown file") === file).map((node) => (
-                            <button type="button" key={node.id} onClick={() => selectNode(node.id)}>
-                              <i className={`kind-dot kind-${node.kind}`} />
-                              <b>{node.label || node.id}</b>
-                              <small>{node.kind} · line {node.line || "—"}</small>
-                            </button>
-                          ))}
+                          {module.nodes
+                            .filter(
+                              (node) => (node.file || "Unknown file") === file,
+                            )
+                            .map((node) => (
+                              <button
+                                type="button"
+                                key={node.id}
+                                onClick={() => selectNode(node.id)}
+                              >
+                                <i className={`kind-dot kind-${node.kind}`} />
+                                <b>{node.label || node.id}</b>
+                                <small>
+                                  {node.kind} · line {node.line || "—"}
+                                </small>
+                              </button>
+                            ))}
                         </div>
                       ))}
                     </div>
