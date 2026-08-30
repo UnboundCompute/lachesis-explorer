@@ -108,6 +108,8 @@ export default function Page() {
   const [activity, setActivity] = useState<InvestigationEvent[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const compareFileRef = useRef<HTMLInputElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const previousView = useRef<View | null>(null);
   const dragDepth = useRef(0);
   const pendingLink = useRef<PendingLink | null>(null);
   const importBusy = useRef(false);
@@ -158,6 +160,16 @@ export default function Page() {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     writeLocal("lachesis-theme", dark ? "dark" : "light");
   }, [dark]);
+  useEffect(() => {
+    if (previousView.current === null) {
+      previousView.current = view;
+      return;
+    }
+    if (previousView.current !== view) {
+      workspaceRef.current?.focus({ preventScroll: true });
+      previousView.current = view;
+    }
+  }, [view]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -737,7 +749,12 @@ export default function Page() {
           </div>
         </div>
       )}
-      <div id="workspace-content" tabIndex={-1}>
+      <div
+        ref={workspaceRef}
+        id="workspace-content"
+        tabIndex={-1}
+        aria-label={`${viewLabels[view]} workspace`}
+      >
       {view !== "home" && (
         <Intro
           view={view as Exclude<View, "home">}
