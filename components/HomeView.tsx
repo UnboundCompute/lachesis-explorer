@@ -264,19 +264,19 @@ export function HomeView({
           <p>Choose the kind of understanding you need first.</p>
         </div>
         <div className="question-list">
-          <button type="button" onClick={() => graphFocus ? onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "") : onView("trace")}>
+          <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
             <b>Where does a value go?</b>
-            <small>Trace a value through its handoffs.</small>
+            <small>{graphFocus ? "Trace a value through its handoffs." : "No value paths in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
-          <button type="button" onClick={() => firstEntry ? onEntry(0, firstEntry.hops[0]?.node_id ?? "") : onView("journey")}>
+          <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
             <b>What calls this code?</b>
-            <small>Walk a request from entrypoint to effect.</small>
+            <small>{firstEntry ? "Walk a request from entrypoint to effect." : "No request paths in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
-          <button type="button" onClick={() => firstSink ? onSink(firstSink.id) : onView("investigate")}>
+          <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
             <b>What converges here?</b>
-            <small>Compare paths that reach one boundary.</small>
+            <small>{firstSink ? "Compare paths that reach one boundary." : "No boundary nodes in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
           <button type="button" onClick={() => onView("map")}>
