@@ -17,6 +17,10 @@ const descriptions: Record<string, string> = {
   class: "A type or class symbol that organizes related behavior.",
   query: "A query-building or query-execution symbol in the graph.",
   effect: "An external effect or operation represented in the graph.",
+  expression: "An expression or operation participating in the analyzed code path.",
+  parameter: "An input parameter carrying a value into a symbol or expression.",
+  variable: "A local or scoped variable represented in the graph.",
+  literal: "A literal value represented as a graph node.",
 };
 type Props = {
   node: Node;
