@@ -145,7 +145,7 @@ export function TraceView({
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [flow, direction, stepId]);
+  }, [flow, direction, stepId, selectedPosition]);
   if (!flow)
     return (
       <section className="workspace-empty">

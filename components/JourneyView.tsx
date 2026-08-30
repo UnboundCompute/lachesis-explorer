@@ -67,7 +67,7 @@ export function JourneyView({
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [entry, hopId]);
+  }, [entry, hopId, selectedPosition]);
   if (!entry)
     return (
       <section className="workspace-empty">
