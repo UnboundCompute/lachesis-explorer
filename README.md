@@ -141,6 +141,8 @@ public/code-exploration-bundle.json
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and review checklist. Before opening a pull request, run the build and strict TypeScript checks:
 
+Please follow the project’s [Code of Conduct](CODE_OF_CONDUCT.md) when participating.
+
 ```bash
 npm run check
 npm run verify:bundles
