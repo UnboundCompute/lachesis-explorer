@@ -170,6 +170,7 @@ export function TraceView({
   ).length;
   const items: PathItem[] = steps.map((step) => ({
     id: step.node_id,
+    occurrenceId: step.id,
     node: app.nodes.find((node) => node.id === step.node_id) ?? app.nodes[0],
     label: step.role,
     caption: step.note,

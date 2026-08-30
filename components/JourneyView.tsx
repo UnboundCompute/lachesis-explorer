@@ -94,6 +94,7 @@ export function JourneyView({
   );
   const items: PathItem[] = entry.hops.map((hop) => ({
     id: hop.node_id,
+    occurrenceId: hop.id,
     node: app.nodes.find((node) => node.id === hop.node_id) ?? app.nodes[0],
     label: hop.edge_label,
     caption: hop.caption,
