@@ -17,6 +17,8 @@ const pos = (index: number) => ({
   x: 92 + (index % 4) * 178,
   y: 66 + Math.floor(index / 4) * 92,
 });
+const shorten = (value: string, limit = 20) =>
+  value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
 
 function matches(node: Node, query: string, app: App) {
   return query
@@ -339,6 +341,17 @@ export function OverviewView({
                         >
                           {node.kind}
                         </text>
+                        {(selected?.id === node.id ||
+                          connectedIds.has(node.id)) && (
+                          <text
+                            className="topology-name"
+                            x={p.x}
+                            y={p.y + 52}
+                            textAnchor="middle"
+                          >
+                            {shorten(node.label || node.id)}
+                          </text>
+                        )}
                       </g>
                     );
                   })}
