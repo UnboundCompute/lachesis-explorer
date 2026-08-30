@@ -62,7 +62,7 @@ export function SinkView({
           type="button"
           onClick={() => onView(app.flows.length ? "trace" : "map")}
         >
-          <span>{app.flows.length ? "Open graph paths" : "Open system map"}</span>
+          <span>{app.flows.length ? "Open graph paths" : "Open graph"}</span>
           <span className="button-icon">
             <Icon name="arrow" size={14} />
           </span>

@@ -75,14 +75,14 @@ export function JourneyView({
         <p>
           {app.flows.length
             ? "Graph paths are still available. Open one to follow its symbols and relationships."
-            : "Open the system map to inspect the graph structure included in this bundle."}
+            : "Open the graph to inspect the structure included in this bundle."}
         </p>
         <button
           className="context-upload"
           type="button"
           onClick={() => onView(app.flows.length ? "trace" : "map")}
         >
-          <span>{app.flows.length ? "Open graph paths" : "Open system map"}</span>
+          <span>{app.flows.length ? "Open graph paths" : "Open graph"}</span>
           <span className="button-icon">
             <Icon name="arrow" size={14} />
           </span>

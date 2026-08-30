@@ -53,7 +53,7 @@ export function Intro({
         : view === "investigate"
           ? "SINK-FIRST LENS"
           : view === "map"
-            ? "SYSTEM-MAP LENS"
+            ? "GRAPH LENS"
             : view === "compare"
               ? "REVISION DIFF"
               : "LOCAL WORKFLOW";

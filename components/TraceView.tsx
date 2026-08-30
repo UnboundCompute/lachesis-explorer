@@ -158,7 +158,7 @@ export function TraceView({
           included for tracing.{" "}
           {app.entries.length
             ? "Follow a request path instead."
-            : "Open the system map to inspect its structure."}
+            : "Open the graph to inspect its structure."}
         </p>
         <button
           className="context-upload"
@@ -166,7 +166,7 @@ export function TraceView({
           onClick={() => onView(app.entries.length ? "journey" : "map")}
         >
           <span>
-            {app.entries.length ? "Open request paths" : "Open system map"}
+            {app.entries.length ? "Open request paths" : "Open graph"}
           </span>
           <span className="button-icon">
             <Icon name="arrow" size={14} />

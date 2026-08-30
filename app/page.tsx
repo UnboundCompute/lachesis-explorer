@@ -982,7 +982,7 @@ export default function Page() {
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
             setInspectorOpen(true);
-            record("Opened connected graph path", nextFlow, "from system map");
+            record("Opened connected graph path", nextFlow, "from graph");
           }}
           onEntry={(nextIndex, nextHop) => {
             changeView("journey");
@@ -993,7 +993,7 @@ export default function Page() {
             record(
               "Opened connected request path",
               app.entries[nextIndex]?.label ?? "Unknown entry",
-              "from system map",
+              "from graph",
             );
           }}
         />
