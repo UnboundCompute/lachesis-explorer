@@ -145,7 +145,8 @@ export function HomeView({
   );
   const metadataOnly = findings.length === 0 && app.flows.length === 0 && app.mcp.length > 0;
   const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
-  const bundleMode = app.findings.length > 0 || app.bundle.projection === "security projection"
+  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const bundleMode = securityMode
     ? "Security evidence projection"
     : "Code exploration graph";
   const graphFocus = useMemo(
@@ -266,31 +267,20 @@ export function HomeView({
           </button>
           {isDemo && (
             <div className="fixture-links">
-              <a className="download-fixture" href="/demo-bundle.json" download>
-                Download security sample <Icon name="arrow" size={12} />
-              </a>
-              <button
-                className="download-fixture sample-load"
-                type="button"
-                disabled={loadState.type === "loading"}
-                onClick={onLoadSecuritySample}
-              >
-                Load security sample <Icon name="arrow" size={12} />
-              </button>
               <a
                 className="download-fixture"
-                href="/code-exploration-bundle.json"
+                href={securityMode ? "/demo-bundle.json" : "/code-exploration-bundle.json"}
                 download
               >
-                Try code graph sample <Icon name="arrow" size={12} />
+                Download current sample <Icon name="arrow" size={12} />
               </a>
               <button
                 className="download-fixture sample-load"
                 type="button"
                 disabled={loadState.type === "loading"}
-                onClick={onLoadSample}
+                onClick={securityMode ? onLoadSample : onLoadSecuritySample}
               >
-                Load code graph sample <Icon name="arrow" size={12} />
+                {securityMode ? "Switch to code sample" : "View security sample"} <Icon name="arrow" size={12} />
               </button>
             </div>
           )}
