@@ -137,6 +137,12 @@ npm run check
 npm run verify:bundles
 ```
 
+To validate another local producer output without adding it to the repository:
+
+```bash
+npm run verify:bundles -- /path/to/bundle.json
+```
+
 Please keep the JSON contract stable, keep evidence grounded in bundle data, and include a short note about responsive behavior when changing UI.
 
 Please report vulnerabilities privately according to [SECURITY.md](SECURITY.md); do not attach real repository bundles to public issues.
