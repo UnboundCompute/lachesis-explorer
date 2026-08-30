@@ -30,6 +30,15 @@ function flowLocation(app: App, flow: App["flows"][number]) {
     : `${location(first)} → ${location(last)}`;
 }
 
+function flowKindLabel(flow: App["flows"][number], security: boolean) {
+  if (security) return "Security witness";
+  const kind = flow.kind?.trim().toLowerCase();
+  if (kind === "call-path" || kind === "callpath") return "Call path";
+  if (kind === "data-flow" || kind === "dataflow") return "Data flow";
+  if (kind === "value-flow" || kind === "valueflow") return "Value path";
+  return flow.kind?.trim() || "Graph path";
+}
+
 export function CommandPalette({
   app,
   onClose,
@@ -85,11 +94,7 @@ export function CommandPalette({
         ...app.flows.map((flow) => ({
           id: `flow-${flow.id}`,
           label: flow.name,
-          meta: `${
-            app.findings.some((finding) => finding.id === flow.id)
-              ? "Security witness"
-              : "Value path"
-          } · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}`,
+          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}`,
           run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
         })),
         ...app.entries.map((entry, index) => ({
