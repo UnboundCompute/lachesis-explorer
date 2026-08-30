@@ -185,19 +185,25 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
                     edge.source === node.id ? edge.target : edge.source;
                   const peer = app.nodes.find((item) => item.id === peerId);
                     return (
-                      <span key={edge.id}>
-                        {edge.source === node.id ? "→" : "←"}{" "}
-                        {edge.relation || "connected"} · {peer?.label || peerId}
-                        {edge.dynamic
-                          ? " · dynamic"
-                          : edge.alias
-                            ? " · alias"
-                            : ""}
-                        {edge.confidence ? ` · ${edge.confidence} confidence` : ""}
-                        {edge.limitations?.length
-                          ? ` · ${edge.limitations[0]}`
-                          : ""}
-                      </span>
+                      <div className="relationship-item" key={edge.id}>
+                        <span>
+                          {edge.source === node.id ? "→" : "←"}{" "}
+                          {edge.relation || "connected"} · {peer?.label || peerId}
+                        </span>
+                        {(edge.dynamic || edge.alias || edge.confidence) && (
+                          <small className="relationship-signals">
+                            {edge.dynamic && <em>dynamic</em>}
+                            {edge.alias && <em>alias</em>}
+                            {edge.confidence && <em>{edge.confidence} confidence</em>}
+                          </small>
+                        )}
+                        {edge.limitations?.length ? (
+                          <small className="relationship-caveat">
+                            <i />
+                            {edge.limitations.join(" · ")}
+                          </small>
+                        ) : null}
+                      </div>
                     );
                 })}
               </div>
