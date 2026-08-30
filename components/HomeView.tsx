@@ -355,7 +355,7 @@ export function HomeView({
               <h2>Graph structure is ready to explore</h2>
               <p>
                 This bundle includes {app.nodes.length} nodes and{" "}
-                {app.edges.length} relationships, but no value-flow paths were
+                {app.edges.length} relationships, but no graph paths were
                 included.
               </p>
               <div className="priority-actions">
@@ -489,16 +489,26 @@ export function HomeView({
           </span>
         </div>
         <div className="reading-grid">
-          <button onClick={() => onView("investigate")}>
+          <button
+            onClick={() =>
+              graphOnly && graphFocus
+                ? onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "")
+                : onView("investigate")
+            }
+          >
             <span className="reading-metric">
-              {
-                new Set(findings.map((item) => item.sink?.id).filter(Boolean))
-                  .size
-              }
+              {graphOnly
+                ? app.flows.length
+                : new Set(findings.map((item) => item.sink?.id).filter(Boolean))
+                    .size}
             </span>
             <span>
-              <b>Execution boundaries</b>
-              <small>Compare every value converging on a sink.</small>
+              <b>{graphOnly ? "Graph paths" : "Execution boundaries"}</b>
+              <small>
+                {graphOnly
+                  ? "Trace a bundled path through its connected symbols."
+                  : "Compare every value converging on a sink."}
+              </small>
             </span>
             <Icon name="arrow" size={13} />
           </button>
