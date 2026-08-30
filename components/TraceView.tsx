@@ -81,9 +81,14 @@ export function TraceView({
   if (!flow)
     return (
       <section className="workspace-empty">
-        <span className="empty-target"><Icon name="code" size={22} /></span>
+        <span className="empty-target">
+          <Icon name="code" size={22} />
+        </span>
         <h2>No paths in this bundle</h2>
-        <p>This bundle contains graph structure, but no value-flow paths were included for tracing.</p>
+        <p>
+          This bundle contains graph structure, but no value-flow paths were
+          included for tracing.
+        </p>
       </section>
     );
   const selected = app.nodes.find((node) => node.id === stepId) ?? app.nodes[0];
@@ -91,6 +96,15 @@ export function TraceView({
   const steps =
     direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const evidence = app.mcp.find((item) => item.for === flow.id);
+  const firstNode = app.nodes.find(
+    (node) => node.id === flow.steps[0]?.node_id,
+  );
+  const lastNode = app.nodes.find(
+    (node) => node.id === flow.steps.at(-1)?.node_id,
+  );
+  const indirectSteps = flow.steps.filter(
+    (step) => step.edge?.alias || step.edge?.dynamic,
+  ).length;
   const items: PathItem[] = steps.map((step) => ({
     id: step.node_id,
     node: app.nodes.find((node) => node.id === step.node_id) ?? app.nodes[0],
@@ -198,6 +212,33 @@ export function TraceView({
                 goes to
               </button>
             </div>
+          </div>
+        </div>
+        <div className="trace-orientation" aria-label="Selected path summary">
+          <div>
+            <span>START</span>
+            <b>{firstNode?.label || "Unknown symbol"}</b>
+            <small>
+              {firstNode?.file}:{firstNode?.line}
+            </small>
+          </div>
+          <i aria-hidden="true">
+            <span />
+          </i>
+          <div>
+            <span>END</span>
+            <b>{lastNode?.label || "Unknown symbol"}</b>
+            <small>
+              {lastNode?.file}:{lastNode?.line}
+            </small>
+          </div>
+          <div className="trace-orientation-fact">
+            <span>HOPS</span>
+            <b>{flow.steps.length}</b>
+          </div>
+          <div className="trace-orientation-fact">
+            <span>INDIRECT</span>
+            <b>{indirectSteps}</b>
           </div>
         </div>
         <PathCanvas
