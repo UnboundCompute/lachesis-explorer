@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { Icon } from "./Icon";
@@ -43,6 +43,7 @@ export function JourneyView({
   const entry = app.entries[entryIndex] ?? app.entries[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const selectedHopRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!entry) return;
     const fallback = entry.hops.findIndex((hop) => hop.node_id === hopId);
@@ -51,6 +52,9 @@ export function JourneyView({
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
   }, [app, entryIndex, position]);
+  useEffect(() => {
+    selectedHopRef.current?.scrollIntoView({ block: "nearest" });
+  }, [entryIndex, selectedPosition, hopId]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -166,6 +170,7 @@ export function JourneyView({
           {entry.hops.map((hop, index) => (
             <button
               key={`${index}-${hop.node_id}`}
+              ref={selectedIndex === index ? selectedHopRef : undefined}
               className={selectedIndex === index ? "hop-row selected" : "hop-row"}
               onClick={() => {
                 const node = app.nodes.find((item) => item.id === hop.node_id);

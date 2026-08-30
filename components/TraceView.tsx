@@ -97,6 +97,7 @@ export function TraceView({
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const selectedFlowRef = useRef<HTMLButtonElement>(null);
   const previousDirection = useRef(direction);
   useEffect(() => {
     if (!flow) return;
@@ -114,6 +115,9 @@ export function TraceView({
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
   }, [app, flowId, direction, position, selectedPosition]);
+  useEffect(() => {
+    selectedFlowRef.current?.scrollIntoView({ block: "nearest" });
+  }, [flowId, query]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -236,6 +240,7 @@ export function TraceView({
             visible.map((item) => (
               <button
                 key={item.id}
+                ref={item.id === flow.id ? selectedFlowRef : undefined}
                 className={
                   flow.id === item.id ? "node-row selected" : "node-row"
                 }
