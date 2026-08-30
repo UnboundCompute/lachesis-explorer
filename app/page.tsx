@@ -339,6 +339,9 @@ export default function Page() {
     setHopId(next.entries[0]?.hops[0]?.node_id ?? next.nodes[0]?.id ?? "");
     setHopIndex(0);
     setSinkId(firstSink);
+    setDirection("backward");
+    setQuery("");
+    setFocusNodeId("");
     let restored = false;
     if (pending) {
       if (
