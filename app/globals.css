@@ -134,7 +134,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .download-fixture:hover{color:var(--brand);text-decoration:underline}
 .sample-load{border:0;background:transparent;cursor:pointer}
 .command-more{border-top:1px solid var(--line);color:var(--ink-3);font:8px/1.5 var(--mono)}
-.coverage-note{display:flex;align-items:center;gap:7px;grid-column:1/-1;color:var(--ink-3);font:8px var(--mono)}.coverage-note i{width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.coverage-note{display:flex;align-items:center;gap:7px;grid-column:1;color:var(--ink-3);font:8px var(--mono)}.coverage-note i{width:6px;height:6px;border-radius:50%;background:var(--amber)}
 .fixture-links{display:flex;flex-direction:column;gap:5px}
 .briefing-guide{max-width:790px;margin:0 0 25px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));list-style:none;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.briefing-guide li{min-width:0;display:flex;gap:10px;padding:13px 14px 13px 0}.briefing-guide li+li{padding-left:14px;border-left:1px solid var(--line)}.briefing-guide>li>span{flex:none;color:var(--brand);font:700 8px var(--mono)}.briefing-guide b,.briefing-guide small{display:block}.briefing-guide b{font:700 9px var(--mono)}.briefing-guide small{margin-top:4px;color:var(--ink-3);font:8px/1.45 var(--mono)}
 .triage-board{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:8px;padding:7px;border:1px solid color-mix(in srgb,var(--line-strong) 72%,transparent);border-radius:18px;background:color-mix(in srgb,var(--surface-2) 74%,var(--canvas));box-shadow:0 22px 70px rgba(0,0,0,.16)}
