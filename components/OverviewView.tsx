@@ -201,40 +201,43 @@ export function OverviewView({
               present.
             </p>
           </div>
-          <div className="overview-switch">
+          <div className="overview-heading-actions">
             {selected && onShare && (
               <button
                 type="button"
+                className="share-control"
                 onClick={() => onShare(selected.id)}
                 aria-label="Copy link to selected graph node"
               >
                 Copy link
               </button>
             )}
-            <button
-              type="button"
-              className={mode === "map" ? "active" : ""}
-              onClick={() => setMode("map")}
-            >
-              <Icon name="target" size={13} />
-              Topology
-            </button>
-            <button
-              type="button"
-              className={mode === "architecture" ? "active" : ""}
-              onClick={() => setMode("architecture")}
-            >
-              <Icon name="matrix" size={13} />
-              Architecture
-            </button>
-            <button
-              type="button"
-              className={mode === "health" ? "active" : ""}
-              onClick={() => setMode("health")}
-            >
-              <Icon name="history" size={13} />
-              Health
-            </button>
+            <div className="overview-switch">
+              <button
+                type="button"
+                className={mode === "map" ? "active" : ""}
+                onClick={() => setMode("map")}
+              >
+                <Icon name="target" size={13} />
+                Topology
+              </button>
+              <button
+                type="button"
+                className={mode === "architecture" ? "active" : ""}
+                onClick={() => setMode("architecture")}
+              >
+                <Icon name="matrix" size={13} />
+                Architecture
+              </button>
+              <button
+                type="button"
+                className={mode === "health" ? "active" : ""}
+                onClick={() => setMode("health")}
+              >
+                <Icon name="history" size={13} />
+                Health
+              </button>
+            </div>
           </div>
         </header>
         <div className="query-composer">
