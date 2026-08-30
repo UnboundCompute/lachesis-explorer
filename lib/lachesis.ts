@@ -159,7 +159,8 @@ export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entr
 export function normalize(raw: any): App {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Bundle must be a JSON object.')
   // bundle/1.0: findings are versioned envelopes. bundle/0.x (below) stays a
-  // permissive adapter for the flow-centric prototype format.
+  // permissive adapter for the flow-centric code-exploration format. Its
+  // flows are paths to understand, not security findings.
   if (String(raw.schema_version ?? '') === '2.0') {
     if (String(raw.format ?? '') !== 'lachesis-explorer-bundle') throw new Error('Graph-first bundles must use format "lachesis-explorer-bundle".')
     return normalizeGraphV2(raw)
@@ -193,7 +194,7 @@ export function normalize(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeBundleV1(raw: any): App {
