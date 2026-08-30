@@ -124,6 +124,9 @@ export function HomeView({
     () => [...app.flows].sort((a, b) => recommendationScore(b) - recommendationScore(a))[0],
     [app.flows],
   );
+  const graphFocusNode = graphFocus?.steps[0]
+    ? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
+    : undefined;
   const firstEntry = app.entries[0];
   const firstSink = [...app.nodes]
     .filter(
@@ -384,27 +387,40 @@ export function HomeView({
                   <p>Suggested starting path · code understanding</p>
                 </div>
               </div>
-              <div className="witness-route" aria-label="Path summary">
-                <span>
-                  <small>Starts at</small>
-                  <b>
-                    {sourceFor(graphFocus, app)?.label ?? "Source not reported"}
-                  </b>
-                </span>
-                <i>
-                  <span />
-                </i>
-                <span>
-                  <small>Reaches</small>
-                  <b>
-                    {sinkFor(graphFocus, app)?.label ?? "Boundary not reported"}
-                  </b>
-                </span>
-              </div>
+              {graphFocus.steps.length > 1 ? (
+                <div className="witness-route" aria-label="Path summary">
+                  <span>
+                    <small>Starts at</small>
+                    <b>
+                      {sourceFor(graphFocus, app)?.label ?? "Source not reported"}
+                    </b>
+                  </span>
+                  <i>
+                    <span />
+                  </i>
+                  <span>
+                    <small>Reaches</small>
+                    <b>
+                      {sinkFor(graphFocus, app)?.label ?? "Boundary not reported"}
+                    </b>
+                  </span>
+                </div>
+              ) : (
+                <div className="witness-route single-symbol-route" aria-label="Selected symbol">
+                  <span>
+                    <small>Starting symbol</small>
+                    <b>{graphFocusNode?.label ?? graphFocus.steps[0]?.node_id ?? "Symbol not reported"}</b>
+                  </span>
+                  <span>
+                    <small>Location</small>
+                    <b>{graphFocusNode ? `${graphFocusNode.file || "Source unavailable"}:${graphFocusNode.line || "—"}` : "Source location unavailable"}</b>
+                  </span>
+                </div>
+              )}
               <p className="priority-summary">
-                This bundled graph path connects {graphFocus.steps.length} symbols.
-                Follow it to see how the code relates before making an
-                interpretation.
+                {graphFocus.steps.length > 1
+                  ? `This bundled graph path connects ${graphFocus.steps.length} symbols. Follow it to see how the code relates before making an interpretation.`
+                  : "This bundle contains one symbol for this path. Open it to inspect its source and relationships in the surrounding graph."}
               </p>
               <div className="judgment-row">
                 <div>
