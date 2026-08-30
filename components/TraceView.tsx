@@ -274,6 +274,8 @@ export function TraceView({
                   <small>
                     {app.findings.some((finding) => finding.id === item.id)
                       ? "Security witness"
+                      : app.mcp.some((evidence) => evidence.for === item.id)
+                        ? "MCP-backed value path"
                       : "Value path"} {" · "}
                     {item.steps.length} nodes · {indirectionCount(item)} indirect
                   </small>
