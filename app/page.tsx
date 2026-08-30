@@ -474,7 +474,7 @@ export default function Page() {
             setFlowId(nextFlow);
             setStepId(nextNode);
             setInspectorOpen(true);
-            record("Opened value flow", nextFlow, "via command palette");
+            record("Opened graph path", nextFlow, "via command palette");
           }}
           onEntry={(nextIndex, nextHop) => {
             setView("journey");
@@ -626,7 +626,7 @@ export default function Page() {
             setFlowId(nextFlow);
             setStepId(nextNode);
             setInspectorOpen(true);
-            record("Opened connected value flow", nextFlow, "from system map");
+            record("Opened connected graph path", nextFlow, "from system map");
           }}
           onEntry={(nextIndex, nextHop) => {
             setView("journey");
