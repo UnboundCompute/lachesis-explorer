@@ -135,6 +135,8 @@ export function OverviewView({
     app.entries.filter((entry) =>
       entry.hops.some((hop) => hop.node_id === nodeId),
     ).length;
+  const rolesForNode = (nodeId: string) =>
+    [...new Set(app.flows.flatMap((flow) => flow.steps.filter((step) => step.node_id === nodeId).map((step) => step.role.trim().toLowerCase())))];
   const chokePoints = app.nodes
     .map((node) => ({
       node,
@@ -386,10 +388,12 @@ export function OverviewView({
                   {visible.map((node) => {
                     const p = graphPos(node);
                     const select = () => selectNode(node.id);
+                    const roles = rolesForNode(node.id);
+                    const roleClasses = roles.map((role) => `role-${role.replace(/[^a-z0-9]+/g, "-")}`).join(" ");
                     return (
                       <g
                         key={node.id}
-                        className={`topology-node kind-${node.kind}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
+                        className={`topology-node kind-${node.kind} ${roleClasses}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
                         onClick={select}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
@@ -399,7 +403,7 @@ export function OverviewView({
                         }}
                         role="button"
                         tabIndex={0}
-                        aria-label={`${node.label || node.id}, ${node.kind}, ${node.file}:${node.line}`}
+                        aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}, ${node.file}:${node.line}`}
                       >
                         <circle cx={p.x} cy={p.y} r="24" />
                         <text x={p.x} y={p.y + 4} textAnchor="middle">
@@ -411,7 +415,7 @@ export function OverviewView({
                           y={p.y + 39}
                           textAnchor="middle"
                         >
-                          {node.kind}
+                          {shorten(roles.join("/") || node.kind, 14)}
                         </text>
                         {(selected?.id === node.id ||
                           connectedIds.has(node.id)) && (
@@ -434,7 +438,9 @@ export function OverviewView({
                   <span><i className="legend-dynamic" />dynamic relationship</span>
                 </div>
                 <div className="topology-node-list" aria-label="Graph nodes">
-                  {visible.map((node) => (
+                  {visible.map((node) => {
+                    const roles = rolesForNode(node.id);
+                    return (
                     <button
                       type="button"
                       key={node.id}
@@ -445,10 +451,11 @@ export function OverviewView({
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
                       <small>
-                        {node.kind} · {node.file}:{node.line}
+                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""} · {node.file}:{node.line}
                       </small>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (
