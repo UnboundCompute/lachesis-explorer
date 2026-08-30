@@ -19,6 +19,7 @@ export function Intro({
   isDemo: boolean;
   onUpload: () => void;
 }) {
+  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
   const copy = {
     trace: [
       "Trace one value. See every handoff.",
@@ -28,10 +29,15 @@ export function Intro({
       "Walk the request as the code sees it.",
       "Inspect a focused callpath from entrypoint to effect, one grounded hop at a time.",
     ],
-    investigate: [
-      "Start at the effect. Reveal every converging value.",
-      "Compare the bundled paths that reach one execution boundary without turning overlap into a claim.",
-    ],
+    investigate: securityMode
+      ? [
+          "Start at the effect. Reveal every converging value.",
+          "Compare the bundled paths that reach one execution boundary without turning overlap into a claim.",
+        ]
+      : [
+          "Start at a boundary. See what converges there.",
+          "Compare the bundled value paths that meet at one execution boundary, then follow any path back into the code.",
+        ],
     map: [
       "See the shape before you follow the path.",
       "Survey relationships, module concentration, shared choke points, and bundle health from deterministic graph facts.",
@@ -51,7 +57,9 @@ export function Intro({
       : view === "journey"
         ? "REQUEST-PATH LENS"
         : view === "investigate"
-          ? "SINK-FIRST LENS"
+            ? securityMode
+              ? "SINK-FIRST LENS"
+              : "BOUNDARY LENS"
           : view === "map"
             ? "GRAPH LENS"
             : view === "compare"
