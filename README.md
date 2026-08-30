@@ -85,7 +85,9 @@ For a producer, the important distinction is between the graph and its projectio
 `graph.edges` describe the reusable code relationship layer, while `paths.values` and
 `paths.requests` provide readable traversals through that graph. A path may include a short
 `description`, explicit `source_node`/`sink_node`, confidence, and limitations so the UI can orient the
-reader without inventing an interpretation. A path step or hop should carry
+reader without inventing an interpretation. A value path may also declare a
+display-only `kind` such as `value-flow`, `call-path`, or `data-flow`; this describes the traversal,
+not a security verdict. A path step or hop should carry
 an `occurrence_id` (unique within its path) when the same node appears more than once. This lets the
 Explorer deep-link to the exact occurrence instead of only selecting a repeated symbol. Stable IDs are
 also recommended for nodes, edges, flows, paths, files, modules, entrypoints, and findings.
