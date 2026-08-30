@@ -215,7 +215,6 @@ export default function Page() {
       if (event.key === "Escape") {
         setCommandOpen(false);
         setMenu(false);
-        setInspectorOpen(false);
         dragDepth.current = 0;
         setDragActive(false);
         return;
