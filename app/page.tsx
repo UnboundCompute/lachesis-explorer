@@ -49,6 +49,7 @@ export default function Page() {
   const [urlReady,setUrlReady]=useState(false)
   const fileRef=useRef<HTMLInputElement>(null)
   const compareFileRef=useRef<HTMLInputElement>(null)
+  const dragDepth=useRef(0)
   const pendingLink=useRef<PendingLink|null>(null)
 
   const record=useCallback((action:string,target:string,detail:string)=>setActivity(current=>[{id:Date.now()+Math.random(),action,target,detail,at:Date.now()},...current].slice(0,20)),[])
@@ -94,7 +95,7 @@ export default function Page() {
     }else{
       ;['flow','node','direction','entry','hop','sink'].forEach(key=>url.searchParams.delete(key))
     }
-    window.history.replaceState({},'',url)
+    window.history.replaceState(window.history.state,'',url)
   },[urlReady,pendingLocal,bundleScope,view,flowId,stepId,direction,entryIndex,hopId,sinkId,app.entries])
 
   useEffect(()=>{
@@ -102,7 +103,7 @@ export default function Page() {
       const target=event.target as HTMLElement
       const editing=target.matches('input, textarea, select, [contenteditable="true"]')
       if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();setCommandOpen(open=>!open);return}
-      if(event.key==='Escape'){setCommandOpen(false);setMenu(false);setInspectorOpen(false);return}
+      if(event.key==='Escape'){setCommandOpen(false);setMenu(false);setInspectorOpen(false);dragDepth.current=0;setDragActive(false);return}
       if(editing)return
       if(event.key==='/'&&view==='trace'){event.preventDefault();document.querySelector<HTMLInputElement>('.search input')?.focus()}
       if(view==='trace'&&event.key==='ArrowLeft'){setDirection('backward');record('Changed direction',flowId,'comes from');trackEvent('trace_direction_changed',{direction:'backward',source:'keyboard'})}
@@ -148,7 +149,7 @@ export default function Page() {
 
   async function uploadComparison(file?:File){if(!file)return;try{const raw=JSON.parse(await file.text());setCompareApp(normalize(raw));setView('compare');setLoadState({type:'success',message:`Loaded ${file.name} as the comparison bundle.`});record('Loaded comparison bundle',file.name,'active bundle kept');trackEvent('comparison_bundle_loaded')}catch(error){setLoadState({type:'error',message:`${error instanceof Error?error.message:'Could not read comparison bundle'} The active bundle was kept.`});trackEvent('comparison_bundle_load_failed')}finally{if(compareFileRef.current)compareFileRef.current.value=''}}
 
-  return <main className="app-shell" id="top" onDragEnter={event=>{event.preventDefault();setDragActive(true)}} onDragOver={event=>event.preventDefault()} onDragLeave={event=>{if(event.currentTarget===event.target)setDragActive(false)}} onDrop={event=>{event.preventDefault();upload(event.dataTransfer.files?.[0])}}>
+  return <main className="app-shell" id="top" onDragEnter={event=>{event.preventDefault();dragDepth.current+=1;setDragActive(true)}} onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect='copy'}} onDragLeave={event=>{event.preventDefault();dragDepth.current=Math.max(0,dragDepth.current-1);if(dragDepth.current===0)setDragActive(false)}} onDragEnd={()=>{dragDepth.current=0;setDragActive(false)}} onDrop={event=>{event.preventDefault();dragDepth.current=0;setDragActive(false);upload(event.dataTransfer.files?.[0])}}>
     <Header view={view} setView={changeView} app={app} menu={menu} setMenu={setMenu} onUpload={()=>fileRef.current?.click()} onCommand={()=>setCommandOpen(true)} dark={dark} setDark={setDark} recentBundles={recentBundles}/>
     <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={event=>{upload(event.target.files?.[0]);event.target.value=''}}/>
     <input ref={compareFileRef} type="file" accept=".json,application/json" hidden onChange={event=>uploadComparison(event.target.files?.[0])}/>
