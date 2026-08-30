@@ -325,7 +325,7 @@ export function OverviewView({
                 <svg
                   viewBox={`0 0 760 ${graphHeight}`}
                   style={{ height: `${graphHeight}px` }}
-                  aria-hidden="true"
+                  aria-label="Interactive graph topology"
                   focusable="false"
                 >
                   <defs>
@@ -391,6 +391,15 @@ export function OverviewView({
                         key={node.id}
                         className={`topology-node kind-${node.kind}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
                         onClick={select}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            select();
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`${node.label || node.id}, ${node.kind}, ${node.file}:${node.line}`}
                       >
                         <circle cx={p.x} cy={p.y} r="24" />
                         <text x={p.x} y={p.y + 4} textAnchor="middle">
