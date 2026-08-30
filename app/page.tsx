@@ -938,11 +938,17 @@ export default function Page() {
           sinkId={sinkId}
           setSinkId={setSinkId}
           onRecord={record}
-          onOpenFlow={(nextFlow, nextNode) => {
+          onOpenFlow={(nextFlow, nextNode, originalPosition) => {
             changeView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            const selectedFlow = app.flows.find((flow) => flow.id === nextFlow);
+            const selectedPosition = originalPosition == null || !selectedFlow
+              ? positionForFlow(app, nextFlow, nextNode, direction)
+              : direction === "forward"
+                ? selectedFlow.steps.length - 1 - originalPosition
+                : originalPosition;
+            setStepIndex(selectedPosition);
             setInspectorOpen(true);
           }}
           onView={(next) => changeView(next)}

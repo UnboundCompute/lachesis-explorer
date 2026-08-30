@@ -11,7 +11,7 @@ type Props = {
   app: App;
   sinkId: string;
   setSinkId: (id: string) => void;
-  onOpenFlow: (flowId: string, nodeId: string) => void;
+  onOpenFlow: (flowId: string, nodeId: string, position?: number) => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map") => void;
 };
@@ -222,13 +222,13 @@ export function SinkView({
             app={app}
             flows={flows}
             sinkId={sink.id}
-            onOpenFlow={(flowId, nodeId) => {
+            onOpenFlow={(flowId, nodeId, position) => {
               onRecord(
                 "Opened value flow",
                 flowId,
                 `from sink ${sink.label || sink.id}`,
               );
-              onOpenFlow(flowId, nodeId);
+              onOpenFlow(flowId, nodeId, position);
             }}
           />
         )}
