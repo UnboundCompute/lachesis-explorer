@@ -171,6 +171,7 @@ Event payloads deliberately exclude repository names, filenames, code snippets, 
 - [UnboundCompute](https://unboundcompute.com/) — the main site
 - [Trace demo](https://trace.unboundcompute.com/) — casefiles and proof
 - [UnboundCompute Security](https://security.unboundcompute.com/) — security research blog
+- [Lachesis Explorer source repository](https://github.com/UnboundCompute/lachesis-explorer) — UI, issues, and docs
 - [Lachesis source repository](https://github.com/UnboundCompute/lachesis)
 
 ## License
