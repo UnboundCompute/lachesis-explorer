@@ -174,6 +174,10 @@ function normalizeBundleV1(raw: any): App {
 function normalizeGraphV2(raw:any):App {
   const graph=raw.graph??{}
   const meta=raw.meta??{}
+  if (!raw.meta || typeof raw.meta !== 'object' || Array.isArray(raw.meta)) throw new Error('Graph-first bundles require a meta object.')
+  for (const field of ['repository','language','revision','lines','indexed_nodes']) {
+    if (meta[field] == null) throw new Error(`Graph-first bundles require meta.${field}.`)
+  }
   const nodes:Node[]=Array.isArray(graph.nodes)?graph.nodes.map(normalizeNode):[]
   if(!nodes.length)throw new Error('The bundle contains no graph nodes.')
   const nodeIds=new Set(nodes.map(node=>node.id))
@@ -206,7 +210,8 @@ function normalizeGraphV2(raw:any):App {
   const coverage=graph.coverage??{}
   const limitations=Array.isArray(coverage.limitations)?coverage.limitations.map(String):[]
   const capabilities=Array.isArray(graph.capabilities)?graph.capabilities.map(String):[]
-  const indexedNodes=Number(coverage.indexed_nodes??meta.indexed_nodes??meta.nodes_total??0)||undefined
+  const indexedNodes=Number(coverage.indexed_nodes??meta.indexed_nodes??meta.nodes_total)
+  if (!Number.isInteger(indexedNodes)||indexedNodes<0) throw new Error('Coverage indexed_nodes must be a non-negative integer.')
   const includedNodes=Number(coverage.included_nodes??nodes.length)
   if(!Number.isFinite(includedNodes)||includedNodes!==nodes.length)throw new Error(`Coverage included_nodes (${coverage.included_nodes}) does not match graph.nodes (${nodes.length}).`)
   if(indexedNodes!==undefined&&indexedNodes<includedNodes)throw new Error(`Coverage indexed_nodes (${indexedNodes}) cannot be less than included_nodes (${includedNodes}).`)
