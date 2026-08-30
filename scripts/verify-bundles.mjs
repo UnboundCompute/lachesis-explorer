@@ -6,12 +6,22 @@ function fail(file, message) {
   throw new Error(`${file}: ${message}`);
 }
 
+function validateNodes(file, ids, steps, label, { required = true } = {}) {
+  if (!Array.isArray(steps)) fail(file, `${label} steps must be an array`);
+  if (required && steps.length === 0) fail(file, `${label} must contain at least one step`);
+  for (const [stepIndex, step] of steps.entries()) {
+    const nodeId = String(step?.node_id ?? step?.nodeId ?? step?.node ?? "");
+    if (!ids.has(nodeId)) fail(file, `${label} step ${stepIndex} references a missing node`);
+  }
+}
+
 function verify(file, bundle) {
   if (!bundle || typeof bundle !== "object" || Array.isArray(bundle)) fail(file, "bundle must be a JSON object");
   const graph = bundle.graph;
   if (!graph || !Array.isArray(graph.nodes)) fail(file, "graph.nodes must be an array");
   const ids = new Set(graph.nodes.map((node) => String(node.id ?? node.node_id ?? "")));
   if (ids.size !== graph.nodes.length || ids.has("")) fail(file, "graph nodes must have unique non-empty IDs");
+  if (graph.edges != null && !Array.isArray(graph.edges)) fail(file, "graph.edges must be an array");
 
   for (const [index, edge] of (graph.edges ?? []).entries()) {
     const source = String(edge.source ?? edge.from ?? edge.source_id ?? "");
@@ -23,23 +33,27 @@ function verify(file, bundle) {
   for (const [kind, pathList] of Object.entries({ values: paths.values ?? graph.value_flows ?? graph.flows ?? [], requests: paths.requests ?? graph.request_paths ?? graph.callpaths ?? [] })) {
     if (!Array.isArray(pathList)) fail(file, `paths.${kind} must be an array`);
     for (const [pathIndex, path] of pathList.entries()) {
-      const steps = path.steps ?? path.hops ?? [];
-      if (!Array.isArray(steps)) fail(file, `paths.${kind}[${pathIndex}] steps must be an array`);
-      if (steps.length === 0) fail(file, `paths.${kind}[${pathIndex}] must contain at least one step`);
-      for (const [stepIndex, step] of steps.entries()) {
-        const nodeId = String(step.node_id ?? step.nodeId ?? step.node ?? "");
-        if (!ids.has(nodeId)) fail(file, `paths.${kind}[${pathIndex}] step ${stepIndex} references a missing node`);
-      }
+      validateNodes(file, ids, path.steps ?? path.hops ?? [], `paths.${kind}[${pathIndex}]`);
+      const entryNode = path.entry_node ?? path.entryNode;
+      if (entryNode != null && !ids.has(String(entryNode))) fail(file, `paths.${kind}[${pathIndex}] entry_node references a missing node`);
     }
   }
 
+  if (bundle.mcp != null && !Array.isArray(bundle.mcp)) fail(file, "mcp must be an array");
   for (const [index, record] of (bundle.mcp ?? []).entries()) {
     for (const nodeId of (Array.isArray(record.nodes) ? record.nodes : record.node_ids ?? [])) {
       if (!ids.has(String(nodeId))) fail(file, `mcp[${index}] references a missing node`);
     }
   }
 
-  if (String(bundle.schema_version ?? "") === "2.0" && !bundle.security) fail(file, "2.0 bundles must declare the optional security overlay");
+  const findings = bundle.security?.findings ?? bundle.findings;
+  if (findings != null && !Array.isArray(findings)) fail(file, "security.findings must be an array");
+  for (const [index, finding] of (findings ?? []).entries()) {
+    const witness = finding.witness?.steps;
+    if (witness != null) validateNodes(file, ids, witness, `findings[${index}].witness`, { required: false });
+  }
+
+  if (bundle.security != null && typeof bundle.security !== "object") fail(file, "security must be an object");
   console.log(`${file}: valid (${graph.nodes.length} nodes, ${(graph.edges ?? []).length} edges)`);
 }
 
