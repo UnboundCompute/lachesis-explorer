@@ -13,6 +13,7 @@ type Props = {
   onEntry: (index: number, hopId: string) => void;
   onSink: (sinkId: string) => void;
   onNode: (nodeId: string) => void;
+  opener?: HTMLElement | null;
 };
 export function CommandPalette({
   app,
@@ -22,15 +23,15 @@ export function CommandPalette({
   onEntry,
   onSink,
   onNode,
+  opener,
 }: Props) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const normalized = query.trim().toLowerCase();
   const dialogRef = useRef<HTMLElement>(null);
   const activeOptionRef = useRef<HTMLButtonElement>(null);
-  const openerRef = useRef<HTMLElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(opener ?? null);
   useEffect(() => {
-    openerRef.current = document.activeElement as HTMLElement | null;
     return () => openerRef.current?.focus();
   }, []);
   const commands = useMemo(

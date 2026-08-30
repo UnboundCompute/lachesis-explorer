@@ -77,6 +77,7 @@ export default function Page() {
   const [isDemo, setIsDemo] = useState(true);
   const [dragActive, setDragActive] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const commandOpenerRef = useRef<HTMLElement | null>(null);
   const [focusNodeId, setFocusNodeId] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [recentBundles, setRecentBundles] = useState<RecentBundle[]>([]);
@@ -209,6 +210,7 @@ export default function Page() {
       );
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        commandOpenerRef.current = document.activeElement as HTMLElement | null;
         setCommandOpen((open) => !open);
         return;
       }
@@ -510,7 +512,10 @@ export default function Page() {
         menu={menu}
         setMenu={setMenu}
         onUpload={() => fileRef.current?.click()}
-        onCommand={() => setCommandOpen(true)}
+        onCommand={() => {
+          commandOpenerRef.current = document.activeElement as HTMLElement | null;
+          setCommandOpen(true);
+        }}
         dark={dark}
         setDark={setDark}
         recentBundles={recentBundles}
@@ -536,6 +541,7 @@ export default function Page() {
       {commandOpen && (
         <CommandPalette
           app={app}
+          opener={commandOpenerRef.current}
           onClose={() => setCommandOpen(false)}
           onView={changeView}
           onFlow={(nextFlow, nextNode) => {
