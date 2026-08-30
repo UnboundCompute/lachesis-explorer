@@ -313,8 +313,8 @@ export function OverviewView({
                 </b>
               </div>
               <div>
-                <span>SELECTED</span>
-                <b>{visible.length ? selected?.kind || "—" : "—"}</b>
+                <span>SELECTED ROLE / KIND</span>
+                <b>{visible.length ? rolesForNode(selected?.id ?? "").join(" / ") || selected?.kind || "—" : "—"}</b>
               </div>
               <p>
                 {visible.length
