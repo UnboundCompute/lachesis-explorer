@@ -52,18 +52,22 @@ The preferred contract is `lachesis-explorer-bundle` `2.0`: a graph-first snapsh
 
 The full graph-first contract is documented in [`docs/GRAPH_EXPLORER_CONTRACT.md`](docs/GRAPH_EXPLORER_CONTRACT.md), with a machine-readable v2 schema at [`docs/GRAPH_EXPLORER_BUNDLE.schema.json`](docs/GRAPH_EXPLORER_BUNDLE.schema.json). It defines stable graph entities, source locations, hierarchy, path projections, capabilities, coverage, and limitations.
 
-At minimum, a `2.0` bundle needs `schema_version`, `graph.nodes`, and may omit paths and findings entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional fields include:
+At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional fields include:
 
 ```json
 {
-  "meta": { "repo": "owner/repo", "lang": "typescript", "commit": "abc123", "loc": 12345 },
+  "format": "lachesis-explorer-bundle",
+  "schema_version": "2.0",
+  "meta": { "repository": "owner/repo", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
   "graph": {
     "nodes": [],
     "edges": [],
-    "flows": [],
-    "callpaths": []
-  },
-  "mcp": []
+    "files": [],
+    "modules": [],
+    "entrypoints": [],
+    "capabilities": [],
+    "coverage": { "scope": "repository", "limitations": [] }
+  }
 }
 ```
 

@@ -11,8 +11,8 @@ Thanks for helping improve Lachesis Explorer.
 5. Run the checks below before opening a pull request.
 
 ```bash
-npx tsc --noEmit
-npm run build
+npm run check
+npm run verify:bundles
 git diff --check
 ```
 
