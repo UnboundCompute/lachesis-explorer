@@ -92,12 +92,13 @@ export default function Page() {
   function activate(next:App){
     const pending=pendingLink.current
     const firstSink=next.nodes.find(node=>node.kind==='sink'||next.flows.some(flow=>flow.steps.some(step=>step.node_id===node.id&&step.role==='sink')))?.id??''
-    setApp(next);setFlowId(next.flows[0].id);setStepId(next.flows[0].steps[0].node_id);setEntryIndex(0);setHopId(next.entries[0]?.hops[0]?.node_id??next.nodes[0].id);setSinkId(firstSink)
+    const firstFlow=next.flows[0]
+    setApp(next);setFlowId(firstFlow?.id??'');setStepId(firstFlow?.steps[0]?.node_id??next.nodes[0]?.id??'');setEntryIndex(0);setHopId(next.entries[0]?.hops[0]?.node_id??next.nodes[0]?.id??'');setSinkId(firstSink)
     let restored=false
     if(pending){
       if(pending.view==='home'||pending.view==='trace'||pending.view==='journey'||pending.view==='investigate'||pending.view==='map'||pending.view==='compare'||pending.view==='install')setView(pending.view)
       const linkedFlow=next.flows.find(flow=>flow.id===pending.flow)
-      if(linkedFlow){setFlowId(linkedFlow.id);setStepId(pending.node&&linkedFlow.steps.some(step=>step.node_id===pending.node)?pending.node:linkedFlow.steps[0].node_id);restored=true}
+      if(linkedFlow){setFlowId(linkedFlow.id);setStepId(pending.node&&linkedFlow.steps.some(step=>step.node_id===pending.node)?pending.node:linkedFlow.steps[0]?.node_id??'');restored=true}
       const linkedEntry=next.entries.findIndex(entry=>entry.id===pending.entry)
       if(linkedEntry>=0){setEntryIndex(linkedEntry);setHopId(pending.hop&&next.entries[linkedEntry].hops.some(hop=>hop.node_id===pending.hop)?pending.hop:next.entries[linkedEntry].hops[0]?.node_id??next.nodes[0].id);restored=true}
       if(pending.sink&&next.nodes.some(node=>node.id===pending.sink)){setSinkId(pending.sink);restored=true}

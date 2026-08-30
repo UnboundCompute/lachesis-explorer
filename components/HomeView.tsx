@@ -1,105 +1,418 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo, useState } from 'react'
-import type { App, Evidence, Flow, Node } from '../lib/lachesis'
-import { Icon } from './Icon'
+import { useEffect, useMemo, useState } from "react";
+import type { App, Evidence, Flow, Node } from "../lib/lachesis";
+import { Icon } from "./Icon";
 
-type LoadState={type:'idle'|'loading'|'success'|'error';message:string}
-type Props={
-  app:App
-  isDemo:boolean
-  loadState:LoadState
-  onUpload:()=>void
-  onView:(view:'map'|'investigate'|'trace'|'journey')=>void
-  onFlow:(flowId:string,nodeId:string)=>void
-  onSink:(sinkId:string)=>void
-  onEntry:(entryIndex:number,hopId:string)=>void
+type LoadState = {
+  type: "idle" | "loading" | "success" | "error";
+  message: string;
+};
+type Props = {
+  app: App;
+  isDemo: boolean;
+  loadState: LoadState;
+  onUpload: () => void;
+  onView: (view: "map" | "investigate" | "trace" | "journey") => void;
+  onFlow: (flowId: string, nodeId: string) => void;
+  onSink: (sinkId: string) => void;
+  onEntry: (entryIndex: number, hopId: string) => void;
+};
+
+const statusCopy: Record<string, string> = {
+  lead: "Review first",
+  inconclusive: "Unresolved",
+  refuted: "Guard observed",
+  verified: "Verified",
+};
+const statusRank: Record<string, number> = {
+  lead: 0,
+  inconclusive: 1,
+  verified: 2,
+  refuted: 3,
+};
+type QueueFilter = "all" | "lead" | "inconclusive" | "refuted";
+
+function sinkFor(flow: Flow, app: App): Node | undefined {
+  const sinkStep = [...flow.steps]
+    .reverse()
+    .find((step) => step.role === "sink");
+  return app.nodes.find(
+    (node) => node.id === (sinkStep?.node_id ?? flow.steps.at(-1)?.node_id),
+  );
 }
 
-const statusCopy:Record<string,string>={lead:'Review first',inconclusive:'Unresolved',refuted:'Guard observed',verified:'Verified'}
-const statusRank:Record<string,number>={lead:0,inconclusive:1,verified:2,refuted:3}
-type QueueFilter='all'|'lead'|'inconclusive'|'refuted'
-
-function sinkFor(flow:Flow,app:App):Node|undefined{
-  const sinkStep=[...flow.steps].reverse().find(step=>step.role==='sink')
-  return app.nodes.find(node=>node.id===(sinkStep?.node_id??flow.steps.at(-1)?.node_id))
+function EvidenceState({ evidence }: { evidence?: Evidence }) {
+  const status = evidence?.status ?? "lead";
+  return (
+    <span className={`finding-state state-${status}`}>
+      <i />
+      {statusCopy[status] ?? status}
+    </span>
+  );
 }
 
-function EvidenceState({evidence}:{evidence?:Evidence}){
-  const status=evidence?.status??'lead'
-  return <span className={`finding-state state-${status}`}><i/>{statusCopy[status]??status}</span>
-}
+export function HomeView({
+  app,
+  isDemo,
+  loadState,
+  onUpload,
+  onView,
+  onFlow,
+  onSink,
+  onEntry,
+}: Props) {
+  const [selectedId, setSelectedId] = useState(app.findings[0]?.id ?? "");
+  const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+  useEffect(() => {
+    setSelectedId(app.findings[0]?.id ?? "");
+    setQueueFilter("all");
+  }, [app]);
+  const findings = useMemo(
+    () =>
+      app.findings
+        .map((flow) => ({
+          flow,
+          evidence: app.mcp.find((item) => item.for === flow.id),
+          sink: sinkFor(flow, app),
+        }))
+        .sort(
+          (a, b) =>
+            (statusRank[a.evidence?.status ?? "lead"] ?? 4) -
+            (statusRank[b.evidence?.status ?? "lead"] ?? 4),
+        ),
+    [app],
+  );
+  const visibleFindings = useMemo(
+    () =>
+      queueFilter === "all"
+        ? findings
+        : findings.filter(
+            (item) => (item.evidence?.status ?? "lead") === queueFilter,
+          ),
+    [findings, queueFilter],
+  );
+  const priority =
+    visibleFindings.find((item) => item.flow.id === selectedId) ??
+    visibleFindings[0];
+  const leadCount = findings.filter(
+    (item) => item.evidence?.status === "lead" || !item.evidence?.status,
+  ).length;
+  const unresolvedCount = findings.filter(
+    (item) => item.evidence?.status === "inconclusive",
+  ).length;
+  const refutedCount = findings.filter(
+    (item) => item.evidence?.status === "refuted",
+  ).length;
+  const filterCount = (filter: QueueFilter) =>
+    filter === "all"
+      ? findings.length
+      : findings.filter((item) => (item.evidence?.status ?? "lead") === filter)
+          .length;
+  const dynamicCount = app.edges.filter((edge) => edge.dynamic).length;
+  const incompletePaths = app.entries.filter(
+    (entry) => !entry.hasLayout,
+  ).length;
+  const guardVerdict = priority?.evidence?.guards?.verdict;
+  const title =
+    leadCount || unresolvedCount
+      ? `${leadCount} lead${leadCount === 1 ? "" : "s"} and ${unresolvedCount} unresolved path${unresolvedCount === 1 ? "" : "s"} deserve review.`
+      : "No open evidence paths in this bundle.";
 
-export function HomeView({app,isDemo,loadState,onUpload,onView,onFlow,onSink,onEntry}:Props){
-  const [selectedId,setSelectedId]=useState(app.flows[0]?.id??'')
-  const [queueFilter,setQueueFilter]=useState<QueueFilter>('all')
-  useEffect(()=>{setSelectedId(app.flows[0]?.id??'');setQueueFilter('all')},[app])
-  const findings=useMemo(()=>app.flows.map(flow=>({flow,evidence:app.mcp.find(item=>item.for===flow.id),sink:sinkFor(flow,app)})).sort((a,b)=>(statusRank[a.evidence?.status??'lead']??4)-(statusRank[b.evidence?.status??'lead']??4)),[app])
-  const visibleFindings=useMemo(()=>queueFilter==='all'?findings:findings.filter(item=>(item.evidence?.status??'lead')===queueFilter),[findings,queueFilter])
-  const priority=visibleFindings.find(item=>item.flow.id===selectedId)??visibleFindings[0]
-  const leadCount=findings.filter(item=>item.evidence?.status==='lead'||!item.evidence?.status).length
-  const unresolvedCount=findings.filter(item=>item.evidence?.status==='inconclusive').length
-  const refutedCount=findings.filter(item=>item.evidence?.status==='refuted').length
-  const filterCount=(filter:QueueFilter)=>filter==='all'?findings.length:findings.filter(item=>(item.evidence?.status??'lead')===filter).length
-  const dynamicCount=app.edges.filter(edge=>edge.dynamic).length
-  const incompletePaths=app.entries.filter(entry=>!entry.hasLayout).length
-  const guardVerdict=priority?.evidence?.guards?.verdict
-  const title=leadCount||unresolvedCount?`${leadCount} lead${leadCount===1?'':'s'} and ${unresolvedCount} unresolved path${unresolvedCount===1?'':'s'} deserve review.`:'No open evidence paths in this bundle.'
-
-  return <section className="investigation-briefing">
-    <header className="briefing-intro">
-      <div className="briefing-copy">
-        <div className="briefing-status-line"><span className={isDemo?'fixture-flag':'fixture-flag live'}><i/>{isDemo?'Synthetic working bundle':'Loaded local bundle'}</span><span>{app.bundle.projection??'graph evidence'} · contract {app.bundle.schemaVersion}</span></div>
-        <h1>{title}</h1>
-        <p>Start with the strongest witness, inspect what controls it, and keep uncertainty visible. Lachesis shows the path the bundle contains—not a vulnerability verdict.</p>
-      </div>
-      <div className="briefing-actions">
-        <button className="load-bundle-action" onClick={onUpload}><span><Icon name="upload" size={16}/><b>{loadState.type==='loading'?'Reading bundle…':'Load bundle.json'}</b><small>Processed only in this browser</small></span><span className="action-orb"><Icon name="arrow" size={14}/></span></button>
-        {isDemo&&<a className="download-fixture" href="/demo-bundle.json" download>Download this sample <Icon name="arrow" size={12}/></a>}
-      </div>
-    </header>
-
-    {loadState.message&&<p className={`briefing-notice ${loadState.type}`} role={loadState.type==='error'?'alert':'status'}><i/>{loadState.message}</p>}
-
-    <div className="triage-board">
-      <section className="priority-investigation">
-        <div className="priority-header"><span>Priority investigation</span>{priority&&<EvidenceState evidence={priority.evidence}/>}</div>
-        {priority?<>
-          <div className="priority-title"><span className="target-mark"><Icon name="target" size={18}/></span><div><h2>{priority.flow.name}</h2><p>{priority.sink?.file}:{priority.sink?.line}</p></div></div>
-          <div className="witness-route" aria-label="Witness summary">
-            <span><small>Source</small><b>{app.nodes.find(node=>node.id===priority.flow.steps[0]?.node_id)?.label??'Unknown source'}</b></span>
-            <i><span/></i>
-            <span><small>Boundary</small><b>{priority.sink?.label??'Unknown sink'}</b></span>
+  return (
+    <section className="investigation-briefing">
+      <header className="briefing-intro">
+        <div className="briefing-copy">
+          <div className="briefing-status-line">
+            <span className={isDemo ? "fixture-flag" : "fixture-flag live"}>
+              <i />
+              {isDemo ? "Synthetic working bundle" : "Loaded local bundle"}
+            </span>
+            <span>
+              {app.bundle.projection ?? "graph evidence"} · contract{" "}
+              {app.bundle.schemaVersion}
+            </span>
           </div>
-          <p className="priority-summary">{priority.evidence?.result_summary??`${priority.flow.steps.length} bundled steps connect the selected source and boundary.`}</p>
-          <div className="judgment-row">
-            <div><small>Confidence</small><b>{priority.evidence?.confidence??'bundle'}</b></div>
-            <div><small>Guard verdict</small><b>{guardVerdict?.replace('-', ' ')??'not reported'}</b></div>
-            <div><small>Witness</small><b>{priority.flow.steps.length} steps</b></div>
+          <h1>{title}</h1>
+          <p>
+            Start with the strongest witness, inspect what controls it, and keep
+            uncertainty visible. Lachesis shows the path the bundle contains—not
+            a vulnerability verdict.
+          </p>
+        </div>
+        <div className="briefing-actions">
+          <button className="load-bundle-action" onClick={onUpload}>
+            <span>
+              <Icon name="upload" size={16} />
+              <b>
+                {loadState.type === "loading"
+                  ? "Reading bundle…"
+                  : "Load bundle.json"}
+              </b>
+              <small>Processed only in this browser</small>
+            </span>
+            <span className="action-orb">
+              <Icon name="arrow" size={14} />
+            </span>
+          </button>
+          {isDemo && (
+            <a className="download-fixture" href="/demo-bundle.json" download>
+              Download this sample <Icon name="arrow" size={12} />
+            </a>
+          )}
+        </div>
+      </header>
+
+      {loadState.message && (
+        <p
+          className={`briefing-notice ${loadState.type}`}
+          role={loadState.type === "error" ? "alert" : "status"}
+        >
+          <i />
+          {loadState.message}
+        </p>
+      )}
+
+      <div className="triage-board">
+        <section className="priority-investigation">
+          <div className="priority-header">
+            <span>Priority investigation</span>
+            {priority && <EvidenceState evidence={priority.evidence} />}
           </div>
-          {priority.evidence?.limitations?.[0]&&<p className="priority-limitation"><Icon name="spark" size={13}/><span><b>Known limit</b>{priority.evidence.limitations[0]}</span></p>}
-          <div className="priority-actions"><button onClick={()=>onFlow(priority.flow.id,priority.flow.steps[0].node_id)}>Trace this witness <span className="action-orb"><Icon name="arrow" size={13}/></span></button>{priority.sink&&<button onClick={()=>onSink(priority.sink!.id)}>Compare reaching paths</button>}</div>
-        </>:<div className="briefing-empty"><h2>No witness paths available</h2><p>Load a bundle containing finding witnesses or value flows to begin an investigation.</p></div>}
+          {priority ? (
+            <>
+              <div className="priority-title">
+                <span className="target-mark">
+                  <Icon name="target" size={18} />
+                </span>
+                <div>
+                  <h2>{priority.flow.name}</h2>
+                  <p>
+                    {priority.sink?.file}:{priority.sink?.line}
+                  </p>
+                </div>
+              </div>
+              <div className="witness-route" aria-label="Witness summary">
+                <span>
+                  <small>Source</small>
+                  <b>
+                    {app.nodes.find(
+                      (node) => node.id === priority.flow.steps[0]?.node_id,
+                    )?.label ?? "Unknown source"}
+                  </b>
+                </span>
+                <i>
+                  <span />
+                </i>
+                <span>
+                  <small>Boundary</small>
+                  <b>{priority.sink?.label ?? "Unknown sink"}</b>
+                </span>
+              </div>
+              <p className="priority-summary">
+                {priority.evidence?.result_summary ??
+                  `${priority.flow.steps.length} bundled steps connect the selected source and boundary.`}
+              </p>
+              <div className="judgment-row">
+                <div>
+                  <small>Confidence</small>
+                  <b>{priority.evidence?.confidence ?? "bundle"}</b>
+                </div>
+                <div>
+                  <small>Guard verdict</small>
+                  <b>{guardVerdict?.replace("-", " ") ?? "not reported"}</b>
+                </div>
+                <div>
+                  <small>Witness</small>
+                  <b>{priority.flow.steps.length} steps</b>
+                </div>
+              </div>
+              {priority.evidence?.limitations?.[0] && (
+                <p className="priority-limitation">
+                  <Icon name="spark" size={13} />
+                  <span>
+                    <b>Known limit</b>
+                    {priority.evidence.limitations[0]}
+                  </span>
+                </p>
+              )}
+              <div className="priority-actions">
+                <button
+                  onClick={() =>
+                    onFlow(priority.flow.id, priority.flow.steps[0].node_id)
+                  }
+                >
+                  Trace this witness{" "}
+                  <span className="action-orb">
+                    <Icon name="arrow" size={13} />
+                  </span>
+                </button>
+                {priority.sink && (
+                  <button onClick={() => onSink(priority.sink!.id)}>
+                    Compare reaching paths
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="briefing-empty">
+              <h2>No witness paths available</h2>
+              <p>
+                Load a bundle containing finding witnesses or value flows to
+                begin an investigation.
+              </p>
+            </div>
+          )}
+        </section>
+
+        <aside className="evidence-queue">
+          <div className="queue-heading">
+            <div>
+              <span>Evidence queue</span>
+              <small>Choose a lead to keep it in context</small>
+            </div>
+            <b>{visibleFindings.length}</b>
+          </div>
+          <div className="queue-filters" aria-label="Filter evidence queue">
+            {(["all", "lead", "inconclusive", "refuted"] as QueueFilter[]).map(
+              (filter) => (
+                <button
+                  type="button"
+                  key={filter}
+                  className={queueFilter === filter ? "active" : ""}
+                  aria-pressed={queueFilter === filter}
+                  onClick={() => setQueueFilter(filter)}
+                >
+                  {filter === "all"
+                    ? "All"
+                    : filter === "lead"
+                      ? "Open"
+                      : filter === "inconclusive"
+                        ? "Unresolved"
+                        : "Refuted"}{" "}
+                  <span>{filterCount(filter)}</span>
+                </button>
+              ),
+            )}
+          </div>
+          <div className="queue-list">
+            {visibleFindings.map((item, index) => (
+              <button
+                type="button"
+                key={item.flow.id}
+                className={item.flow.id === priority?.flow.id ? "active" : ""}
+                aria-pressed={item.flow.id === priority?.flow.id}
+                aria-label={`Select ${item.flow.name}`}
+                onClick={() => setSelectedId(item.flow.id)}
+              >
+                <span className="queue-index">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="queue-copy">
+                  <b>{item.flow.name}</b>
+                  <small>
+                    {item.evidence?.confidence ?? "bundle"} confidence ·{" "}
+                    {item.flow.steps.length} steps
+                  </small>
+                </span>
+                <EvidenceState evidence={item.evidence} />
+                <Icon name="arrow" size={12} />
+              </button>
+            ))}
+          </div>
+          {!visibleFindings.length && (
+            <p className="queue-empty">No findings match this filter.</p>
+          )}
+          <div className="queue-foot">
+            <span>
+              <i className="lead-dot" />
+              {leadCount} lead
+            </span>
+            <span>
+              <i className="unknown-dot" />
+              {unresolvedCount} unresolved
+            </span>
+            <span>
+              <i className="refuted-dot" />
+              {refutedCount} refuted
+            </span>
+          </div>
+        </aside>
+      </div>
+
+      <section className="bundle-reading">
+        <div className="reading-heading">
+          <div>
+            <h2>Read the bundle from another angle.</h2>
+            <p>The same evidence stays connected as you change lenses.</p>
+          </div>
+          <span>
+            {app.name} · {app.commit}
+          </span>
+        </div>
+        <div className="reading-grid">
+          <button onClick={() => onView("investigate")}>
+            <span className="reading-metric">
+              {
+                new Set(findings.map((item) => item.sink?.id).filter(Boolean))
+                  .size
+              }
+            </span>
+            <span>
+              <b>Execution boundaries</b>
+              <small>Compare every value converging on a sink.</small>
+            </span>
+            <Icon name="arrow" size={13} />
+          </button>
+          <button onClick={() => onView("map")}>
+            <span className="reading-metric">{app.nodes.length}</span>
+            <span>
+              <b>Graph topology</b>
+              <small>
+                {app.edges.length} relationships · {dynamicCount} dynamic.
+              </small>
+            </span>
+            <Icon name="arrow" size={13} />
+          </button>
+          <button
+            onClick={() =>
+              app.entries[0]
+                ? onEntry(0, app.entries[0].hops[0]?.node_id ?? "")
+                : onView("journey")
+            }
+          >
+            <span className="reading-metric">{app.entries.length}</span>
+            <span>
+              <b>Request paths</b>
+              <small>
+                {incompletePaths
+                  ? `${incompletePaths} use derived layout`
+                  : "All carry bundled layout"}
+                .
+              </small>
+            </span>
+            <Icon name="arrow" size={13} />
+          </button>
+        </div>
       </section>
 
-      <aside className="evidence-queue">
-        <div className="queue-heading"><div><span>Evidence queue</span><small>Choose a lead to keep it in context</small></div><b>{visibleFindings.length}</b></div>
-        <div className="queue-filters" aria-label="Filter evidence queue">{(['all','lead','inconclusive','refuted'] as QueueFilter[]).map(filter=><button type="button" key={filter} className={queueFilter===filter?'active':''} aria-pressed={queueFilter===filter} onClick={()=>setQueueFilter(filter)}>{filter==='all'?'All':filter==='lead'?'Open':filter==='inconclusive'?'Unresolved':'Refuted'} <span>{filterCount(filter)}</span></button>)}</div>
-        <div className="queue-list">{visibleFindings.map((item,index)=><button type="button" key={item.flow.id} className={item.flow.id===priority?.flow.id?'active':''} aria-pressed={item.flow.id===priority?.flow.id} aria-label={`Select ${item.flow.name}`} onClick={()=>setSelectedId(item.flow.id)}><span className="queue-index">{String(index+1).padStart(2,'0')}</span><span className="queue-copy"><b>{item.flow.name}</b><small>{item.evidence?.confidence??'bundle'} confidence · {item.flow.steps.length} steps</small></span><EvidenceState evidence={item.evidence}/><Icon name="arrow" size={12}/></button>)}</div>
-        {!visibleFindings.length&&<p className="queue-empty">No findings match this filter.</p>}
-        <div className="queue-foot"><span><i className="lead-dot"/>{leadCount} lead</span><span><i className="unknown-dot"/>{unresolvedCount} unresolved</span><span><i className="refuted-dot"/>{refutedCount} refuted</span></div>
-      </aside>
-    </div>
-
-    <section className="bundle-reading">
-      <div className="reading-heading"><div><h2>Read the bundle from another angle.</h2><p>The same evidence stays connected as you change lenses.</p></div><span>{app.name} · {app.commit}</span></div>
-      <div className="reading-grid">
-        <button onClick={()=>onView('investigate')}><span className="reading-metric">{new Set(findings.map(item=>item.sink?.id).filter(Boolean)).size}</span><span><b>Execution boundaries</b><small>Compare every value converging on a sink.</small></span><Icon name="arrow" size={13}/></button>
-        <button onClick={()=>onView('map')}><span className="reading-metric">{app.nodes.length}</span><span><b>Graph topology</b><small>{app.edges.length} relationships · {dynamicCount} dynamic.</small></span><Icon name="arrow" size={13}/></button>
-        <button onClick={()=>app.entries[0]?onEntry(0,app.entries[0].hops[0]?.node_id??''):onView('journey')}><span className="reading-metric">{app.entries.length}</span><span><b>Request paths</b><small>{incompletePaths?`${incompletePaths} use derived layout`:'All carry bundled layout'}.</small></span><Icon name="arrow" size={13}/></button>
-      </div>
+      <footer className="bundle-provenance">
+        <div>
+          <span className="local-badge">
+            <i />
+            Local-only inspection
+          </span>
+          <span>
+            {app.language} · {app.lines.toLocaleString()} indexed lines
+          </span>
+        </div>
+        <div>
+          <span>Engine</span>
+          <b>{app.bundle.engine ?? "not reported"}</b>
+          <span>Catalog</span>
+          <b>{app.bundle.catalog ?? "not reported"}</b>
+        </div>
+      </footer>
     </section>
-
-    <footer className="bundle-provenance"><div><span className="local-badge"><i/>Local-only inspection</span><span>{app.language} · {app.lines.toLocaleString()} indexed lines</span></div><div><span>Engine</span><b>{app.bundle.engine??'not reported'}</b><span>Catalog</span><b>{app.bundle.catalog??'not reported'}</b></div></footer>
-  </section>
+  );
 }
