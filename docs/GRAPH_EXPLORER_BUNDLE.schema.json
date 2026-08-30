@@ -128,6 +128,7 @@
       "type": "object",
       "required": ["node_id"],
       "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Stable occurrence identity within this path." },
         "node_id": { "type": "string", "minLength": 1 },
         "role": { "type": "string" },
         "note": { "type": "string" },
@@ -139,6 +140,7 @@
       "type": "object",
       "required": ["node_id"],
       "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Stable occurrence identity within this request path." },
         "node_id": { "type": "string", "minLength": 1 },
         "edge_label": { "type": "string" },
         "caption": { "type": "string" },

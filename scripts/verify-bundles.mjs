@@ -16,7 +16,14 @@ function requireFields(file, value, fields, label) {
 function validateNodes(file, ids, steps, label, { required = true } = {}) {
   if (!Array.isArray(steps)) fail(file, `${label} steps must be an array`);
   if (required && steps.length === 0) fail(file, `${label} must contain at least one step`);
+  const occurrenceIds = new Set();
   for (const [stepIndex, step] of steps.entries()) {
+    if (step?.id != null) {
+      const occurrenceId = String(step.id);
+      if (!occurrenceId) fail(file, `${label} step ${stepIndex}.id must not be empty`);
+      if (occurrenceIds.has(occurrenceId)) fail(file, `${label} duplicates occurrence ID ${occurrenceId}`);
+      occurrenceIds.add(occurrenceId);
+    }
     const nodeId = String(step?.node_id ?? step?.nodeId ?? step?.node ?? "");
     if (!ids.has(nodeId)) fail(file, `${label} step ${stepIndex} references a missing node`);
   }

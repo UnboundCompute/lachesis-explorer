@@ -1,12 +1,12 @@
 import demoBundle from '../public/demo-bundle.json'
 
 export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; signature?: string; documentation?: string; snippet: string }
-export type Step = { node_id: string; role: string; note?: string; edge?: { alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
+export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
 export type Flow = { id: string; name: string; steps: Step[] }
 export type GuardEvidence = { verdict?: string; note?: string; items?: {node_id?:string;effect?:string}[] }
 export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; node_ids?: string[]; indirections?: number; confidence?: string; origin?: string; status?: string; lifecycle?: string; limitations?: string[]; guards?: GuardEvidence }
 export type LayoutPoint = { x: number; y: number }
-export type Hop = { node_id: string; edge_label: string; caption: string; layout?: LayoutPoint; confidence?: string; limitations?: string[] }
+export type Hop = { id?: string; node_id: string; edge_label: string; caption: string; layout?: LayoutPoint; confidence?: string; limitations?: string[] }
 export type Entry = { id: string; label: string; file: string; entry_node?: string; hops: Hop[]; hasLayout: boolean }
 export type GraphFile = { id: string; path: string; module?: string; language?: string; lines?: number }
 export type GraphModule = { id: string; name: string; path?: string; parentId?: string; nodeIds?: string[] }
@@ -58,6 +58,18 @@ function assertUniqueIds(items:{id:string}[], label:string) {
     seen.add(item.id)
   }
 }
+function assertUniqueOccurrenceIds(items:{id?:string}[], label:string) {
+  const seen=new Set<string>()
+  for (const item of items) if (item.id != null) {
+    if (!item.id.trim()) throw new Error(`${label} occurrence IDs must be non-empty.`)
+    if (seen.has(item.id)) throw new Error(`${label} contains duplicate occurrence ID "${item.id}".`)
+    seen.add(item.id)
+  }
+}
+function normalizeStep(raw:any):Step {
+  const id=raw?.occurrence_id??raw?.step_id??raw?.id
+  return {id:id==null?undefined:String(id),node_id:String(raw?.node_id??raw?.nodeId??raw?.node??raw?.id??''),role:String(raw?.role??'node'),note:raw?.note,edge:raw?.edge}
+}
 
 type EdgeSeed = Omit<GraphEdge,'id'|'origins'|'flow_ids'|'entry_ids'> & {id?:string;origin:EdgeOrigin;flow_id?:string;entry_id?:string}
 
@@ -66,11 +78,12 @@ function normalizeEntries(rawPaths:unknown,nodes:Node[]):Entry[]{
   const entries=rawPaths.map((e:any,i:number)=>{
     const rawHops=Array.isArray(e.hops)?e.hops:[]
     const entryNode=String(e.entry_node??e.entryNode??rawHops[0]?.node_id??'')
-    const hops=rawHops.map((h:any,j:number)=>({node_id:String(h.node_id??h.nodeId??h.id??''),edge_label:String(h.edge_label??h.label??''),caption:String(h.caption??''),confidence:h.confidence==null?undefined:String(h.confidence),limitations:Array.isArray(h.limitations)?h.limitations.map(String):undefined,layout:pointFor(e.layout,String(h.node_id??h.nodeId??h.id??''),j)}))
+    const hops=rawHops.map((h:any,j:number)=>({id:(h.occurrence_id??h.hop_id??h.id)==null?undefined:String(h.occurrence_id??h.hop_id??h.id),node_id:String(h.node_id??h.nodeId??h.node??h.id??''),edge_label:String(h.edge_label??h.label??''),caption:String(h.caption??''),confidence:h.confidence==null?undefined:String(h.confidence),limitations:Array.isArray(h.limitations)?h.limitations.map(String):undefined,layout:pointFor(e.layout,String(h.node_id??h.nodeId??h.node??h.id??''),j)}))
     const firstNode=nodes.find(node=>node.id===entryNode)
     return {id:String(e.id??e.callpath_id??`callpath_${i}`),label:String(e.entry??e.label??''),file:firstNode?`${firstNode.file}:${firstNode.line}`:'',entry_node:entryNode,hops,hasLayout:hops.length>0&&hops.every((hop:Hop)=>hop.layout!==undefined)}
   })
   assertUniqueIds(entries,'Request paths')
+  entries.forEach((entry,index)=>assertUniqueOccurrenceIds(entry.hops,`Request path ${entry.id||index}`))
   return entries
 }
 
@@ -118,7 +131,7 @@ export function normalize(raw: any): App {
   if (!Array.isArray(source.nodes)) throw new Error('Expected graph.nodes to be an array.')
   if (!Array.isArray(source.flows)) throw new Error('Expected graph.flows to be an array.')
   const nodes = source.nodes.map(normalizeNode)
-  const flows = source.flows.map((f:any,i:number)=>{const id=String(f.id??`flow_${i}`);return {id,name:String(f.value??f.name??id),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []}})
+  const flows = source.flows.map((f:any,i:number)=>{const id=String(f.id??`flow_${i}`);return {id,name:String(f.value??f.name??id),steps:Array.isArray(f.steps)?f.steps.map(normalizeStep) : []}})
   assertUniqueIds(flows,'Graph paths')
   const entries=normalizeEntries(raw.callpaths??source.callpaths??[],nodes)
   const rawMcp = raw.mcp ?? source.mcp
@@ -150,13 +163,14 @@ function normalizeBundleV1(raw: any): App {
   const nodes:Node[] = graph.nodes.map(normalizeNode)
   const findingFlows:Flow[] = raw.findings.map((f:any,i:number)=>{
     const id=String(f.finding_id??f.id??`finding_${i}`)
-    const steps=Array.isArray(f.witness?.steps)?f.witness.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})) : []
+    const steps=Array.isArray(f.witness?.steps)?f.witness.steps.map(normalizeStep) : []
     const source=f.locations?.find((location:any)=>location.role==='source')?.symbol
     const sink=f.locations?.find((location:any)=>location.role==='sink')?.symbol
     return {id,name:String(f.display_name??f.name??((source&&sink)?`${source} → ${sink}`:sink??source??id)),steps}
   })
   assertUniqueIds(findingFlows,'Security findings')
   const flows = findingFlows.filter(flow=>flow.steps.length>0)
+  findingFlows.forEach((flow)=>assertUniqueOccurrenceIds(flow.steps,`Security finding ${flow.id}`))
   const mcp:Evidence[] = raw.findings.map((f:any,i:number)=>{
     const id=String(f.finding_id??f.id??`finding_${i}`)
     const steps=Array.isArray(f.witness?.steps)?f.witness.steps:[]
@@ -209,8 +223,10 @@ function normalizeGraphV2(raw:any):App {
   const pathRequests=raw.paths?.requests??graph.request_paths??raw.callpaths??[]
   const findings=raw.security?.findings??raw.findings??[]
   const flowRaw=Array.isArray(pathValues)?pathValues:[]
-  const flows:Flow[]=flowRaw.map((f:any,i:number)=>{const id=String(f.id??f.finding_id??`value_flow_${i}`);return {id,name:String(f.name??f.value??f.display_name??id),steps:Array.isArray(f.steps)?f.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})):[]}})
-  const findingFlows:Flow[]=Array.isArray(findings)?findings.map((f:any,i:number)=>{const id=String(f.finding_id??f.id??`finding_${i}`);return {id,name:String(f.display_name??f.name??id),steps:Array.isArray(f.witness?.steps)?f.witness.steps.map((s:any)=>({node_id:String(s.node_id??s.nodeId??s.node??''),role:String(s.role??'node'),note:s.note,edge:s.edge})):[]}}):[]
+  const flows:Flow[]=flowRaw.map((f:any,i:number)=>{const id=String(f.id??f.finding_id??`value_flow_${i}`);return {id,name:String(f.name??f.value??f.display_name??id),steps:Array.isArray(f.steps)?f.steps.map(normalizeStep):[]}})
+  const findingFlows:Flow[]=Array.isArray(findings)?findings.map((f:any,i:number)=>{const id=String(f.finding_id??f.id??`finding_${i}`);return {id,name:String(f.display_name??f.name??id),steps:Array.isArray(f.witness?.steps)?f.witness.steps.map(normalizeStep):[]}}):[]
+  flows.forEach((flow)=>assertUniqueOccurrenceIds(flow.steps,`Value path ${flow.id}`))
+  findingFlows.forEach((flow)=>assertUniqueOccurrenceIds(flow.steps,`Security finding ${flow.id}`))
   assertUniqueIds(findingFlows,'Security findings')
   const emptyValuePath=flows.find(flow=>flow.steps.length===0)
   if(emptyValuePath)throw new Error(`Value path "${emptyValuePath.name}" contains no steps.`)
