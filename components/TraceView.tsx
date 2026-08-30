@@ -199,6 +199,9 @@ export function TraceView({
     ? "function"
     : app.nodes[0]?.kind || "node";
   const filterSuggestions = [
+    flow.kind
+      ? { label: pathKindLabel(flow, securityPath), query: `path:${flow.kind}` }
+      : null,
     app.findings.length > 0 || app.bundle.projection === "security projection"
       ? { label: "sink", query: "kind:sink" }
       : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
@@ -261,7 +264,7 @@ export function TraceView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search paths: symbol, file, edge…"
+            placeholder="Search paths: symbol, file, path:value-flow, edge…"
             aria-label="Filter graph paths"
           />
         </label>
