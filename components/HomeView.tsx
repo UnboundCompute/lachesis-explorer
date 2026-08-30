@@ -234,7 +234,7 @@ export function HomeView({
           <p>Choose the kind of understanding you need first.</p>
         </div>
         <div className="question-list">
-          <button type="button" onClick={() => graphFocus ? onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "") : onView("trace")}>
+          <button type="button" onClick={() => graphFocus ? onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "") : onView("trace")}>
             <b>Where does a value go?</b>
             <small>Trace a value through its handoffs.</small>
             <Icon name="arrow" size={12} />
@@ -402,7 +402,7 @@ export function HomeView({
               <div className="priority-actions">
                 <button
                   onClick={() =>
-                    onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "")
+                    onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")
                   }
                 >
                   Trace this path{" "}
@@ -514,7 +514,7 @@ export function HomeView({
                 aria-label={`Select ${item.flow.name}`}
                 onClick={() =>
                   graphOnly
-                    ? onFlow(item.flow.id, item.flow.steps[0]?.node_id ?? "")
+                    ? onFlow(item.flow.id, item.flow.sourceNodeId ?? item.flow.steps[0]?.node_id ?? "")
                     : setSelectedId(item.flow.id)
                 }
               >
@@ -585,7 +585,7 @@ export function HomeView({
                 ? onView("map")
                 : graphOnly
                 ? graphFocus
-                  ? onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "")
+                  ? onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")
                   : onView("map")
                 : onView("investigate")
             }
