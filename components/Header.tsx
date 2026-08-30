@@ -137,6 +137,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
                   <span><b>{app.name || 'Untitled bundle'}</b><small>{app.language || 'unknown'} · {app.commit || 'no commit'}</small></span>
                 </div>
                 {app.bundle.description && <p className="bundle-description">{app.bundle.description}</p>}
+                {app.coverage.limitations[0] && <p className="bundle-coverage-warning"><i />{app.coverage.limitations[0]}</p>}
                 <div className="menu-metrics"><span><b>{app.nodes.length}</b> nodes</span><span><b>{app.flows.length}</b> flows</span><span><b>{app.entries.length}</b> paths</span></div>
                 {recentBundles.length > 0 && (
                   <div className="recent-bundles">
