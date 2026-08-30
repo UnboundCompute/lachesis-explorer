@@ -65,6 +65,7 @@ function matchesFlow(app: App, flow: Flow, query: string) {
     }
     const haystack = [
       flow.name,
+      flow.kind,
       ...flow.steps.map((step) => step.role),
       ...nodes.flatMap((node) =>
         node ? [node.label, node.file, node.kind] : [],
