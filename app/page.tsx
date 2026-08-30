@@ -239,7 +239,20 @@ export default function Page() {
       if (value) url.searchParams.set(key, value);
     });
     try {
-      await navigator.clipboard.writeText(url.toString());
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url.toString());
+      } else {
+        const input = document.createElement("textarea");
+        input.value = url.toString();
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        const copied = document.execCommand("copy");
+        input.remove();
+        if (!copied) throw new Error("Clipboard fallback failed");
+      }
       setLoadState({ type: "success", message: "Investigation link copied." });
       trackEvent("investigation_link_copied", {
         view: params.view ?? "unknown",
