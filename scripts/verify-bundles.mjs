@@ -6,6 +6,12 @@ function fail(file, message) {
   throw new Error(`${file}: ${message}`);
 }
 
+function requireFields(file, value, fields, label) {
+  for (const field of fields) {
+    if (value?.[field] == null) fail(file, `${label}.${field} is required`);
+  }
+}
+
 function validateNodes(file, ids, steps, label, { required = true } = {}) {
   if (!Array.isArray(steps)) fail(file, `${label} steps must be an array`);
   if (required && steps.length === 0) fail(file, `${label} must contain at least one step`);
@@ -22,10 +28,17 @@ function verify(file, bundle) {
   if (format && format !== "lachesis-explorer-bundle") fail(file, "format must be lachesis-explorer-bundle");
   if (schemaVersion && !["1.0", "2.0"].includes(schemaVersion)) fail(file, `unsupported schema_version ${schemaVersion}`);
   if (schemaVersion === "2.0" && format !== "lachesis-explorer-bundle") fail(file, "2.0 bundles must declare format lachesis-explorer-bundle");
+  if (schemaVersion === "2.0") {
+    requireFields(file, bundle, ["format", "schema_version", "meta", "graph"], "bundle");
+    requireFields(file, bundle.meta, ["repository", "language", "revision", "lines", "indexed_nodes"], "meta");
+  }
   const graph = bundle.graph;
   if (!graph || !Array.isArray(graph.nodes)) fail(file, "graph.nodes must be an array");
   const ids = new Set(graph.nodes.map((node) => String(node.id ?? node.node_id ?? "")));
   if (ids.size !== graph.nodes.length || ids.has("")) fail(file, "graph nodes must have unique non-empty IDs");
+  if (schemaVersion === "2.0") {
+    graph.nodes.forEach((node, index) => requireFields(file, node, ["id", "kind", "file", "line", "label", "snippet"], `graph.nodes[${index}]`));
+  }
   if (graph.edges != null && !Array.isArray(graph.edges)) fail(file, "graph.edges must be an array");
 
   for (const [index, edge] of (graph.edges ?? []).entries()) {
