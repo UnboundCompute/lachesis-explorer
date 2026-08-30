@@ -97,7 +97,7 @@ export function TraceView({
     const ordered = direction === "backward" ? flow.steps : [...flow.steps].reverse();
     const position = ordered.findIndex((step) => step.node_id === stepId);
     setSelectedPosition(position >= 0 ? position : 0);
-  }, [flowId, direction]);
+  }, [app, flowId, direction]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;

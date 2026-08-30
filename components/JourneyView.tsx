@@ -42,7 +42,7 @@ export function JourneyView({
     if (!entry) return;
     const position = entry.hops.findIndex((hop) => hop.node_id === hopId);
     setSelectedPosition(position >= 0 ? position : 0);
-  }, [entryIndex]);
+  }, [app, entryIndex]);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
