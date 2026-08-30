@@ -55,12 +55,15 @@ CLI commands, jobs, event handlers, public APIs, and exported functions.
 
 `paths.values` and `paths.requests` contain optional precomputed paths for fast
 guided exploration. They are useful accelerators, not substitutes for the
-underlying graph.
+underlying graph. Every value path must contain at least one valid `steps`
+item; an empty value path is invalid because it cannot be traversed. Request
+paths may be omitted when the exporter has no callpath projection.
 
 `security.findings` contains the existing Lachesis finding envelopes. Each
 finding should reference graph node and edge IDs where possible. A bundle with
 zero findings remains valid and must present a clean security state rather
-than failing to load.
+than failing to load. Findings without witness steps may remain as metadata,
+but are not exposed as traceable paths until a witness is available.
 
 ## Scope and completeness
 
