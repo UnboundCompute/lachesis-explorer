@@ -176,7 +176,7 @@ export function OverviewView({
     { label: "Relationships", value: app.edges.length },
     { label: "Graph paths", value: app.flows.length },
     { label: "Request paths", value: app.entries.length },
-    { label: "MCP records", value: app.mcp.length },
+    { label: "Linked records", value: app.mcp.length },
     {
       label: "Missing layouts",
       value: app.entries.filter((entry) => !entry.hasLayout).length,
@@ -607,7 +607,7 @@ export function OverviewView({
               {!app.mcp.length && (
                 <p>
                   <i />
-                  No MCP evidence records are bundled; summaries remain derived.
+                  No linked evidence records are bundled; summaries remain derived.
                 </p>
               )}
             </section>
