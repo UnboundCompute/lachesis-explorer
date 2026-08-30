@@ -35,6 +35,8 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
   const inspectorRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
+  const [snippetCopied, setSnippetCopied] = useState(false);
+  const [snippetCopyError, setSnippetCopyError] = useState(false);
   const [showAllConnections, setShowAllConnections] = useState(false);
   const location = node.file
     ? `${node.file}:${node.line || "—"}${node.column ? `:${node.column}` : ""}`
@@ -43,6 +45,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
     node.endLine && node.endLine !== node.line
       ? `lines ${node.line}–${node.endLine}`
       : `line ${node.line || "—"}`;
+  const snippet = node.snippet || node.label || "";
   const flows =
     app?.flows.filter((flow) =>
       flow.steps.some((step) => step.node_id === node.id),
@@ -74,6 +77,19 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
     } catch {
       setCopied(false);
       setCopyError(true);
+    }
+  }
+  async function copySnippet() {
+    if (!snippet) return;
+    try {
+      await copyText(snippet);
+      setSnippetCopyError(false);
+      setSnippetCopied(true);
+      trackEvent("source_snippet_copied");
+      window.setTimeout(() => setSnippetCopied(false), 1200);
+    } catch {
+      setSnippetCopied(false);
+      setSnippetCopyError(true);
     }
   }
   function closeInspector() {
@@ -126,10 +142,12 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
           </button>
         </div>
         <pre className="source-code">
-          <code>
-            {node.snippet || node.label || "Source unavailable in this bundle."}
-          </code>
+          <code>{snippet || "Source unavailable in this bundle."}</code>
         </pre>
+        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet}>
+          <Icon name="code" size={12} />
+          {snippetCopied ? "Snippet copied" : snippetCopyError ? "Retry copy" : "Copy snippet"}
+        </button>
       </div>
       <div className="detail-rule" />
       <span className="panel-label">WHAT THIS NODE MEANS</span>
