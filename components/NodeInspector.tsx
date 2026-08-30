@@ -91,7 +91,9 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
           <i />
           {node.kind}
         </span>
-        <span className="node-identity">{node.id}</span>
+        <span className="node-identity" title={`Graph ID: ${node.id}`}>
+          ID · {node.id.length > 10 ? `…${node.id.slice(-8)}` : node.id}
+        </span>
         <button
           className="inspector-close"
           onClick={closeInspector}
