@@ -159,6 +159,8 @@ function normalizeGraphV2(raw:any):App {
   const meta=raw.meta??{}
   const nodes:Node[]=Array.isArray(graph.nodes)?graph.nodes.map(normalizeNode):[]
   if(!nodes.length)throw new Error('The bundle contains no graph nodes.')
+  const nodeIds=new Set(nodes.map(node=>node.id))
+  if(nodeIds.size!==nodes.length)throw new Error('The bundle contains duplicate node IDs.')
   const files=normalizeFiles(graph.files)
   const modules=normalizeModules(graph.modules)
   const entrypoints=normalizeEntrypoints(graph.entrypoints)
