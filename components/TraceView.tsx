@@ -88,6 +88,10 @@ function flowLocation(app: App, flow: Flow) {
     : `${location(first)} → ${location(last)}`;
 }
 
+function nodeLocation(node: App["nodes"][number] | undefined) {
+  return node ? `${node.file || "Source location unavailable"}:${node.line || "—"}` : "Source location unavailable";
+}
+
 export function TraceView({
   app,
   flowId,
@@ -382,7 +386,7 @@ export function TraceView({
             <span>START</span>
             <b>{firstNode?.label || "Unknown symbol"}</b>
             <small>
-              {firstNode?.file}:{firstNode?.line}
+              {nodeLocation(firstNode)}
             </small>
           </div>
           <i aria-hidden="true">
@@ -392,7 +396,7 @@ export function TraceView({
             <span>END</span>
             <b>{lastNode?.label || "Unknown symbol"}</b>
             <small>
-              {lastNode?.file}:{lastNode?.line}
+              {nodeLocation(lastNode)}
             </small>
           </div>
           <div className="trace-orientation-fact">

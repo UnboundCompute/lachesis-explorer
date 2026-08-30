@@ -6,6 +6,10 @@ import { Icon } from "./Icon";
 import { PathCanvas, type PathItem } from "./PathCanvas";
 import { NodeInspector } from "./NodeInspector";
 import { EvidencePanel } from "./EvidencePanel";
+
+function nodeLocation(node: App["nodes"][number] | undefined) {
+  return node ? `${node.file || "Source location unavailable"}:${node.line || "—"}` : "Source location unavailable";
+}
 type Props = {
   app: App;
   entryIndex: number;
@@ -265,7 +269,7 @@ export function JourneyView({
             <span>ENTRYPOINT</span>
             <b>{firstNode?.label || entry.label}</b>
             <small>
-              {firstNode?.file}:{firstNode?.line}
+              {nodeLocation(firstNode)}
             </small>
           </div>
           <i aria-hidden="true">
@@ -275,7 +279,7 @@ export function JourneyView({
             <span>LAST OBSERVED HOP</span>
             <b>{lastNode?.label || "Unknown symbol"}</b>
             <small>
-              {lastNode?.file}:{lastNode?.line}
+              {nodeLocation(lastNode)}
             </small>
           </div>
           <div className="trace-orientation-fact">
