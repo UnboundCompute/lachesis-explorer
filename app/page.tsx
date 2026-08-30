@@ -682,8 +682,10 @@ export default function Page() {
         view={view}
         flowId={flowId}
         stepId={stepId}
+        stepIndex={stepIndex}
         entryIndex={entryIndex}
         hopId={hopId}
+        hopIndex={hopIndex}
         sinkId={sinkId}
       />
       {view === "trace" && (
