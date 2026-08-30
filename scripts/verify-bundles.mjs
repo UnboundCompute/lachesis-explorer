@@ -13,6 +13,13 @@ function requireFields(file, value, fields, label) {
   }
 }
 
+function requireNonNegativeIntegers(file, value, fields, label) {
+  for (const field of fields) {
+    if (typeof value?.[field] !== "number" || !Number.isInteger(value[field]) || value[field] < 0)
+      fail(file, `${label}.${field} must be a non-negative integer`);
+  }
+}
+
 function validateNodes(file, ids, steps, label, { required = true } = {}) {
   if (!Array.isArray(steps)) fail(file, `${label} steps must be an array`);
   if (required && steps.length === 0) fail(file, `${label} must contain at least one step`);
@@ -57,6 +64,7 @@ function verify(file, bundle) {
   if (schemaVersion === "2.0") {
     requireFields(file, bundle, ["format", "schema_version", "meta", "graph"], "bundle");
     requireFields(file, bundle.meta, ["repository", "language", "revision", "lines", "indexed_nodes"], "meta");
+    requireNonNegativeIntegers(file, bundle.meta, ["lines", "indexed_nodes"], "meta");
   }
   const graph = bundle.graph;
   if (!graph || !Array.isArray(graph.nodes)) fail(file, "graph.nodes must be an array");
@@ -65,6 +73,8 @@ function verify(file, bundle) {
   if (schemaVersion === "2.0") {
     graph.nodes.forEach((node, index) => requireFields(file, node, ["id", "kind", "file", "line", "label", "snippet"], `graph.nodes[${index}]`));
     const coverage = graph.coverage;
+    if (coverage?.included_nodes != null || coverage?.indexed_nodes != null)
+      requireNonNegativeIntegers(file, coverage, ["included_nodes", "indexed_nodes"].filter((field) => coverage[field] != null), "graph.coverage");
     if (coverage?.included_nodes != null && Number(coverage.included_nodes) !== graph.nodes.length) fail(file, "graph.coverage.included_nodes must match graph.nodes.length");
     if (coverage?.indexed_nodes != null && Number(coverage.indexed_nodes) < Number(coverage.included_nodes ?? graph.nodes.length)) fail(file, "graph.coverage.indexed_nodes cannot be less than included_nodes");
   }

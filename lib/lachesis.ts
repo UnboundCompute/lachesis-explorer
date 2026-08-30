@@ -204,6 +204,10 @@ function normalizeGraphV2(raw:any):App {
   for (const field of ['repository','language','revision','lines','indexed_nodes']) {
     if (meta[field] == null) throw new Error(`Graph-first bundles require meta.${field}.`)
   }
+  for (const field of ['lines','indexed_nodes']) {
+    if (typeof meta[field] !== 'number' || !Number.isInteger(meta[field]) || meta[field] < 0)
+      throw new Error(`Graph-first bundles require meta.${field} to be a non-negative integer.`)
+  }
   const nodes:Node[]=Array.isArray(graph.nodes)?graph.nodes.map(normalizeNode):[]
   if(!nodes.length)throw new Error('The bundle contains no graph nodes.')
   const nodeIds=new Set(nodes.map(node=>node.id))
