@@ -28,7 +28,9 @@ type Props = {
 export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
-  const location = `${node.file}:${node.line}${node.column ? `:${node.column}` : ""}`;
+  const location = node.file
+    ? `${node.file}:${node.line || "—"}${node.column ? `:${node.column}` : ""}`
+    : node.id;
   const range =
     node.endLine && node.endLine !== node.line
       ? `lines ${node.line}–${node.endLine}`
