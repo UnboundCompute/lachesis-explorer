@@ -22,12 +22,14 @@ type Props = {
 
 const statusCopy: Record<string, string> = {
   lead: "Review first",
+  reported: "Reported evidence",
   inconclusive: "Unresolved",
   refuted: "Guard observed",
   verified: "Verified",
 };
 const statusRank: Record<string, number> = {
   lead: 0,
+  reported: 1,
   inconclusive: 1,
   verified: 2,
   refuted: 3,
@@ -46,7 +48,7 @@ function sourceFor(flow: Flow, app: App): Node | undefined {
 }
 
 function EvidenceState({ evidence }: { evidence?: Evidence }) {
-  const status = evidence?.status ?? "lead";
+  const status = evidence?.status ?? (evidence ? "reported" : "lead");
   return (
     <span className={`finding-state state-${status}`}>
       <i />

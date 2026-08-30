@@ -2,11 +2,11 @@ import type { Evidence } from '../lib/lachesis'
 import { Icon } from './Icon'
 
 type Props={evidence?:Evidence;fallbackTool:string;fallbackArgs:string;fallbackSummary:string;nodeCount:number;indirections?:number}
-const labels:Record<string,string>={lead:'Lead · review needed',inconclusive:'Inconclusive',refuted:'Refuted by guard',verified:'Verified evidence'}
+const labels:Record<string,string>={lead:'Lead · review needed',reported:'Reported evidence',inconclusive:'Inconclusive',refuted:'Refuted by guard',verified:'Verified evidence'}
 
 export function EvidencePanel({evidence,fallbackTool,fallbackArgs,fallbackSummary,nodeCount,indirections}:Props){
   const grounded=Boolean(evidence)
-  const status=evidence?.status??(evidence?.confidence==='exact'?'verified':'lead')
+  const status=evidence?.status??(grounded?'reported':evidence?.confidence==='exact'?'verified':'lead')
   const limitations=evidence?.limitations??[]
   const guard=evidence?.guards
   const resolution=status==='inconclusive'

@@ -130,6 +130,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .finding-state i{width:5px;height:5px;border-radius:50%;background:currentColor}
 .finding-state.state-refuted{background:var(--brand-wash);color:var(--brand)}
 .finding-state.state-verified{background:var(--cyan-wash);color:var(--cyan)}
+.finding-state.state-reported{background:var(--cyan-wash);color:var(--cyan)}
 .finding-state.state-inconclusive{background:var(--violet-wash);color:var(--violet)}
 .priority-title{display:flex;align-items:center;gap:13px;margin-top:28px}
 .target-mark{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:12px;background:var(--coral-wash);color:var(--coral)}
