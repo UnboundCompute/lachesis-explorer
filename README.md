@@ -93,6 +93,8 @@ Please keep the JSON contract stable, keep evidence grounded in bundle data, and
 
 Please report vulnerabilities privately according to [SECURITY.md](SECURITY.md); do not attach real repository bundles to public issues.
 
+Pull requests are checked automatically by [GitHub Actions](.github/workflows/ci.yml) for bundle-contract validation, type safety, and a production build.
+
 ## Analytics
 
 The deployed app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. Events cover navigation and product interactions such as changing views, toggling theme, selecting a flow or callpath hop, loading a bundle, copying an install command, and opening a related resource.
