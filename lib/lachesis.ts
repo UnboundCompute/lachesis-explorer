@@ -174,6 +174,8 @@ function normalizeGraphV2(raw:any):App {
   if(emptyValuePath)throw new Error(`Value path "${emptyValuePath.name}" contains no steps.`)
   const allFlows=[...flows,...findingFlows.filter(f=>f.steps.length>0&&!flows.some(existing=>existing.id===f.id))]
   const entries=normalizeEntries(pathRequests,nodes)
+  const emptyRequestPath=entries.find(entry=>entry.hops.length===0)
+  if(emptyRequestPath)throw new Error(`Request path "${emptyRequestPath.label||emptyRequestPath.id}" contains no hops.`)
   const rawEdges=Array.isArray(graph.edges)?graph.edges:[]
   const explicitEdges:EdgeSeed[]=rawEdges.map((edge:any)=>({source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),origin:'bundle'}))
   const ids=new Set(nodes.map(node=>node.id))

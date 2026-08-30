@@ -56,8 +56,10 @@ CLI commands, jobs, event handlers, public APIs, and exported functions.
 `paths.values` and `paths.requests` contain optional precomputed paths for fast
 guided exploration. They are useful accelerators, not substitutes for the
 underlying graph. Every value path must contain at least one valid `steps`
-item; an empty value path is invalid because it cannot be traversed. Request
-paths may be omitted when the exporter has no callpath projection.
+item; an empty value path is invalid because it cannot be traversed. Every
+request path must contain at least one hop; an empty request path is invalid
+because it cannot be traversed. Either path collection may be omitted when
+the exporter has no corresponding projection.
 
 `security.findings` contains the existing Lachesis finding envelopes. Each
 finding should reference graph node and edge IDs where possible. A bundle with

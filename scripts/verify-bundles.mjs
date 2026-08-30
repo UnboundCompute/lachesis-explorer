@@ -25,7 +25,7 @@ function verify(file, bundle) {
     for (const [pathIndex, path] of pathList.entries()) {
       const steps = path.steps ?? path.hops ?? [];
       if (!Array.isArray(steps)) fail(file, `paths.${kind}[${pathIndex}] steps must be an array`);
-      if (kind === "values" && steps.length === 0) fail(file, `paths.values[${pathIndex}] must contain at least one step`);
+      if (steps.length === 0) fail(file, `paths.${kind}[${pathIndex}] must contain at least one step`);
       for (const [stepIndex, step] of steps.entries()) {
         const nodeId = String(step.node_id ?? step.nodeId ?? step.node ?? "");
         if (!ids.has(nodeId)) fail(file, `paths.${kind}[${pathIndex}] step ${stepIndex} references a missing node`);
