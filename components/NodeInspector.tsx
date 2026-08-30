@@ -41,6 +41,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
   const location = node.file
     ? `${node.file}:${node.line || "—"}${node.column ? `:${node.column}` : ""}`
     : node.id;
+  const hasSourceLocation = Boolean(node.file);
   const range =
     node.endLine && node.endLine !== node.line
       ? `lines ${node.line}–${node.endLine}`
@@ -113,6 +114,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
           ID · {node.id.length > 10 ? `…${node.id.slice(-8)}` : node.id}
         </span>
         <button
+          type="button"
           className="inspector-close"
           onClick={closeInspector}
           aria-label="Close source inspector"
@@ -121,8 +123,10 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
         </button>
       </div>
       <div className="inspector-source">
-        <span className="panel-label">SOURCE LOCATION</span>
-        <h3>{node.file || "Unknown file"}</h3>
+        <span className="panel-label">
+          {hasSourceLocation ? "SOURCE LOCATION" : "SOURCE LOCATION UNAVAILABLE"}
+        </span>
+        <h3>{node.file || "This bundle has no file mapping"}</h3>
         <div className="inspector-symbol">
           <b>{node.label || node.id}</b>
           {node.qualifiedName && node.qualifiedName !== node.label && (
@@ -132,13 +136,10 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
           {node.module && <span>module {node.module}</span>}
         </div>
         <div className="location-row">
-          <span className="line-number">
-            {range}
-            {node.column ? ` · column ${node.column}` : ""}
-          </span>
-          <button onClick={copyLocation} aria-label="Copy source location">
+          <span className="line-number">{hasSourceLocation ? <>{range}{node.column ? ` · column ${node.column}` : ""}</> : <>Graph ID · {node.id}</>}</span>
+          <button type="button" onClick={copyLocation} aria-label={hasSourceLocation ? "Copy source location" : "Copy graph ID"}>
             <Icon name="code" size={12} />
-            {copied ? "Copied" : copyError ? "Retry" : "Copy"}
+            {copied ? "Copied" : copyError ? "Retry" : hasSourceLocation ? "Copy" : "Copy ID"}
           </button>
         </div>
         <pre className="source-code">
