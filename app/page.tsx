@@ -111,6 +111,7 @@ export default function Page() {
   const dragDepth = useRef(0);
   const pendingLink = useRef<PendingLink | null>(null);
   const importBusy = useRef(false);
+  const urlReady = useRef(false);
 
   const record = useCallback(
     (action: string, target: string, detail: string) =>
@@ -238,7 +239,32 @@ export default function Page() {
       starter.nodes.some((node) => node.id === link.node)
     )
       setFocusNodeId(link.node);
+    urlReady.current = true;
   }, []);
+
+  useEffect(() => {
+    if (!urlReady.current) return;
+    const params = new URLSearchParams();
+    params.set("view", view);
+    if (!isDemo) params.set("scope", "local");
+    if (view === "trace") {
+      params.set("flow", flowId);
+      params.set("node", stepId);
+      params.set("direction", direction);
+      params.set("step_index", String(stepIndex));
+      const occurrence = stepAtPosition(app, flowId, stepIndex, direction)?.id;
+      if (occurrence) params.set("step_occurrence", occurrence);
+    } else if (view === "journey") {
+      params.set("entry", app.entries[entryIndex]?.id ?? "");
+      params.set("hop", hopId);
+      params.set("hop_index", String(hopIndex));
+      const occurrence = app.entries[entryIndex]?.hops[hopIndex]?.id;
+      if (occurrence) params.set("hop_occurrence", occurrence);
+    } else if (view === "investigate" && sinkId) {
+      params.set("sink", sinkId);
+    }
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+  }, [app, direction, entryIndex, flowId, hopId, hopIndex, isDemo, sinkId, stepId, stepIndex, view]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -414,6 +440,7 @@ export default function Page() {
       if (pending.direction === "forward") setDirection("forward");
       pendingLink.current = null;
     }
+    urlReady.current = true;
     setMenu(false);
     setInspectorOpen(true);
     setIsDemo(false);
