@@ -13,6 +13,7 @@ type Props = {
   isDemo: boolean;
   loadState: LoadState;
   onUpload: () => void;
+  onLoadSample: () => void;
   onView: (view: "map" | "investigate" | "trace" | "journey") => void;
   onFlow: (flowId: string, nodeId: string) => void;
   onSink: (sinkId: string) => void;
@@ -57,6 +58,7 @@ export function HomeView({
   isDemo,
   loadState,
   onUpload,
+  onLoadSample,
   onView,
   onFlow,
   onSink,
@@ -178,6 +180,13 @@ export function HomeView({
               >
                 Try code graph sample <Icon name="arrow" size={12} />
               </a>
+              <button
+                className="download-fixture sample-load"
+                type="button"
+                onClick={onLoadSample}
+              >
+                Load code graph sample <Icon name="arrow" size={12} />
+              </button>
             </div>
           )}
         </div>

@@ -363,6 +363,25 @@ export default function Page() {
     }
   }
 
+  async function loadCodeSample() {
+    setLoadState({
+      type: "loading",
+      message: "Reading the code exploration sample…",
+    });
+    try {
+      const response = await fetch("/code-exploration-bundle.json");
+      if (!response.ok)
+        throw new Error("The code exploration sample could not be loaded.");
+      activate(normalize(await response.json()));
+    } catch (error) {
+      setLoadState({
+        type: "error",
+        message: `${error instanceof Error ? error.message : "Could not load the code exploration sample"} The current bundle was kept.`,
+      });
+      trackEvent("bundle_load_failed");
+    }
+  }
+
   async function uploadComparison(file?: File) {
     if (!file) return;
     try {
@@ -517,6 +536,7 @@ export default function Page() {
           isDemo={isDemo}
           loadState={loadState}
           onUpload={() => fileRef.current?.click()}
+          onLoadSample={loadCodeSample}
           onView={(next) => changeView(next)}
           onFlow={(nextFlow, nextNode) => {
             setView("trace");
