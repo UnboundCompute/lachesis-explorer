@@ -336,6 +336,7 @@ export default function Page() {
     setMenu(false);
     setInspectorOpen(true);
     setIsDemo(false);
+    setActivity([]);
     setLoadState({
       type: restored || !pending ? "success" : "error",
       message: restored
