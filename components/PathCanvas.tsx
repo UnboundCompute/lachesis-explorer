@@ -210,6 +210,7 @@ export function PathCanvas({
                 }}
                 role="button"
                 tabIndex={0}
+                aria-pressed={selected}
                 aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}`}
               >
                 <title>{item.node.label || item.node.id}</title>

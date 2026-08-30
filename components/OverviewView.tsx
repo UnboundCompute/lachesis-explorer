@@ -465,6 +465,7 @@ export function OverviewView({
                         }}
                         role="button"
                         tabIndex={0}
+                        aria-pressed={selected?.id === node.id}
                         aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}, ${nodeLocation(node)}`}
                       >
                         <title>{node.label || node.id}</title>
