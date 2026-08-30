@@ -158,13 +158,22 @@ export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
             {relationships.length > 0 && (
               <div>
                 <small>RELATIONSHIPS</small>
-                {relationships.slice(0, 4).map((edge) => (
-                  <span key={edge.id}>
-                    {edge.source === node.id ? "→" : "←"}{" "}
-                    {edge.relation || edge.alias || "connected"}
-                    {edge.dynamic ? " · dynamic" : ""}
-                  </span>
-                ))}
+                {relationships.slice(0, 4).map((edge) => {
+                  const peerId =
+                    edge.source === node.id ? edge.target : edge.source;
+                  const peer = app.nodes.find((item) => item.id === peerId);
+                  return (
+                    <span key={edge.id}>
+                      {edge.source === node.id ? "→" : "←"}{" "}
+                      {edge.relation || "connected"} · {peer?.label || peerId}
+                      {edge.dynamic
+                        ? " · dynamic"
+                        : edge.alias
+                          ? " · alias"
+                          : ""}
+                    </span>
+                  );
+                })}
               </div>
             )}
             {!flows.length && !entries.length && !relationships.length && (
