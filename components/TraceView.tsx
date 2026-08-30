@@ -21,6 +21,7 @@ type Props = {
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "journey" | "map") => void;
+  onShare: () => void;
 };
 function matchesFlow(app: App, flow: Flow, query: string) {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -78,6 +79,7 @@ export function TraceView({
   onInspectorClose,
   onRecord,
   onView,
+  onShare,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   if (!flow)
@@ -214,6 +216,9 @@ export function TraceView({
                 Show source
               </button>
             )}
+            <button className="inspector-reopen" type="button" onClick={onShare}>
+              Copy link
+            </button>
             <div className="segmented" aria-label="Trace direction">
               <button
                 className={direction === "backward" ? "selected" : ""}

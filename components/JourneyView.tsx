@@ -16,6 +16,7 @@ type Props = {
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map") => void;
+  onShare: () => void;
 };
 export function JourneyView({
   app,
@@ -28,6 +29,7 @@ export function JourneyView({
   onInspectorClose,
   onRecord,
   onView,
+  onShare,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
   if (!entry)
@@ -138,6 +140,9 @@ export function JourneyView({
                 Show source
               </button>
             )}
+            <button className="inspector-reopen" type="button" onClick={onShare}>
+              Copy link
+            </button>
             <span
               className={`layout-source ${entry.hasLayout ? "precomputed" : "derived"}`}
             >

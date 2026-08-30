@@ -231,6 +231,28 @@ export default function Page() {
     record("Changed lens", viewLabels[next], "");
   }
 
+  async function copyInvestigationLink(params: Record<string, string>) {
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("scope", "local");
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) url.searchParams.set(key, value);
+    });
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setLoadState({ type: "success", message: "Investigation link copied." });
+      trackEvent("investigation_link_copied", {
+        view: params.view ?? "unknown",
+      });
+    } catch {
+      setLoadState({
+        type: "error",
+        message:
+          "Could not copy the link. Your browser may block clipboard access.",
+      });
+    }
+  }
+
   function activate(next: App) {
     const pending = pendingLink.current;
     const firstSink =
@@ -588,6 +610,14 @@ export default function Page() {
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
           onView={(next: "journey" | "map") => changeView(next)}
+          onShare={() =>
+            copyInvestigationLink({
+              view: "trace",
+              flow: flowId,
+              node: stepId,
+              direction,
+            })
+          }
         />
       )}
       {view === "journey" && (
@@ -602,6 +632,13 @@ export default function Page() {
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
           onView={(next: "trace" | "map") => changeView(next)}
+          onShare={() =>
+            copyInvestigationLink({
+              view: "journey",
+              entry: app.entries[entryIndex]?.id ?? "",
+              hop: hopId,
+            })
+          }
         />
       )}
       {view === "investigate" && (
