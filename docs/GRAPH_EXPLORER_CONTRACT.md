@@ -14,6 +14,10 @@ label. A `2.0` bundle with another format value is invalid and must be
 rejected before it replaces the active bundle. The Explorer still accepts
 older flow-centric bundles through its compatibility adapter.
 
+`graph.nodes` must contain at least one node. An empty graph cannot provide a
+meaningful exploration surface and should be reported as an export error
+rather than loaded as a successful snapshot.
+
 ```json
 {
   "format": "lachesis-explorer-bundle",
