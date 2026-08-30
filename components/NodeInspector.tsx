@@ -17,9 +17,15 @@ const descriptions: Record<string, string> = {
   query: "A query-building or query-execution symbol in the graph.",
   effect: "An external effect or operation represented in the graph.",
 };
-type Props = { node: Node; onClose: () => void; app?: App };
+type Props = {
+  node: Node;
+  onClose: () => void;
+  app?: App;
+  onFlow?: (flowId: string, nodeId: string) => void;
+  onEntry?: (entryIndex: number, nodeId: string) => void;
+};
 
-export function NodeInspector({ node, onClose, app }: Props) {
+export function NodeInspector({ node, onClose, app, onFlow, onEntry }: Props) {
   const [copied, setCopied] = useState(false);
   const location = `${node.file}:${node.line}${node.column ? `:${node.column}` : ""}`;
   const range =
@@ -109,17 +115,44 @@ export function NodeInspector({ node, onClose, app }: Props) {
             {flows.length > 0 && (
               <div>
                 <small>VALUE FLOWS</small>
-                {flows.slice(0, 4).map((flow) => (
-                  <span key={flow.id}>{flow.name}</span>
-                ))}
+                {flows.slice(0, 4).map((flow) =>
+                  onFlow ? (
+                    <button
+                      type="button"
+                      key={flow.id}
+                      onClick={() =>
+                        onFlow(flow.id, flow.steps[0]?.node_id ?? node.id)
+                      }
+                    >
+                      {flow.name}
+                    </button>
+                  ) : (
+                    <span key={flow.id}>{flow.name}</span>
+                  ),
+                )}
               </div>
             )}
             {entries.length > 0 && (
               <div>
                 <small>REQUEST PATHS</small>
-                {entries.slice(0, 4).map((entry) => (
-                  <span key={entry.id}>{entry.label}</span>
-                ))}
+                {entries.slice(0, 4).map((entry) =>
+                  onEntry ? (
+                    <button
+                      type="button"
+                      key={entry.id}
+                      onClick={() =>
+                        onEntry(
+                          app.entries.findIndex((item) => item.id === entry.id),
+                          entry.hops[0]?.node_id ?? node.id,
+                        )
+                      }
+                    >
+                      {entry.label}
+                    </button>
+                  ) : (
+                    <span key={entry.id}>{entry.label}</span>
+                  ),
+                )}
               </div>
             )}
             {relationships.length > 0 && (

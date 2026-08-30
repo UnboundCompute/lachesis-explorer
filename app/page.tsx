@@ -617,7 +617,29 @@ export default function Page() {
         />
       )}
       {view === "map" && (
-        <OverviewView app={app} focusNodeId={focusNodeId} onRecord={record} />
+        <OverviewView
+          app={app}
+          focusNodeId={focusNodeId}
+          onRecord={record}
+          onFlow={(nextFlow, nextNode) => {
+            setView("trace");
+            setFlowId(nextFlow);
+            setStepId(nextNode);
+            setInspectorOpen(true);
+            record("Opened connected value flow", nextFlow, "from system map");
+          }}
+          onEntry={(nextIndex, nextHop) => {
+            setView("journey");
+            setEntryIndex(nextIndex);
+            setHopId(nextHop);
+            setInspectorOpen(true);
+            record(
+              "Opened connected request path",
+              app.entries[nextIndex]?.label ?? "Unknown entry",
+              "from system map",
+            );
+          }}
+        />
       )}
       {view === "compare" && (
         <CompareView

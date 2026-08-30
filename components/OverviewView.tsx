@@ -10,6 +10,8 @@ type Props = {
   app: App;
   focusNodeId?: string;
   onRecord: (action: string, target: string, detail: string) => void;
+  onFlow?: (flowId: string, nodeId: string) => void;
+  onEntry?: (entryIndex: number, nodeId: string) => void;
 };
 const pos = (index: number) => ({
   x: 92 + (index % 4) * 178,
@@ -48,7 +50,13 @@ function matches(node: Node, query: string, app: App) {
     });
 }
 
-export function OverviewView({ app, focusNodeId, onRecord }: Props) {
+export function OverviewView({
+  app,
+  focusNodeId,
+  onRecord,
+  onFlow,
+  onEntry,
+}: Props) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>("map");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
@@ -465,6 +473,9 @@ export function OverviewView({ app, focusNodeId, onRecord }: Props) {
       {inspectorOpen && selected && (
         <NodeInspector
           node={selected}
+          app={app}
+          onFlow={onFlow}
+          onEntry={onEntry}
           onClose={() => setInspectorOpen(false)}
         />
       )}

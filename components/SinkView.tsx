@@ -254,6 +254,8 @@ export function SinkView({
       {inspectorOpen && (
         <NodeInspector
           node={selected}
+          app={app}
+          onFlow={onOpenFlow}
           onClose={() => setInspectorOpen(false)}
         />
       )}
