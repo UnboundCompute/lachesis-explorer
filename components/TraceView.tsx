@@ -300,8 +300,10 @@ export function TraceView({
             </small>
           </div>
           <div className="trace-orientation-fact">
-            <span>HOPS</span>
-            <b>{flow.steps.length}</b>
+            <span>STEP / HOPS</span>
+            <b>
+              {selectedIndex + 1} / {items.length}
+            </b>
           </div>
           <div className="trace-orientation-fact">
             <span>INDIRECT</span>

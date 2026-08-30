@@ -209,8 +209,10 @@ export function JourneyView({
             </small>
           </div>
           <div className="trace-orientation-fact">
-            <span>HOPS</span>
-            <b>{entry.hops.length}</b>
+            <span>HOP / TOTAL</span>
+            <b>
+              {selectedIndex + 1} / {items.length}
+            </b>
           </div>
           <div className="trace-orientation-fact">
             <span>LAYOUT</span>
