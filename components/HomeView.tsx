@@ -167,9 +167,18 @@ export function HomeView({
             </span>
           </button>
           {isDemo && (
-            <a className="download-fixture" href="/demo-bundle.json" download>
-              Download this sample <Icon name="arrow" size={12} />
-            </a>
+            <div className="fixture-links">
+              <a className="download-fixture" href="/demo-bundle.json" download>
+                Download security sample <Icon name="arrow" size={12} />
+              </a>
+              <a
+                className="download-fixture"
+                href="/code-exploration-bundle.json"
+                download
+              >
+                Try code graph sample <Icon name="arrow" size={12} />
+              </a>
+            </div>
           )}
         </div>
       </header>
