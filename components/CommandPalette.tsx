@@ -4,7 +4,7 @@ import type { App } from '../lib/lachesis'
 import { Icon } from './Icon'
 import { trackEvent } from '../lib/analytics'
 
-type View = 'trace'|'journey'|'investigate'|'install'
+type View = 'trace'|'journey'|'investigate'|'map'|'install'
 type Props = { app:App; onClose:()=>void; onView:(view:View)=>void; onFlow:(flowId:string,nodeId:string)=>void; onEntry:(index:number,hopId:string)=>void; onSink:(sinkId:string)=>void }
 export function CommandPalette({app,onClose,onView,onFlow,onEntry,onSink}:Props) {
   const [query,setQuery]=useState(''); const [active,setActive]=useState(0); const normalized=query.trim().toLowerCase()
@@ -13,6 +13,7 @@ export function CommandPalette({app,onClose,onView,onFlow,onEntry,onSink}:Props)
     {id:'view-trace',label:'Open value-flow lens',meta:'View',run:()=>onView('trace')},
     {id:'view-journey',label:'Open request-path lens',meta:'View',run:()=>onView('journey')},
     {id:'view-investigate',label:'Open sink-first investigation',meta:'View',run:()=>onView('investigate')},
+    {id:'view-map',label:'Open system topology map',meta:'View',run:()=>onView('map')},
     {id:'view-install',label:'Open local workflow',meta:'View',run:()=>onView('install')},
     ...app.flows.map(flow=>({id:`flow-${flow.id}`,label:flow.name,meta:`Value flow · ${flow.steps.length} nodes`,run:()=>onFlow(flow.id,flow.steps[0]?.node_id??'')})),
     ...app.entries.map((entry,index)=>({id:`entry-${entry.id}`,label:entry.label,meta:`Request path · ${entry.hops.length} hops`,run:()=>onEntry(index,entry.hops[0]?.node_id??'')})),
