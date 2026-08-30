@@ -98,7 +98,7 @@ function verify(file, bundle) {
 
   const paths = bundle.paths ?? {};
   const valuePathIds = new Set();
-  for (const [kind, pathList] of Object.entries({ values: paths.values ?? graph.value_flows ?? graph.flows ?? [], requests: paths.requests ?? graph.request_paths ?? graph.callpaths ?? [] })) {
+  for (const [kind, pathList] of Object.entries({ values: paths.values ?? paths.value_flows ?? graph.value_flows ?? graph.flows ?? [], requests: paths.requests ?? paths.request_paths ?? graph.request_paths ?? graph.callpaths ?? [] })) {
     if (!Array.isArray(pathList)) fail(file, `paths.${kind} must be an array`);
     const pathIds = new Set();
     for (const [pathIndex, path] of pathList.entries()) {

@@ -236,8 +236,8 @@ function normalizeGraphV2(raw:any):App {
   if (brokenModule) throw new Error(`A graph module references missing node "${brokenModule}".`)
   const brokenEntrypoint=entrypoints.find(entrypoint=>entrypoint.nodeId&&!knownNodeIds.has(entrypoint.nodeId))
   if (brokenEntrypoint) throw new Error(`Graph entrypoint "${brokenEntrypoint.id}" references missing node "${brokenEntrypoint.nodeId}".`)
-  const pathValues=raw.paths?.values??graph.value_flows??raw.value_flows??[]
-  const pathRequests=raw.paths?.requests??graph.request_paths??raw.callpaths??[]
+  const pathValues=raw.paths?.values??raw.paths?.value_flows??graph.value_flows??raw.value_flows??[]
+  const pathRequests=raw.paths?.requests??raw.paths?.request_paths??graph.request_paths??raw.callpaths??[]
   const findings=raw.security?.findings??raw.findings??[]
   const flowRaw=Array.isArray(pathValues)?pathValues:[]
   const flows:Flow[]=flowRaw.map((f:any,i:number)=>{const id=String(f.id??f.finding_id??`value_flow_${i}`);return {id,name:String(f.name??f.value??f.display_name??id),steps:Array.isArray(f.steps)?f.steps.map(normalizeStep):[],...normalizePathMetadata(f)}})

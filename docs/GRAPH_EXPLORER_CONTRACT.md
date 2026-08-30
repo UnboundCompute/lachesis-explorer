@@ -70,8 +70,10 @@ CLI commands, jobs, event handlers, public APIs, and exported functions.
 ## Paths and security
 
 `paths.values` and `paths.requests` contain optional precomputed paths for fast
-guided exploration. They are useful accelerators, not substitutes for the
-underlying graph. Every value path must contain at least one valid `steps`
+guided exploration. `paths.value_flows` and `paths.request_paths` are accepted
+compatibility aliases, but new exporters should use the shorter canonical
+names. They are useful accelerators, not substitutes for the underlying graph.
+Every value path must contain at least one valid `steps`
 item; an empty value path is invalid because it cannot be traversed. Every
 request path must contain at least one hop; an empty request path is invalid
 because it cannot be traversed. When supplied, path IDs must be non-empty and

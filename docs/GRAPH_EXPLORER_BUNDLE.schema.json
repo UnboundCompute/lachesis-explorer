@@ -100,7 +100,9 @@
       "type": "object",
       "properties": {
         "values": { "type": "array", "items": { "$ref": "#/$defs/value_path" } },
-        "requests": { "type": "array", "items": { "$ref": "#/$defs/request_path" } }
+        "requests": { "type": "array", "items": { "$ref": "#/$defs/request_path" } },
+        "value_flows": { "type": "array", "items": { "$ref": "#/$defs/value_path" }, "description": "Compatibility alias for values." },
+        "request_paths": { "type": "array", "items": { "$ref": "#/$defs/request_path" }, "description": "Compatibility alias for requests." }
       },
       "additionalProperties": true
     },
