@@ -1,5 +1,9 @@
 # Lachesis Explorer
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Built with Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
+[![Live demo](https://img.shields.io/badge/demo-lachesis.unboundcompute.com-brightgreen.svg)](https://lachesis.unboundcompute.com)
+
 The browser companion for [Lachesis](https://github.com/UnboundCompute/lachesis), a compiler-precise code property graph for following values, calls, and source-to-sink paths through a codebase.
 
 Explorer loads a Lachesis `bundle.json` locally and makes the graph readable without a server or model in the loop. It is designed for inspecting deterministic evidence: where a value originated, which nodes it reaches, and how a request travels through an application.
@@ -87,4 +91,9 @@ Event payloads deliberately exclude repository names, filenames, code snippets, 
 
 ## License
 
-See the repository’s license and contribution policies before redistributing or extending this project.
+Released under the [MIT License](LICENSE). You are free to use, modify, and redistribute
+Explorer, including in commercial and hosted contexts, provided the copyright notice and
+license text are preserved.
+
+The Lachesis reader that produces the `bundle.json` Explorer renders is a separate project
+under its own license — see the [Lachesis repository](https://github.com/UnboundCompute/lachesis).
