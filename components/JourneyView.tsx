@@ -213,6 +213,7 @@ export function JourneyView({
                 className="inspector-reopen"
                 type="button"
                 disabled={selectedIndex === 0}
+                aria-keyshortcuts="["
                 onClick={() => moveHop(-1)}
               >
                 Previous
@@ -221,10 +222,14 @@ export function JourneyView({
                 className="inspector-reopen"
                 type="button"
                 disabled={selectedIndex >= items.length - 1}
+                aria-keyshortcuts="]"
                 onClick={() => moveHop(1)}
               >
                 Next
               </button>
+              <span className="step-nav-hint" aria-label="Use left bracket and right bracket to navigate hops">
+                <kbd>[</kbd><kbd>]</kbd>
+              </span>
             </div>
             <span
               className={`layout-source ${entry.hasLayout ? "precomputed" : "derived"}`}
