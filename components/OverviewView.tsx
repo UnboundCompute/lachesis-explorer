@@ -303,6 +303,26 @@ export function OverviewView({
                   aria-hidden="true"
                   focusable="false"
                 >
+                  <defs>
+                    {(["exact", "alias", "dynamic"] as const).map((kind) => (
+                      <marker
+                        key={kind}
+                        id={`topology-arrow-${kind}`}
+                        viewBox="0 0 10 10"
+                        refX="9"
+                        refY="5"
+                        markerWidth="5"
+                        markerHeight="5"
+                        orient="auto-start-reverse"
+                        markerUnits="strokeWidth"
+                      >
+                        <path
+                          d="M 0 0 L 10 5 L 0 10 z"
+                          className={`topology-arrow topology-arrow-${kind}`}
+                        />
+                      </marker>
+                    ))}
+                  </defs>
                   {edges.map((edge) => {
                     const source = visible.find(
                         (node) => node.id === edge.source,
@@ -320,6 +340,7 @@ export function OverviewView({
                       <path
                         key={edge.id}
                         className={`topology-edge ${kind}${focusActive && !connectedIds.has(edge.source) && !connectedIds.has(edge.target) ? " dimmed" : ""}`}
+                        markerEnd={`url(#topology-arrow-${kind})`}
                         d={`M${a.x} ${a.y} C${(a.x + b.x) / 2} ${a.y},${(a.x + b.x) / 2} ${b.y},${b.x} ${b.y}`}
                       />
                     );
