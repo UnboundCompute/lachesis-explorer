@@ -173,7 +173,8 @@ if (schema.$schema !== "https://json-schema.org/draft/2020-12/schema") fail(sche
 if (schema.$id !== "https://lachesis.unboundcompute.com/schemas/graph-explorer-bundle-2.0.json") fail(schemaFile, "$id does not match the published v2 contract");
 console.log(`${schemaFile}: valid`);
 
-for (const file of process.argv.slice(2).length ? process.argv.slice(2) : fixtures) {
+const requestedFiles = process.argv.slice(2).filter((argument) => argument !== "--");
+for (const file of (requestedFiles.length ? requestedFiles : fixtures)) {
   const bundle = JSON.parse(await readFile(file, "utf8"));
   verify(file, bundle);
 }
