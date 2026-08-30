@@ -450,7 +450,7 @@ export function HomeView({
               </button>
             ))}
           </div>
-          {!visibleFindings.length && (
+          {!queueItems.length && (
             <p className="queue-empty">
               {graphOnly
                 ? graphFocus
