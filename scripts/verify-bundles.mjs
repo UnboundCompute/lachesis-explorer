@@ -42,7 +42,14 @@ function verify(file, bundle) {
   }
   if (graph.edges != null && !Array.isArray(graph.edges)) fail(file, "graph.edges must be an array");
 
+  const edgeIds = new Set();
   for (const [index, edge] of (graph.edges ?? []).entries()) {
+    if (edge.id != null) {
+      const edgeId = String(edge.id);
+      if (!edgeId) fail(file, `graph.edges[${index}].id must not be empty`);
+      if (edgeIds.has(edgeId)) fail(file, `graph.edges[${index}] duplicates edge ID ${edgeId}`);
+      edgeIds.add(edgeId);
+    }
     const source = String(edge.source ?? edge.from ?? edge.source_id ?? "");
     const target = String(edge.target ?? edge.to ?? edge.target_id ?? "");
     if (!ids.has(source) || !ids.has(target)) fail(file, `graph.edges[${index}] references a missing node`);
