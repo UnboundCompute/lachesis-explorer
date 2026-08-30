@@ -67,6 +67,24 @@ export function JourneyView({
     label: hop.edge_label,
     caption: hop.caption,
   }));
+  const selectedIndex = Math.max(
+    0,
+    items.findIndex((item) => item.id === hopId),
+  );
+  function moveHop(delta: number) {
+    const next = items[selectedIndex + delta];
+    if (!next) return;
+    setHopId(next.id);
+    onInspectorOpen();
+    onRecord(
+      "Inspected request step",
+      next.node.label || next.node.id,
+      `${next.node.file}:${next.node.line}`,
+    );
+    trackEvent("callpath_step_navigated", {
+      direction: delta > 0 ? "next" : "previous",
+    });
+  }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="journey-rail">
@@ -143,6 +161,24 @@ export function JourneyView({
             <button className="inspector-reopen" type="button" onClick={onShare}>
               Copy link
             </button>
+            <div className="step-nav" aria-label="Request path step navigation">
+              <button
+                className="inspector-reopen"
+                type="button"
+                disabled={selectedIndex === 0}
+                onClick={() => moveHop(-1)}
+              >
+                Previous
+              </button>
+              <button
+                className="inspector-reopen"
+                type="button"
+                disabled={selectedIndex >= items.length - 1}
+                onClick={() => moveHop(1)}
+              >
+                Next
+              </button>
+            </div>
             <span
               className={`layout-source ${entry.hasLayout ? "precomputed" : "derived"}`}
             >
