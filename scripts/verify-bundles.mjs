@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 const fixtures = ["public/code-exploration-bundle.json", "public/demo-bundle.json"];
+const schemaFile = "docs/GRAPH_EXPLORER_BUNDLE.schema.json";
 
 function fail(file, message) {
   throw new Error(`${file}: ${message}`);
@@ -74,6 +75,11 @@ function verify(file, bundle) {
   if (bundle.security != null && (typeof bundle.security !== "object" || Array.isArray(bundle.security))) fail(file, "security must be an object");
   console.log(`${file}: valid (${graph.nodes.length} nodes, ${(graph.edges ?? []).length} edges)`);
 }
+
+const schema = JSON.parse(await readFile(schemaFile, "utf8"));
+if (schema.$schema !== "https://json-schema.org/draft/2020-12/schema") fail(schemaFile, "$schema must target draft 2020-12");
+if (schema.$id !== "https://lachesis.unboundcompute.com/schemas/graph-explorer-bundle-2.0.json") fail(schemaFile, "$id does not match the published v2 contract");
+console.log(`${schemaFile}: valid`);
 
 for (const file of process.argv.slice(2).length ? process.argv.slice(2) : fixtures) {
   const bundle = JSON.parse(await readFile(file, "utf8"));
