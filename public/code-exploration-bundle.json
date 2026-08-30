@@ -5,6 +5,7 @@
     "repository": "demo/atlas-commerce",
     "language": "typescript",
     "revision": "main",
+    "description": "Request and value paths through the search flow.",
     "lines": 28416,
     "indexed_nodes": 20,
     "fixture": true

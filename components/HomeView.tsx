@@ -154,7 +154,7 @@ export function HomeView({
             {metadataOnly
               ? "This bundle includes security records without witness steps. Explore the graph structure while the exporter adds a traceable path."
               : graphOnly
-              ? "Start with a value flow or request path, then move through the symbols and relationships that make the behavior understandable."
+              ? app.bundle.description || "Start with a value flow or request path, then move through the symbols and relationships that make the behavior understandable."
               : "Start with the strongest witness, inspect what controls it, and keep uncertainty visible. Lachesis shows the path the bundle contains—not a vulnerability verdict."}
           </p>
         </div>

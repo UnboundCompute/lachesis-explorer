@@ -22,6 +22,7 @@
         "repository": { "type": "string" },
         "language": { "type": "string" },
         "revision": { "type": "string" },
+        "description": { "type": "string", "description": "Exporter-authored summary of what this graph projection represents." },
         "lines": { "type": "integer", "minimum": 0 },
         "indexed_nodes": { "type": "integer", "minimum": 0 },
         "generated_at": { "type": "string" },

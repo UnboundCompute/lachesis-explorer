@@ -22,6 +22,7 @@ older flow-centric bundles through its compatibility adapter.
     "repository": "example/app",
     "language": "typescript",
     "revision": "9f6c2ad",
+    "description": "Request and value paths through the search flow.",
     "lines": 28416,
     "indexed_nodes": 193057
   },
@@ -95,6 +96,10 @@ must remain separate so a projected security graph is not mistaken for a
 complete repository graph. When present, `coverage.included_nodes` must equal
 the number of nodes in `graph.nodes`, and `coverage.indexed_nodes` must be at
 least that large.
+
+`meta.description` is optional exporter-authored context for the graph
+projection. The Explorer may show it as orientation copy, but must not infer or
+rewrite it into a security conclusion.
 
 `coverage.scope`, `coverage.limitations`, and `graph.capabilities` make missing
 language constructs, unresolved calls, omitted dependencies, and projections
