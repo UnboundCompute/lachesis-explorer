@@ -362,6 +362,11 @@ export default function Page() {
   }, [view, flowId, record, commandOpen, menu]);
 
   function changeView(next: View) {
+    if (next !== view && urlReady.current) {
+      const params = new URLSearchParams(window.location.search);
+      params.set("view", next);
+      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+    }
     setView(next);
     record("Changed lens", viewLabels[next], "");
   }
@@ -588,7 +593,7 @@ export default function Page() {
     try {
       const raw = JSON.parse(await file.text());
       setCompareApp(normalize(raw));
-      setView("compare");
+      changeView("compare");
       setLoadState({
         type: "success",
         message: `Loaded ${file.name} as the comparison bundle.`,
@@ -676,7 +681,7 @@ export default function Page() {
           onClose={() => setCommandOpen(false)}
           onView={changeView}
           onFlow={(nextFlow, nextNode) => {
-            setView("trace");
+            changeView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -684,7 +689,7 @@ export default function Page() {
             record("Opened graph path", nextFlow, "via command palette");
           }}
           onEntry={(nextIndex, nextHop) => {
-            setView("journey");
+            changeView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
@@ -696,7 +701,7 @@ export default function Page() {
             );
           }}
           onSink={(nextSink) => {
-            setView("investigate");
+            changeView("investigate");
             setSinkId(nextSink);
             record(
               "Focused sink",
@@ -706,7 +711,7 @@ export default function Page() {
           }}
           onNode={(nextNode) => {
             setFocusNodeId(nextNode);
-            setView("map");
+            changeView("map");
             setInspectorOpen(true);
             record(
               "Inspected graph node",
@@ -747,7 +752,7 @@ export default function Page() {
           onLoadSample={loadCodeSample}
           onView={(next) => changeView(next)}
           onFlow={(nextFlow, nextNode) => {
-            setView("trace");
+            changeView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -755,12 +760,12 @@ export default function Page() {
             record("Opened priority witness", nextFlow, "from briefing");
           }}
           onSink={(nextSink) => {
-            setView("investigate");
+            changeView("investigate");
             setSinkId(nextSink);
             record("Focused execution boundary", nextSink, "from briefing");
           }}
           onEntry={(nextIndex, nextHop) => {
-            setView("journey");
+            changeView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
@@ -819,7 +824,7 @@ export default function Page() {
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
-            setView("journey");
+            changeView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
@@ -851,7 +856,7 @@ export default function Page() {
             })
           }
           onFlow={(nextFlow, nextNode) => {
-            setView("trace");
+            changeView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -872,7 +877,7 @@ export default function Page() {
           setSinkId={setSinkId}
           onRecord={record}
           onOpenFlow={(nextFlow, nextNode) => {
-            setView("trace");
+            changeView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -890,7 +895,7 @@ export default function Page() {
             copyInvestigationLink({ view: "map", node: nodeId })
           }
           onFlow={(nextFlow, nextNode) => {
-            setView("trace");
+            changeView("trace");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -898,7 +903,7 @@ export default function Page() {
             record("Opened connected graph path", nextFlow, "from system map");
           }}
           onEntry={(nextIndex, nextHop) => {
-            setView("journey");
+            changeView("journey");
             setEntryIndex(nextIndex);
             setHopId(nextHop);
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
