@@ -95,6 +95,20 @@ export function OverviewView({
     app.nodes.find((node) => node.id === selectedId) ??
     visible[0] ??
     app.nodes[0];
+  const focusActive = Boolean(inspectorOpen && selected);
+  const connectedIds = new Set(
+    selected
+      ? [
+          selected.id,
+          ...app.edges
+            .filter(
+              (edge) =>
+                edge.source === selected.id || edge.target === selected.id,
+            )
+            .flatMap((edge) => [edge.source, edge.target]),
+        ]
+      : [],
+  );
   const flowCount = (nodeId: string) =>
     app.flows.filter((flow) =>
       flow.steps.some((step) => step.node_id === nodeId),
@@ -290,7 +304,7 @@ export function OverviewView({
                     return (
                       <path
                         key={edge.id}
-                        className={`topology-edge ${kind}`}
+                        className={`topology-edge ${kind}${focusActive && !connectedIds.has(edge.source) && !connectedIds.has(edge.target) ? " dimmed" : ""}`}
                         d={`M${a.x} ${a.y} C${(a.x + b.x) / 2} ${a.y},${(a.x + b.x) / 2} ${b.y},${b.x} ${b.y}`}
                       />
                     );
@@ -301,7 +315,7 @@ export function OverviewView({
                     return (
                       <g
                         key={node.id}
-                        className={`topology-node kind-${node.kind}${selected?.id === node.id ? " selected" : ""}`}
+                        className={`topology-node kind-${node.kind}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
                         role="button"
                         tabIndex={0}
                         aria-label={`Select ${node.label || node.id}`}
