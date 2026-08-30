@@ -88,6 +88,8 @@ export function HomeView({
   const metadataOnly = findings.length === 0 && app.mcp.length > 0;
   const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
   const graphFocus = app.flows[0];
+  const firstEntry = app.entries[0];
+  const firstSink = app.nodes.find((node) => node.kind === "sink");
   const visibleFindings = useMemo(
     () =>
       queueFilter === "all"
@@ -221,6 +223,35 @@ export function HomeView({
           </div>
         </li>
       </ol>
+
+      <section className="briefing-questions" aria-labelledby="briefing-questions-title">
+        <div>
+          <span className="panel-label" id="briefing-questions-title">START WITH A QUESTION</span>
+          <p>Choose the kind of understanding you need first.</p>
+        </div>
+        <div className="question-list">
+          <button type="button" onClick={() => graphFocus ? onFlow(graphFocus.id, graphFocus.steps[0]?.node_id ?? "") : onView("trace")}>
+            <b>Where does a value go?</b>
+            <small>Trace a value through its handoffs.</small>
+            <Icon name="arrow" size={12} />
+          </button>
+          <button type="button" onClick={() => firstEntry ? onEntry(0, firstEntry.hops[0]?.node_id ?? "") : onView("journey")}>
+            <b>What calls this code?</b>
+            <small>Walk a request from entrypoint to effect.</small>
+            <Icon name="arrow" size={12} />
+          </button>
+          <button type="button" onClick={() => firstSink ? onSink(firstSink.id) : onView("investigate")}>
+            <b>What converges here?</b>
+            <small>Compare paths that reach one boundary.</small>
+            <Icon name="arrow" size={12} />
+          </button>
+          <button type="button" onClick={() => onView("map")}>
+            <b>How is it connected?</b>
+            <small>Survey modules, relationships, and shape.</small>
+            <Icon name="arrow" size={12} />
+          </button>
+        </div>
+      </section>
 
       {loadState.message && (
         <p
