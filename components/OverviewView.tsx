@@ -91,6 +91,12 @@ export function OverviewView({
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
+    setSelectedId(app.nodes[0]?.id ?? "");
+    setQuery("");
+    setExpandedModule(null);
+    setShareState("idle");
+  }, [app]);
+  useEffect(() => {
     if (focusNodeId && app.nodes.some((node) => node.id === focusNodeId)) {
       setSelectedId(focusNodeId);
       setInspectorOpen(true);
