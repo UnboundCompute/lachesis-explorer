@@ -182,12 +182,14 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
                   onFlow ? (
                     <button
                       type="button"
+                      className="connected-link"
                       key={flow.id}
                       onClick={() =>
                         onFlow(flow.id, node.id)
                       }
                     >
-                      {flow.name}
+                      <span>{flow.name}</span>
+                      <Icon name="arrow" size={11} />
                     </button>
                   ) : (
                     <span key={flow.id}>{flow.name}</span>
@@ -202,6 +204,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
                   onEntry ? (
                     <button
                       type="button"
+                      className="connected-link"
                       key={entry.id}
                       onClick={() =>
                         onEntry(
@@ -210,7 +213,8 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
                         )
                       }
                     >
-                      {entry.label}
+                      <span>{entry.label}</span>
+                      <Icon name="arrow" size={11} />
                     </button>
                   ) : (
                     <span key={entry.id}>{entry.label}</span>
