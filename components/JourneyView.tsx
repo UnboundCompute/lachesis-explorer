@@ -125,7 +125,7 @@ export function JourneyView({
     onRecord(
       "Inspected request step",
       next.node.label || next.node.id,
-      `${next.node.file}:${next.node.line}`,
+      nodeLocation(next.node),
     );
     trackEvent("callpath_step_navigated", {
       direction: delta > 0 ? "next" : "previous",
@@ -189,7 +189,7 @@ export function JourneyView({
                   onRecord(
                     "Inspected request node",
                     node.label || node.id,
-                    `${hop.edge_label} · ${node.file}:${node.line}`,
+                    `${hop.edge_label} · ${nodeLocation(node)}`,
                   );
                 trackEvent("callpath_hop_selected");
               }}
@@ -309,7 +309,7 @@ export function JourneyView({
               onRecord(
                 "Inspected request node",
                 node.label || node.id,
-                `${node.file}:${node.line}`,
+                nodeLocation(node),
               );
             trackEvent("callpath_hop_selected");
           }}

@@ -101,7 +101,7 @@ export function CommandPalette({
         ...app.nodes.map((node) => ({
           id: `node-${node.id}`,
           label: node.label || node.id,
-          meta: `Symbol · ${node.kind} · ${node.file}:${node.line} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
+          meta: `Symbol · ${node.kind} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
           run: () => onNode(node.id),
         })),
         ...app.files.flatMap((file) => {
@@ -148,7 +148,7 @@ export function CommandPalette({
           .map((node) => ({
             id: `sink-${node.id}`,
             label: node.label || node.id,
-            meta: `Sink · ${node.file}:${node.line}`,
+            meta: `Sink · ${node.file || "Source unavailable"}:${node.line || "—"}`,
             run: () => onSink(node.id),
           })),
       ].filter(

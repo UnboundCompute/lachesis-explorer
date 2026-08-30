@@ -232,7 +232,7 @@ export function TraceView({
     onRecord(
       "Inspected path step",
       next.node.label || next.node.id,
-      `${next.node.file}:${next.node.line}`,
+      nodeLocation(next.node),
     );
     trackEvent("trace_step_navigated", { direction: delta > 0 ? "next" : "previous" });
   }
@@ -448,7 +448,7 @@ export function TraceView({
               onRecord(
                 "Inspected node",
                 node.label || node.id,
-                `${node.file}:${node.line}`,
+                nodeLocation(node),
               );
             trackEvent("trace_node_selected");
           }}

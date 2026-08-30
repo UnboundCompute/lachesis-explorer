@@ -20,6 +20,8 @@ const pos = (index: number) => ({
 });
 const shorten = (value: string, limit = 20) =>
   value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
+const nodeLocation = (node: Node) =>
+  `${node.file || "Source unavailable"}:${node.line || "—"}`;
 
 function matches(node: Node, query: string, app: App) {
   return query
@@ -225,7 +227,7 @@ export function OverviewView({
       onRecord(
         "Inspected graph node",
         node.label || node.id,
-        `${node.file}:${node.line}`,
+        `${node.file || "Source unavailable"}:${node.line || "—"}`,
       );
   }
   const summary = selected
@@ -440,7 +442,7 @@ export function OverviewView({
                         }}
                         role="button"
                         tabIndex={0}
-                        aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}, ${node.file}:${node.line}`}
+                        aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}, ${nodeLocation(node)}`}
                       >
                         <title>{node.label || node.id}</title>
                         <circle cx={p.x} cy={p.y} r="24" />
@@ -487,7 +489,7 @@ export function OverviewView({
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
                       <small>
-                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""} · {node.file}:{node.line}
+                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""} · {nodeLocation(node)}
                       </small>
                     </button>
                     );
