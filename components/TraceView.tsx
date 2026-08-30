@@ -131,6 +131,22 @@ export function TraceView({
     caption: step.note,
     edge: step.edge,
   }));
+  const selectedIndex = Math.max(
+    0,
+    items.findIndex((item) => item.id === stepId),
+  );
+  function moveStep(delta: number) {
+    const next = items[selectedIndex + delta];
+    if (!next) return;
+    setStepId(next.id);
+    onInspectorOpen();
+    onRecord(
+      "Inspected path step",
+      next.node.label || next.node.id,
+      `${next.node.file}:${next.node.line}`,
+    );
+    trackEvent("trace_step_navigated", { direction: delta > 0 ? "next" : "previous" });
+  }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="sidebar">
@@ -219,6 +235,24 @@ export function TraceView({
             <button className="inspector-reopen" type="button" onClick={onShare}>
               Copy link
             </button>
+            <div className="step-nav" aria-label="Path step navigation">
+              <button
+                className="inspector-reopen"
+                type="button"
+                disabled={selectedIndex === 0}
+                onClick={() => moveStep(-1)}
+              >
+                Previous
+              </button>
+              <button
+                className="inspector-reopen"
+                type="button"
+                disabled={selectedIndex >= items.length - 1}
+                onClick={() => moveStep(1)}
+              >
+                Next
+              </button>
+            </div>
             <div className="segmented" aria-label="Trace direction">
               <button
                 className={direction === "backward" ? "selected" : ""}
