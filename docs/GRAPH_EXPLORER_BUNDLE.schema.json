@@ -167,6 +167,7 @@
     "edge_context": {
       "type": "object",
       "properties": {
+        "relation": { "type": "string" },
         "alias": { "type": "boolean" },
         "dynamic": { "type": "boolean" },
         "confidence": { "type": "string" },

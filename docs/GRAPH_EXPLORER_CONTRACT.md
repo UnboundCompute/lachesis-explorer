@@ -62,6 +62,12 @@ optional uncertainty fields may appear on a
 path step or request-path hop when the path projection has more specific
 context than the underlying edge.
 
+Path step `role` values describe the node's position in a path (`origin`,
+`transform`, `sink`, and similar labels); they are not necessarily edge
+relationships. Producers may provide `step.edge.relation` when the projected
+relationship needs to be explicit. Otherwise the Explorer uses `value flows to` for
+endpoint roles and treats other roles as relationship labels.
+
 Files and modules provide the hierarchy needed for progressive exploration:
 repository → package → module/file → symbol → path. When modules or
 entrypoints list node IDs, every listed node must exist in `graph.nodes`; their

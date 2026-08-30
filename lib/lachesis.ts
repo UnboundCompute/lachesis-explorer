@@ -1,7 +1,7 @@
 import demoBundle from '../public/demo-bundle.json'
 
 export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; signature?: string; documentation?: string; snippet: string }
-export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
+export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { relation?: string; alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
 export type Flow = { id: string; name: string; steps: Step[]; description?: string; sourceNodeId?: string; sinkNodeId?: string; confidence?: string; limitations?: string[] }
 export type GuardEvidence = { verdict?: string; note?: string; items?: {node_id?:string;effect?:string}[] }
 export type Evidence = { for: string; verb: string; args: string; result_summary: string; hops?: number; nodes?: number; node_ids?: string[]; indirections?: number; confidence?: string; origin?: string; status?: string; lifecycle?: string; limitations?: string[]; guards?: GuardEvidence }
@@ -30,6 +30,16 @@ function formatArgs(args: unknown) {
   if (args == null) return ''
   if (typeof args === 'object') return Object.entries(args as Record<string, unknown>).map(([key, value]) => `${key}=${typeof value === 'string' ? value : JSON.stringify(value)}`).join(' · ')
   return String(args)
+}
+
+function normalizeRelation(value: unknown) {
+  const relation = String(value ?? 'connects').trim()
+  return relation ? relation.replace(/[_-]+/g, ' ').toLowerCase() : 'connects'
+}
+
+function flowRelation(step: Step) {
+  const role = step.role.trim().toLowerCase()
+  return normalizeRelation(step.edge?.relation ?? (['origin', 'source', 'sink', 'boundary'].includes(role) ? 'value flows to' : step.role || 'value flows to'))
 }
 
 function normalizeEvidence(raw: any): Evidence {
@@ -136,8 +146,8 @@ export function deriveGraphEdges(explicit:EdgeSeed[], flows:Flow[], entries:Entr
     collected.set(key,{id,source:seed.source,target:seed.target,relation:seed.relation||'connects',alias:seed.alias,dynamic:seed.dynamic,confidence:seed.confidence,limitations:seed.limitations,origins:[seed.origin],flow_ids:seed.flow_id?[seed.flow_id]:[],entry_ids:seed.entry_id?[seed.entry_id]:[]})
   }
   explicit.forEach(include)
-  flows.forEach(flow=>flow.steps.slice(1).forEach((step,index)=>include({source:flow.steps[index].node_id,target:step.node_id,relation:step.role||'flows to',alias:Boolean(step.edge?.alias),dynamic:Boolean(step.edge?.dynamic),confidence:step.edge?.confidence,limitations:step.edge?.limitations,origin:'value-flow',flow_id:flow.id})))
-  entries.forEach(entry=>entry.hops.slice(1).forEach((hop,index)=>include({source:entry.hops[index].node_id,target:hop.node_id,relation:hop.edge_label||'calls',alias:false,dynamic:false,confidence:hop.confidence,limitations:hop.limitations,origin:'request-path',entry_id:entry.id})))
+  flows.forEach(flow=>flow.steps.slice(1).forEach((step,index)=>include({source:flow.steps[index].node_id,target:step.node_id,relation:flowRelation(step),alias:Boolean(step.edge?.alias),dynamic:Boolean(step.edge?.dynamic),confidence:step.edge?.confidence,limitations:step.edge?.limitations,origin:'value-flow',flow_id:flow.id})))
+  entries.forEach(entry=>entry.hops.slice(1).forEach((hop,index)=>include({source:entry.hops[index].node_id,target:hop.node_id,relation:normalizeRelation(hop.edge_label||'calls'),alias:false,dynamic:false,confidence:hop.confidence,limitations:hop.limitations,origin:'request-path',entry_id:entry.id})))
   return [...collected.values()]
 }
 
@@ -162,7 +172,7 @@ export function normalize(raw: any): App {
   const rawMcp = raw.mcp ?? source.mcp
   const mcp = Array.isArray(rawMcp) ? rawMcp.map(normalizeEvidence) : []
   const rawEdges = Array.isArray(source.edges) ? source.edges : []
-  const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
+  const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:normalizeRelation(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
   const ids = new Set<string>(nodes.map((node:Node)=>node.id))
   if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
@@ -211,7 +221,7 @@ function normalizeBundleV1(raw: any): App {
   })
   const entries=normalizeEntries(raw.callpaths??graph.callpaths??[],nodes)
   const rawEdges = Array.isArray(graph.edges) ? graph.edges : []
-  const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
+  const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:normalizeRelation(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
   const ids = new Set<string>(nodes.map((node:Node)=>node.id))
   if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
@@ -274,7 +284,7 @@ function normalizeGraphV2(raw:any):App {
   const emptyRequestPath=entries.find(entry=>entry.hops.length===0)
   if(emptyRequestPath)throw new Error(`Request path "${emptyRequestPath.label||emptyRequestPath.id}" contains no hops.`)
   const rawEdges=Array.isArray(graph.edges)?graph.edges:[]
-  const explicitEdges:EdgeSeed[]=rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
+  const explicitEdges:EdgeSeed[]=rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:normalizeRelation(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
   const ids=new Set(nodes.map(node=>node.id))
   const brokenStep=allFlows.flatMap(flow=>flow.steps).find(step=>!ids.has(step.node_id))
   if(brokenStep)throw new Error(`A path references missing node "${brokenStep.node_id}".`)
