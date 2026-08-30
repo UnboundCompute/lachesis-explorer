@@ -449,8 +449,9 @@ export default function Page() {
     setApp(next);
     setCompareApp(null);
     setFlowId(firstFlow?.id ?? "");
-    setStepId(firstFlow?.sourceNodeId ?? firstFlow?.steps[0]?.node_id ?? next.nodes[0]?.id ?? "");
-    setStepIndex(0);
+    const initialStepId = firstFlow?.sourceNodeId ?? firstFlow?.steps[0]?.node_id ?? next.nodes[0]?.id ?? "";
+    setStepId(initialStepId);
+    setStepIndex(firstFlow ? positionForFlow(next, firstFlow.id, initialStepId, "backward") : 0);
     setEntryIndex(0);
     setHopId(next.entries[0]?.hops[0]?.node_id ?? next.nodes[0]?.id ?? "");
     setHopIndex(0);
