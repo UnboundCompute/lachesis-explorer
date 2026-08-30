@@ -27,6 +27,7 @@ export function CommandPalette({
   const [active, setActive] = useState(0);
   const normalized = query.trim().toLowerCase();
   const dialogRef = useRef<HTMLElement>(null);
+  const activeOptionRef = useRef<HTMLButtonElement>(null);
   const commands = useMemo(
     () =>
       [
@@ -138,6 +139,9 @@ export function CommandPalette({
   );
   const visibleCommands = commands.slice(0, 80);
   useEffect(() => setActive(0), [query]);
+  useEffect(() => {
+    activeOptionRef.current?.scrollIntoView({ block: "nearest" });
+  }, [active]);
   function execute(command: (typeof commands)[number]) {
     command.run();
     trackEvent("command_executed", { type: command.meta.split(" · ")[0] });
@@ -214,6 +218,7 @@ export function CommandPalette({
               <button
                 key={command.id}
                 id={`command-option-${index}`}
+                ref={active === index ? activeOptionRef : undefined}
                 role="option"
                 className={active === index ? "active" : ""}
                 aria-selected={active === index}
