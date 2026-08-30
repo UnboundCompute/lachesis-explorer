@@ -74,6 +74,10 @@ function assertUniqueOccurrenceIds(items:{id?:string}[], label:string) {
     seen.add(item.id)
   }
 }
+function assertEvidenceNodes(items:Evidence[], ids:Set<string>) {
+  const broken=items.flatMap(item=>item.node_ids??[]).find(nodeId=>!ids.has(nodeId))
+  if(broken)throw new Error(`MCP evidence references missing node "${broken}".`)
+}
 function normalizeStep(raw:any):Step {
   const id=raw?.occurrence_id??raw?.step_id??raw?.id
   return {id:id==null?undefined:String(id),node_id:String(raw?.node_id??raw?.nodeId??raw?.node??raw?.id??''),role:String(raw?.role??'node'),note:raw?.note,edge:raw?.edge}
@@ -160,7 +164,7 @@ export function normalize(raw: any): App {
   const rawEdges = Array.isArray(source.edges) ? source.edges : []
   const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
-  const ids = new Set(nodes.map((node:Node)=>node.id))
+  const ids = new Set<string>(nodes.map((node:Node)=>node.id))
   if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
   const emptyFlow = flows.find((flow:Flow)=>flow.steps.length===0)
   if (emptyFlow) throw new Error(`Flow "${emptyFlow.name}" contains no steps.`)
@@ -168,6 +172,7 @@ export function normalize(raw: any): App {
   if (brokenStep) throw new Error(`A flow references missing node "${brokenStep.node_id}".`)
   const brokenHop = entries.flatMap((entry:Entry)=>entry.hops).find((hop:Hop)=>!ids.has(hop.node_id))
   if (brokenHop) throw new Error(`A callpath references missing node "${brokenHop.node_id}".`)
+  assertEvidenceNodes(mcp,ids)
   const brokenEdge = explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
   if (brokenEdge) throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
@@ -208,12 +213,13 @@ function normalizeBundleV1(raw: any): App {
   const rawEdges = Array.isArray(graph.edges) ? graph.edges : []
   const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:String(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
-  const ids = new Set(nodes.map((node:Node)=>node.id))
+  const ids = new Set<string>(nodes.map((node:Node)=>node.id))
   if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
   const brokenStep = flows.flatMap((flow:Flow)=>flow.steps).find((step:Step)=>!ids.has(step.node_id))
   if (brokenStep) throw new Error(`A finding references missing node "${brokenStep.node_id}".`)
   const brokenHop=entries.flatMap(entry=>entry.hops).find(hop=>!ids.has(hop.node_id))
   if(brokenHop)throw new Error(`A callpath references missing node "${brokenHop.node_id}".`)
+  assertEvidenceNodes(mcp,ids)
   const brokenEdge = explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
   if (brokenEdge) throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
@@ -287,8 +293,7 @@ function normalizeGraphV2(raw:any):App {
   mcpEvidence.forEach((item)=>{if(item.for)evidenceById.set(item.for,item)})
   findingEvidence.forEach((item)=>{if(item.for&&!evidenceById.has(item.for))evidenceById.set(item.for,item)})
   const evidence=[...evidenceById.values()]
-  const brokenMcp=evidence.flatMap(item=>item.node_ids??[]).find(nodeId=>!ids.has(nodeId))
-  if(brokenMcp)throw new Error(`MCP evidence references missing node "${brokenMcp}".`)
+  assertEvidenceNodes(evidence,ids)
   const coverage=graph.coverage??{}
   const limitations=Array.isArray(coverage.limitations)?coverage.limitations.map(String):[]
   const capabilities=Array.isArray(graph.capabilities)?graph.capabilities.map(String):[]
