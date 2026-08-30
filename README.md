@@ -20,6 +20,8 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Load any compatible `bundle.json` from the browser.
 - Switch between light and dark themes; the preference is saved locally.
 - Jump to views, values, or entrypoints with `Cmd/Ctrl+K`; deep links preserve the active graph selection.
+- Search symbols by label, qualified name, file, module, or graph ID from the universal command palette.
+- Browse the graph hierarchy from module to file to symbol in the System Map.
 - Keep a local-only list of recent bundle metadata without storing bundle contents.
 
 ## Run locally
@@ -40,11 +42,13 @@ npm run start
 
 ## Bundle format
 
-The explorer ships with a downloadable, explicitly synthetic [`demo-bundle.json`](public/demo-bundle.json). It exercises competing review states, guard evidence, limitations, dynamic dispatch, request paths, and partial layout so UI work can continue before the production exporter is finalized.
+The explorer ships with two downloadable, explicitly synthetic fixtures: [`demo-bundle.json`](public/demo-bundle.json) exercises security evidence states, while [`code-exploration-bundle.json`](public/code-exploration-bundle.json) demonstrates a graph-first bundle with symbols, modules, relationships, request paths, and no security findings.
 
-The preferred temporary contract is `lachesis-explorer-bundle` `1.0`: a graph snapshot plus versioned `findings` envelopes and an evidence manifest. The importer maps that evidence into the UI without converting a lead into a vulnerability verdict. The earlier flow-centric shape remains available as a permissive `bundle/0.x` adapter.
+The preferred contract is `lachesis-explorer-bundle` `2.0`: a graph-first snapshot with optional `paths` and an optional `security.findings` overlay. The importer maps security evidence into the security lenses without making findings a prerequisite for code exploration. The existing `1.0` security envelope and earlier flow-centric shape remain available through backward-compatible adapters.
 
-At minimum, a legacy bundle needs `graph.nodes` and `graph.flows`. Optional fields include:
+The full graph-first contract is documented in [`docs/GRAPH_EXPLORER_CONTRACT.md`](docs/GRAPH_EXPLORER_CONTRACT.md). It defines stable graph entities, source locations, hierarchy, path projections, capabilities, coverage, and limitations.
+
+At minimum, a `2.0` bundle needs `schema_version`, `graph.nodes`, and may omit paths and findings entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional fields include:
 
 ```json
 {
@@ -70,6 +74,10 @@ app/page.tsx              state and view orchestration
 app/globals.css           design tokens, responsive layout, themes
 components/               header, views, icons, links, code blocks
 lib/lachesis.ts           bundle types, starter data, normalization
+docs/GRAPH_EXPLORER_CONTRACT.md
+                           graph-first bundle contract
+public/code-exploration-bundle.json
+                           graph-only working fixture
 ```
 
 ## Contributing
