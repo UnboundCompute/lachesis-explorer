@@ -21,6 +21,7 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Switch between light and dark themes; the preference is saved locally.
 - Jump to views, values, or entrypoints with `Cmd/Ctrl+K`; deep links preserve the active graph selection.
 - Copy a local link to the selected graph node, value-flow step, or request-path hop.
+- Copy a selected symbol’s `file:line:column` location from the source inspector.
 - Move through value-flow and request-path steps sequentially with Previous/Next controls.
 - Use `[` and `]` to step backward or forward while reading a path; text inputs are unaffected.
 - Search symbols by label, qualified name, file, module, or graph ID from the universal command palette.
