@@ -25,8 +25,8 @@ export function Intro({
     : "Code exploration graph";
   const copy = {
     trace: [
-      "Trace one value. See every handoff.",
-      "Follow origins, transformations, aliases, and sinks with source evidence attached.",
+      "Trace a graph path. See every handoff.",
+      "Follow symbols, calls, transformations, and boundaries with source evidence attached.",
     ],
     journey: [
       "Walk the request as the code sees it.",
@@ -56,7 +56,7 @@ export function Intro({
   }[view];
   const kicker =
     view === "trace"
-      ? "VALUE-FLOW LENS"
+      ? "GRAPH-PATH LENS"
       : view === "journey"
         ? "REQUEST-PATH LENS"
         : view === "investigate"

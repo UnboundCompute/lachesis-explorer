@@ -54,7 +54,7 @@ export function CommandPalette({
       [
         {
           id: "view-trace",
-          label: "Open value-flow lens",
+          label: "Open graph-path lens",
           meta: "View",
           run: () => onView("trace"),
         },

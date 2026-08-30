@@ -46,7 +46,7 @@ type PendingLink = {
 
 const viewLabels: Record<View, string> = {
   home: "Briefing",
-  trace: "Value flow",
+  trace: "Graph path",
   journey: "Request path",
   investigate: "Convergence",
   map: "Graph",

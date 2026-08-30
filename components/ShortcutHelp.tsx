@@ -11,7 +11,7 @@ const shortcuts = [
   ["⌘ K / Ctrl K", "Open the jump menu"],
   ["/", "Focus path search while tracing"],
   ["[ / ]", "Move to the previous or next path step"],
-  ["← / →", "Change value-flow direction"],
+  ["← / →", "Change graph-path direction"],
   ["Esc", "Close an open panel or overlay"],
 ];
 

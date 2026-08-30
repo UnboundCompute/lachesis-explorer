@@ -11,7 +11,7 @@ type Props = { view: View; setView: (view: View) => void; app: App; menu: boolea
 
 const primary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'home', label: 'Briefing', detail: 'Start here' },
-  { id: 'trace', label: 'Value flow', detail: 'Follow a value' },
+  { id: 'trace', label: 'Graph path', detail: 'Follow symbols' },
   { id: 'journey', label: 'Request path', detail: 'Follow callers' },
   { id: 'map', label: 'Graph', detail: 'See relationships' },
 ]
