@@ -7,6 +7,8 @@ const labels:Record<string,string>={lead:'Lead · review needed',reported:'Repor
 export function EvidencePanel({evidence,fallbackTool,fallbackArgs,fallbackSummary,nodeCount,indirections,variant='evidence'}:Props){
   const isPath = variant === 'path'
   const grounded=Boolean(evidence)
+  const commandName = isPath ? 'trace' : evidence?.verb || fallbackTool
+  const commandArgs = isPath ? fallbackArgs : evidence?.args || fallbackArgs
   const status=evidence?.status??(grounded?'reported':evidence?.confidence==='exact'?'verified':'lead')
   const limitations=evidence?.limitations??[]
   const guard=evidence?.guards
@@ -22,7 +24,7 @@ export function EvidencePanel({evidence,fallbackTool,fallbackArgs,fallbackSummar
   const statusLabel = isPath ? (grounded ? 'Bundle context' : 'Path summary') : labels[status] ?? status
   return <section className={`evidence-panel ${grounded?'grounded':'derived'} evidence-${status}${isPath?' path-context':''}`}>
     <div className="evidence-head"><span className="evidence-symbol"><Icon name={isPath ? 'code' : 'spark'} size={15}/></span><div><b>{isPath ? 'Path context' : 'Evidence capsule'}</b><small>{grounded?'Reported by the loaded bundle':isPath?'Calculated from the visible graph path':'Calculated from visible path metadata'}</small></div><span className="evidence-status"><i/>{statusLabel}</span></div>
-    <div className="evidence-command"><code>{evidence?.verb||fallbackTool}</code><span>(</span><code>{evidence?.args||fallbackArgs}</code><span>)</span></div>
+    <div className="evidence-command"><code>{commandName}</code><span>(</span><code>{commandArgs}</code><span>)</span></div>
     <p className="evidence-result">{evidence?.result_summary||fallbackSummary}</p>
     <dl className="evidence-metrics"><div><dt>{isPath?'Signal':'Confidence'}</dt><dd>{evidence?.confidence??(grounded?'bundle':'derived')}</dd></div><div><dt>{isPath?'Symbols':'Nodes'}</dt><dd>{evidence?.nodes??nodeCount}</dd></div>{indirections!==undefined&&<div><dt>{isPath?'Non-direct':'Indirections'}</dt><dd>{evidence?.indirections??indirections}</dd></div>}<div><dt>{isPath?'Source':'Origin'}</dt><dd>{evidence?.origin||(grounded?'bundle':'derived')}</dd></div></dl>
     {!isPath&&resolution&&<div className={`evidence-next next-${status}`}><span><Icon name="target" size={12}/><b>Next resolving check</b></span><p>{resolution}</p></div>}
