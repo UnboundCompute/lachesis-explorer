@@ -433,6 +433,7 @@ export function TraceView({
           fallbackSummary={`${steps.length} visible nodes in this graph path.`}
           nodeCount={steps.length}
           indirections={indirectionCount(flow, evidence)}
+          variant={app.findings.some((finding) => finding.id === flow.id) ? "evidence" : "path"}
         />
       </main>
       {inspectorOpen && (

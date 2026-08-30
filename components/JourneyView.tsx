@@ -317,6 +317,7 @@ export function JourneyView({
           fallbackArgs={entry.label}
           fallbackSummary={`${entry.hops.length} visible hops from the selected entrypoint.`}
           nodeCount={entry.hops.length}
+          variant="path"
         />
       </main>
       {inspectorOpen && (
