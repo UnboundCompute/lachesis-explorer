@@ -277,7 +277,7 @@ export function CommandPalette({
           <kbd>esc</kbd>
           <button type="button" className="command-close" onClick={onClose} aria-label="Close jump menu">×</button>
         </div>
-        <div className="command-results" id="command-results" role="listbox">
+        <div className="command-results" id="command-results" role="listbox" aria-label="Jump results">
           {visibleCommands.length ? (
             visibleCommands.map((command, index) => (
               <button
