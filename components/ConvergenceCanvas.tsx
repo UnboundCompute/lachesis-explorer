@@ -25,7 +25,7 @@ export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, 
   const [zoom, setZoom] = useState(1)
   const [focusedOnly, setFocusedOnly] = useState(false)
   const flowIdentity = allFlows.map(flow => `${flow.id}:${flow.steps.map(step => step.node_id).join(',')}`).join('|')
-  useEffect(() => { setZoom(1); setFocusedOnly(false) }, [flowIdentity, sinkId])
+  useEffect(() => { setZoom(1); setFocusedOnly(false) }, [flowIdentity, sinkId, selectedId])
   const flows = focusedOnly && selectedId
     ? allFlows.filter(flow => flow.steps.some(step => step.node_id === selectedId))
     : allFlows
