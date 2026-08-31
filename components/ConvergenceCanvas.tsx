@@ -20,6 +20,7 @@ function pathLocation(flow: Flow, nodes: Node[]) {
 
 export function ConvergenceCanvas({ flows, nodes, sinkId, selectedId, onSelect, securityMode = true }: Props) {
   const [zoom, setZoom] = useState(1)
+  useEffect(() => { setZoom(1) }, [sinkId])
   const graph = useMemo(() => {
     const occurrences = new Map<string, Array<{ distance: number; lane: number; role: string }>>()
     const edges = new Map<string, ConvergenceEdge>()
