@@ -135,6 +135,7 @@ export function SinkView({
         node.label || node.id,
         nodeLocation(node),
       );
+    trackEvent("convergence_node_selected");
   }
   async function shareSink() {
     if (!onShare) return;
