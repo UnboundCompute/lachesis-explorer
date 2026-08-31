@@ -168,7 +168,7 @@ export function PathCanvas({
           >
             Reset
           </button>
-          <div className="zoom-controls" aria-label="Path zoom">
+          <div className="zoom-controls" role="group" aria-label="Path zoom">
             <button type="button" onClick={() => adjustZoom(-.1)} aria-label="Zoom path out">−</button>
             <output aria-live="polite">{Math.round(zoom * 100)}%</output>
             <button type="button" onClick={() => adjustZoom(.1)} aria-label="Zoom path in">+</button>
