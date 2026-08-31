@@ -1,7 +1,6 @@
 {
   "name": "lachesis-explorer",
   "version": "0.1.0",
-  "private": true,
   "description": "Browser companion for Lachesis — read a compiler-precise code property graph: trace where values come from and go, and walk request callpaths, straight from a bundle.json. No server or model in the loop.",
   "license": "MIT",
   "homepage": "https://lachesis.unboundcompute.com",
