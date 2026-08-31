@@ -213,7 +213,7 @@ export default function Page() {
       return;
     }
     if (previousView.current !== view) {
-      workspaceRef.current?.focus({ preventScroll: true });
+      workspaceRef.current?.focus();
       previousView.current = view;
     }
   }, [view]);
