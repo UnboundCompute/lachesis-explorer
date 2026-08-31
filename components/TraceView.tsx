@@ -392,9 +392,18 @@ export function TraceView({
               </button>
             ))
           ) : (
-            <p className="list-empty">
-              No graph paths match this semantic filter.
-            </p>
+            <div className="list-empty">
+              <p>No graph paths match this semantic filter.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  trackEvent("semantic_filter_cleared", { surface: "trace" });
+                }}
+              >
+                Show all graph paths
+              </button>
+            </div>
           )}
         </div>
         <div className="sidebar-foot" aria-live="polite">

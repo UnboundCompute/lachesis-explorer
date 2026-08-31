@@ -628,15 +628,20 @@ export function HomeView({
             ))}
           </div>
           {!queueItems.length && (
-            <p className="queue-empty">
+            <div className="queue-empty">
               {metadataOnly
                 ? "These records need witness steps before they can be traced."
                 : graphOnly
-                ? graphFocus
-                  ? "Security findings were not included; explore the graph paths instead."
-                  : "No paths were included; open the full graph to browse its structure."
+                  ? graphFocus
+                    ? "Security findings were not included; explore the graph paths instead."
+                    : "No paths were included; open the full graph to browse its structure."
                 : "No findings match this filter."}
-            </p>
+              {!graphOnly && !metadataOnly && queueFilter !== "all" && (
+                <button type="button" onClick={() => setQueueFilter("all")}>
+                  Show all findings
+                </button>
+              )}
+            </div>
           )}
           {!graphOnly && !metadataOnly && (
             <div className="queue-foot">
