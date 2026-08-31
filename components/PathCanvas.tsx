@@ -198,7 +198,7 @@ export function PathCanvas({
       )}
 
       {boundaries.length > 1 && (
-        <div className="path-boundary-ribbon" aria-label="Path boundary context">
+        <div className="path-boundary-ribbon" role="group" aria-label="Path boundary context">
           <span className="path-boundary-label">BOUNDARY CONTEXT</span>
           <div className="path-boundary-segments">
             {boundaries.map((boundary, index) => (

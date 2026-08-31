@@ -274,7 +274,7 @@ export function JourneyView({
             <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
               {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
             </button>
-            <div className="step-nav" aria-label="Request path step navigation">
+            <div className="step-nav" role="group" aria-label="Request path step navigation">
               <button
                 className="inspector-reopen"
                 type="button"

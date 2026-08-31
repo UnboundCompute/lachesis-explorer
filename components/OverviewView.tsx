@@ -637,7 +637,7 @@ export function OverviewView({
                   <span className="panel-label">TOPOLOGY OVERVIEW</span>
                   <small>Choose a point to focus its source context.</small>
                 </div>
-                <div className="topology-zoom" aria-label="Topology zoom controls">
+                <div className="topology-zoom" role="group" aria-label="Topology zoom controls">
                   <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out">−</button>
                   <output aria-live="polite">{Math.round(topologyZoom * 100)}%</output>
                   <button type="button" onClick={() => setTopologyZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom topology in">+</button>

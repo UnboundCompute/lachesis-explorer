@@ -313,7 +313,7 @@ export function TraceView({
             aria-label="Filter graph paths"
           />
         </label>
-        <div className="filter-hints" aria-label="Suggested semantic filters">
+        <div className="filter-hints" role="group" aria-label="Suggested semantic filters">
           {filterSuggestions.map((suggestion) => (
             <button
               type="button"
