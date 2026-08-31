@@ -905,7 +905,7 @@ export default function Page() {
         <ShortcutHelp opener={helpOpenerRef.current} onClose={closeHelp} />
       )}
       {dragActive && (
-        <div className="drop-overlay" role="presentation">
+        <div className="drop-overlay" role="status" aria-live="polite" aria-atomic="true">
           <div>
             <span className="drop-glyph">
               <Icon name="upload" size={22} />
