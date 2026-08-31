@@ -32,6 +32,8 @@ const nodeScopeLabel = (node: Node) =>
   node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.repository || "Unscoped nodes";
 const crossesScope = (source: Node, target: Node) =>
   nodeScopeKey(source) !== nodeScopeKey(target) && Boolean(source.scope || target.scope);
+const nodeScopeKind = (node: Node) =>
+  node.scope?.kind?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "";
 
 function matches(node: Node, query: string, app: App) {
   return query
@@ -542,7 +544,7 @@ export function OverviewView({
                     return (
                       <g
                         key={node.id}
-                        className={`topology-node kind-${node.kind} ${roleClasses}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
+                        className={`topology-node kind-${node.kind} scope-${nodeScopeKind(node)} ${roleClasses}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
                         onClick={select}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
@@ -553,7 +555,7 @@ export function OverviewView({
                         role="button"
                         tabIndex={0}
                         aria-pressed={selected?.id === node.id}
-                        aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}, ${nodeLocation(node)}`}
+                        aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}${node.scope?.kind ? `, ${node.scope.kind} boundary` : ""}, ${nodeLocation(node)}`}
                       >
                         <title>{node.label || node.id}</title>
                         <circle cx={p.x} cy={p.y} r="24" />
@@ -585,6 +587,7 @@ export function OverviewView({
                   <span><i className="legend-alias" />alias relationship</span>
                   <span><i className="legend-dynamic" />dynamic relationship</span>
                   <span><i className="legend-boundary" />context boundary</span>
+                  {visible.some((node) => node.scope?.kind === "external" || node.scope?.kind === "generated") && <span><i className="legend-scope" />external / generated node</span>}
                   <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
                 </div>
                 <div className="topology-node-list" aria-label="Graph nodes">
@@ -601,7 +604,7 @@ export function OverviewView({
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
                       <small>
-                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
+                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
                     </button>
                     );

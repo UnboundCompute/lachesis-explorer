@@ -44,6 +44,9 @@ const scopeLabel = (node: Node) => {
   return scope.label || scope.service || scope.package || scope.module || scope.repository || 'Unlabelled boundary'
 }
 
+const scopeKind = (node: Node) =>
+  node.scope?.kind?.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || ''
+
 export function PathCanvas({
   items,
   selectedId,
@@ -234,7 +237,7 @@ export function PathCanvas({
             return (
               <g
                 key={`${item.id}-${start + index}`}
-                className={`path-node kind-${item.node.kind} ${roleClass}${selected ? ' selected' : ''}`}
+                className={`path-node kind-${item.node.kind} scope-${scopeKind(item.node)} ${roleClass}${selected ? ' selected' : ''}`}
                 onClick={select}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
@@ -245,7 +248,7 @@ export function PathCanvas({
                 role="button"
                 tabIndex={0}
                 aria-pressed={selected}
-                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}`}
+                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
               >
                 <title>{item.node.label || item.node.id}</title>
                 <circle className="node-halo" cx={point.x} cy={point.y} r="38" />
@@ -277,7 +280,7 @@ export function PathCanvas({
               onClick={() => onSelect(item.id, start + index)}
               aria-pressed={occurrenceSelected}
               aria-current={occurrenceSelected ? 'step' : undefined}
-              aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}`}
+              aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
             >
               <span>{String(start + index + 1).padStart(2, '0')}</span>
               <b>{item.label}</b>
@@ -296,6 +299,7 @@ export function PathCanvas({
         <span><i className="legend-alias" />alias</span>
         <span><i className="legend-dynamic" />dynamic</span>
         <span><i className="legend-sink" />sink</span>
+        {items.some((item) => item.node.scope?.kind === 'external' || item.node.scope?.kind === 'generated') && <span><i className="legend-scope" />external / generated context</span>}
       </div>
     </div>
   )

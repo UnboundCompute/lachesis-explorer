@@ -48,7 +48,7 @@ function normalizeScope(raw: unknown): NodeScope | undefined {
   const value = raw as Record<string, unknown>
   const scope: NodeScope = {}
   for (const key of ['repository', 'service', 'package', 'module', 'kind', 'label'] as const) {
-    if (value[key] != null && String(value[key]).trim()) scope[key] = String(value[key]).trim()
+    if (value[key] != null && String(value[key]).trim()) scope[key] = key === 'kind' ? String(value[key]).trim().toLowerCase() : String(value[key]).trim()
   }
   return Object.keys(scope).length ? scope : undefined
 }

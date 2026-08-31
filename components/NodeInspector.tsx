@@ -144,6 +144,11 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
               scope {node.scope.label || node.scope.service || node.scope.repository}
             </span>
           )}
+          {node.scope?.kind && (
+            <span className={`node-scope-kind scope-kind-${node.scope.kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
+              {node.scope.kind} boundary
+            </span>
+          )}
         </div>
         <div className="location-row">
           <span className="line-number">{hasSourceLocation ? <>{range}{node.column ? ` · column ${node.column}` : ""}</> : <>Graph ID · {node.id}</>}</span>
