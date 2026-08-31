@@ -54,6 +54,12 @@ function matchesFlow(app: App, flow: Flow, query: string) {
         return nodes.some((node) => node?.kind.toLowerCase().includes(value));
       if (key === "file")
         return nodes.some((node) => node?.file.toLowerCase().includes(value));
+      if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+        return nodes.some((node) =>
+          [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package]
+            .some((item) => item?.toLowerCase().includes(value)),
+        );
+      }
       if (key === "has" && value === "mcp")
         return app.mcp.some((item) => item.for === flow.id);
       if (key === "path")
@@ -216,6 +222,9 @@ export function TraceView({
       ? { label: "uncertain", query: "edge:uncertain" }
       : null,
     app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
+    ...[...new Set(app.nodes.map((node) => node.scope?.service).filter(Boolean))]
+      .slice(0, 2)
+      .map((service) => ({ label: service!, query: `service:${service}` })),
   ].filter(Boolean) as { label: string; query: string }[];
   const firstNode = app.nodes.find((node) => node.id === (flow.sourceNodeId ?? flow.steps[0]?.node_id));
   const lastNode = app.nodes.find((node) => node.id === (flow.sinkNodeId ?? flow.steps.at(-1)?.node_id));
@@ -265,7 +274,7 @@ export function TraceView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search paths: symbol, file, path:value-flow, edge…"
+            placeholder="Search paths: symbol, file, service:api, path:value-flow, edge…"
             aria-label="Filter graph paths"
           />
         </label>
