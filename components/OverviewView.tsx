@@ -505,7 +505,7 @@ export function OverviewView({
                 </div>
                 <div className="topology-zoom" aria-label="Topology zoom controls">
                   <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out">−</button>
-                  <output>{Math.round(topologyZoom * 100)}%</output>
+                  <output aria-live="polite">{Math.round(topologyZoom * 100)}%</output>
                   <button type="button" onClick={() => setTopologyZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom topology in">+</button>
                   <button type="button" onClick={() => setTopologyZoom(1)}>Reset</button>
                 </div>
