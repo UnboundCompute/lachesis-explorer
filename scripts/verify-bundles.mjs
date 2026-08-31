@@ -91,6 +91,7 @@ function verify(file, bundle) {
   const graph = bundle.graph;
   if (!graph || !Array.isArray(graph.nodes)) fail(file, "graph.nodes must be an array");
   if (graph.nodes.length === 0) fail(file, "graph.nodes must contain at least one node");
+  if (!schemaVersion && !Array.isArray(graph.flows)) fail(file, "graph.flows must be an array for legacy bundles");
   const ids = new Set(graph.nodes.map((node) => String(node.id ?? node.node_id ?? "")));
   if (ids.size !== graph.nodes.length || ids.has("")) fail(file, "graph nodes must have unique non-empty IDs");
   if (schemaVersion === "2.0") {
