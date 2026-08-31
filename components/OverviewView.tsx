@@ -774,6 +774,8 @@ export function OverviewView({
                       const filterKey = context.service ? "service" : context.repository ? "repo" : context.module ? "module" : "scope";
                       setMode("map");
                       setQuery(filterValue ? `${filterKey}:${filterValue}` : "");
+                      setNeighborhoodOnly(false);
+                      setTopologyZoom(1);
                       trackEvent(filterValue ? "semantic_filter_applied" : "semantic_filter_cleared", { surface: "architecture", filter: filterKey });
                     }}
                   >
@@ -864,6 +866,8 @@ export function OverviewView({
                     if (!transition.query) return;
                     setMode("map");
                     setQuery(transition.query);
+                    setNeighborhoodOnly(false);
+                    setTopologyZoom(1);
                     trackEvent("semantic_filter_applied", { surface: "architecture", filter: transition.query.split(":", 1)[0] || "scope" });
                   }}
                   aria-label={`${transition.source} to ${transition.target}, ${transition.count} relationships`}
