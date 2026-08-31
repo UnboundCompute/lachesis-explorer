@@ -54,9 +54,11 @@ function matchesFlow(app: App, flow: Flow, query: string) {
         return nodes.some((node) => node?.kind.toLowerCase().includes(value));
       if (key === "file")
         return nodes.some((node) => node?.file.toLowerCase().includes(value));
+      if (key === "module")
+        return nodes.some((node) => [node?.module, node?.scope?.module].some((item) => item?.toLowerCase().includes(value)));
       if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
         return nodes.some((node) =>
-          [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package]
+            [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package, node?.scope?.module]
             .some((item) => item?.toLowerCase().includes(value)),
         );
       }
@@ -274,7 +276,7 @@ export function TraceView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search paths: symbol, file, service:api, path:value-flow, edge…"
+            placeholder="Search paths: symbol, module:search, service:api, path:value-flow…"
             aria-label="Filter graph paths"
           />
         </label>

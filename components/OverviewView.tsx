@@ -48,7 +48,7 @@ function matches(node: Node, query: string, app: App) {
         if (key === "kind") return node.kind.toLowerCase().includes(value);
         if (key === "file") return node.file.toLowerCase().includes(value);
         if (key === "module")
-          return node.module?.toLowerCase().includes(value) ?? false;
+          return [node.module, node.scope?.module].some((item) => item?.toLowerCase().includes(value));
         if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
           const scopeValues = [node.scope?.label, node.scope?.repository, node.scope?.service, node.scope?.package, node.scope?.kind];
           return scopeValues.some((item) => item?.toLowerCase().includes(value));
@@ -93,6 +93,7 @@ function matches(node: Node, query: string, app: App) {
         node.kind,
         node.qualifiedName,
         node.module,
+        node.scope?.module,
         node.scope?.label,
         node.scope?.service,
         node.scope?.repository,
@@ -403,7 +404,7 @@ export function OverviewView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter nodes: symbol:query service:api file:src/ edge:dynamic"
+            placeholder="Filter nodes: symbol:query module:search service:api file:src/…"
             aria-label="Filter graph nodes"
           />
           <div className="query-chips">
