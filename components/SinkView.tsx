@@ -11,6 +11,10 @@ function nodeLocation(node: App["nodes"][number]) {
   return `${node.file || "Source unavailable"}:${node.line || "—"}`;
 }
 
+function nodeContext(node: App["nodes"][number]) {
+  return node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped";
+}
+
 type Props = {
   app: App;
   sinkId: string;
@@ -144,6 +148,7 @@ export function SinkView({
               <button
                 key={item.id}
                 className={item.id === sink.id ? "selected" : ""}
+                aria-pressed={item.id === sink.id}
                 onClick={() => chooseSink(item.id)}
               >
                 <span className="sink-pulse">
@@ -152,7 +157,7 @@ export function SinkView({
                 <span>
                   <b>{item.label || item.id}</b>
                   <small>
-                    {nodeLocation(item)}
+                    {nodeContext(item)} · {nodeLocation(item)}
                   </small>
                 </span>
                 <em>{count}</em>
