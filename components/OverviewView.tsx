@@ -850,6 +850,7 @@ export function OverviewView({
         <NodeInspector
           node={selected}
           app={app}
+          onNode={selectNode}
           onFlow={onFlow}
           onEntry={onEntry}
           onClose={() => setInspectorOpen(false)}

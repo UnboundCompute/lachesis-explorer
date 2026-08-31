@@ -31,11 +31,12 @@ type Props = {
   contextRole?: string;
   onClose: () => void;
   app?: App;
+  onNode?: (nodeId: string) => void;
   onFlow?: (flowId: string, nodeId: string) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
 };
 
-export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry }: Props) {
+export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow, onEntry }: Props) {
   const inspectorRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
@@ -256,7 +257,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
                       <div className="relationship-item" key={edge.id}>
                         <span>
                           {edge.source === node.id ? "→ leads to" : "← receives from"}{" "}
-                          {peerFlow && onFlow ? <button type="button" className="relationship-peer" onClick={() => onFlow(peerFlow.id, peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
+                          {(onNode || peerFlow && onFlow) ? <button type="button" className="relationship-peer" onClick={() => onNode ? onNode(peerId) : onFlow?.(peerFlow!.id, peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
                         </span>
                         {(edge.dynamic || edge.alias || edge.confidence) && (
                           <small className="relationship-signals">
