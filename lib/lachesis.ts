@@ -128,6 +128,7 @@ function assertGraphV2Nodes(nodes:Node[]) {
 function assertModuleReferences(modules:GraphModule[], nodeIds:Set<string>) {
   const moduleIds = new Set(modules.map((module) => module.id))
   for (const module of modules) {
+    if (module.parentId != null && !module.parentId.trim()) throw new Error(`Graph module "${module.id}" parent ID must be non-empty.`)
     if (module.parentId === module.id) throw new Error(`Graph module "${module.id}" cannot be its own parent.`)
     if (module.parentId && !moduleIds.has(module.parentId)) {
       throw new Error(`Graph module "${module.id}" references missing parent module "${module.parentId}".`)
