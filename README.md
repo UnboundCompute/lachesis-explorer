@@ -55,6 +55,8 @@ path to the underlying graph and source.
 - `Cmd/Ctrl+K` opens the command palette for views, symbols, values, and entrypoints.
 - `/` focuses search where a lens supports filtering.
 - `[` and `]` move to the previous or next step in a value flow or request path.
+- `←` and `→` move between focused graph nodes; in the Trace lens, they change direction when no graph node is focused.
+- `↑` and `↓` move between rows in the Topology lens; `Home` and `End` jump to the first or last graph node.
 - `Esc` closes the current overlay or source inspector.
 - The Help control in the footer shows the current shortcut list.
 

@@ -1200,7 +1200,7 @@ export default function Page() {
           <i className="status-dot" /> Active bundle: <b>{app.name}</b>
         </span>
         <span>
-          Shortcuts: <b>⌘K</b> jump · <b>/</b> search · <b>← →</b> direction ·{" "}
+          Shortcuts: <b>⌘K</b> jump · <b>/</b> search · <b>← →</b> direction / nodes · <b>↑ ↓</b> topology rows ·{" "}
           <b>[ ]</b> step ·{" "}
           <b>Esc</b> close · <button className="footer-help" type="button" onClick={() => { helpOpenerRef.current = document.activeElement as HTMLElement | null; setHelpOpen(true); }}> <b>?</b> keyboard help</button>
         </span>
