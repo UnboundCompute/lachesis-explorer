@@ -52,6 +52,7 @@ function DiffColumn({
   empty,
   className,
   actionable = false,
+  previewFlows = false,
   onOpenFlow,
 }: {
   label: string
@@ -60,6 +61,7 @@ function DiffColumn({
   empty: string
   className: string
   actionable?: boolean
+  previewFlows?: boolean
   onOpenFlow?: (flowId: string, nodeId: string) => void
 }) {
   return (
@@ -68,8 +70,14 @@ function DiffColumn({
       {items.length ? (
         items.slice(0, 8).map((item) => {
           const flow = actionable ? app.flows.find((value) => value.id === item.id) : undefined
+          const preview = previewFlows ? app.flows.find((value) => value.id === item.id) : undefined
           const firstNodeId = flow?.steps[0]?.node_id
-          return flow && onOpenFlow && firstNodeId ? (
+          return preview ? (
+            <details className="diff-flow-preview" key={item.id}>
+              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview</small></summary>
+              <p>{flowPath(preview, app) || "No step sequence available."}</p>
+            </details>
+          ) : flow && onOpenFlow && firstNodeId ? (
             <button
               type="button"
               className="diff-item-action"
@@ -158,7 +166,7 @@ export function CompareView({ base, compare, onUpload, onOpenFlow }: Props) {
           <section key={label}>
             <h3>{label}</h3>
             <div className="diff-columns">
-              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" />
+              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" previewFlows={label === pathGroup} />
               <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} />
             </div>
           </section>
