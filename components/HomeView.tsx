@@ -264,7 +264,7 @@ export function HomeView({
           <h1>{title}</h1>
           <p>
             {metadataOnly
-              ? "This bundle includes linked records without witness steps. Explore the graph structure while the exporter adds a traceable path."
+              ? "This bundle includes linked records without path steps. Explore the graph structure while the exporter adds a traceable path."
               : graphOnly
               ? app.bundle.description ||
                 (graphFocus
