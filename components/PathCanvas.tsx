@@ -62,6 +62,7 @@ export function PathCanvas({
   const [viewport, setViewport] = useState<'fit' | 'reset'>('fit')
   const [focused, setFocused] = useState(false)
   const [zoom, setZoom] = useState(1)
+  const pathIdentity = items.map((item) => item.occurrenceId ?? item.id).join('|')
   function adjustZoom(delta: number) {
     const next = Math.max(.75, Math.min(1.5, Number((zoom + delta).toFixed(1))))
     if (next !== zoom) trackEvent('path_zoom_changed', { direction: delta > 0 ? 'in' : 'out' })
@@ -103,6 +104,11 @@ export function PathCanvas({
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }, [selectedId, selectedIndex, start])
+  useEffect(() => {
+    setViewport('fit')
+    setFocused(false)
+    setZoom(1)
+  }, [pathIdentity])
 
   const xs = resolved.map((point) => point.x)
   const ys = resolved.map((point) => point.y)
