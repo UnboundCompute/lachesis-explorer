@@ -40,6 +40,11 @@ html[data-theme='light'] body::before{opacity:.35}
 button,input,select{font:inherit}button{cursor:pointer}::selection{background:var(--brand);color:#06100c}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.58}
 *{scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
+}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .app-shell{position:relative;z-index:1;min-height:100dvh;padding-top:18px}
 #workspace-content{scroll-margin-top:110px}
