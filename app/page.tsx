@@ -995,6 +995,9 @@ export default function Page() {
             setInspectorOpen(true);
           }}
           onView={(next) => changeView(next)}
+          onShare={(nextSink) =>
+            copyInvestigationLink({ view: "investigate", sink: nextSink })
+          }
         />
       )}
       {view === "map" && (

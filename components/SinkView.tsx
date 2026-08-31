@@ -18,6 +18,7 @@ type Props = {
   onOpenFlow: (flowId: string, nodeId: string, position?: number) => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map") => void;
+  onShare?: (sinkId: string) => Promise<boolean>;
 };
 
 export function SinkView({
@@ -27,6 +28,7 @@ export function SinkView({
   onOpenFlow,
   onRecord,
   onView,
+  onShare,
 }: Props) {
   const sinks = useMemo(
     () =>
@@ -48,6 +50,7 @@ export function SinkView({
     sink?.id ?? app.nodes[0]?.id ?? "",
   );
   const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   useEffect(() => {
     if (sink?.id) setSelectedId(sink.id);
   }, [sink?.id]);
@@ -117,6 +120,12 @@ export function SinkView({
         nodeLocation(node),
       );
   }
+  async function shareSink() {
+    if (!onShare) return;
+    const copied = await onShare(sink.id);
+    setShareState(copied ? "copied" : "failed");
+    window.setTimeout(() => setShareState("idle"), 1800);
+  }
   return (
     <section
       className={`sink-workspace${inspectorOpen ? "" : " inspector-closed"}`}
@@ -172,6 +181,11 @@ export function SinkView({
             className="lens-switch"
             aria-label="Investigation representation"
           >
+            {onShare && (
+              <button type="button" className="share-control" onClick={shareSink} aria-live="polite">
+                {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+              </button>
+            )}
             <button
               type="button"
               className={mode === "field" ? "active" : ""}
