@@ -92,6 +92,12 @@ an `occurrence_id` (unique within its path) when the same node appears more than
 Explorer deep-link to the exact occurrence instead of only selecting a repeated symbol. Stable IDs are
 also recommended for nodes, edges, flows, paths, files, modules, entrypoints, and findings.
 
+For distributed or deeply nested code, nodes may include a `scope` object with stable
+`repository`, `service`, `package`, `module`, and optional `kind`/`label` fields. The Explorer uses
+adjacent scope changes to render boundary segments, highlight cross-context edges, and expose
+external or generated nodes. Missing scope is supported for older bundles; those nodes fall back to
+file and module context. Scope is descriptive graph context, not a security conclusion.
+
 At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional fields include:
 
 ```json
@@ -101,7 +107,7 @@ At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_
   "meta": { "repository": "owner/repo", "description": "A short human-readable bundle description", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
   "graph": {
     "nodes": [
-      { "id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "snippet": "function search() {}" }
+      { "id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "scope": { "repository": "owner/app", "service": "web-api", "package": "search" }, "snippet": "function search() {}" }
     ],
     "edges": [],
     "files": [],
