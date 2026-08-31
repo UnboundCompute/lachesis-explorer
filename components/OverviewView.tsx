@@ -488,6 +488,9 @@ export function OverviewView({
             placeholder="Filter nodes: symbol:query module:search service:api file:src/…"
             aria-label="Filter graph nodes"
           />
+          <span className="sr-only" aria-live="polite">
+            {query ? `${visible.length} graph nodes match the current filter.` : "Showing all graph nodes."}
+          </span>
           <div className="query-chips">
             {filterSuggestions.map((suggestion) => (
               <button

@@ -397,7 +397,7 @@ export function TraceView({
             </p>
           )}
         </div>
-        <div className="sidebar-foot">
+        <div className="sidebar-foot" aria-live="polite">
           <span className="tiny-dot" /> {visible.length} of {app.flows.length}{" "}
           graph paths visible
         </div>
