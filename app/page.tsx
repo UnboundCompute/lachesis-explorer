@@ -921,6 +921,7 @@ export default function Page() {
       <InvestigationContext
         app={app}
         view={view}
+        onHome={() => changeView("home")}
         flowId={flowId}
         stepId={stepId}
         stepIndex={stepIndex}
