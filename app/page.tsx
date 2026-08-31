@@ -427,6 +427,11 @@ export default function Page() {
         });
         return;
       }
+      if (event.key === "Escape" && editing && !inDialog) {
+        event.preventDefault();
+        target.blur();
+        return;
+      }
       if (event.key === "?" && !editing && !inDialog && !commandOpen && !menu) {
         event.preventDefault();
         helpOpenerRef.current = document.activeElement as HTMLElement | null;
