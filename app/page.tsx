@@ -227,6 +227,24 @@ export default function Page() {
       hopIndex: params.get("hop_index") == null ? undefined : Number(params.get("hop_index")),
       sink: params.get("sink") ?? undefined,
     };
+    if (params.get("sample") === "security") {
+      pendingLink.current = link;
+      setLoadState({ type: "loading", message: "Loading the security sample…" });
+      fetch("/demo-bundle.json")
+        .then((response) => {
+          if (!response.ok) throw new Error("The security sample could not be loaded.");
+          return response.json();
+        })
+        .then((raw) => activate(normalize(raw), true))
+        .catch((error) => {
+          urlReady.current = true;
+          setLoadState({
+            type: "error",
+            message: `${error instanceof Error ? error.message : "Could not load the security sample"} The current bundle was kept.`,
+          });
+        });
+      return;
+    }
     if (params.get("scope") === "local") {
       pendingLink.current = link;
       setLoadState({
@@ -447,7 +465,12 @@ export default function Page() {
   async function copyInvestigationLink(params: Record<string, string>) {
     const url = new URL(window.location.href);
     url.search = "";
-    url.searchParams.set("scope", "local");
+    if (isDemo) {
+      const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+      if (securityMode) url.searchParams.set("sample", "security");
+    } else {
+      url.searchParams.set("scope", "local");
+    }
     Object.entries(params).forEach(([key, value]) => {
       if (value) url.searchParams.set(key, value);
     });
@@ -468,7 +491,7 @@ export default function Page() {
     }
   }
 
-  function activate(next: App) {
+  function activate(next: App, demo = false) {
     const pending = pendingLink.current;
     const firstSink = recommendedSink(next)?.id ?? "";
     const firstFlow = recommendedFlow(next.flows);
@@ -559,7 +582,7 @@ export default function Page() {
     urlReady.current = true;
     setMenu(false);
     setInspectorOpen(true);
-    setIsDemo(false);
+    setIsDemo(demo);
     setActivity([]);
     setLoadState({
       type: restored || !pending ? "success" : "error",
@@ -640,7 +663,7 @@ export default function Page() {
       const response = await fetch("/code-exploration-bundle.json");
       if (!response.ok)
         throw new Error("The code exploration sample could not be loaded.");
-      activate(normalize(await response.json()));
+      activate(normalize(await response.json()), true);
     } catch (error) {
       setLoadState({
         type: "error",
@@ -664,7 +687,7 @@ export default function Page() {
       const response = await fetch("/demo-bundle.json");
       if (!response.ok)
         throw new Error("The security sample could not be loaded.");
-      activate(normalize(await response.json()));
+      activate(normalize(await response.json()), true);
     } catch (error) {
       setLoadState({
         type: "error",
