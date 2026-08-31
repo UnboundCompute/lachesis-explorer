@@ -377,7 +377,7 @@ export function OverviewView({
     { label: "Indexed nodes", value: app.coverage.indexedNodes ?? app.nodes.length },
     {
       label: "Node coverage",
-      value: `${Math.round(((app.coverage.includedNodes ?? app.nodes.length) / Math.max(1, app.coverage.indexedNodes ?? app.nodes.length)) * 100)}%`,
+      value: `${Math.min(100, Math.round(((app.coverage.includedNodes ?? app.nodes.length) / Math.max(1, app.coverage.indexedNodes ?? app.nodes.length)) * 100))}%`,
     },
     { label: "Relationships", value: app.edges.length },
     { label: "Explicit relationships", value: app.edges.filter((edge) => edge.origins.includes("bundle")).length },
