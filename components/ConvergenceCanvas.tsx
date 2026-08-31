@@ -81,8 +81,8 @@ export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, 
   const pathLabel = securityMode ? 'value flows' : 'graph paths'
   const canvasStyle = { width: `${zoom * 100}%`, minWidth: `${Math.max(760, graph.width) * zoom}px`, height: `${graph.height * zoom}px` }
   return <section className="convergence-canvas" aria-label={`Converging ${pathLabel}`}>
-    <div className="convergence-filter" role="status">
-      <span>{focusedOnly ? `Showing ${flows.length} focused paths.` : 'Showing every path that reaches this boundary.'}</span>
+    <div className="convergence-filter" role="group" aria-label="Convergence display filter">
+      <span aria-live="polite" aria-atomic="true">{focusedOnly ? `Showing ${flows.length} focused paths.` : 'Showing every path that reaches this boundary.'}</span>
       <button type="button" className={focusedOnly ? 'active' : ''} aria-pressed={focusedOnly} onClick={() => { const next = !focusedOnly; setFocusedOnly(next); trackEvent('convergence_focus_toggled', { focused: next }) }} disabled={!selectedId || allFlows.length < 2}>
         {focusedOnly ? 'Show all paths' : 'Focus selected node'}
       </button>
