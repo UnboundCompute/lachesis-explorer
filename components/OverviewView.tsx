@@ -402,6 +402,7 @@ export function OverviewView({
   const visibleIndex = (node: Node) => orderedVisible.indexOf(node);
   const graphPos = (node: Node) => pos(Math.max(0, visibleIndex(node)));
   const graphHeight = Math.max(300, Math.ceil(visible.length / 4) * 92 + 110);
+  const graphViewModified = Boolean(query || neighborhoodOnly || topologyZoom !== 1 || nodeOrder !== "path");
   const labelIndex = (node: Node) =>
     String(Math.max(0, visibleIndex(node)) + 1).padStart(2, "0");
   async function shareNode() {
@@ -556,6 +557,21 @@ export function OverviewView({
                     onClick={() => setNeighborhoodOnly((value) => !value)}
                   >
                     {neighborhoodOnly ? "Show full filtered graph" : "Focus selected neighborhood"}
+                  </button>
+                )}
+                {graphViewModified && (
+                  <button
+                    type="button"
+                    className="query-clear"
+                    onClick={() => {
+                      setQuery("");
+                      setNeighborhoodOnly(false);
+                      setTopologyZoom(1);
+                      setNodeOrder("path");
+                      trackEvent("graph_view_reset");
+                    }}
+                  >
+                    Reset graph view
                   </button>
                 )}
               </p>
