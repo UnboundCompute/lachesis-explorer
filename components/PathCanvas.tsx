@@ -230,7 +230,7 @@ export function PathCanvas({
                   className={`path-edge ${edgeClass}`}
                   markerEnd={`url(#path-arrow-${edgeClass})`}
                   d={`M${point.x + 30} ${point.y} C${point.x + 62} ${point.y},${next.x - 62} ${next.y},${next.x - 30} ${next.y}`}
-                />
+                ><title>{shown[index]?.node.label || shown[index]?.node.id} → {item?.node.label || item?.node.id}: {relation || edgeClass}</title></path>
                 {(relation || edgeClass !== 'exact') && (
                   <text
                     className={`edge-caption ${edgeClass}`}

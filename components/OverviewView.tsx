@@ -552,7 +552,7 @@ export function OverviewView({
                           className={`topology-edge ${kind}${boundary ? " boundary" : ""}${focusActive && !nearby ? " dimmed" : ""}`}
                           markerEnd={`url(#topology-arrow-${kind})`}
                           d={`M${a.x} ${a.y} C${(a.x + b.x) / 2} ${a.y},${(a.x + b.x) / 2} ${b.y},${b.x} ${b.y}`}
-                        />
+                        ><title>{source.label || source.id} → {target.label || target.id}: {boundary ? "context boundary · " : ""}{edge.relation || "connected"}</title></path>
                         {focusActive && touchesSelected && (
                           <text
                             className={`topology-edge-label ${kind}`}
