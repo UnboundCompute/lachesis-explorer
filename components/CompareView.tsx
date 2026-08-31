@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { App, Flow } from '../lib/lachesis'
 import { copyText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
@@ -89,6 +89,7 @@ function DiffColumn({
   onOpenFlow?: (flowId: string, nodeId: string) => void
 }) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  useEffect(() => { setCopyState('idle') }, [app, items])
   async function copyPreview(flow: Flow) {
     try {
       await copyText(`${flow.name}\n${flowSequence(flow, app)}`)
