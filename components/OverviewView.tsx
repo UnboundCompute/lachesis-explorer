@@ -419,13 +419,12 @@ export function OverviewView({
     : visible.length
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
-  const visibleIndex = (node: Node) => orderedVisible.indexOf(node);
   const canvasOrder = neighborhoodOnly ? topologyNodes : orderedVisible;
   const graphPos = (node: Node) => pos(Math.max(0, canvasOrder.indexOf(node)));
   const graphHeight = Math.max(300, Math.ceil(canvasOrder.length / 4) * 92 + 110);
   const graphViewModified = Boolean(query || neighborhoodOnly || topologyZoom !== 1 || nodeOrder !== "path");
   const labelIndex = (node: Node) =>
-    String(Math.max(0, visibleIndex(node)) + 1).padStart(2, "0");
+    String(Math.max(0, canvasOrder.indexOf(node)) + 1).padStart(2, "0");
   async function shareNode() {
     if (!selected || !onShare) return;
     const copied = await onShare(selected.id);
@@ -724,7 +723,7 @@ export function OverviewView({
                             select();
                             return;
                           }
-                          const index = orderedVisible.findIndex((item) => item.id === node.id);
+                          const index = canvasOrder.findIndex((item) => item.id === node.id);
                           const nextIndex = event.key === "ArrowRight"
                             ? index + 1
                             : event.key === "ArrowLeft"
@@ -736,12 +735,12 @@ export function OverviewView({
                                   : event.key === "Home"
                                     ? 0
                                     : event.key === "End"
-                                      ? orderedVisible.length - 1
+                                      ? canvasOrder.length - 1
                                       : -1;
-                          if (nextIndex >= 0 && nextIndex < orderedVisible.length) {
+                          if (nextIndex >= 0 && nextIndex < canvasOrder.length) {
                             event.preventDefault();
                             focusAfterSelection.current = true;
-                            selectNode(orderedVisible[nextIndex].id);
+                            selectNode(canvasOrder[nextIndex].id);
                           }
                         }}
                         role="button"
@@ -784,7 +783,7 @@ export function OverviewView({
                   <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
                 </div>
                 <div className="topology-node-list" aria-label="Graph nodes">
-                  {orderedVisible.map((node) => {
+                  {topologyNodes.map((node) => {
                     const roles = rolesForNode(node.id);
                     return (
                     <button
