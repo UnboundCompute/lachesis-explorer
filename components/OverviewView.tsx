@@ -6,9 +6,11 @@ import { trackEvent } from "../lib/analytics";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
 
-type Mode = "map" | "architecture" | "health";
+export type OverviewMode = "map" | "architecture" | "health";
 type Props = {
   app: App;
+  mode?: OverviewMode;
+  setMode?: (mode: OverviewMode) => void;
   query: string;
   setQuery: (value: string) => void;
   focusNodeId?: string;
@@ -109,6 +111,8 @@ function matches(node: Node, query: string, app: App) {
 
 export function OverviewView({
   app,
+  mode: controlledMode,
+  setMode: setControlledMode,
   query,
   setQuery,
   focusNodeId,
@@ -118,7 +122,9 @@ export function OverviewView({
   onEntry,
   onShare,
 }: Props) {
-  const [mode, setMode] = useState<Mode>("map");
+  const [localMode, setLocalMode] = useState<OverviewMode>("map");
+  const mode = controlledMode ?? localMode;
+  const setMode = setControlledMode ?? setLocalMode;
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);

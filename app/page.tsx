@@ -7,7 +7,7 @@ import { InstallView } from "../components/InstallView";
 import { JourneyView } from "../components/JourneyView";
 import { TraceView } from "../components/TraceView";
 import { SinkView } from "../components/SinkView";
-import { OverviewView } from "../components/OverviewView";
+import { OverviewView, type OverviewMode } from "../components/OverviewView";
 import { CompareView } from "../components/CompareView";
 import { HomeView } from "../components/HomeView";
 import { InvestigationContext } from "../components/InvestigationContext";
@@ -43,6 +43,7 @@ type PendingLink = {
   hopIndex?: number;
   sink?: string;
   filter?: string;
+  mapMode?: string;
 };
 
 const viewLabels: Record<View, string> = {
@@ -130,6 +131,7 @@ export default function Page() {
   );
   const [query, setQuery] = useState("");
   const [mapQuery, setMapQuery] = useState("");
+  const [mapMode, setMapMode] = useState<OverviewMode>("map");
   const [loadState, setLoadState] = useState<LoadState>({
     type: "idle",
     message: "",
@@ -229,6 +231,7 @@ export default function Page() {
       hopIndex: params.get("hop_index") == null ? undefined : Number(params.get("hop_index")),
       sink: params.get("sink") ?? undefined,
       filter: params.get("filter") ?? undefined,
+      mapMode: params.get("map_mode") ?? undefined,
     };
     if (params.get("sample") === "security") {
       pendingLink.current = link;
@@ -310,6 +313,7 @@ export default function Page() {
     if (link.direction === "forward") setDirection("forward");
     if (link.view === "trace") setQuery(link.filter ?? "");
     if (link.view === "map") setMapQuery(link.filter ?? "");
+    if (link.mapMode && ["map", "architecture", "health"].includes(link.mapMode)) setMapMode(link.mapMode as OverviewMode);
     if (
       link.view === "map" &&
       link.node &&
@@ -343,9 +347,10 @@ export default function Page() {
     } else if (view === "map") {
       if (focusNodeId) params.set("node", focusNodeId);
       if (mapQuery) params.set("filter", mapQuery);
+      if (mapMode !== "map") params.set("map_mode", mapMode);
     }
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapQuery, query, sinkId, stepId, stepIndex, view]);
+  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapMode, mapQuery, query, sinkId, stepId, stepIndex, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
@@ -369,6 +374,8 @@ export default function Page() {
       }
       if (nextView === "trace") setQuery(params.get("filter") ?? "");
       if (nextView === "map") setMapQuery(params.get("filter") ?? "");
+      const nextMapMode = params.get("map_mode");
+      if (nextMapMode && ["map", "architecture", "health"].includes(nextMapMode)) setMapMode(nextMapMode as OverviewMode);
       const linkedEntry = app.entries.findIndex((item) => item.id === params.get("entry"));
       if (linkedEntry >= 0) {
         const hops = app.entries[linkedEntry].hops;
@@ -590,6 +597,7 @@ export default function Page() {
       if (pending.direction === "forward") setDirection("forward");
       if (pending.view === "trace") setQuery(pending.filter ?? "");
       if (pending.view === "map") setMapQuery(pending.filter ?? "");
+      if (pending.view === "map" && pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode)) setMapMode(pending.mapMode as OverviewMode);
       pendingLink.current = null;
     }
     urlReady.current = true;
@@ -1053,13 +1061,15 @@ export default function Page() {
       {view === "map" && (
         <OverviewView
           app={app}
+          mode={mapMode}
+          setMode={setMapMode}
           query={mapQuery}
           setQuery={setMapQuery}
           focusNodeId={focusNodeId}
           onFocusNode={setFocusNodeId}
           onRecord={record}
           onShare={(nodeId) =>
-            copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery })
+            copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery, map_mode: mapMode })
           }
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
