@@ -24,6 +24,17 @@ function flowPath(flow: Flow, app: App) {
     .join(' → ')
 }
 
+function flowSequence(flow: Flow, app: App) {
+  return flow.steps
+    .map((step, index) => {
+      const node = app.nodes.find((item) => item.id === step.node_id)
+      const location = node ? `${node.file || 'Source unavailable'}:${node.line || '—'}` : 'Source location unavailable'
+      const scope = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository
+      return `${String(index + 1).padStart(2, '0')}. ${step.role} — ${node?.label || step.node_id} · ${location}${scope ? ` · ${scope}` : ''}${step.edge?.relation ? ` · via ${step.edge.relation}` : ''}${step.note ? ` · ${step.note}` : ''}`
+    })
+    .join('\n')
+}
+
 function flowScopes(flow: Flow, app: App) {
   const scopes: string[] = []
   flow.steps.forEach((step) => {
@@ -80,7 +91,7 @@ function DiffColumn({
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   async function copyPreview(flow: Flow) {
     try {
-      await copyText(flowPath(flow, app))
+      await copyText(`${flow.name}\n${flowSequence(flow, app)}`)
       setCopyState('copied')
       trackEvent('revision_path_copied')
     } catch {
