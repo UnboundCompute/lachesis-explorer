@@ -292,6 +292,8 @@ export function PathCanvas({
                     select()
                     return
                   }
+                  const isNavigationKey = ['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)
+                  if (isNavigationKey) event.preventDefault()
                   const nextIndex = event.key === 'ArrowRight'
                     ? start + index + 1
                     : event.key === 'ArrowLeft'
@@ -302,7 +304,6 @@ export function PathCanvas({
                           ? items.length - 1
                           : -1
                   if (nextIndex >= 0 && nextIndex < items.length) {
-                    event.preventDefault()
                     focusAfterSelection.current = true
                     onSelect(items[nextIndex].id, nextIndex)
                   }
