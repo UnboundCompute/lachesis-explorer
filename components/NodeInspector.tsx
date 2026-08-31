@@ -200,7 +200,12 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         <pre className="source-code">
           <code>{snippet || "Source unavailable in this bundle."}</code>
         </pre>
-        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet}>
+        {!snippet && (
+          <p className="source-unavailable-note">
+            This bundle includes graph evidence for the node, but not its source text. The location and connected paths remain available below.
+          </p>
+        )}
+        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet} title={!snippet ? "No source snippet is available in this bundle" : undefined}>
           <Icon name="code" size={12} />
           {snippetCopied ? "Snippet copied" : snippetCopyError ? "Retry copy" : "Copy snippet"}
         </button>
