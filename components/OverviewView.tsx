@@ -635,7 +635,11 @@ export function OverviewView({
                     className="context-row"
                     key={context.key}
                     aria-label={`${context.label}, ${context.nodes.length} symbols, ${context.outbound} outbound and ${context.inbound} inbound boundary transitions`}
-                    onClick={() => setQuery(`${context.service ? "service" : "repo"}:${context.service || context.repository || ""}`)}
+                    onClick={() => {
+                      const filterValue = context.service || context.repository;
+                      setQuery(filterValue ? `${context.service ? "service" : "repo"}:${filterValue}` : "");
+                      trackEvent(filterValue ? "semantic_filter_applied" : "semantic_filter_cleared", { surface: "architecture", filter: filterValue ? (context.service ? "service" : "repo") : "scope" });
+                    }}
                   >
                     <span className="context-row-mark" />
                     <span>
