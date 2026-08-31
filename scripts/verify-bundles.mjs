@@ -113,7 +113,8 @@ function verify(file, bundle) {
   validateCatalog(file, ids, graph.modules, "modules");
   validateCatalog(file, ids, graph.entrypoints, "entrypoints");
   if (Array.isArray(graph.modules)) {
-    const moduleIds = new Set(graph.modules.map((module, index) => String(module.id ?? module.path ?? module.name ?? `module_${index}`)));
+    const modulesById = new Map(graph.modules.map((module, index) => [String(module.id ?? module.path ?? module.name ?? `module_${index}`), module]));
+    const moduleIds = new Set(modulesById.keys());
     for (const [index, module] of graph.modules.entries()) {
       const moduleId = String(module.id ?? module.path ?? module.name ?? `module_${index}`);
       if (module.parent_id != null || module.parentId != null) {
@@ -127,6 +128,18 @@ function verify(file, bundle) {
         const id = String(nodeId);
         if (nodeIds.has(id)) fail(file, `graph.modules[${index}] duplicates node ID ${id}`);
         nodeIds.add(id);
+      }
+    }
+    for (const module of graph.modules) {
+      const visited = new Set();
+      let current = String(module.id ?? module.path ?? module.name ?? "");
+      while (current) {
+        const currentModule = modulesById.get(current);
+        const parent = currentModule?.parent_id ?? currentModule?.parentId;
+        if (parent == null) break;
+        if (visited.has(current)) fail(file, `graph module hierarchy contains a cycle at ${current}`);
+        visited.add(current);
+        current = String(parent);
       }
     }
   }

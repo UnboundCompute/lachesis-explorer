@@ -96,8 +96,9 @@ entrypoints list node IDs, every listed node must exist in `graph.nodes`; their
 IDs must also be unique within their respective collections so navigation
 targets remain deterministic. Modules may use `parent_id` to describe nesting;
 the parent must reference another module in the same bundle, and a module cannot
-be its own parent. A module's `node_ids` should not repeat a graph node, because
-repeated membership makes architecture counts and navigation ambiguous.
+be its own parent or participate in a parent cycle. A module's `node_ids` should
+not repeat a graph node, because repeated membership makes architecture counts
+and navigation ambiguous.
 
 Entrypoints identify places a developer can start, including HTTP routes,
 CLI commands, jobs, event handlers, public APIs, and exported functions.

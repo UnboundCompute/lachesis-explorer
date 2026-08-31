@@ -139,6 +139,16 @@ function assertModuleReferences(modules:GraphModule[], nodeIds:Set<string>) {
       seen.add(nodeId)
     }
   }
+  const parents = new Map(modules.filter((module) => module.parentId).map((module) => [module.id, module.parentId!]))
+  for (const module of modules) {
+    const visited = new Set<string>()
+    let current: string | undefined = module.id
+    while (current && parents.has(current)) {
+      if (visited.has(current)) throw new Error(`Graph module hierarchy contains a cycle at "${current}".`)
+      visited.add(current)
+      current = parents.get(current)
+    }
+  }
 }
 function assertEvidenceNodes(items:Evidence[], ids:Set<string>) {
   const broken=items.flatMap(item=>item.node_ids??[]).find(nodeId=>!ids.has(nodeId))
