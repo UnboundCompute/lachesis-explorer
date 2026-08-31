@@ -148,7 +148,7 @@ export function PathCanvas({
             type="button"
             className={focused ? 'active' : ''}
             aria-pressed={focused}
-            onClick={() => setFocused((value) => !value)}
+            onClick={() => { const next = !focused; setFocused(next); trackEvent('path_focus_toggled', { focused: next }) }}
           >
             {focused ? 'Show full path' : 'Focus selection'}
           </button>
