@@ -150,6 +150,22 @@ export function OverviewView({
     });
     return [...grouped.values()].sort((a, b) => b.nodes.length - a.nodes.length);
   }, [app]);
+  const boundaryTransitions = useMemo(() => {
+    const nodes = new Map(app.nodes.map((node) => [node.id, node]));
+    const grouped = new Map<string, { source: string; target: string; relation: string; count: number }>();
+    app.edges.forEach((edge) => {
+      const sourceNode = nodes.get(edge.source);
+      const targetNode = nodes.get(edge.target);
+      if (!sourceNode || !targetNode || !crossesScope(sourceNode, targetNode)) return;
+      const source = nodeScopeLabel(sourceNode);
+      const target = nodeScopeLabel(targetNode);
+      const key = `${source}→${target}`;
+      const current = grouped.get(key);
+      if (current) current.count += 1;
+      else grouped.set(key, { source, target, relation: edge.relation || "connected", count: 1 });
+    });
+    return [...grouped.values()].sort((a, b) => b.count - a.count || a.source.localeCompare(b.source)).slice(0, 8);
+  }, [app]);
   useEffect(() => {
     if (focusNodeId && app.nodes.some((node) => node.id === focusNodeId)) {
       setSelectedId(focusNodeId);
@@ -724,6 +740,15 @@ export function OverviewView({
               ))}
             </section>
             <section className="choke-panel">
+              <span className="panel-label">BOUNDARY TRANSITIONS</span>
+              <p>Context-to-context relationships in the loaded graph.</p>
+              {boundaryTransitions.length ? boundaryTransitions.map((transition) => (
+                <div className="boundary-transition" key={`${transition.source}-${transition.target}`}>
+                  <b>{transition.source} <i>→</i> {transition.target}</b>
+                  <small>{transition.count} relationship{transition.count === 1 ? "" : "s"} · {transition.relation}</small>
+                </div>
+              )) : <p className="diff-empty">No explicit context transitions are available.</p>}
+              <div className="detail-rule" />
               <span className="panel-label">SHARED CHOKE POINTS</span>
               <p>
                 Nodes repeated across flows and requests. This is concentration
