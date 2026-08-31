@@ -1076,6 +1076,14 @@ export default function Page() {
             base={app}
             compare={compareApp}
             onUpload={() => compareFileRef.current?.click()}
+            onOpenFlow={(nextFlow, nextNode) => {
+              changeView("trace");
+              setFlowId(nextFlow);
+              setStepId(nextNode);
+              setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+              setInspectorOpen(true);
+              record("Opened changed graph path", nextFlow, "from revision diff");
+            }}
           />
         </div>
       )}

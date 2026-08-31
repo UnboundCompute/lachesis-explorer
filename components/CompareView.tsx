@@ -2,7 +2,7 @@
 
 import type { App, Flow } from '../lib/lachesis'
 
-type Props = { base: App; compare: App | null; onUpload: () => void }
+type Props = { base: App; compare: App | null; onUpload: () => void; onOpenFlow?: (flowId: string, nodeId: string) => void }
 
 const ids = (values: { id: string }[]) => new Set(values.map((value) => value.id))
 
@@ -71,7 +71,7 @@ function DiffColumn({
   )
 }
 
-export function CompareView({ base, compare, onUpload }: Props) {
+export function CompareView({ base, compare, onUpload, onOpenFlow }: Props) {
   const securityMode =
     base.findings.length > 0 ||
     base.bundle.projection === 'security projection' ||
@@ -156,14 +156,15 @@ export function CompareView({ base, compare, onUpload }: Props) {
         </div>
         {changedPaths.length ? (
           changedPaths.slice(0, 8).map((item) => (
-            <div className="changed-flow" key={item.base.id}>
+            <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, item.base.steps[0]?.node_id ?? "")} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
               <b>{item.base.name}</b>
               <div>
                 <span><small>BASE</small>{flowPath(item.base, base)}</span>
                 <i>→</i>
                 <span><small>COMPARISON</small>{flowPath(item.compare, compare)}</span>
               </div>
-            </div>
+              {onOpenFlow && <small className="changed-flow-action">Open base path in Graph Path ↗</small>}
+            </button>
           ))
         ) : (
           <p className="diff-empty">No existing paths changed between these bundles.</p>
