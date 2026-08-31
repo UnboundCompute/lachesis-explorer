@@ -1,6 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import type { App, Flow } from '../lib/lachesis'
+import { copyText } from '../lib/clipboard'
+import { trackEvent } from '../lib/analytics'
 
 type Props = { base: App; compare: App | null; onUpload: () => void; onOpenFlow?: (flowId: string, nodeId: string) => void }
 
@@ -64,6 +67,18 @@ function DiffColumn({
   previewFlows?: boolean
   onOpenFlow?: (flowId: string, nodeId: string) => void
 }) {
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  async function copyPreview(flow: Flow) {
+    try {
+      await copyText(flowPath(flow, app))
+      setCopyState('copied')
+      trackEvent('revision_path_copied')
+    } catch {
+      setCopyState('failed')
+      trackEvent('revision_path_copy_failed')
+    }
+    window.setTimeout(() => setCopyState('idle'), 1600)
+  }
   return (
     <div>
       <span className={className}>{label} · {items.length}</span>
@@ -76,6 +91,7 @@ function DiffColumn({
             <details className="diff-flow-preview" key={item.id}>
               <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps</small></summary>
               <p>{flowPath(preview, app) || "No step sequence available."}</p>
+              <button type="button" className="diff-copy-action" onClick={() => copyPreview(preview)}>{copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy sequence'}</button>
             </details>
           ) : flow && onOpenFlow && firstNodeId ? (
             <button
