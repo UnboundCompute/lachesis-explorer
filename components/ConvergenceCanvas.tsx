@@ -24,7 +24,8 @@ function pathLocation(flow: Flow, nodes: Node[]) {
 export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, onSelect, securityMode = true }: Props) {
   const [zoom, setZoom] = useState(1)
   const [focusedOnly, setFocusedOnly] = useState(false)
-  useEffect(() => { setZoom(1); setFocusedOnly(false) }, [allFlows, sinkId])
+  const flowIdentity = allFlows.map(flow => `${flow.id}:${flow.steps.map(step => step.node_id).join(',')}`).join('|')
+  useEffect(() => { setZoom(1); setFocusedOnly(false) }, [flowIdentity, sinkId])
   const flows = focusedOnly && selectedId
     ? allFlows.filter(flow => flow.steps.some(step => step.node_id === selectedId))
     : allFlows
