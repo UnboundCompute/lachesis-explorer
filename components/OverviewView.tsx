@@ -24,6 +24,12 @@ const shorten = (value: string, limit = 20) =>
   value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
 const nodeLocation = (node: Node) =>
   `${node.file || "Source unavailable"}:${node.line || "—"}`;
+const nodeScopeKey = (node: Node) =>
+  node.scope
+    ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.kind].filter(Boolean).join(" · ")
+    : "unscoped";
+const nodeScopeLabel = (node: Node) =>
+  node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.repository || "Unscoped nodes";
 
 function matches(node: Node, query: string, app: App) {
   return query
@@ -39,6 +45,10 @@ function matches(node: Node, query: string, app: App) {
         if (key === "file") return node.file.toLowerCase().includes(value);
         if (key === "module")
           return node.module?.toLowerCase().includes(value) ?? false;
+        if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+          const scopeValues = [node.scope?.label, node.scope?.repository, node.scope?.service, node.scope?.package, node.scope?.kind];
+          return scopeValues.some((item) => item?.toLowerCase().includes(value));
+        }
         if (key === "symbol" || key === "name")
           return [node.label, node.qualifiedName, node.id].some((item) =>
             item?.toLowerCase().includes(value),
@@ -79,6 +89,10 @@ function matches(node: Node, query: string, app: App) {
         node.kind,
         node.qualifiedName,
         node.module,
+        node.scope?.label,
+        node.scope?.service,
+        node.scope?.repository,
+        node.scope?.package,
       ]
         .join(" ")
         .toLowerCase()
@@ -106,6 +120,16 @@ export function OverviewView({
     setQuery("");
     setExpandedModule(null);
     setShareState("idle");
+  }, [app]);
+  const contexts = useMemo(() => {
+    const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; nodes: Node[] }>();
+    app.nodes.forEach((node) => {
+      const key = nodeScopeKey(node);
+      const current = grouped.get(key);
+      if (current) current.nodes.push(node);
+      else grouped.set(key, { key, label: nodeScopeLabel(node), repository: node.scope?.repository, service: node.scope?.service, nodes: [node] });
+    });
+    return [...grouped.values()].sort((a, b) => b.nodes.length - a.nodes.length);
   }, [app]);
   useEffect(() => {
     if (focusNodeId && app.nodes.some((node) => node.id === focusNodeId)) {
@@ -545,7 +569,7 @@ export function OverviewView({
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
                       <small>
-                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""} · {nodeLocation(node)}
+                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
                     </button>
                     );
@@ -568,6 +592,25 @@ export function OverviewView({
         {mode === "architecture" && (
           <div className="architecture-grid">
             <section>
+              <span className="panel-label">BOUNDARY CONTEXT</span>
+              <div className="context-inventory">
+                {contexts.map((context) => (
+                  <button
+                    type="button"
+                    className="context-row"
+                    key={context.key}
+                    onClick={() => setQuery(`${context.service ? "service" : "repo"}:${context.service || context.repository || ""}`)}
+                  >
+                    <span className="context-row-mark" />
+                    <span>
+                      <b>{context.label}</b>
+                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : ""} · {context.nodes.length} symbols</small>
+                    </span>
+                    <em>{context.nodes.length}</em>
+                  </button>
+                ))}
+              </div>
+              <div className="detail-rule" />
               <span className="panel-label">MODULE CONCENTRATION</span>
               {modules.map((module) => (
                 <div className="module-group" key={module.id}>
