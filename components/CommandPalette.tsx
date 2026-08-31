@@ -30,6 +30,16 @@ function flowLocation(app: App, flow: App["flows"][number]) {
     : `${location(first)} → ${location(last)}`;
 }
 
+function flowScopes(app: App, flow: App["flows"][number]) {
+  const scopes: string[] = [];
+  flow.steps.forEach((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    const scope = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository;
+    if (scope && scopes.at(-1) !== scope) scopes.push(scope);
+  });
+  return scopes;
+}
+
 function flowKindLabel(flow: App["flows"][number], security: boolean) {
   if (security) return "Security witness";
   const kind = flow.kind?.trim().toLowerCase();
@@ -110,7 +120,7 @@ export function CommandPalette({
         ...app.flows.map((flow) => ({
           id: `flow-${flow.id}`,
           label: flow.name,
-          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}`,
+          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
           run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
         })),
         ...app.entries.map((entry, index) => ({
