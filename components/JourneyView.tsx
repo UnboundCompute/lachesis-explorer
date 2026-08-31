@@ -36,7 +36,7 @@ type Props = {
   onInspectorOpen: () => void;
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
-  onView: (view: "trace" | "map") => void;
+  onView: (view: "trace" | "map", nodeId?: string) => void;
   onShare: (position: number) => Promise<boolean>;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
@@ -247,6 +247,9 @@ export function JourneyView({
                 Show source
               </button>
             )}
+            <button className="inspector-reopen" type="button" onClick={() => onView("map", hopId)}>
+              See in graph
+            </button>
             <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
               {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
             </button>

@@ -988,7 +988,10 @@ export default function Page() {
           onInspectorOpen={() => setInspectorOpen(true)}
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
-          onView={(next: "journey" | "map") => changeView(next)}
+          onView={(next: "journey" | "map", nextNode) => {
+            if (next === "map" && nextNode) setFocusNodeId(nextNode);
+            changeView(next);
+          }}
           onShare={(position) =>
             copyInvestigationLink({
               view: "trace",
@@ -1028,7 +1031,10 @@ export default function Page() {
           onInspectorOpen={() => setInspectorOpen(true)}
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
-          onView={(next: "trace" | "map") => changeView(next)}
+          onView={(next: "trace" | "map", nextNode) => {
+            if (next === "map" && nextNode) setFocusNodeId(nextNode);
+            changeView(next);
+          }}
           onShare={(position) =>
             copyInvestigationLink({
               view: "journey",

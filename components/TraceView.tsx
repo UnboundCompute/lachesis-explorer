@@ -23,7 +23,7 @@ type Props = {
   onInspectorOpen: () => void;
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
-  onView: (view: "journey" | "map") => void;
+  onView: (view: "journey" | "map", nodeId?: string) => void;
   onShare: (position: number) => Promise<boolean>;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
@@ -404,6 +404,9 @@ export function TraceView({
                 Show source
               </button>
             )}
+            <button className="inspector-reopen" type="button" onClick={() => onView("map", stepId)}>
+              See in graph
+            </button>
             <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
               {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
             </button>
