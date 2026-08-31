@@ -97,6 +97,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
   function choose(next: View) {
     setView(next)
     setMoreOpen(false)
+    setMenu(false)
     trackEvent('view_changed', { view: next })
   }
 
@@ -114,7 +115,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
             </button>
           ))}
           <div className="more-views" ref={moreRef}>
-            <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => setMoreOpen(open => !open)} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
+            <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
               <span>More</span><small>Compare &amp; tools</small><Icon name="chevron" size={11} />
             </button>
             {moreOpen && (
