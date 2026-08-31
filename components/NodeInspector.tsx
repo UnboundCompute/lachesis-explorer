@@ -183,18 +183,20 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         </div>
         <div className="location-row">
           <span className="line-number">{hasSourceLocation ? <>{range}{node.column ? ` · column ${node.column}` : ""}</> : <>Graph ID · {node.id}</>}</span>
-          <button type="button" onClick={copyLocation} aria-live="polite" aria-label={hasSourceLocation ? "Copy source location" : "Copy graph ID"}>
+          <button type="button" onClick={copyLocation} aria-label={hasSourceLocation ? "Copy source location" : "Copy graph ID"}>
             <Icon name="code" size={12} />
             {copied ? "Copied" : copyError ? "Retry" : hasSourceLocation ? "Copy" : "Copy ID"}
           </button>
+          <span className="sr-only" aria-live="polite">{copied ? "Source location copied." : copyError ? "Source location could not be copied." : ""}</span>
         </div>
         <pre className="source-code">
           <code>{snippet || "Source unavailable in this bundle."}</code>
         </pre>
-        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet} aria-live="polite">
+        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet}>
           <Icon name="code" size={12} />
           {snippetCopied ? "Snippet copied" : snippetCopyError ? "Retry copy" : "Copy snippet"}
         </button>
+        <span className="sr-only" aria-live="polite">{snippetCopied ? "Source snippet copied." : snippetCopyError ? "Source snippet could not be copied." : ""}</span>
       </div>
       <div className="detail-rule" />
       <span className="panel-label">WHAT THIS NODE MEANS</span>
