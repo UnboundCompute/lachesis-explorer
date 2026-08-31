@@ -1090,7 +1090,10 @@ export default function Page() {
             setStepIndex(selectedPosition);
             setInspectorOpen(true);
           }}
-          onView={(next) => changeView(next)}
+          onView={(next, nextNode) => {
+            if (next === "map" && nextNode) setFocusNodeId(nextNode);
+            changeView(next);
+          }}
           onShare={(nextSink) =>
             copyInvestigationLink({ view: "investigate", sink: nextSink })
           }

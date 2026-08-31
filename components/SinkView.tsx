@@ -22,7 +22,7 @@ type Props = {
   onOpenFlow: (flowId: string, nodeId: string, position?: number) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
   onRecord: (action: string, target: string, detail: string) => void;
-  onView: (view: "trace" | "map") => void;
+  onView: (view: "trace" | "map", nodeId?: string) => void;
   onShare?: (sinkId: string) => Promise<boolean>;
 };
 
@@ -196,6 +196,9 @@ export function SinkView({
                 {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
               </button>
             )}
+            <button type="button" onClick={() => onView("map", selected.id)}>
+              See in graph
+            </button>
             <button
               type="button"
               className={mode === "field" ? "active" : ""}
