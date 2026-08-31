@@ -810,11 +810,9 @@ export function OverviewView({
             ) : (
               <div className="topology-empty">
                 <Icon name="search" size={18} />
-                <h3>No nodes match this filter</h3>
-                <p>Try another query or return to the complete graph.</p>
-                <button type="button" onClick={() => setQuery("")}>
-                  Clear filter
-                </button>
+                <h3>{query ? "No nodes match this filter" : "No graph nodes in this bundle"}</h3>
+                <p>{query ? "Try another query or return to the complete graph." : "Load a bundle that includes graph nodes to inspect its structure here."}</p>
+                {query && <button type="button" onClick={() => setQuery("")}>Clear filter</button>}
               </div>
             )}
           </>
