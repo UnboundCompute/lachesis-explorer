@@ -30,7 +30,7 @@ export function Intro({
     ],
     journey: [
       "Walk the request as the code sees it.",
-      "Inspect a focused callpath from entrypoint to effect, one grounded hop at a time.",
+      "Inspect a focused request path from entrypoint to effect, one grounded hop at a time.",
     ],
     investigate: securityMode
       ? [

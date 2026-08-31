@@ -109,7 +109,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           ))}
           <div className="more-views" ref={moreRef}>
             <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => setMoreOpen(open => !open)} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
-              <span>More</span><small>Other lenses</small><Icon name="chevron" size={11} />
+              <span>More</span><small>Compare &amp; tools</small><Icon name="chevron" size={11} />
             </button>
             {moreOpen && (
               <div id="more-analysis-menu" className="more-menu" role="menu" aria-label="More analysis views">
