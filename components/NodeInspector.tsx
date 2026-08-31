@@ -46,6 +46,8 @@ function contextRoute(app: App, nodeIds: string[]) {
 type Props = {
   node: Node;
   contextRole?: string;
+  contextNote?: string;
+  contextOccurrence?: string;
   onClose: () => void;
   app?: App;
   onNode?: (nodeId: string) => void;
@@ -53,7 +55,7 @@ type Props = {
   onEntry?: (entryIndex: number, nodeId: string) => void;
 };
 
-export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow, onEntry }: Props) {
+export function NodeInspector({ node, contextRole, contextNote, contextOccurrence, onClose, app, onNode, onFlow, onEntry }: Props) {
   const inspectorRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
@@ -195,6 +197,13 @@ export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow,
             ? "A node participating in the selected graph path."
             : "A node participating in the loaded code graph.")}
       </p>
+      {(contextNote || contextOccurrence) && (
+        <div className="node-documentation">
+          <span className="panel-label">SELECTED PATH CONTEXT</span>
+          {contextNote && <p>{contextNote}</p>}
+          {contextOccurrence && <p>Occurrence · {contextOccurrence}</p>}
+        </div>
+      )}
       {node.documentation && (
         <div className="node-documentation">
           <span className="panel-label">DOCUMENTATION</span>

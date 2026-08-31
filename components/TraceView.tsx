@@ -551,6 +551,8 @@ export function TraceView({
         <NodeInspector
           node={selected}
           contextRole={items[selectedIndex]?.label}
+          contextNote={items[selectedIndex]?.caption}
+          contextOccurrence={items[selectedIndex]?.occurrenceId}
           app={app}
           onFlow={onFlow}
           onEntry={onEntry}
