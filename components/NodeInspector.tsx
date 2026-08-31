@@ -22,6 +22,10 @@ const descriptions: Record<string, string> = {
   variable: "A local or scoped variable represented in the graph.",
   literal: "A literal value represented as a graph node.",
 };
+const scopeIdentity = (node: Node) =>
+  node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.kind].filter(Boolean).join(" · ") : "";
+const scopeDisplay = (node: Node) =>
+  node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.repository || "Unscoped";
 type Props = {
   node: Node;
   contextRole?: string;
@@ -246,6 +250,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
                   const peerId =
                     edge.source === node.id ? edge.target : edge.source;
                   const peer = app.nodes.find((item) => item.id === peerId);
+                  const crossesBoundary = Boolean(peer && scopeIdentity(node) && scopeIdentity(peer) && scopeIdentity(node) !== scopeIdentity(peer));
                     return (
                       <div className="relationship-item" key={edge.id}>
                         <span>
@@ -265,6 +270,12 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
                             {edge.limitations.join(" · ")}
                           </small>
                         ) : null}
+                        {crossesBoundary && peer && (
+                          <small className="relationship-boundary">
+                            <i />
+                            {scopeDisplay(node)} → {scopeDisplay(peer)}
+                          </small>
+                        )}
                       </div>
                     );
                 })}
