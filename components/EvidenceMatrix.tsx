@@ -11,6 +11,16 @@ type Props = {
 const location = (node: App['nodes'][number] | undefined) =>
   node ? `${node.file || 'Source unavailable'}:${node.line || '—'}` : 'Source location unavailable'
 
+function flowScopes(app: App, flow: Flow) {
+  const scopes: string[] = []
+  flow.steps.forEach((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id)
+    const scope = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository
+    if (scope && scopes.at(-1) !== scope) scopes.push(scope)
+  })
+  return scopes
+}
+
 export function EvidenceMatrix({ app, flows, sinkId, onOpenFlow, securityMode = true }: Props) {
   return (
     <div className="matrix-wrap">
@@ -20,6 +30,7 @@ export function EvidenceMatrix({ app, flows, sinkId, onOpenFlow, securityMode = 
           <tr>
             <th>Value</th>
             <th>Origin</th>
+            <th>Context</th>
             <th>Path</th>
             <th>Alias</th>
             <th>Dynamic</th>
@@ -37,6 +48,7 @@ export function EvidenceMatrix({ app, flows, sinkId, onOpenFlow, securityMode = 
               (node) => node.id === (flow.sourceNodeId ?? steps[0]?.node_id),
             )
             const evidence = app.mcp.find((item) => item.for === flow.id)
+            const scopes = flowScopes(app, flow)
             const aliases = steps.filter((step) => step.edge?.alias).length
             const dynamic = steps.filter((step) => step.edge?.dynamic).length
             return (
@@ -53,6 +65,9 @@ export function EvidenceMatrix({ app, flows, sinkId, onOpenFlow, securityMode = 
                 <td>
                   <span>{origin?.label || steps[0]?.node_id || 'Origin unavailable'}</span>
                   <small>{location(origin)}</small>
+                </td>
+                <td>
+                  <span>{scopes.length ? scopes.join(' → ') : 'No boundary metadata'}</span>
                 </td>
                 <td>{steps.length} {securityMode ? 'nodes' : 'symbols'}</td>
                 <td><span className={aliases ? 'matrix-signal alias' : 'matrix-signal quiet'}>{aliases || '—'}</span></td>
