@@ -363,6 +363,9 @@ export function TraceView({
                   <small className="node-row-context">
                     {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary ?? flowLocation(app, item)}
                   </small>
+                  {flowScopes(app, item).length > 1 && (
+                    <small className="node-row-context">Context: {flowScopes(app, item).join(" → ")}</small>
+                  )}
                 </span>
               </button>
             ))
