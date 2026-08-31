@@ -90,6 +90,8 @@ export function SinkView({
   const dynamic = flows
     .flatMap((flow) => flow.steps)
     .filter((step) => step.edge?.dynamic).length;
+  const pathNoun = securityMode ? "value flow" : "graph path";
+  const pathNounPlural = securityMode ? "value flows" : "graph paths";
   function chooseSink(id: string) {
     const next = sinks.find((node) => node.id === id);
     setSinkId(id);
@@ -99,7 +101,7 @@ export function SinkView({
       onRecord(
         "Focused sink",
         next.label || next.id,
-        `${app.flows.filter((flow) => flow.steps.some((step) => step.node_id === id)).length} value flows`,
+        `${app.flows.filter((flow) => flow.steps.some((step) => step.node_id === id)).length} ${pathNounPlural}`,
       );
       trackEvent("sink_selected");
     }
@@ -153,7 +155,7 @@ export function SinkView({
           <Icon name="target" size={14} />
           <p>
             Boundary-first mode begins at an execution boundary and reveals every
-            bundled value flow that reaches it.
+            bundled {pathNounPlural} that reaches it.
           </p>
         </div>
       </aside>
@@ -198,7 +200,7 @@ export function SinkView({
         </header>
         <div className="sink-facts">
           <div>
-            <span>REACHING VALUES</span>
+            <span>{securityMode ? "REACHING VALUES" : "REACHING PATHS"}</span>
             <b>{flows.length}</b>
           </div>
           <div>
@@ -224,6 +226,7 @@ export function SinkView({
             nodes={app.nodes}
             sinkId={sink.id}
             selectedId={selectedId}
+            securityMode={securityMode}
             onSelect={chooseNode}
           />
         ) : (
@@ -234,7 +237,7 @@ export function SinkView({
             securityMode={securityMode}
             onOpenFlow={(flowId, nodeId, position) => {
               onRecord(
-                "Opened value flow",
+                `Opened ${pathNoun}`,
                 flowId,
                 `from sink ${sink.label || sink.id}`,
               );
@@ -246,7 +249,7 @@ export function SinkView({
           <div>
             <span className="panel-label">REQUEST OVERLAP</span>
             <p>
-              Entrypoints sharing at least one node with these value flows. This
+              Entrypoints sharing at least one node with these {pathNounPlural}. This
               is overlap evidence, not a reachability claim.
             </p>
           </div>
