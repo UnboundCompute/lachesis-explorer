@@ -96,6 +96,14 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
   ).length;
   useEffect(() => {
     inspectorRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    const activeElement = document.activeElement;
+    if (
+      activeElement &&
+      activeElement !== document.body &&
+      !inspectorRef.current?.contains(activeElement)
+    ) {
+      inspectorRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
     setCopied(false);
     setCopyError(false);
     setSnippetCopied(false);
