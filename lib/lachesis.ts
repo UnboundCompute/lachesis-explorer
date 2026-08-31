@@ -125,6 +125,21 @@ function assertGraphV2Nodes(nodes:Node[]) {
     }
   }
 }
+function assertModuleReferences(modules:GraphModule[], nodeIds:Set<string>) {
+  const moduleIds = new Set(modules.map((module) => module.id))
+  for (const module of modules) {
+    if (module.parentId === module.id) throw new Error(`Graph module "${module.id}" cannot be its own parent.`)
+    if (module.parentId && !moduleIds.has(module.parentId)) {
+      throw new Error(`Graph module "${module.id}" references missing parent module "${module.parentId}".`)
+    }
+    const seen = new Set<string>()
+    for (const nodeId of module.nodeIds ?? []) {
+      if (!nodeIds.has(nodeId)) throw new Error(`Graph module "${module.id}" references missing node "${nodeId}".`)
+      if (seen.has(nodeId)) throw new Error(`Graph module "${module.id}" contains duplicate node ID "${nodeId}".`)
+      seen.add(nodeId)
+    }
+  }
+}
 function assertEvidenceNodes(items:Evidence[], ids:Set<string>) {
   const broken=items.flatMap(item=>item.node_ids??[]).find(nodeId=>!ids.has(nodeId))
   if(broken)throw new Error(`MCP evidence references missing node "${broken}".`)
@@ -309,8 +324,7 @@ function normalizeGraphV2(raw:any):App {
   assertUniqueIds(modules,'Graph modules')
   assertUniqueIds(entrypoints,'Graph entrypoints')
   const knownNodeIds=new Set(nodes.map(node=>node.id))
-  const brokenModule=modules.flatMap(module=>module.nodeIds??[]).find(nodeId=>!knownNodeIds.has(nodeId))
-  if (brokenModule) throw new Error(`A graph module references missing node "${brokenModule}".`)
+  assertModuleReferences(modules, knownNodeIds)
   const brokenEntrypoint=entrypoints.find(entrypoint=>entrypoint.nodeId&&!knownNodeIds.has(entrypoint.nodeId))
   if (brokenEntrypoint) throw new Error(`Graph entrypoint "${brokenEntrypoint.id}" references missing node "${brokenEntrypoint.nodeId}".`)
   const pathValues=raw.paths?.values??raw.paths?.value_flows??graph.value_flows??raw.value_flows??[]
