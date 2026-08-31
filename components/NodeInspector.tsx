@@ -258,7 +258,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow,
                       <div className="relationship-item" key={edge.id}>
                         <span>
                           {edge.source === node.id ? "→ leads to" : "← receives from"}{" "}
-                          {(onNode || peerFlow && onFlow || peerEntry && onEntry) ? <button type="button" className="relationship-peer" onClick={() => onNode ? onNode(peerId) : peerFlow && onFlow ? onFlow(peerFlow.id, peerId) : onEntry?.(app.entries.findIndex((item) => item.id === peerEntry!.id), peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
+                          {(onNode || peerFlow && onFlow || peerEntry && onEntry) ? <button type="button" className="relationship-peer" aria-label={`${onNode ? "Focus" : peerFlow && onFlow ? "Open graph path for" : "Open request path for"} ${peer?.label || peerId}`} onClick={() => onNode ? onNode(peerId) : peerFlow && onFlow ? onFlow(peerFlow.id, peerId) : onEntry?.(app.entries.findIndex((item) => item.id === peerEntry!.id), peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
                         </span>
                         {(edge.dynamic || edge.alias || edge.confidence) && (
                           <small className="relationship-signals">
