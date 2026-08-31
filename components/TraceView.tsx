@@ -122,6 +122,9 @@ function flowScopes(app: App, flow: Flow) {
 function nodeLocation(node: App["nodes"][number] | undefined) {
   return node ? `${node.file || "Source location unavailable"}:${node.line || "—"}` : "Source location unavailable";
 }
+function nodeContext(node: App["nodes"][number] | undefined) {
+  return node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository || "";
+}
 
 export function TraceView({
   app,
@@ -285,7 +288,7 @@ export function TraceView({
   }
   async function copySequence() {
     const sequence = items
-      .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${item.relation ? ` · via ${item.relation}` : ""}${item.caption ? ` · ${item.caption}` : ""}`)
+      .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${nodeContext(item.node) ? ` · ${nodeContext(item.node)}` : ""}${item.relation ? ` · via ${item.relation}` : ""}${item.caption ? ` · ${item.caption}` : ""}`)
       .join("\n");
     try {
       await copyText(`${flow.name}\n${sequence}`);
