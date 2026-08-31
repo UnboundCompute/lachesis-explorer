@@ -280,6 +280,7 @@ export function CommandPalette({
                 id={`command-option-${index}`}
                 ref={active === index ? activeOptionRef : undefined}
                 role="option"
+                tabIndex={-1}
                 className={active === index ? "active" : ""}
                 aria-selected={active === index}
                 onMouseEnter={() => setActive(index)}
