@@ -113,6 +113,18 @@ function assertExplicitEdgeIds(items:EdgeSeed[], label:string) {
     seen.add(item.id)
   }
 }
+function assertGraphV2Nodes(nodes:Node[]) {
+  for (const [index, node] of nodes.entries()) {
+    const label = `Graph node ${index}`
+    for (const [field, value] of [['id', node.id], ['kind', node.kind], ['file', node.file], ['label', node.label], ['snippet', node.snippet]] as const) {
+      if (!value.trim()) throw new Error(`${label}.${field} must be a non-empty string.`)
+    }
+    const locations: Array<[string, number | undefined]> = [['line', node.line], ['column', node.column], ['endLine', node.endLine], ['endColumn', node.endColumn]]
+    for (const [field, value] of locations) {
+      if (value != null && (!Number.isInteger(value) || value < 0)) throw new Error(`${label}.${field} must be a non-negative integer.`)
+    }
+  }
+}
 function assertEvidenceNodes(items:Evidence[], ids:Set<string>) {
   const broken=items.flatMap(item=>item.node_ids??[]).find(nodeId=>!ids.has(nodeId))
   if(broken)throw new Error(`MCP evidence references missing node "${broken}".`)
@@ -287,6 +299,7 @@ function normalizeGraphV2(raw:any):App {
   }
   const nodes:Node[]=Array.isArray(graph.nodes)?graph.nodes.map(normalizeNode):[]
   if(!nodes.length)throw new Error('The bundle contains no graph nodes.')
+  assertGraphV2Nodes(nodes)
   const nodeIds=new Set(nodes.map(node=>node.id))
   if(nodeIds.size!==nodes.length)throw new Error('The bundle contains duplicate node IDs.')
   const files=normalizeFiles(graph.files)
