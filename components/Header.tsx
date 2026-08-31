@@ -120,7 +120,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
             {moreOpen && (
               <div id="more-analysis-menu" className="more-menu" role="menu" aria-label="More analysis views">
                 {secondary.map(item => (
-                  <button type="button" key={item.id} role="menuitem" aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
+                  <button type="button" key={item.id} role="menuitem" tabIndex={-1} aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
                     <span><b>{item.label}</b><small>{item.detail}</small></span><Icon name="arrow" size={12} />
                   </button>
                 ))}
