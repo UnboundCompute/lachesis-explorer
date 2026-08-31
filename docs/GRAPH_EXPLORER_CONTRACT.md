@@ -55,6 +55,14 @@ Kinds are treated as case-insensitive semantic labels; new exporters should
 prefer lowercase kebab-case values such as `function`, `call`, `expression`,
 and `source-sink`.
 
+Nodes may also include a `scope` object with optional `repository`, `service`,
+`package`, `module`, `kind`, and display `label` fields. This is context for
+progressive exploration, not a security verdict. The Explorer uses adjacent
+scope changes to show where a path crosses a repository, service, package, or
+other exporter-defined boundary. Exporters should provide stable values for
+every node in a distributed path; older bundles without `scope` remain valid
+and continue to use file/module context only.
+
 Edges use a semantic `kind` such as `calls`, `imports`, `reads`, `writes`,
 `returns`, `implements`, `inherits`, `data-flow`, or `controls`. `dynamic`,
 `alias`, `confidence`, and `limitations` describe the relationship without

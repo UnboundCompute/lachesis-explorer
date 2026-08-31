@@ -32,6 +32,18 @@ const nodeLocation = (node: Node) =>
 const nodeFile = (node: Node) =>
   node.file ? node.file.split('/').pop() || node.file : 'Source unavailable'
 
+const scopeKey = (node: Node) => {
+  const scope = node.scope
+  if (!scope) return ''
+  return [scope.repository, scope.service, scope.package, scope.module, scope.kind].filter(Boolean).join(' · ')
+}
+
+const scopeLabel = (node: Node) => {
+  const scope = node.scope
+  if (!scope) return 'No boundary metadata'
+  return scope.label || scope.service || scope.package || scope.module || scope.repository || 'Unlabelled boundary'
+}
+
 export function PathCanvas({
   items,
   selectedId,
@@ -63,6 +75,13 @@ export function PathCanvas({
     },
   )
   const selectedItem = items[selectedIndex]
+  const boundaries = shown.reduce<Array<{ key: string; label: string; start: number; end: number }>>((result, item, index) => {
+    const key = scopeKey(item.node)
+    const previous = result.at(-1)
+    if (previous?.key === key) previous.end = index
+    else result.push({ key, label: scopeLabel(item.node), start: index, end: index })
+    return result
+  }, [])
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
@@ -137,6 +156,21 @@ export function PathCanvas({
                 : 'Known limitation'}
             </em>
           )}
+        </div>
+      )}
+
+      {boundaries.length > 1 && (
+        <div className="path-boundary-ribbon" aria-label="Path boundary context">
+          <span className="path-boundary-label">BOUNDARY CONTEXT</span>
+          <div className="path-boundary-segments">
+            {boundaries.map((boundary, index) => (
+              <span className="path-boundary-segment" key={`${boundary.key}-${boundary.start}`}>
+                {index > 0 && <i aria-hidden="true">→</i>}
+                <b>{boundary.label}</b>
+                <small>{boundary.end - boundary.start + 1} {itemUnit}</small>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

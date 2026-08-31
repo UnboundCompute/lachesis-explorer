@@ -139,6 +139,11 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
           )}
           {node.signature && <code>{node.signature}</code>}
           {node.module && <span>module {node.module}</span>}
+          {node.scope && (node.scope.label || node.scope.service || node.scope.repository) && (
+            <span className="node-scope-context">
+              scope {node.scope.label || node.scope.service || node.scope.repository}
+            </span>
+          )}
         </div>
         <div className="location-row">
           <span className="line-number">{hasSourceLocation ? <>{range}{node.column ? ` · column ${node.column}` : ""}</> : <>Graph ID · {node.id}</>}</span>

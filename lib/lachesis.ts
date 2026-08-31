@@ -1,6 +1,7 @@
 import codeExplorationBundle from '../public/code-exploration-bundle.json'
 
-export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; signature?: string; documentation?: string; snippet: string }
+export type NodeScope = { repository?: string; service?: string; package?: string; module?: string; kind?: string; label?: string }
+export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; scope?: NodeScope; signature?: string; documentation?: string; snippet: string }
 export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { relation?: string; alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
 export type Flow = { id: string; name: string; steps: Step[]; kind?: string; description?: string; sourceNodeId?: string; sinkNodeId?: string; confidence?: string; limitations?: string[] }
 export type GuardEvidence = { verdict?: string; note?: string; items?: {node_id?:string;effect?:string}[] }
@@ -42,6 +43,16 @@ function normalizeKind(value: unknown) {
   return kind ? kind.replace(/[_\s]+/g, '-').toLowerCase() : 'node'
 }
 
+function normalizeScope(raw: unknown): NodeScope | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
+  const value = raw as Record<string, unknown>
+  const scope: NodeScope = {}
+  for (const key of ['repository', 'service', 'package', 'module', 'kind', 'label'] as const) {
+    if (value[key] != null && String(value[key]).trim()) scope[key] = String(value[key]).trim()
+  }
+  return Object.keys(scope).length ? scope : undefined
+}
+
 function flowRelation(step: Step, pathKind = 'value-flow') {
   const role = step.role.trim().toLowerCase()
   const fallback = pathKind === 'call-path' || pathKind === 'callpath'
@@ -72,7 +83,7 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
 }
 
 function normalizeNode(n:any,i:number):Node {
-  return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end.column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??n.label??n.name??'')}
+  return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end.column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),scope:normalizeScope(n.scope??n.context??n.boundary),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??n.label??n.name??'')}
 }
 
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }

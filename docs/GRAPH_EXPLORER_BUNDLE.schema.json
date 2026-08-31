@@ -66,9 +66,22 @@
         "label": { "type": "string", "minLength": 1 },
         "qualified_name": { "type": "string" },
         "module": { "type": "string" },
+        "scope": { "$ref": "#/$defs/scope", "description": "Optional repository, service, package, and module context used to render path boundaries." },
         "signature": { "type": "string" },
         "documentation": { "type": "string" },
         "snippet": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string" },
+        "service": { "type": "string" },
+        "package": { "type": "string" },
+        "module": { "type": "string" },
+        "kind": { "type": "string" },
+        "label": { "type": "string" }
       },
       "additionalProperties": true
     },
