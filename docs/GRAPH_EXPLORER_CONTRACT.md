@@ -81,6 +81,15 @@ relationships. Producers may provide `step.edge.relation` when the projected
 relationship needs to be explicit. Otherwise the Explorer uses `value flows to` for
 endpoint roles and treats other roles as relationship labels.
 
+After normalization, every relationship retains one or more provenance origins:
+`bundle` for an explicit `graph.edges` record, `value-flow` for a relationship
+derived from a value-path sequence, and `request-path` for one derived from a
+request-path sequence. A relationship may have multiple origins when an
+exported edge and a path projection describe the same pair. The Graph lens
+surfaces these origins and supports `edge:explicit`, `edge:derived`,
+`origin:value-flow`, and `origin:request-path` filters; these labels describe
+how the relationship entered the bundle, not a security verdict.
+
 Files and modules provide the hierarchy needed for progressive exploration:
 repository → package → module/file → symbol → path. When modules or
 entrypoints list node IDs, every listed node must exist in `graph.nodes`; their
