@@ -287,8 +287,13 @@ export function OverviewView({
     ? visible.find((node) => node.id === selectedId) ?? visible[0]
     : undefined;
   const topologySelectedRef = useRef<SVGGElement>(null);
+  const focusAfterSelection = useRef(false);
   useEffect(() => {
     topologySelectedRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    if (focusAfterSelection.current) {
+      topologySelectedRef.current?.focus();
+      focusAfterSelection.current = false;
+    }
   }, [selectedId]);
   const focusActive = Boolean(inspectorOpen && selected);
   const connectedIds = new Set(
@@ -712,11 +717,32 @@ export function OverviewView({
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
                             select();
+                            return;
+                          }
+                          const index = orderedVisible.findIndex((item) => item.id === node.id);
+                          const nextIndex = event.key === "ArrowRight"
+                            ? index + 1
+                            : event.key === "ArrowLeft"
+                              ? index - 1
+                              : event.key === "ArrowDown"
+                                ? index + 4
+                                : event.key === "ArrowUp"
+                                  ? index - 4
+                                  : event.key === "Home"
+                                    ? 0
+                                    : event.key === "End"
+                                      ? orderedVisible.length - 1
+                                      : -1;
+                          if (nextIndex >= 0 && nextIndex < orderedVisible.length) {
+                            event.preventDefault();
+                            focusAfterSelection.current = true;
+                            selectNode(orderedVisible[nextIndex].id);
                           }
                         }}
                         role="button"
                         tabIndex={0}
                         aria-pressed={selected?.id === node.id}
+                        aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End"
                         aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}${node.scope?.kind ? `, ${node.scope.kind} boundary` : ""}, ${nodeLocation(node)}`}
                       >
                         <title>{node.label || node.id}</title>
