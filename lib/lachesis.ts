@@ -105,6 +105,14 @@ function assertUniqueOccurrenceIds(items:{id?:string}[], label:string) {
     seen.add(item.id)
   }
 }
+function assertExplicitEdgeIds(items:EdgeSeed[], label:string) {
+  const seen=new Set<string>()
+  for (const item of items) if (item.id != null) {
+    if (!item.id.trim()) throw new Error(`${label} IDs must be non-empty.`)
+    if (seen.has(item.id)) throw new Error(`${label} contains duplicate ID "${item.id}".`)
+    seen.add(item.id)
+  }
+}
 function assertEvidenceNodes(items:Evidence[], ids:Set<string>) {
   const broken=items.flatMap(item=>item.node_ids??[]).find(nodeId=>!ids.has(nodeId))
   if(broken)throw new Error(`MCP evidence references missing node "${broken}".`)
@@ -195,6 +203,7 @@ export function normalize(raw: any): App {
   const mcp = Array.isArray(rawMcp) ? rawMcp.map(normalizeEvidence) : []
   const rawEdges = Array.isArray(source.edges) ? source.edges : []
   const explicitEdges:EdgeSeed[] = rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:normalizeRelation(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
+  assertExplicitEdgeIds(explicitEdges,'Graph edges')
   if (!nodes.length) throw new Error('The bundle contains no graph nodes.')
   const ids = new Set<string>(nodes.map((node:Node)=>node.id))
   if (ids.size !== nodes.length) throw new Error('The bundle contains duplicate node IDs.')
@@ -312,6 +321,7 @@ function normalizeGraphV2(raw:any):App {
   if(emptyRequestPath)throw new Error(`Request path "${emptyRequestPath.label||emptyRequestPath.id}" contains no hops.`)
   const rawEdges=Array.isArray(graph.edges)?graph.edges:[]
   const explicitEdges:EdgeSeed[]=rawEdges.map((edge:any)=>({id:edge.id==null?undefined:String(edge.id),source:String(edge.source??edge.from??edge.source_id??''),target:String(edge.target??edge.to??edge.target_id??''),relation:normalizeRelation(edge.relation??edge.kind??edge.type??edge.label??'connects'),alias:Boolean(edge.alias),dynamic:Boolean(edge.dynamic),confidence:edge.confidence==null?undefined:String(edge.confidence),limitations:Array.isArray(edge.limitations)?edge.limitations.map(String):undefined,origin:'bundle'}))
+  assertExplicitEdgeIds(explicitEdges,'Graph edges')
   const ids=new Set(nodes.map(node=>node.id))
   const brokenStep=allFlows.flatMap(flow=>flow.steps).find(step=>!ids.has(step.node_id))
   if(brokenStep)throw new Error(`A path references missing node "${brokenStep.node_id}".`)
