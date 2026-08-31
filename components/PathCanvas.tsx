@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { LayoutPoint, Node, Step } from '../lib/lachesis'
+import { trackEvent } from '../lib/analytics'
 
 export type PathItem = {
   id: string
@@ -61,6 +62,11 @@ export function PathCanvas({
   const [viewport, setViewport] = useState<'fit' | 'reset'>('fit')
   const [focused, setFocused] = useState(false)
   const [zoom, setZoom] = useState(1)
+  function adjustZoom(delta: number) {
+    const next = Math.max(.75, Math.min(1.5, Number((zoom + delta).toFixed(1))))
+    if (next !== zoom) trackEvent('path_zoom_changed', { direction: delta > 0 ? 'in' : 'out' })
+    setZoom(next)
+  }
   const selectedRef = useRef<HTMLButtonElement>(null)
   const selectedIndex = Math.max(
     0,
@@ -149,9 +155,9 @@ export function PathCanvas({
             Reset
           </button>
           <div className="zoom-controls" aria-label="Path zoom">
-            <button type="button" onClick={() => setZoom((value) => Math.max(.75, Number((value - .1).toFixed(1))))} aria-label="Zoom path out">−</button>
-            <output>{Math.round(zoom * 100)}%</output>
-            <button type="button" onClick={() => setZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom path in">+</button>
+            <button type="button" onClick={() => adjustZoom(-.1)} aria-label="Zoom path out">−</button>
+            <output aria-live="polite">{Math.round(zoom * 100)}%</output>
+            <button type="button" onClick={() => adjustZoom(.1)} aria-label="Zoom path in">+</button>
           </div>
         </div>
       </div>
