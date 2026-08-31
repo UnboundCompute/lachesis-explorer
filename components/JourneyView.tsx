@@ -10,6 +10,12 @@ import { EvidencePanel } from "./EvidencePanel";
 function nodeLocation(node: App["nodes"][number] | undefined) {
   return node ? `${node.file || "Source location unavailable"}:${node.line || "—"}` : "Source location unavailable";
 }
+function nodeContext(node: App["nodes"][number] | undefined) {
+  return node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository || "";
+}
+function entryContext(entry: App["entries"][number], app: App) {
+  return nodeContext(app.nodes.find((node) => node.id === entry.hops[0]?.node_id));
+}
 type Props = {
   app: App;
   entryIndex: number;
@@ -164,7 +170,7 @@ export function JourneyView({
         >
           {app.entries.map((item, index) => (
             <option value={index} key={item.id}>
-              {item.label}
+              {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""}
             </option>
           ))}
         </select>
@@ -201,7 +207,7 @@ export function JourneyView({
                 <b>{hop.edge_label}</b>
                 <small>{hop.caption || "Relationship not reported"}</small>
                 <small className="node-row-context">
-                  {rowNode?.file || "Source unavailable"}:{rowNode?.line || "—"}
+                  {nodeContext(rowNode) ? `${nodeContext(rowNode)} · ` : ""}{rowNode?.file || "Source unavailable"}:{rowNode?.line || "—"}
                 </small>
               </span>
             </button>
