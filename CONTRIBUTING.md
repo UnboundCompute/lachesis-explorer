@@ -12,8 +12,8 @@ Thanks for helping improve Lachesis Explorer.
 5. Run the checks below before opening a pull request.
 
 ```bash
-npm run check
-npm run verify:bundles
+corepack pnpm run check
+corepack pnpm run verify:bundles
 git diff --check
 ```
 

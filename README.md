@@ -72,8 +72,8 @@ With npm, use `npm install` followed by `npm run dev`.
 Open [http://localhost:3000](http://localhost:3000). For a production build:
 
 ```bash
-npm run build
-npm run start
+corepack pnpm run build
+corepack pnpm run start
 ```
 
 ## Bundle format
@@ -156,14 +156,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and review c
 Please follow the project’s [Code of Conduct](CODE_OF_CONDUCT.md) when participating.
 
 ```bash
-npm run check
-npm run verify:bundles
+corepack pnpm run check
+corepack pnpm run verify:bundles
 ```
 
 To validate another local producer output without adding it to the repository:
 
 ```bash
-npm run verify:bundles -- /path/to/bundle.json
+corepack pnpm run verify:bundles -- /path/to/bundle.json
 ```
 
 Please keep the JSON contract stable, keep evidence grounded in bundle data, and include a short note about responsive behavior when changing UI.
