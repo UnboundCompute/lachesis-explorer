@@ -130,6 +130,7 @@ export function OverviewView({
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [neighborhoodOnly, setNeighborhoodOnly] = useState(false);
   const [topologyZoom, setTopologyZoom] = useState(1);
+  const [nodeOrder, setNodeOrder] = useState<"path" | "centrality">("path");
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
     setSelectedId(app.nodes[0]?.id ?? "");
@@ -138,6 +139,7 @@ export function OverviewView({
     setShareState("idle");
     setNeighborhoodOnly(false);
     setTopologyZoom(1);
+    setNodeOrder("path");
   }, [app]);
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; module?: string; nodes: Node[]; inbound: number; outbound: number }>();
@@ -263,11 +265,6 @@ export function OverviewView({
         ]
       : [],
   );
-  const topologyNodes = neighborhoodOnly && selected
-    ? visible.filter((node) => connectedIds.has(node.id))
-    : visible;
-  const topologyIds = new Set(topologyNodes.map((node) => node.id));
-  const topologyEdges = edges.filter((edge) => topologyIds.has(edge.source) && topologyIds.has(edge.target));
   const participation = useMemo(() => {
     const flows = new Map<string, number>();
     const entries = new Map<string, number>();
@@ -289,6 +286,23 @@ export function OverviewView({
     participation.entries.get(nodeId) ?? 0;
   const rolesForNode = (nodeId: string) =>
     [...(participation.roles.get(nodeId) ?? [])];
+  const orderedVisible = useMemo(() => {
+    if (nodeOrder === "path") return visible;
+    const degree = new Map<string, number>();
+    app.edges.forEach((edge) => {
+      degree.set(edge.source, (degree.get(edge.source) ?? 0) + 1);
+      degree.set(edge.target, (degree.get(edge.target) ?? 0) + 1);
+    });
+    return [...visible].sort((a, b) => {
+      const score = (nodeId: string) => (participation.flows.get(nodeId) ?? 0) + (participation.entries.get(nodeId) ?? 0) + (degree.get(nodeId) ?? 0);
+      return score(b.id) - score(a.id) || visible.indexOf(a) - visible.indexOf(b);
+    });
+  }, [app.edges, nodeOrder, participation, visible]);
+  const topologyNodes = neighborhoodOnly && selected
+    ? orderedVisible.filter((node) => connectedIds.has(node.id))
+    : orderedVisible;
+  const topologyIds = new Set(topologyNodes.map((node) => node.id));
+  const topologyEdges = edges.filter((edge) => topologyIds.has(edge.source) && topologyIds.has(edge.target));
   const chokePoints = app.nodes
     .map((node) => ({
       node,
@@ -351,7 +365,7 @@ export function OverviewView({
     : visible.length
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
-  const visibleIndex = (node: Node) => visible.indexOf(node);
+  const visibleIndex = (node: Node) => orderedVisible.indexOf(node);
   const graphPos = (node: Node) => pos(Math.max(0, visibleIndex(node)));
   const graphHeight = Math.max(300, Math.ceil(visible.length / 4) * 92 + 110);
   const labelIndex = (node: Node) =>
@@ -455,6 +469,20 @@ export function OverviewView({
                 }}
               >
                 Clear
+              </button>
+            )}
+            {mode === "map" && (
+              <button
+                type="button"
+                className={`node-order${nodeOrder === "centrality" ? " active" : ""}`}
+                aria-pressed={nodeOrder === "centrality"}
+                onClick={() => {
+                  const next = nodeOrder === "path" ? "centrality" : "path";
+                  setNodeOrder(next);
+                  trackEvent("graph_node_order_changed", { order: next });
+                }}
+              >
+                {nodeOrder === "path" ? "Order: path" : "Order: centrality"}
               </button>
             )}
           </div>
@@ -643,7 +671,7 @@ export function OverviewView({
                   <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
                 </div>
                 <div className="topology-node-list" aria-label="Graph nodes">
-                  {visible.map((node) => {
+                  {orderedVisible.map((node) => {
                     const roles = rolesForNode(node.id);
                     return (
                     <button
