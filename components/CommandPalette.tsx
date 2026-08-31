@@ -267,6 +267,9 @@ export function CommandPalette({
             placeholder="Jump to a view, path, symbol, file, or boundary…"
             aria-label="Search views, paths, symbols, files, and boundaries"
             aria-controls="command-results"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
             aria-activedescendant={
               visibleCommands[active] ? `command-option-${active}` : undefined
             }
