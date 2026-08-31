@@ -788,6 +788,7 @@ export function OverviewView({
                       className={selected?.id === node.id ? "selected" : ""}
                       onClick={() => selectNode(node.id)}
                       aria-pressed={selected?.id === node.id}
+                      aria-current={selected?.id === node.id ? "step" : undefined}
                       aria-label={`${node.label || node.id}, ${node.kind}, ${flowCount(node.id)} graph paths, ${entryCount(node.id)} request paths, ${nodeLocation(node)}`}
                     >
                       <span>{labelIndex(node)}</span>
