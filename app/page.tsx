@@ -892,6 +892,7 @@ export default function Page() {
         hopId={hopId}
         hopIndex={hopIndex}
         sinkId={sinkId}
+        focusNodeId={focusNodeId}
       />
       {view === "trace" && (
         <TraceView
