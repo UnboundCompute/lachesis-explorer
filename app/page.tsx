@@ -237,6 +237,7 @@ export default function Page() {
         })
         .then((raw) => activate(normalize(raw), true))
         .catch((error) => {
+          pendingLink.current = null;
           urlReady.current = true;
           setLoadState({
             type: "error",
