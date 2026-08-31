@@ -202,7 +202,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         </pre>
         {!snippet && (
           <p className="source-unavailable-note">
-            This bundle includes graph evidence for the node, but not its source text. The location and connected paths remain available below.
+            This bundle includes graph evidence for the node, but not its source text. Any available location, graph ID, and connected paths remain available below.
           </p>
         )}
         <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet} title={!snippet ? "No source snippet is available in this bundle" : undefined}>
