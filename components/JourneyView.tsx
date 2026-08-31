@@ -16,6 +16,14 @@ function nodeContext(node: App["nodes"][number] | undefined) {
 function entryContext(entry: App["entries"][number], app: App) {
   return nodeContext(app.nodes.find((node) => node.id === entry.hops[0]?.node_id));
 }
+function entryScopes(entry: App["entries"][number], app: App) {
+  const scopes: string[] = [];
+  entry.hops.forEach((hop) => {
+    const scope = nodeContext(app.nodes.find((node) => node.id === hop.node_id));
+    if (scope && scopes.at(-1) !== scope) scopes.push(scope);
+  });
+  return scopes;
+}
 type Props = {
   app: App;
   entryIndex: number;
@@ -107,6 +115,7 @@ export function JourneyView({
   const lastNode = app.nodes.find(
     (node) => node.id === entry.hops.at(-1)?.node_id,
   );
+  const contextRoute = entryScopes(entry, app);
   const items: PathItem[] = entry.hops.map((hop) => ({
     id: hop.node_id,
     occurrenceId: hop.id,
@@ -225,7 +234,11 @@ export function JourneyView({
               <p className="path-meta">
                 {entry.confidence && <span>{entry.confidence} confidence</span>}
                 {entry.limitations?.length ? <span>{entry.limitations.length} known limitation{entry.limitations.length === 1 ? "" : "s"}</span> : null}
+                {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
               </p>
+            )}
+            {!entry.confidence && !entry.limitations?.length && contextRoute.length > 1 && (
+              <p className="path-meta"><span>context: {contextRoute.join(" → ")}</span></p>
             )}
           </div>
           <div className="toolbar-actions">

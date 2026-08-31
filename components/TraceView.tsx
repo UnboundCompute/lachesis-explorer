@@ -108,6 +108,16 @@ function flowLocation(app: App, flow: Flow) {
     : `${location(first)} → ${location(last)}`;
 }
 
+function flowScopes(app: App, flow: Flow) {
+  const scopes: string[] = [];
+  flow.steps.forEach((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    const scope = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository;
+    if (scope && scopes.at(-1) !== scope) scopes.push(scope);
+  });
+  return scopes;
+}
+
 function nodeLocation(node: App["nodes"][number] | undefined) {
   return node ? `${node.file || "Source location unavailable"}:${node.line || "—"}` : "Source location unavailable";
 }
@@ -230,6 +240,7 @@ export function TraceView({
   ].filter(Boolean) as { label: string; query: string }[];
   const firstNode = app.nodes.find((node) => node.id === (flow.sourceNodeId ?? flow.steps[0]?.node_id));
   const lastNode = app.nodes.find((node) => node.id === (flow.sinkNodeId ?? flow.steps.at(-1)?.node_id));
+  const contextRoute = flowScopes(app, flow);
   const indirectSteps = flow.steps.filter(
     (step) => step.edge?.alias || step.edge?.dynamic,
   ).length;
@@ -378,6 +389,7 @@ export function TraceView({
               <span>{pathKindLabel(flow, securityPath)}</span>
               {flow.confidence && <span>{flow.confidence} confidence</span>}
               {flow.limitations?.length ? <span>{flow.limitations.length} known limitation{flow.limitations.length === 1 ? "" : "s"}</span> : null}
+              {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
             </p>
           </div>
           <div className="toolbar-actions">
