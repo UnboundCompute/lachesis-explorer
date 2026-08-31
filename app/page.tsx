@@ -120,7 +120,9 @@ export default function Page() {
   const [app, setApp] = useState<App>(starter);
   const [compareApp, setCompareApp] = useState<App | null>(null);
   const [menu, setMenu] = useState(false);
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(
+    () => typeof window === "undefined" || readLocal("lachesis-theme") !== "light",
+  );
   const [flowId, setFlowId] = useState(starter.flows[0].id);
   const [stepId, setStepId] = useState(starter.flows[0].steps[0].node_id);
   const [stepIndex, setStepIndex] = useState(0);
@@ -175,10 +177,6 @@ export default function Page() {
     [],
   );
 
-  useEffect(() => {
-    const stored = readLocal("lachesis-theme");
-    if (stored === "light") setDark(false);
-  }, []);
   useEffect(() => {
     try {
       const stored = JSON.parse(
