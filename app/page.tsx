@@ -936,7 +936,10 @@ export default function Page() {
           loadState={loadState}
           isDemo={isDemo}
           onUpload={() => fileRef.current?.click()}
-          onDismiss={() => setLoadState({ type: "idle", message: "" })}
+          onDismiss={() => {
+            setLoadState({ type: "idle", message: "" });
+            workspaceRef.current?.focus();
+          }}
         />
       )}
       {view === "home" && (
@@ -948,7 +951,10 @@ export default function Page() {
           onLoadSample={loadCodeSample}
           onLoadSecuritySample={loadSecuritySample}
           onView={(next) => changeView(next)}
-          onDismiss={() => setLoadState({ type: "idle", message: "" })}
+          onDismiss={() => {
+            setLoadState({ type: "idle", message: "" });
+            workspaceRef.current?.focus();
+          }}
           direction={direction}
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
