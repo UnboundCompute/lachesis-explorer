@@ -1149,6 +1149,7 @@ export default function Page() {
           <CompareView
             base={app}
             compare={compareApp}
+            loading={loadState.type === "loading"}
             onUpload={() => compareFileRef.current?.click()}
             onOpenFlow={(nextFlow, nextNode) => {
               changeView("trace");

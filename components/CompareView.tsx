@@ -5,7 +5,7 @@ import type { App, Flow } from '../lib/lachesis'
 import { copyText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
 
-type Props = { base: App; compare: App | null; onUpload: () => void; onOpenFlow?: (flowId: string, nodeId: string) => void }
+type Props = { base: App; compare: App | null; onUpload: () => void; loading?: boolean; onOpenFlow?: (flowId: string, nodeId: string) => void }
 
 const ids = (values: { id: string }[]) => new Set(values.map((value) => value.id))
 
@@ -137,7 +137,7 @@ function DiffColumn({
   )
 }
 
-export function CompareView({ base, compare, onUpload, onOpenFlow }: Props) {
+export function CompareView({ base, compare, onUpload, loading = false, onOpenFlow }: Props) {
   const securityMode =
     base.findings.length > 0 ||
     base.bundle.projection === 'security projection' ||
@@ -152,7 +152,7 @@ export function CompareView({ base, compare, onUpload, onOpenFlow }: Props) {
           Load a second bundle to see added, removed, and changed{' '}
           {securityMode ? 'evidence' : 'graph structure'} without replacing the active investigation.
         </p>
-        <button type="button" className="context-upload" onClick={onUpload}>
+        <button type="button" className="context-upload" onClick={onUpload} disabled={loading} aria-busy={loading}>
           <span>Load comparison bundle</span>
           <span>＋</span>
         </button>
@@ -194,7 +194,7 @@ export function CompareView({ base, compare, onUpload, onOpenFlow }: Props) {
           <h2>{base.commit || 'base'} <span>→</span> {compare.commit || 'comparison'}</h2>
           <p>Deterministic ID and step comparisons. A missing item means it is absent from that bundle, not necessarily deleted from source. Removed paths open in the active bundle; added paths stay comparison-only here.</p>
         </div>
-        <button type="button" className="secondary-button" onClick={onUpload}>Load another</button>
+        <button type="button" className="secondary-button" onClick={onUpload} disabled={loading} aria-busy={loading}>{loading ? "Reading…" : "Load another"}</button>
       </header>
       <div className="compare-summary">
         <div><span>BASE</span><b>{base.name}</b><small>{base.nodes.length} nodes · {base.flows.length} paths</small></div>
