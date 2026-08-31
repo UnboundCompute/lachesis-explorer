@@ -131,14 +131,14 @@ export function OverviewView({
     setTopologyZoom(1);
   }, [app]);
   const contexts = useMemo(() => {
-    const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; nodes: Node[]; inbound: number; outbound: number }>();
+    const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; module?: string; nodes: Node[]; inbound: number; outbound: number }>();
     const nodeContexts = new Map<string, string>();
     app.nodes.forEach((node) => {
       const key = nodeScopeKey(node);
       nodeContexts.set(node.id, key);
       const current = grouped.get(key);
       if (current) current.nodes.push(node);
-      else grouped.set(key, { key, label: nodeScopeLabel(node), repository: node.scope?.repository, service: node.scope?.service, nodes: [node], inbound: 0, outbound: 0 });
+      else grouped.set(key, { key, label: nodeScopeLabel(node), repository: node.scope?.repository, service: node.scope?.service, module: node.scope?.module, nodes: [node], inbound: 0, outbound: 0 });
     });
     app.edges.forEach((edge) => {
       const source = nodeContexts.get(edge.source);
@@ -165,7 +165,9 @@ export function OverviewView({
         ? `service:${sourceNode.scope.service}`
         : sourceNode.scope?.repository
           ? `repo:${sourceNode.scope.repository}`
-          : "";
+          : sourceNode.scope?.module
+            ? `module:${sourceNode.scope.module}`
+            : "";
       const current = grouped.get(key);
       if (current) current.count += 1;
       else grouped.set(key, { source, target, relation: edge.relation || "connected", count: 1, query });
@@ -666,16 +668,17 @@ export function OverviewView({
                     key={context.key}
                     aria-label={`${context.label}, ${context.nodes.length} symbols, ${context.outbound} outbound and ${context.inbound} inbound boundary transitions`}
                     onClick={() => {
-                      const filterValue = context.service || context.repository;
+                      const filterValue = context.service || context.repository || context.module;
+                      const filterKey = context.service ? "service" : context.repository ? "repo" : context.module ? "module" : "scope";
                       setMode("map");
-                      setQuery(filterValue ? `${context.service ? "service" : "repo"}:${filterValue}` : "");
-                      trackEvent(filterValue ? "semantic_filter_applied" : "semantic_filter_cleared", { surface: "architecture", filter: filterValue ? (context.service ? "service" : "repo") : "scope" });
+                      setQuery(filterValue ? `${filterKey}:${filterValue}` : "");
+                      trackEvent(filterValue ? "semantic_filter_applied" : "semantic_filter_cleared", { surface: "architecture", filter: filterKey });
                     }}
                   >
                     <span className="context-row-mark" />
                     <span>
                       <b>{context.label}</b>
-                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : ""} · {context.nodes.length} symbols · {context.outbound} out / {context.inbound} in</small>
+                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : context.module ? ` · ${context.module}` : ""} · {context.nodes.length} symbols · {context.outbound} out / {context.inbound} in</small>
                     </span>
                     <em title={`${context.outbound} outbound · ${context.inbound} inbound boundary transitions`}>{context.nodes.length}</em>
                   </button>

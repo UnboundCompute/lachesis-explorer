@@ -143,9 +143,9 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
           )}
           {node.signature && <code>{node.signature}</code>}
           {node.module && <span>module {node.module}</span>}
-          {node.scope && (node.scope.label || node.scope.service || node.scope.module || node.scope.repository) && (
+          {node.scope && (node.scope.label || node.scope.service || node.scope.package || node.scope.module || node.scope.repository) && (
             <span className="node-scope-context">
-              scope {node.scope.label || node.scope.service || node.scope.module || node.scope.repository}
+              scope {node.scope.label || node.scope.service || node.scope.package || node.scope.module || node.scope.repository}
             </span>
           )}
           {node.scope?.kind && (
