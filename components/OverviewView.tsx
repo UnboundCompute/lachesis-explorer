@@ -420,8 +420,9 @@ export function OverviewView({
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
   const visibleIndex = (node: Node) => orderedVisible.indexOf(node);
-  const graphPos = (node: Node) => pos(Math.max(0, visibleIndex(node)));
-  const graphHeight = Math.max(300, Math.ceil(visible.length / 4) * 92 + 110);
+  const canvasOrder = neighborhoodOnly ? topologyNodes : orderedVisible;
+  const graphPos = (node: Node) => pos(Math.max(0, canvasOrder.indexOf(node)));
+  const graphHeight = Math.max(300, Math.ceil(canvasOrder.length / 4) * 92 + 110);
   const graphViewModified = Boolean(query || neighborhoodOnly || topologyZoom !== 1 || nodeOrder !== "path");
   const labelIndex = (node: Node) =>
     String(Math.max(0, visibleIndex(node)) + 1).padStart(2, "0");
