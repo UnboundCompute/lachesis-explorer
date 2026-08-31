@@ -562,6 +562,9 @@ export function OverviewView({
         {mode === "map" && (
           <>
             <div className="map-summary">
+              <span className="sr-only" aria-live="polite" aria-atomic="true">
+                {selected ? `Selected ${selected.label || selected.id}, ${nodeLocation(selected)}.` : "No graph node selected."}
+              </span>
               <div>
                 <span>{neighborhoodOnly ? "CANVAS NODES" : "VISIBLE NODES"}</span>
                 <b>
