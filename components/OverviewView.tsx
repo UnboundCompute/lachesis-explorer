@@ -152,7 +152,7 @@ export function OverviewView({
   }, [app]);
   const boundaryTransitions = useMemo(() => {
     const nodes = new Map(app.nodes.map((node) => [node.id, node]));
-    const grouped = new Map<string, { source: string; target: string; relation: string; count: number }>();
+    const grouped = new Map<string, { source: string; target: string; relation: string; count: number; query: string }>();
     app.edges.forEach((edge) => {
       const sourceNode = nodes.get(edge.source);
       const targetNode = nodes.get(edge.target);
@@ -160,9 +160,14 @@ export function OverviewView({
       const source = nodeScopeLabel(sourceNode);
       const target = nodeScopeLabel(targetNode);
       const key = `${source}→${target}`;
+      const query = sourceNode.scope?.service
+        ? `service:${sourceNode.scope.service}`
+        : sourceNode.scope?.repository
+          ? `repo:${sourceNode.scope.repository}`
+          : "";
       const current = grouped.get(key);
       if (current) current.count += 1;
-      else grouped.set(key, { source, target, relation: edge.relation || "connected", count: 1 });
+      else grouped.set(key, { source, target, relation: edge.relation || "connected", count: 1, query });
     });
     return [...grouped.values()].sort((a, b) => b.count - a.count || a.source.localeCompare(b.source)).slice(0, 8);
   }, [app]);
@@ -743,10 +748,22 @@ export function OverviewView({
               <span className="panel-label">BOUNDARY TRANSITIONS</span>
               <p>Context-to-context relationships in the loaded graph.</p>
               {boundaryTransitions.length ? boundaryTransitions.map((transition) => (
-                <div className="boundary-transition" key={`${transition.source}-${transition.target}`}>
+                <button
+                  type="button"
+                  className="boundary-transition"
+                  key={`${transition.source}-${transition.target}`}
+                  disabled={!transition.query}
+                  onClick={() => {
+                    if (!transition.query) return;
+                    setMode("map");
+                    setQuery(transition.query);
+                    trackEvent("semantic_filter_applied", { surface: "architecture", filter: transition.query.split(":", 1)[0] || "scope" });
+                  }}
+                  aria-label={`${transition.source} to ${transition.target}, ${transition.count} relationships`}
+                >
                   <b>{transition.source} <i>→</i> {transition.target}</b>
                   <small>{transition.count} relationship{transition.count === 1 ? "" : "s"} · {transition.relation}</small>
-                </div>
+                </button>
               )) : <p className="diff-empty">No explicit context transitions are available.</p>}
               <div className="detail-rule" />
               <span className="panel-label">SHARED CHOKE POINTS</span>
