@@ -144,7 +144,7 @@ export function CompareView({ base, compare, onUpload, onOpenFlow }: Props) {
         <div>
           <span className="context-kicker">REVISION DIFF</span>
           <h2>{base.commit || 'base'} <span>→</span> {compare.commit || 'comparison'}</h2>
-          <p>Deterministic ID and step comparisons. A missing item means it is absent from that bundle, not necessarily deleted from source.</p>
+          <p>Deterministic ID and step comparisons. A missing item means it is absent from that bundle, not necessarily deleted from source. Removed paths open in the active bundle; added paths stay comparison-only here.</p>
         </div>
         <button type="button" className="secondary-button" onClick={onUpload}>Load another</button>
       </header>
