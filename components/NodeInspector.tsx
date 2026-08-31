@@ -96,7 +96,12 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
   ).length;
   useEffect(() => {
     inspectorRef.current?.scrollTo({ top: 0, behavior: "auto" });
-  }, [node.id]);
+    setCopied(false);
+    setCopyError(false);
+    setSnippetCopied(false);
+    setSnippetCopyError(false);
+    setShowAllConnections(false);
+  }, [node.id, contextRole, contextOccurrence]);
   async function copyLocation() {
     try {
       await copyText(location);
