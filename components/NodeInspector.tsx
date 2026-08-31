@@ -129,7 +129,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     });
   }
   return (
-    <aside ref={inspectorRef} className="detail-panel" aria-label={`Source inspector for ${node.label || node.id}`}>
+    <aside id="source-inspector" ref={inspectorRef} className="detail-panel" aria-label={`Source inspector for ${node.label || node.id}`}>
       <p className="sr-only" aria-live="polite">
         Selected {node.kind} {node.label || node.id}, source {location}.
       </p>

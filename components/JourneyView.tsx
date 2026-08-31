@@ -259,7 +259,7 @@ export function JourneyView({
           </div>
           <div className="toolbar-actions">
             {!inspectorOpen && (
-              <button className="inspector-reopen" onClick={onInspectorOpen}>
+              <button className="inspector-reopen" type="button" onClick={onInspectorOpen} aria-expanded={inspectorOpen} aria-controls="source-inspector">
                 Show source
               </button>
             )}
