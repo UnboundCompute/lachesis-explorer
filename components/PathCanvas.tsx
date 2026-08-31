@@ -62,7 +62,7 @@ export function PathCanvas({
   const [viewport, setViewport] = useState<'fit' | 'reset'>('fit')
   const [focused, setFocused] = useState(false)
   const [zoom, setZoom] = useState(1)
-  const pathIdentity = items.map((item) => item.occurrenceId ?? item.id).join('|')
+  const pathIdentity = items.map((item) => [item.occurrenceId ?? item.id, item.node.file, item.node.line, scopeKey(item.node), item.relation].join(':')).join('|')
   function adjustZoom(delta: number) {
     const next = Math.max(.75, Math.min(1.5, Number((zoom + delta).toFixed(1))))
     if (next !== zoom) trackEvent('path_zoom_changed', { direction: delta > 0 ? 'in' : 'out' })
