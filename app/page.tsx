@@ -378,7 +378,9 @@ export default function Page() {
         }
       }
       if (nextView === "trace") setQuery(params.get("filter") ?? "");
+      else setQuery("");
       if (nextView === "map") setMapQuery(params.get("filter") ?? "");
+      else setMapQuery("");
       const nextMapMode = params.get("map_mode");
       if (nextMapMode && ["map", "architecture", "health"].includes(nextMapMode)) setMapMode(nextMapMode as OverviewMode);
       const nextMapOrder = params.get("map_order");
