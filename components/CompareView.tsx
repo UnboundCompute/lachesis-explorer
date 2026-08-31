@@ -143,6 +143,8 @@ function DiffColumn({
 }
 
 export function CompareView({ base, compare, onUpload, loading = false, onOpenFlow }: Props) {
+  const [showAllChanged, setShowAllChanged] = useState(false)
+  useEffect(() => { setShowAllChanged(false) }, [base, compare])
   const securityMode =
     base.findings.length > 0 ||
     base.bundle.projection === 'security projection' ||
@@ -226,7 +228,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           <span>{changedPaths.length}</span>
         </div>
         {changedPaths.length ? (
-          changedPaths.slice(0, 8).map((item) => (
+          (showAllChanged ? changedPaths : changedPaths.slice(0, 8)).map((item) => (
             <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, item.base.steps[0]?.node_id ?? "")} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
               <b>{item.base.name}</b>
               <div>
@@ -239,6 +241,11 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           ))
         ) : (
           <p className="diff-empty">No existing paths changed between these bundles.</p>
+        )}
+        {changedPaths.length > 8 && (
+          <button type="button" className="diff-expand changed-expand" onClick={() => setShowAllChanged((value) => !value)} aria-expanded={showAllChanged}>
+            {showAllChanged ? "Show fewer" : `Show all ${changedPaths.length}`}
+          </button>
         )}
       </section>
     </section>
