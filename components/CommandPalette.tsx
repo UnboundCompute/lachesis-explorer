@@ -218,7 +218,7 @@ export function CommandPalette({
           if (event.key === "Tab") {
             const focusable = [
               ...(dialogRef.current?.querySelectorAll<HTMLElement>(
-                "input,button",
+                "input:not(:disabled),button:not(:disabled):not([tabindex=\"-1\"])",
               ) ?? []),
             ];
             if (focusable.length) {
