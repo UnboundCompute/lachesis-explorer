@@ -363,6 +363,8 @@ export function OverviewView({
   const health = [
     { label: "Graph nodes", value: app.nodes.length },
     { label: "Relationships", value: app.edges.length },
+    { label: "Explicit relationships", value: app.edges.filter((edge) => edge.origins.includes("bundle")).length },
+    { label: "Derived relationships", value: app.edges.filter((edge) => edge.origins.some((origin) => origin !== "bundle")).length },
     { label: "Graph paths", value: app.flows.length },
     { label: "Request paths", value: app.entries.length },
     { label: "Linked records", value: app.mcp.length },
