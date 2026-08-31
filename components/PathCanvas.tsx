@@ -149,6 +149,7 @@ export function PathCanvas({
           <strong>{selectedItem.node.label || selectedItem.node.id}</strong>
           <small>
             {selectedItem.label} · {nodeLocation(selectedItem.node)}
+            {selectedItem.node.scope && ` · ${scopeLabel(selectedItem.node)}`}
             {selectedItem.occurrenceId ? ` · occurrence ${selectedItem.occurrenceId}` : ''}
             {selectedItem.caption ? ` · ${selectedItem.caption}` : ''}
           </small>
