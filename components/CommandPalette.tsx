@@ -281,6 +281,7 @@ export function CommandPalette({
           {visibleCommands.length ? (
             visibleCommands.map((command, index) => (
               <button
+                type="button"
                 key={command.id}
                 id={`command-option-${index}`}
                 ref={active === index ? activeOptionRef : undefined}

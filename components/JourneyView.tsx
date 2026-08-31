@@ -209,6 +209,7 @@ export function JourneyView({
             const rowNode = app.nodes.find((item) => item.id === hop.node_id);
             return (
             <button
+              type="button"
               key={`${index}-${hop.node_id}`}
               ref={selectedIndex === index ? selectedHopRef : undefined}
               className={selectedIndex === index ? "hop-row selected" : "hop-row"}

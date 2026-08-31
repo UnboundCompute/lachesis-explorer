@@ -352,6 +352,7 @@ export function TraceView({
           {visible.length ? (
             visible.map((item) => (
               <button
+                type="button"
                 key={item.id}
                 ref={item.id === flow.id ? selectedFlowRef : undefined}
                 className={
