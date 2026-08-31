@@ -218,7 +218,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow,
                         onFlow(flow.id, node.id)
                       }
                     >
-                      <span>{flow.name}</span>
+                      <span>{flow.name} · {flow.kind || "graph path"} · {flow.steps.length} symbols</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
@@ -243,7 +243,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow,
                         )
                       }
                     >
-                      <span>{entry.label}</span>
+                      <span>{entry.label} · {entry.hops.length} hops</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
