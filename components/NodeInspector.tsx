@@ -176,7 +176,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         </div>
         <div className="location-row">
           <span className="line-number">{hasSourceLocation ? <>{range}{node.column ? ` · column ${node.column}` : ""}</> : <>Graph ID · {node.id}</>}</span>
-          <button type="button" onClick={copyLocation} aria-label={hasSourceLocation ? "Copy source location" : "Copy graph ID"}>
+          <button type="button" onClick={copyLocation} aria-live="polite" aria-label={hasSourceLocation ? "Copy source location" : "Copy graph ID"}>
             <Icon name="code" size={12} />
             {copied ? "Copied" : copyError ? "Retry" : hasSourceLocation ? "Copy" : "Copy ID"}
           </button>
@@ -184,7 +184,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         <pre className="source-code">
           <code>{snippet || "Source unavailable in this bundle."}</code>
         </pre>
-        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet}>
+        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet} aria-live="polite">
           <Icon name="code" size={12} />
           {snippetCopied ? "Snippet copied" : snippetCopyError ? "Retry copy" : "Copy snippet"}
         </button>
