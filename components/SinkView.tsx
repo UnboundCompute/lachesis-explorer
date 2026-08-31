@@ -93,6 +93,9 @@ export function SinkView({
     entry.hops.some((hop) => flowNodes.has(hop.node_id)),
   );
   const selected = app.nodes.find((node) => node.id === selectedId) ?? sink;
+  const selectedRole = flows
+    .flatMap((flow) => flow.steps)
+    .find((step) => step.node_id === selected.id)?.role;
   const aliases = flows
     .flatMap((flow) => flow.steps)
     .filter((step) => step.edge?.alias).length;
@@ -300,6 +303,7 @@ export function SinkView({
       {inspectorOpen && (
         <NodeInspector
           node={selected}
+          contextRole={selectedRole}
           app={app}
           onFlow={onOpenFlow}
           onEntry={onEntry}

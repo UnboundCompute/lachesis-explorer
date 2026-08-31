@@ -921,6 +921,7 @@ export function OverviewView({
       {inspectorOpen && selected && (
         <NodeInspector
           node={selected}
+          contextRole={rolesForNode(selected.id).join(" / ") || undefined}
           app={app}
           onNode={selectNode}
           onFlow={onFlow}
