@@ -762,6 +762,7 @@ export default function Page() {
     if (!file) return;
     if (importBusy.current) return;
     importBusy.current = true;
+    setLoadState({ type: "loading", message: `Reading comparison bundle ${file.name}…` });
     try {
       const raw = JSON.parse(await file.text());
       setCompareApp(normalize(raw));
