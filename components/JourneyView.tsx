@@ -179,7 +179,7 @@ export function JourneyView({
         >
           {app.entries.map((item, index) => (
             <option value={index} key={item.id}>
-              {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""}
+              {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""} · {item.hops.length} hops
             </option>
           ))}
         </select>
