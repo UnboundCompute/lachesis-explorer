@@ -412,6 +412,7 @@ export function OverviewView({
         node.label || node.id,
         `${node.file || "Source unavailable"}:${node.line || "—"}`,
       );
+    trackEvent("topology_node_selected");
   }
   const summary = selected
     ? `${selected.label || selected.id} participates in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request path${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} normalized relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
