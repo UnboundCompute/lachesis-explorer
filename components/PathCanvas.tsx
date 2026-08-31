@@ -167,11 +167,20 @@ export function PathCanvas({
           <span className="path-boundary-label">BOUNDARY CONTEXT</span>
           <div className="path-boundary-segments">
             {boundaries.map((boundary, index) => (
-              <span className="path-boundary-segment" key={`${boundary.key}-${boundary.start}`}>
+              <button
+                type="button"
+                className="path-boundary-segment"
+                key={`${boundary.key}-${boundary.start}`}
+                onClick={() => {
+                  const item = shown[boundary.start]
+                  if (item) onSelect(item.id, start + boundary.start)
+                }}
+                aria-label={`Jump to ${boundary.label}, steps ${start + boundary.start + 1} through ${start + boundary.end + 1}`}
+              >
                 {index > 0 && <i aria-hidden="true">→</i>}
                 <b>{boundary.label}</b>
                 <small>{boundary.end - boundary.start + 1} {itemUnit}</small>
-              </span>
+              </button>
             ))}
           </div>
         </div>
