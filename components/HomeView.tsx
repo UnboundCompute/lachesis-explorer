@@ -84,6 +84,16 @@ function pathLocation(flow: Flow, app: App) {
   return nodes.length === 1 ? location(nodes[0]!) : `${location(nodes[0]!)} → ${location(nodes.at(-1)!)}`;
 }
 
+function pathScopes(flow: Flow, app: App) {
+  const labels: string[] = [];
+  flow.steps.forEach((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    const label = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.repository;
+    if (label && labels.at(-1) !== label) labels.push(label);
+  });
+  return labels;
+}
+
 function recommendationScore(flow: Flow) {
   const roles = flow.steps.map((step) => step.role.trim().toLowerCase());
   const hasSource = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin"].includes(role));
@@ -452,6 +462,12 @@ export function HomeView({
                     <small>Location</small>
                     <b>{graphFocusNode ? `${graphFocusNode.file || "Source unavailable"}:${graphFocusNode.line || "—"}` : "Source location unavailable"}</b>
                   </span>
+                </div>
+              )}
+              {pathScopes(graphFocus, app).length > 1 && (
+                <div className="briefing-scope-route" aria-label="Path context route">
+                  <small>Context route</small>
+                  <b>{pathScopes(graphFocus, app).join(" → ")}</b>
                 </div>
               )}
               <p className="priority-summary">
