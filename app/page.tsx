@@ -45,6 +45,7 @@ type PendingLink = {
   filter?: string;
   mapMode?: string;
   mapOrder?: string;
+  mapNeighborhood?: boolean;
 };
 
 const viewLabels: Record<View, string> = {
@@ -136,6 +137,7 @@ export default function Page() {
   const [mapQuery, setMapQuery] = useState("");
   const [mapMode, setMapMode] = useState<OverviewMode>("map");
   const [mapOrder, setMapOrder] = useState<OverviewNodeOrder>("path");
+  const [mapNeighborhoodOnly, setMapNeighborhoodOnly] = useState(false);
   const [loadState, setLoadState] = useState<LoadState>({
     type: "idle",
     message: "",
@@ -233,6 +235,7 @@ export default function Page() {
       filter: params.get("filter") ?? undefined,
       mapMode: params.get("map_mode") ?? undefined,
       mapOrder: params.get("map_order") ?? undefined,
+      mapNeighborhood: params.get("map_focus") === "neighborhood",
     };
     if (params.get("sample") === "security") {
       pendingLink.current = link;
@@ -316,6 +319,7 @@ export default function Page() {
     if (link.view === "map") setMapQuery(link.filter ?? "");
     if (link.mapMode && ["map", "architecture", "health"].includes(link.mapMode)) setMapMode(link.mapMode as OverviewMode);
     if (link.mapOrder && ["path", "centrality"].includes(link.mapOrder)) setMapOrder(link.mapOrder as OverviewNodeOrder);
+    setMapNeighborhoodOnly(Boolean(link.mapNeighborhood));
     if (
       link.view === "map" &&
       link.node &&
@@ -351,9 +355,10 @@ export default function Page() {
       if (mapQuery) params.set("filter", mapQuery);
       if (mapMode !== "map") params.set("map_mode", mapMode);
       if (mapOrder !== "path") params.set("map_order", mapOrder);
+      if (mapNeighborhoodOnly) params.set("map_focus", "neighborhood");
     }
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapMode, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, view]);
+  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
@@ -383,6 +388,7 @@ export default function Page() {
       setMapMode(nextMapMode && ["map", "architecture", "health"].includes(nextMapMode) ? nextMapMode as OverviewMode : "map");
       const nextMapOrder = params.get("map_order");
       setMapOrder(nextMapOrder === "centrality" ? "centrality" : "path");
+      setMapNeighborhoodOnly(params.get("map_focus") === "neighborhood");
       const linkedEntry = app.entries.findIndex((item) => item.id === params.get("entry"));
       if (linkedEntry >= 0) {
         const hops = app.entries[linkedEntry].hops;
@@ -523,6 +529,18 @@ export default function Page() {
     setMapOrder(next);
   }
 
+  function changeMapNeighborhood(next: boolean) {
+    if (next !== mapNeighborhoodOnly && urlReady.current && view === "map") {
+      const params = new URLSearchParams(window.location.search);
+      params.set("view", "map");
+      if (next) params.set("map_focus", "neighborhood");
+      else params.delete("map_focus");
+      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+    }
+    setMapNeighborhoodOnly(next);
+    trackEvent("topology_neighborhood_toggled", { focused: next });
+  }
+
   async function copyInvestigationLink(params: Record<string, string>) {
     const url = new URL(window.location.href);
     url.search = "";
@@ -571,6 +589,7 @@ export default function Page() {
     setMapQuery("");
     setMapMode("map");
     setMapOrder("path");
+    setMapNeighborhoodOnly(false);
     setFocusNodeId("");
     let restored = false;
     if (pending) {
@@ -645,6 +664,7 @@ export default function Page() {
       if (pending.view === "map") setMapQuery(pending.filter ?? "");
       if (pending.view === "map" && pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode)) setMapMode(pending.mapMode as OverviewMode);
       if (pending.view === "map") setMapOrder(pending.mapOrder === "centrality" ? "centrality" : "path");
+      if (pending.view === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
       pendingLink.current = null;
     }
     urlReady.current = true;
@@ -1131,13 +1151,15 @@ export default function Page() {
           setMode={changeMapMode}
           nodeOrder={mapOrder}
           setNodeOrder={changeMapOrder}
+          neighborhoodOnly={mapNeighborhoodOnly}
+          setNeighborhoodOnly={changeMapNeighborhood}
           query={mapQuery}
           setQuery={setMapQuery}
           focusNodeId={focusNodeId}
           onFocusNode={setFocusNodeId}
           onRecord={record}
           onShare={(nodeId) =>
-            copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery, map_mode: mapMode, map_order: mapOrder })
+            copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery, map_mode: mapMode, map_order: mapOrder, map_focus: mapNeighborhoodOnly ? "neighborhood" : "" })
           }
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");

@@ -14,6 +14,8 @@ type Props = {
   setMode?: (mode: OverviewMode) => void;
   nodeOrder?: OverviewNodeOrder;
   setNodeOrder?: (order: OverviewNodeOrder) => void;
+  neighborhoodOnly?: boolean;
+  setNeighborhoodOnly?: (focused: boolean) => void;
   query: string;
   setQuery: (value: string) => void;
   focusNodeId?: string;
@@ -128,6 +130,8 @@ export function OverviewView({
   setMode: setControlledMode,
   nodeOrder: controlledNodeOrder,
   setNodeOrder: setControlledNodeOrder,
+  neighborhoodOnly: controlledNeighborhoodOnly,
+  setNeighborhoodOnly: setControlledNeighborhoodOnly,
   query,
   setQuery,
   focusNodeId,
@@ -143,11 +147,13 @@ export function OverviewView({
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
-  const [neighborhoodOnly, setNeighborhoodOnly] = useState(false);
+  const [localNeighborhoodOnly, setLocalNeighborhoodOnly] = useState(false);
   const [topologyZoom, setTopologyZoom] = useState(1);
   const [localNodeOrder, setLocalNodeOrder] = useState<OverviewNodeOrder>("path");
   const nodeOrder = controlledNodeOrder ?? localNodeOrder;
   const setNodeOrder = setControlledNodeOrder ?? setLocalNodeOrder;
+  const neighborhoodOnly = controlledNeighborhoodOnly ?? localNeighborhoodOnly;
+  const setNeighborhoodOnly = setControlledNeighborhoodOnly ?? setLocalNeighborhoodOnly;
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
     setSelectedId(app.nodes[0]?.id ?? "");
@@ -592,7 +598,7 @@ export function OverviewView({
                     type="button"
                     className="neighborhood-toggle"
                     aria-pressed={neighborhoodOnly}
-                    onClick={() => setNeighborhoodOnly((value) => !value)}
+                    onClick={() => setNeighborhoodOnly(!neighborhoodOnly)}
                   >
                     {neighborhoodOnly ? "Show full filtered graph" : "Focus selected neighborhood"}
                   </button>

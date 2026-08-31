@@ -23,7 +23,7 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Jump to views, values, or entrypoints with `Cmd/Ctrl+K`; deep links preserve the active graph selection.
 - Copy a local link to the selected graph node, value-flow step, or request-path hop; path links preserve the exact step position, including repeated symbols.
 - Move between lenses with browser Back/Forward; the URL restores the active lens, sink, path position, direction, and occurrence identity when the bundle is available.
-- Graph links also preserve the selected Graph lens—Topology, Architecture, or Health—so a shared system-level view opens in the same reading mode.
+- Graph links also preserve the selected Graph lens—Topology, Architecture, or Health—and an active focused neighborhood, so a shared system-level view opens in the same reading mode.
 - Copy a selected symbol’s `file:line:column` location from the source inspector.
 - Copy readable graph-path, request-path, or converging-path sequences with relationships, source locations, and scope context.
 - Move through value-flow and request-path steps sequentially with Previous/Next controls.
