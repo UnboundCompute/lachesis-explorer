@@ -443,9 +443,11 @@ export default function Page() {
         if (!commandOpen && !helpOpen && !menu && !trailOpen) {
           setInspectorOpen(false);
           if (inspectorHasFocus)
-            window.requestAnimationFrame(() =>
-              document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus(),
-            );
+            window.requestAnimationFrame(() => {
+              const sourceTrigger = document.querySelector<HTMLButtonElement>('[aria-controls="source-inspector"]');
+              if (sourceTrigger) sourceTrigger.focus();
+              else document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus();
+            });
         }
         dragDepth.current = 0;
         setDragActive(false);
