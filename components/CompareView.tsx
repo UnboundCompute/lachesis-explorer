@@ -51,18 +51,36 @@ function DiffColumn({
   app,
   empty,
   className,
+  actionable = false,
+  onOpenFlow,
 }: {
   label: string
   items: { id: string }[]
   app: App
   empty: string
   className: string
+  actionable?: boolean
+  onOpenFlow?: (flowId: string, nodeId: string) => void
 }) {
   return (
     <div>
       <span className={className}>{label} · {items.length}</span>
       {items.length ? (
-        items.slice(0, 8).map((item) => <p key={item.id} title={item.id}>{itemLabel(item, app)}</p>)
+        items.slice(0, 8).map((item) => {
+          const flow = actionable ? app.flows.find((value) => value.id === item.id) : undefined
+          const firstNodeId = flow?.steps[0]?.node_id
+          return flow && onOpenFlow && firstNodeId ? (
+            <button
+              type="button"
+              className="diff-item-action"
+              key={item.id}
+              title={`Open ${itemLabel(item, app)} in Graph Path`}
+              onClick={() => onOpenFlow(flow.id, firstNodeId)}
+            >
+              <span>{itemLabel(item, app)}</span><small>Open ↗</small>
+            </button>
+          ) : <p key={item.id} title={item.id}>{itemLabel(item, app)}</p>
+        })
       ) : (
         <p className="diff-empty">{empty}</p>
       )}
@@ -141,7 +159,7 @@ export function CompareView({ base, compare, onUpload, onOpenFlow }: Props) {
             <h3>{label}</h3>
             <div className="diff-columns">
               <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" />
-              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" />
+              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} />
             </div>
           </section>
         ))}
