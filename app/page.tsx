@@ -421,6 +421,7 @@ export default function Page() {
         event.preventDefault();
         commandOpenerRef.current = document.activeElement as HTMLElement | null;
         setMenu(false);
+        setHelpOpen(false);
         setCommandOpen((open) => !open);
         return;
       }
@@ -828,6 +829,7 @@ export default function Page() {
         onCommand={() => {
           commandOpenerRef.current = document.activeElement as HTMLElement | null;
           setMenu(false);
+          setHelpOpen(false);
           setCommandOpen(true);
         }}
         dark={dark}
