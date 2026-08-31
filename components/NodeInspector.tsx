@@ -26,6 +26,14 @@ const scopeIdentity = (node: Node) =>
   node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.module, node.scope.kind].filter(Boolean).join(" · ") : "";
 const scopeDisplay = (node: Node) =>
   node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped";
+const originLabel = (origin: string) =>
+  origin === "bundle"
+    ? "explicit edge"
+    : origin === "value-flow"
+      ? "graph path"
+      : origin === "request-path"
+        ? "request path"
+        : origin;
 type Props = {
   node: Node;
   contextRole?: string;
@@ -260,8 +268,9 @@ export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow,
                           {edge.source === node.id ? "→ leads to" : "← receives from"}{" "}
                           {(onNode || peerFlow && onFlow || peerEntry && onEntry) ? <button type="button" className="relationship-peer" aria-label={`${onNode ? "Focus" : peerFlow && onFlow ? "Open graph path for" : "Open request path for"} ${peer?.label || peerId}`} onClick={() => onNode ? onNode(peerId) : peerFlow && onFlow ? onFlow(peerFlow.id, peerId) : onEntry?.(app.entries.findIndex((item) => item.id === peerEntry!.id), peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
                         </span>
-                        {(edge.dynamic || edge.alias || edge.confidence) && (
+                        {(edge.origins?.length || edge.dynamic || edge.alias || edge.confidence) && (
                           <small className="relationship-signals">
+                            {edge.origins?.map((origin) => <em key={origin}>{originLabel(origin)}</em>)}
                             {edge.dynamic && <em>dynamic</em>}
                             {edge.alias && <em>alias</em>}
                             {edge.confidence && <em>{edge.confidence} confidence</em>}
