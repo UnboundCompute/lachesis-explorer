@@ -257,9 +257,10 @@ export function CommandPalette({
           }
         }}
       >
-        <label className="command-search">
+        <div className="command-search">
           <Icon name="search" size={17} />
           <input
+            id="command-search-input"
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -271,7 +272,8 @@ export function CommandPalette({
             }
           />
           <kbd>esc</kbd>
-        </label>
+          <button type="button" className="command-close" onClick={onClose} aria-label="Close jump menu">×</button>
+        </div>
         <div className="command-results" id="command-results" role="listbox">
           {visibleCommands.length ? (
             visibleCommands.map((command, index) => (
