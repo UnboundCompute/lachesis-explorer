@@ -721,7 +721,6 @@ export default function Page() {
       type: "loading",
       message: "Reading the code exploration sample…",
     });
-    setIsDemo(true);
     try {
       const response = await fetch("/code-exploration-bundle.json");
       if (!response.ok)
@@ -745,7 +744,6 @@ export default function Page() {
       type: "loading",
       message: "Reading the security sample…",
     });
-    setIsDemo(true);
     try {
       const response = await fetch("/demo-bundle.json");
       if (!response.ok)
