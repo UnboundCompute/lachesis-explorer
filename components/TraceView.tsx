@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { App, Flow } from "../lib/lachesis";
 import { indirectionCount } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
@@ -209,7 +209,10 @@ export function TraceView({
       </section>
     );
   const selected = app.nodes.find((node) => node.id === stepId) ?? app.nodes[0];
-  const visible = app.flows.filter((item) => matchesFlow(app, item, query));
+  const visible = useMemo(
+    () => app.flows.filter((item) => matchesFlow(app, item, query)),
+    [app, query],
+  );
   const steps =
     direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const evidence = app.mcp.find((item) => item.for === flow.id);
