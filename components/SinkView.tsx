@@ -179,7 +179,7 @@ export function SinkView({
             <span className="context-kicker">{securityMode ? "SINK-FIRST INVESTIGATION" : "BOUNDARY CONVERGENCE"}</span>
             <h2>{sink.label || sink.id}</h2>
             <p>
-              {nodeLocation(sink)}
+              {nodeContext(sink) !== "Unscoped" ? `${nodeContext(sink)} · ` : ""}{nodeLocation(sink)}
             </p>
           </div>
           <div
