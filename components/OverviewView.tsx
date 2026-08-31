@@ -126,12 +126,23 @@ export function OverviewView({
     setNeighborhoodOnly(false);
   }, [app]);
   const contexts = useMemo(() => {
-    const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; nodes: Node[] }>();
+    const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; nodes: Node[]; inbound: number; outbound: number }>();
+    const nodeContexts = new Map<string, string>();
     app.nodes.forEach((node) => {
       const key = nodeScopeKey(node);
+      nodeContexts.set(node.id, key);
       const current = grouped.get(key);
       if (current) current.nodes.push(node);
-      else grouped.set(key, { key, label: nodeScopeLabel(node), repository: node.scope?.repository, service: node.scope?.service, nodes: [node] });
+      else grouped.set(key, { key, label: nodeScopeLabel(node), repository: node.scope?.repository, service: node.scope?.service, nodes: [node], inbound: 0, outbound: 0 });
+    });
+    app.edges.forEach((edge) => {
+      const source = nodeContexts.get(edge.source);
+      const target = nodeContexts.get(edge.target);
+      if (!source || source === target) return;
+      const sourceContext = grouped.get(source);
+      const targetContext = target ? grouped.get(target) : undefined;
+      if (sourceContext) sourceContext.outbound += 1;
+      if (targetContext) targetContext.inbound += 1;
     });
     return [...grouped.values()].sort((a, b) => b.nodes.length - a.nodes.length);
   }, [app]);
@@ -620,14 +631,15 @@ export function OverviewView({
                     type="button"
                     className="context-row"
                     key={context.key}
+                    aria-label={`${context.label}, ${context.nodes.length} symbols, ${context.outbound} outbound and ${context.inbound} inbound boundary transitions`}
                     onClick={() => setQuery(`${context.service ? "service" : "repo"}:${context.service || context.repository || ""}`)}
                   >
                     <span className="context-row-mark" />
                     <span>
                       <b>{context.label}</b>
-                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : ""} · {context.nodes.length} symbols</small>
+                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : ""} · {context.nodes.length} symbols · {context.outbound} out / {context.inbound} in</small>
                     </span>
-                    <em>{context.nodes.length}</em>
+                    <em title={`${context.outbound} outbound · ${context.inbound} inbound boundary transitions`}>{context.nodes.length}</em>
                   </button>
                 ))}
               </div>
