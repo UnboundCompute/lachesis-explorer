@@ -7,10 +7,13 @@ import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
 
 export type OverviewMode = "map" | "architecture" | "health";
+export type OverviewNodeOrder = "path" | "centrality";
 type Props = {
   app: App;
   mode?: OverviewMode;
   setMode?: (mode: OverviewMode) => void;
+  nodeOrder?: OverviewNodeOrder;
+  setNodeOrder?: (order: OverviewNodeOrder) => void;
   query: string;
   setQuery: (value: string) => void;
   focusNodeId?: string;
@@ -113,6 +116,8 @@ export function OverviewView({
   app,
   mode: controlledMode,
   setMode: setControlledMode,
+  nodeOrder: controlledNodeOrder,
+  setNodeOrder: setControlledNodeOrder,
   query,
   setQuery,
   focusNodeId,
@@ -130,7 +135,9 @@ export function OverviewView({
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [neighborhoodOnly, setNeighborhoodOnly] = useState(false);
   const [topologyZoom, setTopologyZoom] = useState(1);
-  const [nodeOrder, setNodeOrder] = useState<"path" | "centrality">("path");
+  const [localNodeOrder, setLocalNodeOrder] = useState<OverviewNodeOrder>("path");
+  const nodeOrder = controlledNodeOrder ?? localNodeOrder;
+  const setNodeOrder = setControlledNodeOrder ?? setLocalNodeOrder;
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
     setSelectedId(app.nodes[0]?.id ?? "");
@@ -139,7 +146,7 @@ export function OverviewView({
     setShareState("idle");
     setNeighborhoodOnly(false);
     setTopologyZoom(1);
-    setNodeOrder("path");
+    if (!setControlledNodeOrder) setLocalNodeOrder("path");
   }, [app]);
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; module?: string; nodes: Node[]; inbound: number; outbound: number }>();
