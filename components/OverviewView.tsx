@@ -30,6 +30,8 @@ const nodeScopeKey = (node: Node) =>
     : "unscoped";
 const nodeScopeLabel = (node: Node) =>
   node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.repository || "Unscoped nodes";
+const crossesScope = (source: Node, target: Node) =>
+  nodeScopeKey(source) !== nodeScopeKey(target) && Boolean(source.scope || target.scope);
 
 function matches(node: Node, query: string, app: App) {
   return query
@@ -432,7 +434,7 @@ export function OverviewView({
                     if (!source || !target) return null;
                     const a = graphPos(source);
                     const b = graphPos(target);
-                    return <line key={`mini-${edge.id}`} x1={8 + (a.x / 760) * 164} y1={8 + (a.y / graphHeight) * 64} x2={8 + (b.x / 760) * 164} y2={8 + (b.y / graphHeight) * 64} />;
+                    return <line className={crossesScope(source, target) ? "boundary" : ""} key={`mini-${edge.id}`} x1={8 + (a.x / 760) * 164} y1={8 + (a.y / graphHeight) * 64} x2={8 + (b.x / 760) * 164} y2={8 + (b.y / graphHeight) * 64} />;
                   })}
                   {visible.map((node) => {
                     const point = graphPos(node);
@@ -481,12 +483,13 @@ export function OverviewView({
                       : edge.alias
                         ? "alias"
                         : "exact";
+                    const boundary = crossesScope(source, target);
                     const nearby = connectedIds.has(edge.source) || connectedIds.has(edge.target);
                     const touchesSelected = selected?.id === edge.source || selected?.id === edge.target;
                     return (
                       <g key={edge.id}>
                         <path
-                          className={`topology-edge ${kind}${focusActive && !nearby ? " dimmed" : ""}`}
+                          className={`topology-edge ${kind}${boundary ? " boundary" : ""}${focusActive && !nearby ? " dimmed" : ""}`}
                           markerEnd={`url(#topology-arrow-${kind})`}
                           d={`M${a.x} ${a.y} C${(a.x + b.x) / 2} ${a.y},${(a.x + b.x) / 2} ${b.y},${b.x} ${b.y}`}
                         />
@@ -497,7 +500,7 @@ export function OverviewView({
                             y={(a.y + b.y) / 2 - 8}
                             textAnchor="middle"
                           >
-                            {shorten(edge.relation || "connected", 18)}
+                            {shorten(boundary ? "boundary · " + (edge.relation || "connected") : edge.relation || "connected", 18)}
                           </text>
                         )}
                       </g>
@@ -553,6 +556,7 @@ export function OverviewView({
                   <span><i className="legend-exact" />exact relationship</span>
                   <span><i className="legend-alias" />alias relationship</span>
                   <span><i className="legend-dynamic" />dynamic relationship</span>
+                  <span><i className="legend-boundary" />context boundary</span>
                   <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
                 </div>
                 <div className="topology-node-list" aria-label="Graph nodes">
