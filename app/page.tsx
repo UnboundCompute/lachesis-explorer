@@ -129,6 +129,7 @@ export default function Page() {
     recommendedSink(starter)?.id ?? "",
   );
   const [query, setQuery] = useState("");
+  const [mapQuery, setMapQuery] = useState("");
   const [loadState, setLoadState] = useState<LoadState>({
     type: "idle",
     message: "",
@@ -308,6 +309,7 @@ export default function Page() {
       setSinkId(link.sink);
     if (link.direction === "forward") setDirection("forward");
     if (link.view === "trace") setQuery(link.filter ?? "");
+    if (link.view === "map") setMapQuery(link.filter ?? "");
     if (
       link.view === "map" &&
       link.node &&
@@ -338,11 +340,12 @@ export default function Page() {
       if (occurrence) params.set("hop_occurrence", occurrence);
     } else if (view === "investigate" && sinkId) {
       params.set("sink", sinkId);
-    } else if (view === "map" && focusNodeId) {
-      params.set("node", focusNodeId);
+    } else if (view === "map") {
+      if (focusNodeId) params.set("node", focusNodeId);
+      if (mapQuery) params.set("filter", mapQuery);
     }
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, query, sinkId, stepId, stepIndex, view]);
+  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapQuery, query, sinkId, stepId, stepIndex, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
@@ -365,6 +368,7 @@ export default function Page() {
         }
       }
       if (nextView === "trace") setQuery(params.get("filter") ?? "");
+      if (nextView === "map") setMapQuery(params.get("filter") ?? "");
       const linkedEntry = app.entries.findIndex((item) => item.id === params.get("entry"));
       if (linkedEntry >= 0) {
         const hops = app.entries[linkedEntry].hops;
@@ -513,6 +517,7 @@ export default function Page() {
     setSinkId(firstSink);
     setDirection("backward");
     setQuery("");
+    setMapQuery("");
     setFocusNodeId("");
     let restored = false;
     if (pending) {
@@ -584,6 +589,7 @@ export default function Page() {
       if (pending.view === "install" || pending.view === "map") restored = true;
       if (pending.direction === "forward") setDirection("forward");
       if (pending.view === "trace") setQuery(pending.filter ?? "");
+      if (pending.view === "map") setMapQuery(pending.filter ?? "");
       pendingLink.current = null;
     }
     urlReady.current = true;
@@ -1034,11 +1040,13 @@ export default function Page() {
       {view === "map" && (
         <OverviewView
           app={app}
+          query={mapQuery}
+          setQuery={setMapQuery}
           focusNodeId={focusNodeId}
           onFocusNode={setFocusNodeId}
           onRecord={record}
           onShare={(nodeId) =>
-            copyInvestigationLink({ view: "map", node: nodeId })
+            copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery })
           }
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");

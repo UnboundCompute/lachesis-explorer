@@ -9,6 +9,8 @@ import { NodeInspector } from "./NodeInspector";
 type Mode = "map" | "architecture" | "health";
 type Props = {
   app: App;
+  query: string;
+  setQuery: (value: string) => void;
   focusNodeId?: string;
   onFocusNode?: (nodeId: string) => void;
   onRecord: (action: string, target: string, detail: string) => void;
@@ -107,6 +109,8 @@ function matches(node: Node, query: string, app: App) {
 
 export function OverviewView({
   app,
+  query,
+  setQuery,
   focusNodeId,
   onFocusNode,
   onRecord,
@@ -114,7 +118,6 @@ export function OverviewView({
   onEntry,
   onShare,
 }: Props) {
-  const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>("map");
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
