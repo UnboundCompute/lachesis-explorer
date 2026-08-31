@@ -415,13 +415,14 @@ export default function Page() {
       const editing = target.matches(
         'input, textarea, select, [contenteditable="true"]',
       );
+      const inDialog = Boolean(target.closest('[role="dialog"]'));
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         commandOpenerRef.current = document.activeElement as HTMLElement | null;
         setCommandOpen((open) => !open);
         return;
       }
-      if (event.key === "?" && !editing && !commandOpen && !menu) {
+      if (event.key === "?" && !editing && !inDialog && !commandOpen && !menu) {
         event.preventDefault();
         helpOpenerRef.current = document.activeElement as HTMLElement | null;
         setHelpOpen(true);
@@ -450,7 +451,7 @@ export default function Page() {
         setDragActive(false);
         return;
       }
-      if (editing) return;
+      if (editing || inDialog) return;
       if (event.key === "/" && view === "trace") {
         event.preventDefault();
         document.querySelector<HTMLInputElement>(".search input")?.focus();

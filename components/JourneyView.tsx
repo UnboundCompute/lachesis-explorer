@@ -78,7 +78,7 @@ export function JourneyView({
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
-      if (target.matches("input, textarea, select, [contenteditable='true']"))
+      if (target.matches("input, textarea, select, [contenteditable='true']") || target.closest('[role="dialog"]'))
         return;
       if (event.key === "[" || event.key === "]") {
         event.preventDefault();
