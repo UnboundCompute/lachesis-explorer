@@ -4,7 +4,7 @@ import type { App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 
-type View = "trace" | "journey" | "investigate" | "map" | "install";
+type View = "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
 type Props = {
   app: App;
   onClose: () => void;
@@ -39,6 +39,10 @@ function flowKindLabel(flow: App["flows"][number], security: boolean) {
   return flow.kind?.trim() || "Graph path";
 }
 
+function nodeContext(node: App["nodes"][number]) {
+  return node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || node.module || "graph node";
+}
+
 export function CommandPalette({
   app,
   onClose,
@@ -61,6 +65,12 @@ export function CommandPalette({
   const commands = useMemo(
     () =>
       [
+        {
+          id: "view-home",
+          label: "Open briefing",
+          meta: "View",
+          run: () => onView("home"),
+        },
         {
           id: "view-trace",
           label: "Open graph-path lens",
@@ -86,6 +96,12 @@ export function CommandPalette({
           run: () => onView("map"),
         },
         {
+          id: "view-compare",
+          label: "Open revision diff",
+          meta: "View",
+          run: () => onView("compare"),
+        },
+        {
           id: "view-install",
           label: "Open local workflow",
           meta: "View",
@@ -106,7 +122,7 @@ export function CommandPalette({
         ...app.nodes.map((node) => ({
           id: `node-${node.id}`,
           label: node.label || node.id,
-          meta: `Symbol · ${node.kind} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
+          meta: `Symbol · ${node.kind} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
           run: () => onNode(node.id),
         })),
         ...app.files.flatMap((file) => {
@@ -153,7 +169,7 @@ export function CommandPalette({
           .map((node) => ({
             id: `sink-${node.id}`,
             label: node.label || node.id,
-            meta: `Sink · ${node.file || "Source unavailable"}:${node.line || "—"}`,
+          meta: `Sink · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"}`,
             run: () => onSink(node.id),
           })),
       ].filter(
@@ -217,6 +233,14 @@ export function CommandPalette({
             event.preventDefault();
             setActive((current) => Math.max(0, current - 1));
           }
+          if (event.key === "Home") {
+            event.preventDefault();
+            setActive(0);
+          }
+          if (event.key === "End") {
+            event.preventDefault();
+            setActive(Math.max(0, visibleCommands.length - 1));
+          }
           if (event.key === "Enter" && visibleCommands[active]) {
             event.preventDefault();
             execute(visibleCommands[active]);
@@ -275,6 +299,7 @@ export function CommandPalette({
             <kbd>↑</kbd>
             <kbd>↓</kbd> browse
           </span>
+          <span><kbd>home</kbd><kbd>end</kbd> jump</span>
           <span>
             <kbd>enter</kbd> open
           </span>
