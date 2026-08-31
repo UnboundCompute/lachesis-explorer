@@ -283,6 +283,20 @@ export function PathCanvas({
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
                     select()
+                    return
+                  }
+                  const nextIndex = event.key === 'ArrowRight'
+                    ? start + index + 1
+                    : event.key === 'ArrowLeft'
+                      ? start + index - 1
+                      : event.key === 'Home'
+                        ? 0
+                        : event.key === 'End'
+                          ? items.length - 1
+                          : -1
+                  if (nextIndex >= 0 && nextIndex < items.length) {
+                    event.preventDefault()
+                    onSelect(items[nextIndex].id, nextIndex)
                   }
                 }}
                 role="button"
