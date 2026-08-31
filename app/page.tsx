@@ -562,6 +562,8 @@ export default function Page() {
     setDirection("backward");
     setQuery("");
     setMapQuery("");
+    setMapMode("map");
+    setMapOrder("path");
     setFocusNodeId("");
     let restored = false;
     if (pending) {
