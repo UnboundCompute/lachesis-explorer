@@ -476,6 +476,8 @@ export function OverviewView({
                 type="button"
                 className={`node-order${nodeOrder === "centrality" ? " active" : ""}`}
                 aria-pressed={nodeOrder === "centrality"}
+                aria-label="Order nodes by graph-path participation, request-path participation, and relationship degree"
+                title="Rank by graph paths, request paths, and relationship degree"
                 onClick={() => {
                   const next = nodeOrder === "path" ? "centrality" : "path";
                   setNodeOrder(next);
