@@ -309,6 +309,12 @@ export function TraceView({
             </button>
           )}
         </div>
+        {query && !visible.some((item) => item.id === flow.id) && (
+          <div className="filter-context" role="status">
+            <span>Selected path is outside this filter.</span>
+            <button type="button" onClick={() => setQuery("")}>Show selected path</button>
+          </div>
+        )}
         <div className="node-list">
           {visible.length ? (
             visible.map((item) => (
