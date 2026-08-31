@@ -158,7 +158,7 @@ export function JourneyView({
       .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${nodeContext(item.node) ? ` · ${nodeContext(item.node)}` : ""}${item.relation ? ` · via ${item.relation}` : ""}${item.caption ? ` · ${item.caption}` : ""}`)
       .join("\n");
     try {
-      await copyText(`${entry.label}\n${sequence}`);
+      await copyText(`${entry.label} · Request path\n${sequence}`);
       setSequenceState("copied");
       trackEvent("path_sequence_copied", { surface: "journey" });
       window.setTimeout(() => setSequenceState("idle"), 1800);
