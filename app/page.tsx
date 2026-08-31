@@ -382,7 +382,7 @@ export default function Page() {
       if (nextView === "map") setMapQuery(params.get("filter") ?? "");
       else setMapQuery("");
       const nextMapMode = params.get("map_mode");
-      if (nextMapMode && ["map", "architecture", "health"].includes(nextMapMode)) setMapMode(nextMapMode as OverviewMode);
+      setMapMode(nextMapMode && ["map", "architecture", "health"].includes(nextMapMode) ? nextMapMode as OverviewMode : "map");
       const nextMapOrder = params.get("map_order");
       setMapOrder(nextMapOrder === "centrality" ? "centrality" : "path");
       const linkedEntry = app.entries.findIndex((item) => item.id === params.get("entry"));
@@ -405,6 +405,7 @@ export default function Page() {
       const linkedNode = params.get("node");
       if (nextView === "map" && linkedNode && app.nodes.some((node) => node.id === linkedNode))
         setFocusNodeId(linkedNode);
+      else setFocusNodeId("");
       setDirection(params.get("direction") === "forward" ? "forward" : "backward");
     }
     window.addEventListener("popstate", restoreFromUrl);
