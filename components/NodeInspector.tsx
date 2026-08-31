@@ -252,12 +252,13 @@ export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow,
                     edge.source === node.id ? edge.target : edge.source;
                   const peer = app.nodes.find((item) => item.id === peerId);
                   const peerFlow = app.flows.find((flow) => flow.steps.some((step) => step.node_id === peerId));
+                  const peerEntry = app.entries.find((entry) => entry.hops.some((hop) => hop.node_id === peerId));
                   const crossesBoundary = Boolean(peer && scopeIdentity(node) && scopeIdentity(peer) && scopeIdentity(node) !== scopeIdentity(peer));
                     return (
                       <div className="relationship-item" key={edge.id}>
                         <span>
                           {edge.source === node.id ? "→ leads to" : "← receives from"}{" "}
-                          {(onNode || peerFlow && onFlow) ? <button type="button" className="relationship-peer" onClick={() => onNode ? onNode(peerId) : onFlow?.(peerFlow!.id, peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
+                          {(onNode || peerFlow && onFlow || peerEntry && onEntry) ? <button type="button" className="relationship-peer" onClick={() => onNode ? onNode(peerId) : peerFlow && onFlow ? onFlow(peerFlow.id, peerId) : onEntry?.(app.entries.findIndex((item) => item.id === peerEntry!.id), peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
                         </span>
                         {(edge.dynamic || edge.alias || edge.confidence) && (
                           <small className="relationship-signals">
