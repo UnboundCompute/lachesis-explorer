@@ -474,6 +474,10 @@ export default function Page() {
         event.preventDefault();
         document.querySelector<HTMLInputElement>(".search input")?.focus();
       }
+      if (event.key === "/" && view === "map") {
+        event.preventDefault();
+        document.querySelector<HTMLInputElement>(".query-composer input")?.focus();
+      }
       if (view === "trace" && event.key === "ArrowLeft") {
         setDirection("backward");
         record("Changed direction", flowId, "comes from");
