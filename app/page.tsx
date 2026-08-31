@@ -479,6 +479,19 @@ export default function Page() {
     record("Changed lens", viewLabels[next], "");
   }
 
+  function changeMapMode(next: OverviewMode) {
+    if (next !== mapMode && urlReady.current && view === "map") {
+      const params = new URLSearchParams(window.location.search);
+      params.set("view", "map");
+      if (next === "map") params.delete("map_mode");
+      else params.set("map_mode", next);
+      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+    }
+    setMapMode(next);
+    record("Changed graph lens", next === "map" ? "Topology" : next === "architecture" ? "Architecture" : "Health", "");
+    trackEvent("graph_lens_changed", { lens: next });
+  }
+
   async function copyInvestigationLink(params: Record<string, string>) {
     const url = new URL(window.location.href);
     url.search = "";
@@ -1062,7 +1075,7 @@ export default function Page() {
         <OverviewView
           app={app}
           mode={mapMode}
-          setMode={setMapMode}
+          setMode={changeMapMode}
           query={mapQuery}
           setQuery={setMapQuery}
           focusNodeId={focusNodeId}
