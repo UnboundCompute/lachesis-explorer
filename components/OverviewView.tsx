@@ -591,7 +591,7 @@ export function OverviewView({
               </div>
               <p>
                 {visible.length
-                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${topologyNodes.length} directly connected nodes.` : ""}`
+                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${topologyNodes.length} connected context nodes.` : ""}`
                   : `No nodes match “${query}”. Clear the filter to restore the full topology.`}
                 {selected && visible.length > 1 && (
                   <button
