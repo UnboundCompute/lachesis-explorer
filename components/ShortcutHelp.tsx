@@ -9,10 +9,11 @@ type Props = {
 
 const shortcuts = [
   ["⌘ K / Ctrl K", "Open the jump menu"],
-  ["Home / End", "Jump to the first or last result in the jump menu"],
+  ["Home / End", "Jump to the first or last jump-menu result, or graph node"],
   ["/", "Focus path search while tracing"],
   ["[ / ]", "Move to the previous or next path step"],
-  ["← / →", "Change graph-path direction"],
+  ["← / →", "Move between nodes when a graph node is focused; otherwise change trace direction"],
+  ["↑ / ↓", "Move between rows in the topology view"],
   ["Esc", "Close an open panel or overlay"],
 ];
 

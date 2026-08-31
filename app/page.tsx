@@ -463,7 +463,7 @@ export default function Page() {
         setDragActive(false);
         return;
       }
-      if (editing || inDialog) return;
+      if (editing || inDialog || event.defaultPrevented) return;
       if (event.key === "/" && view === "trace") {
         event.preventDefault();
         document.querySelector<HTMLInputElement>(".search input")?.focus();
