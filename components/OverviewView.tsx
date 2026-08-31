@@ -78,7 +78,17 @@ function matches(node: Node, query: string, app: App) {
                   ? edge.dynamic
                   : value === "uncertain"
                     ? Boolean(edge.confidence || edge.limitations?.length)
+                    : value === "explicit"
+                      ? edge.origins.includes("bundle")
+                      : value === "derived"
+                        ? edge.origins.some((origin) => origin !== "bundle")
                   : false),
+          );
+        if (key === "origin")
+          return app.edges.some(
+            (edge) =>
+              (edge.source === node.id || edge.target === node.id) &&
+              edge.origins.some((origin) => origin.includes(value)),
           );
         if (key === "confidence")
           return app.edges.some(
@@ -237,6 +247,12 @@ export function OverviewView({
       : null,
     app.edges.some((edge) => edge.confidence || edge.limitations?.length)
       ? { label: "uncertain", query: "edge:uncertain" }
+      : null,
+    app.edges.some((edge) => edge.origins.includes("bundle"))
+      ? { label: "explicit", query: "edge:explicit" }
+      : null,
+    app.edges.some((edge) => edge.origins.some((origin) => origin !== "bundle"))
+      ? { label: "derived", query: "edge:derived" }
       : null,
     app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
   ].filter(Boolean) as { label: string; query: string }[];

@@ -15,7 +15,7 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Compare reaching flows in an evidence matrix with alias, dynamic-edge, and MCP provenance.
 - Show node source, file locations, aliases, dynamic edges, and MCP evidence.
 - Walk a request callpath hop by hop with baked graph layout when available.
-- Filter flows and graph nodes with semantic terms such as `edge:dynamic`, `edge:uncertain`, `confidence:medium`, `kind:sink`, `file:db/`, and `has:mcp`.
+- Filter flows and graph nodes with semantic terms such as `edge:dynamic`, `edge:uncertain`, `edge:explicit`, `edge:derived`, `origin:value-flow`, `confidence:medium`, `kind:sink`, `file:db/`, and `has:mcp`.
 - Capture a local investigation trail and export it as Markdown.
 - Load any compatible `bundle.json` from the browser.
 - Switch between light and dark themes; the preference is saved locally.
