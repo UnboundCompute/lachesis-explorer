@@ -6,6 +6,7 @@ import { NodeInspector } from "./NodeInspector";
 import { ConvergenceCanvas } from "./ConvergenceCanvas";
 import { EvidenceMatrix } from "./EvidenceMatrix";
 import { trackEvent } from "../lib/analytics";
+import { copyText } from "../lib/clipboard";
 
 function nodeLocation(node: App["nodes"][number]) {
   return `${node.file || "Source unavailable"}:${node.line || "—"}`;
@@ -57,6 +58,7 @@ export function SinkView({
   );
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const [pathsCopyState, setPathsCopyState] = useState<"idle" | "copied" | "failed">("idle");
   useEffect(() => {
     if (sink?.id) setSelectedId(sink.id);
   }, [sink?.id]);
@@ -135,6 +137,28 @@ export function SinkView({
     setShareState(copied ? "copied" : "failed");
     window.setTimeout(() => setShareState("idle"), 1800);
   }
+  async function copyPaths() {
+    const text = flows
+      .map((flow) => {
+        const sequence = flow.steps
+          .map((step, index) => {
+            const node = app.nodes.find((item) => item.id === step.node_id);
+            return `${String(index + 1).padStart(2, "0")}. ${step.role} — ${node?.label || step.node_id} · ${nodeLocation(node || app.nodes[0])}${nodeContext(node || app.nodes[0]) !== "Unscoped" ? ` · ${nodeContext(node || app.nodes[0])}` : ""}${step.edge?.relation ? ` · via ${step.edge.relation}` : ""}`;
+          })
+          .join("\n");
+        return `${flow.name}\n${sequence}`;
+      })
+      .join("\n\n");
+    try {
+      await copyText(`${sink.label || sink.id} · ${pathNounPlural}\n\n${text}`);
+      setPathsCopyState("copied");
+      trackEvent("convergence_paths_copied");
+      window.setTimeout(() => setPathsCopyState("idle"), 1800);
+    } catch {
+      setPathsCopyState("failed");
+      trackEvent("convergence_paths_copy_failed");
+    }
+  }
   return (
     <section
       className={`sink-workspace${inspectorOpen ? "" : " inspector-closed"}`}
@@ -196,6 +220,9 @@ export function SinkView({
                 {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
               </button>
             )}
+            <button type="button" onClick={copyPaths} aria-live="polite">
+              {pathsCopyState === "copied" ? "Paths copied" : pathsCopyState === "failed" ? "Copy failed" : "Copy paths"}
+            </button>
             <button type="button" onClick={() => onView("map", selected.id)}>
               See in graph
             </button>
