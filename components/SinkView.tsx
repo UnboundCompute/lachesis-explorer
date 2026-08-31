@@ -185,6 +185,7 @@ export function SinkView({
                 key={item.id}
                 className={item.id === sink.id ? "selected" : ""}
                 aria-pressed={item.id === sink.id}
+                aria-current={item.id === sink.id ? "step" : undefined}
                 onClick={() => chooseSink(item.id)}
               >
                 <span className="sink-pulse">
