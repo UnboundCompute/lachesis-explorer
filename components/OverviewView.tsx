@@ -255,6 +255,12 @@ export function OverviewView({
       ? { label: "derived", query: "edge:derived" }
       : null,
     app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
+    ...[...new Set(app.nodes.map((node) => node.module || node.scope?.module).filter(Boolean))]
+      .slice(0, 2)
+      .map((module) => ({ label: `module:${module}`, query: `module:${module}` })),
+    ...[...new Set(app.nodes.map((node) => node.scope?.service).filter(Boolean))]
+      .slice(0, 2)
+      .map((service) => ({ label: `service:${service}`, query: `service:${service}` })),
   ].filter(Boolean) as { label: string; query: string }[];
   useEffect(() => {
     if (
