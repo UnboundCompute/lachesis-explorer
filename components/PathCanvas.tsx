@@ -266,7 +266,7 @@ export function PathCanvas({
                 role="button"
                 tabIndex={0}
                 aria-pressed={selected}
-                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${repeatedIds.has(item.id) ? `, revisit ${occurrenceNumbers[start + index]}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
+                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${repeatedIds.has(item.id) ? `, revisit ${occurrenceNumbers[start + index]}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
               >
                 <title>{item.node.label || item.node.id}</title>
                 <circle className="node-halo" cx={point.x} cy={point.y} r="38" />
@@ -303,7 +303,7 @@ export function PathCanvas({
               <span>{String(start + index + 1).padStart(2, '0')}</span>
               <b>{item.label}</b>
               <small>
-                {item.node.label || item.node.id} · {nodeLocation(item.node)}
+                {item.node.label || item.node.id} · {item.node.scope ? `${scopeLabel(item.node)} · ` : ''}{nodeLocation(item.node)}
                 {repeatedIds.has(item.id) ? ` · revisit ${occurrenceNumbers[start + index]}` : ''}
                 {item.edge?.alias ? ' · alias' : ''}
                 {item.edge?.dynamic ? ' · dynamic' : ''}
