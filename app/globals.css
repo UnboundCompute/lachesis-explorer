@@ -281,3 +281,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 /* Keep keyboard focus visible on SVG graph nodes, where a browser outline can be easy to miss. */
 .convergence-node{outline:none}.convergence-node:focus-visible .convergence-body{transform:scale(1.08);stroke:var(--brand)}.convergence-node:focus-visible .convergence-halo{fill:color-mix(in srgb,var(--cyan) 12%,transparent)}
 .topology-node{outline:none}.topology-node:focus-visible circle{stroke:var(--cyan);transform:scale(1.06);filter:drop-shadow(0 0 4px color-mix(in srgb,var(--cyan) 55%,transparent))}
+/* Keep dense graph canvases bounded so source context and navigation stay reachable. */
+.topology-canvas,.convergence-viewport{max-height:min(620px,70dvh);overscroll-behavior:contain}
+@media(max-width:760px){.topology-canvas,.convergence-viewport{max-height:min(440px,55dvh)}}
