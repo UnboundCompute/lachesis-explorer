@@ -419,10 +419,12 @@ export default function Page() {
       const inDialog = Boolean(target.closest('[role="dialog"]'));
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        commandOpenerRef.current = document.activeElement as HTMLElement | null;
         setMenu(false);
         setHelpOpen(false);
-        setCommandOpen((open) => !open);
+        setCommandOpen((open) => {
+          if (!open) commandOpenerRef.current = document.activeElement as HTMLElement | null;
+          return !open;
+        });
         return;
       }
       if (event.key === "?" && !editing && !inDialog && !commandOpen && !menu) {
