@@ -220,7 +220,7 @@ export function SinkView({
                 {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
               </button>
             )}
-            <button type="button" onClick={copyPaths} aria-live="polite">
+            <button type="button" onClick={copyPaths} disabled={!flows.length} aria-live="polite">
               {pathsCopyState === "copied" ? "Paths copied" : pathsCopyState === "failed" ? "Copy failed" : "Copy paths"}
             </button>
             <button type="button" onClick={() => onView("map", selected.id)}>
