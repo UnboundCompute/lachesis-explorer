@@ -92,19 +92,19 @@ function DiffColumn({
   openNodes?: boolean
   onOpenNode?: (nodeId: string) => void
 }) {
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [copyState, setCopyState] = useState<{ id: string; status: 'copied' | 'failed' } | null>(null)
   const [expanded, setExpanded] = useState(false)
-  useEffect(() => { setCopyState('idle'); setExpanded(false) }, [app, items])
+  useEffect(() => { setCopyState(null); setExpanded(false) }, [app, items])
   async function copyPreview(flow: Flow) {
     try {
       await copyText(`${flow.name}\n${flowSequence(flow, app)}`)
-      setCopyState('copied')
+      setCopyState({ id: flow.id, status: 'copied' })
       trackEvent('revision_path_copied')
     } catch {
-      setCopyState('failed')
+      setCopyState({ id: flow.id, status: 'failed' })
       trackEvent('revision_path_copy_failed')
     }
-    window.setTimeout(() => setCopyState('idle'), 1600)
+    window.setTimeout(() => setCopyState((current) => current?.id === flow.id ? null : current), 1600)
   }
   return (
     <div>
@@ -121,7 +121,7 @@ function DiffColumn({
               <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps</small></summary>
               <p>{flowPath(preview, app) || "No step sequence available."}</p>
               {previewScopes.length > 1 && <small className="diff-flow-context">Context: {previewScopes.join(' → ')}</small>}
-              <button type="button" className="diff-copy-action" onClick={() => copyPreview(preview)}>{copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy sequence'}</button>
+              <button type="button" className="diff-copy-action" onClick={() => copyPreview(preview)}>{copyState?.id === preview.id && copyState.status === 'copied' ? 'Copied' : copyState?.id === preview.id && copyState.status === 'failed' ? 'Copy failed' : 'Copy sequence'}</button>
             </details>
           ) : flow && onOpenFlow && firstNodeId ? (
             <button
