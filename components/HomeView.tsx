@@ -240,7 +240,7 @@ export function HomeView({
       : reportedCount
         ? `${reportedCount} reported path${reportedCount === 1 ? " is" : "s are"} ready to inspect.`
         : metadataOnly
-        ? "Security metadata is present, but no traceable witness paths are available."
+        ? "Linked records are present, but no traceable path steps are available."
         : graphOnly
         ? graphFocus
           ? "Understand this code by following one path."
@@ -544,7 +544,7 @@ export function HomeView({
             </div>
           ) : (
             <div className="briefing-empty">
-              <h2>No witness paths available</h2>
+              <h2>No traceable paths available</h2>
               <p>
                 Load a bundle containing finding witnesses or value flows to
                 begin an investigation.
