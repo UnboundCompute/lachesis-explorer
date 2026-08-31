@@ -910,6 +910,7 @@ export default function Page() {
         ref={workspaceRef}
         id="workspace-content"
         tabIndex={-1}
+        role="region"
         aria-label={`${viewLabels[view]} workspace`}
       >
       {view !== "home" && (
