@@ -67,14 +67,20 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
 
   useEffect(() => {
     if (!menu) return
+    appPickerRef.current?.querySelector<HTMLButtonElement>('.upload-action')?.focus()
     function close(event: MouseEvent) {
-      if (!appPickerRef.current?.contains(event.target as Node)) setMenu(false)
+      if (!appPickerRef.current?.contains(event.target as Node)) {
+        setMenu(false)
+        appTriggerRef.current?.focus()
+      }
     }
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setMenu(false)
         appTriggerRef.current?.focus()
+        return
       }
+      if (event.key === 'Tab') setMenu(false)
     }
     document.addEventListener('mousedown', close)
     document.addEventListener('keydown', onKey)
@@ -126,11 +132,11 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           <button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14} /><span>Jump</span><kbd>⌘K</kbd></button>
           <button type="button" className="theme-toggle" aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`} onClick={() => { setDark(!dark); trackEvent('theme_toggled', { theme: dark ? 'light' : 'dark' }) }}><Icon name={dark ? 'sun' : 'moon'} size={15} /><span>{dark ? 'Light' : 'Dark'}</span></button>
           <div className="app-picker" ref={appPickerRef}>
-            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-haspopup="dialog">
+            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-controls="bundle-context-menu" aria-haspopup="dialog">
               <span className="status-dot" /><span><small>Active bundle</small><b>{app.name || 'Untitled bundle'}</b></span><Icon name="chevron" size={14} />
             </button>
             {menu && (
-              <div className="app-menu" role="dialog" aria-label="Bundle context">
+              <div id="bundle-context-menu" className="app-menu" role="dialog" aria-label="Bundle context">
                 <span className="menu-title">BUNDLE CONTEXT</span>
                 <div className="active-bundle">
                   <span className="status-dot" />
@@ -145,7 +151,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
                     {recentBundles.map(item => <div className="recent-bundle" key={`${item.name}:${item.commit}`}><span><b>{item.name}</b><small>{item.language} · {item.commit}</small></span><em>{item.flows} flows</em></div>)}
                   </div>
                 )}
-                <button type="button" className="upload-action" onClick={() => { onUpload(); trackEvent('bundle_upload_started') }}><span>Load another bundle</span><span className="button-icon"><Icon name="upload" size={14} /></span></button>
+                <button type="button" className="upload-action" onClick={() => { setMenu(false); onUpload(); trackEvent('bundle_upload_started') }}><span>Load another bundle</span><span className="button-icon"><Icon name="upload" size={14} /></span></button>
               </div>
             )}
           </div>
