@@ -42,6 +42,7 @@ type PendingLink = {
   stepIndex?: number;
   hopIndex?: number;
   sink?: string;
+  filter?: string;
 };
 
 const viewLabels: Record<View, string> = {
@@ -226,6 +227,7 @@ export default function Page() {
       stepIndex: params.get("step_index") == null ? undefined : Number(params.get("step_index")),
       hopIndex: params.get("hop_index") == null ? undefined : Number(params.get("hop_index")),
       sink: params.get("sink") ?? undefined,
+      filter: params.get("filter") ?? undefined,
     };
     if (params.get("sample") === "security") {
       pendingLink.current = link;
@@ -305,6 +307,7 @@ export default function Page() {
     )
       setSinkId(link.sink);
     if (link.direction === "forward") setDirection("forward");
+    if (link.view === "trace") setQuery(link.filter ?? "");
     if (
       link.view === "map" &&
       link.node &&
@@ -324,6 +327,7 @@ export default function Page() {
       params.set("node", stepId);
       params.set("direction", direction);
       params.set("step_index", String(stepIndex));
+      if (query) params.set("filter", query);
       const occurrence = stepAtPosition(app, flowId, stepIndex, direction)?.id;
       if (occurrence) params.set("step_occurrence", occurrence);
     } else if (view === "journey") {
@@ -338,7 +342,7 @@ export default function Page() {
       params.set("node", focusNodeId);
     }
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, sinkId, stepId, stepIndex, view]);
+  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, query, sinkId, stepId, stepIndex, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
@@ -360,6 +364,7 @@ export default function Page() {
           setStepIndex(linkedStepIndex);
         }
       }
+      if (nextView === "trace") setQuery(params.get("filter") ?? "");
       const linkedEntry = app.entries.findIndex((item) => item.id === params.get("entry"));
       if (linkedEntry >= 0) {
         const hops = app.entries[linkedEntry].hops;
@@ -578,6 +583,7 @@ export default function Page() {
       }
       if (pending.view === "install" || pending.view === "map") restored = true;
       if (pending.direction === "forward") setDirection("forward");
+      if (pending.view === "trace") setQuery(pending.filter ?? "");
       pendingLink.current = null;
     }
     urlReady.current = true;
@@ -942,6 +948,7 @@ export default function Page() {
               flow: flowId,
               node: stepId,
               direction,
+              filter: query,
               step_occurrence: stepAtPosition(app, flowId, position, direction)?.id ?? "",
               step_index: String(position),
             })
