@@ -26,10 +26,10 @@ const nodeLocation = (node: Node) =>
   `${node.file || "Source unavailable"}:${node.line || "—"}`;
 const nodeScopeKey = (node: Node) =>
   node.scope
-    ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.kind].filter(Boolean).join(" · ")
+    ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.module, node.scope.kind].filter(Boolean).join(" · ")
     : "unscoped";
 const nodeScopeLabel = (node: Node) =>
-  node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.repository || "Unscoped nodes";
+  node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped nodes";
 const crossesScope = (source: Node, target: Node) =>
   nodeScopeKey(source) !== nodeScopeKey(target) && Boolean(source.scope || target.scope);
 const nodeScopeKind = (node: Node) =>
@@ -50,7 +50,7 @@ function matches(node: Node, query: string, app: App) {
         if (key === "module")
           return [node.module, node.scope?.module].some((item) => item?.toLowerCase().includes(value));
         if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
-          const scopeValues = [node.scope?.label, node.scope?.repository, node.scope?.service, node.scope?.package, node.scope?.kind];
+          const scopeValues = [node.scope?.label, node.scope?.repository, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.kind];
           return scopeValues.some((item) => item?.toLowerCase().includes(value));
         }
         if (key === "symbol" || key === "name")
@@ -634,7 +634,7 @@ export function OverviewView({
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
                       <small>
-                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
+                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
                     </button>
                     );

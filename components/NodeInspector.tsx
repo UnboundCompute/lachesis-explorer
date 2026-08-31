@@ -23,9 +23,9 @@ const descriptions: Record<string, string> = {
   literal: "A literal value represented as a graph node.",
 };
 const scopeIdentity = (node: Node) =>
-  node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.kind].filter(Boolean).join(" · ") : "";
+  node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.module, node.scope.kind].filter(Boolean).join(" · ") : "";
 const scopeDisplay = (node: Node) =>
-  node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.repository || "Unscoped";
+  node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped";
 type Props = {
   node: Node;
   contextRole?: string;
@@ -143,9 +143,9 @@ export function NodeInspector({ node, contextRole, onClose, app, onFlow, onEntry
           )}
           {node.signature && <code>{node.signature}</code>}
           {node.module && <span>module {node.module}</span>}
-          {node.scope && (node.scope.label || node.scope.service || node.scope.repository) && (
+          {node.scope && (node.scope.label || node.scope.service || node.scope.module || node.scope.repository) && (
             <span className="node-scope-context">
-              scope {node.scope.label || node.scope.service || node.scope.repository}
+              scope {node.scope.label || node.scope.service || node.scope.module || node.scope.repository}
             </span>
           )}
           {node.scope?.kind && (

@@ -8,8 +8,8 @@ type Point = { id: string; x: number; y: number; node: Node; roles: Set<string>;
 type ConvergenceEdge = { source: string; target: string; relation: string; alias: boolean; dynamic: boolean }
 
 const short = (value: string, limit = 17) => value.length > limit ? `${value.slice(0, limit - 1)}…` : value
-const scopeKey = (node: Node) => node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.kind].filter(Boolean).join(' · ') : ''
-const scopeLabel = (node: Node) => node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.repository || ''
+const scopeKey = (node: Node) => node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.module, node.scope.kind].filter(Boolean).join(' · ') : ''
+const scopeLabel = (node: Node) => node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || ''
 
 function pathLocation(flow: Flow, nodes: Node[]) {
   const pathNodes = flow.steps.map(step => nodes.find(node => node.id === step.node_id)).filter(Boolean)

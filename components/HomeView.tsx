@@ -88,7 +88,7 @@ function pathScopes(flow: Flow, app: App) {
   const labels: string[] = [];
   flow.steps.forEach((step) => {
     const node = app.nodes.find((item) => item.id === step.node_id);
-    const label = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.repository;
+    const label = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository;
     if (label && labels.at(-1) !== label) labels.push(label);
   });
   return labels;
