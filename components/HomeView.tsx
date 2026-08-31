@@ -638,7 +638,7 @@ export function HomeView({
                 ? "These records need witness steps before they can be traced."
                 : graphOnly
                   ? graphFocus
-                    ? "Security findings were not included; explore the graph paths instead."
+                    ? "This bundle has no security overlay; explore its graph paths instead."
                     : "No paths were included; open the full graph to browse its structure."
                 : "No findings match this filter."}
               {!graphOnly && !metadataOnly && queueFilter !== "all" && (
