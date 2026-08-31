@@ -177,7 +177,7 @@ Pull requests are checked automatically by [GitHub Actions](.github/workflows/ci
 
 ## Analytics
 
-The deployed app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. Events cover navigation and product interactions such as changing views or Graph lenses, toggling theme, selecting a graph path or request-path hop, changing path zoom, focusing or restoring convergence paths, applying or clearing a semantic filter, loading a bundle, copying an investigation link, path sequence, or install command, and opening a related resource.
+The deployed app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. Events cover navigation and product interactions such as changing views or Graph lenses, toggling theme, selecting a graph path, request-path hop, or topology node, changing path zoom, focusing or restoring convergence paths, applying or clearing a semantic filter, loading a bundle, copying an investigation link, path sequence, or install command, and opening a related resource.
 
 Semantic-filter events contain only the fixed surface and filter category; they never include query text or the selected filter value. All event payloads deliberately exclude repository names, filenames, code snippets, path values, and uploaded bundle contents. Analytics is best-effort; the explorer continues to work when it is unavailable.
 
