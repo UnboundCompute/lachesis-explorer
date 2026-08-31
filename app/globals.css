@@ -268,5 +268,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .changed-flow:hover{background:var(--surface-3)}.changed-flow:focus-visible{background:var(--surface-3);outline:2px solid var(--cyan);outline-offset:-2px}.changed-flow:disabled{cursor:default;opacity:.72}.changed-flow-action{display:block;margin-top:10px;color:var(--brand);font:7px var(--mono);letter-spacing:.04em}
 .inspector-context button:focus-visible,.module-file>button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .convergence-legend::after{content:'Select a node · ← → move · Home/End jump';margin-left:auto;color:var(--ink-2)}
+.path-boundary-segment.active{border-color:var(--line-strong);background:var(--brand-wash);color:var(--brand-strong)}
 .source-unavailable-note{margin:-7px 0 12px;color:var(--amber);font:8px/1.5 var(--mono)}
 .canvas-direction{margin-left:8px;color:var(--brand-strong);font:7px var(--mono);letter-spacing:.04em}.convergence-canvas .canvas-title::after{content:' · read left → right';color:var(--brand-strong);font:7px var(--mono);font-weight:400;letter-spacing:.04em}

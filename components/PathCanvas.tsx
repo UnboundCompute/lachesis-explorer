@@ -204,13 +204,14 @@ export function PathCanvas({
             {boundaries.map((boundary, index) => (
               <button
                 type="button"
-                className="path-boundary-segment"
+                className={`path-boundary-segment${selectedIndex >= start + boundary.start && selectedIndex <= start + boundary.end ? ' active' : ''}`}
                 key={`${boundary.key}-${boundary.start}`}
                 onClick={() => {
                   const item = shown[boundary.start]
                   if (item) onSelect(item.id, start + boundary.start)
                 }}
                 aria-label={`Jump to ${boundary.label}, steps ${start + boundary.start + 1} through ${start + boundary.end + 1}`}
+                aria-current={selectedIndex >= start + boundary.start && selectedIndex <= start + boundary.end ? 'step' : undefined}
               >
                 {index > 0 && <i aria-hidden="true">→</i>}
                 <b>{boundary.label}</b>
