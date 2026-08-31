@@ -89,7 +89,8 @@ function DiffColumn({
   onOpenFlow?: (flowId: string, nodeId: string) => void
 }) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
-  useEffect(() => { setCopyState('idle') }, [app, items])
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => { setCopyState('idle'); setExpanded(false) }, [app, items])
   async function copyPreview(flow: Flow) {
     try {
       await copyText(`${flow.name}\n${flowSequence(flow, app)}`)
@@ -105,7 +106,7 @@ function DiffColumn({
     <div>
       <span className={className}>{label} · {items.length}</span>
       {items.length ? (
-        items.slice(0, 8).map((item) => {
+        (expanded ? items : items.slice(0, 8)).map((item) => {
           const flow = actionable ? app.flows.find((value) => value.id === item.id) : undefined
           const preview = previewFlows ? app.flows.find((value) => value.id === item.id) : undefined
           const previewScopes = preview ? flowScopes(preview, app) : []
@@ -132,7 +133,11 @@ function DiffColumn({
       ) : (
         <p className="diff-empty">{empty}</p>
       )}
-      {items.length > 8 && <p className="diff-more">+ {items.length - 8} more</p>}
+      {items.length > 8 && (
+        <button type="button" className="diff-expand" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
+          {expanded ? 'Show fewer' : `Show all ${items.length}`}
+        </button>
+      )}
     </div>
   )
 }
