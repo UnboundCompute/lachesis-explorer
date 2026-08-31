@@ -382,7 +382,7 @@ export function OverviewView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter nodes: symbol:query path:value-flow file:src/ edge:dynamic"
+            placeholder="Filter nodes: symbol:query service:api file:src/ edge:dynamic"
             aria-label="Filter graph nodes"
           />
           <div className="query-chips">
@@ -419,17 +419,17 @@ export function OverviewView({
           <>
             <div className="map-summary">
               <div>
-                <span>VISIBLE NODES</span>
+                <span>{neighborhoodOnly ? "CANVAS NODES" : "VISIBLE NODES"}</span>
                 <b>
-                  {visible.length}
-                  <small> / {app.nodes.length}</small>
+                  {neighborhoodOnly ? topologyNodes.length : visible.length}
+                  <small> / {visible.length}</small>
                 </b>
               </div>
               <div>
-                <span>VISIBLE EDGES</span>
+                <span>{neighborhoodOnly ? "CANVAS EDGES" : "VISIBLE EDGES"}</span>
                 <b>
-                  {edges.length}
-                  <small> / {app.edges.length}</small>
+                  {neighborhoodOnly ? topologyEdges.length : edges.length}
+                  <small> / {edges.length}</small>
                 </b>
               </div>
               <div>
@@ -438,7 +438,7 @@ export function OverviewView({
               </div>
               <p>
                 {visible.length
-                  ? summary
+                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${topologyNodes.length} directly connected nodes.` : ""}`
                   : `No nodes match “${query}”. Clear the filter to restore the full topology.`}
                 {selected && visible.length > 1 && (
                   <button
