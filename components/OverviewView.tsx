@@ -119,6 +119,7 @@ export function OverviewView({
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [neighborhoodOnly, setNeighborhoodOnly] = useState(false);
+  const [topologyZoom, setTopologyZoom] = useState(1);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
     setSelectedId(app.nodes[0]?.id ?? "");
@@ -126,6 +127,7 @@ export function OverviewView({
     setExpandedModule(null);
     setShareState("idle");
     setNeighborhoodOnly(false);
+    setTopologyZoom(1);
   }, [app]);
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; nodes: Node[]; inbound: number; outbound: number }>();
@@ -457,6 +459,12 @@ export function OverviewView({
                   <span className="panel-label">TOPOLOGY OVERVIEW</span>
                   <small>Choose a point to focus its source context.</small>
                 </div>
+                <div className="topology-zoom" aria-label="Topology zoom controls">
+                  <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out">−</button>
+                  <output>{Math.round(topologyZoom * 100)}%</output>
+                  <button type="button" onClick={() => setTopologyZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom topology in">+</button>
+                  <button type="button" onClick={() => setTopologyZoom(1)}>Reset</button>
+                </div>
                 <svg viewBox="0 0 180 80" aria-label="Topology minimap">
                   {topologyEdges.map((edge) => {
                     const source = visible.find((node) => node.id === edge.source);
@@ -476,7 +484,7 @@ export function OverviewView({
               <div className="topology-canvas">
                 <svg
                   viewBox={`0 0 760 ${graphHeight}`}
-                  style={{ height: `${graphHeight}px` }}
+                  style={{ height: `${graphHeight * topologyZoom}px`, width: `${Math.max(100, topologyZoom * 100)}%` }}
                   aria-label="Interactive graph topology"
                   focusable="false"
                 >
