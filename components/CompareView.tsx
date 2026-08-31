@@ -96,7 +96,8 @@ function DiffColumn({
 }) {
   const [copyState, setCopyState] = useState<{ id: string; status: 'copied' | 'failed' } | null>(null)
   const [expanded, setExpanded] = useState(false)
-  useEffect(() => { setCopyState(null); setExpanded(false) }, [app, items])
+  const itemIdentity = items.map(item => item.id).join('|')
+  useEffect(() => { setCopyState(null); setExpanded(false) }, [app, itemIdentity])
   async function copyPreview(flow: Flow) {
     try {
       await copyText(`${flow.name}\n${flowSequence(flow, app)}`)
