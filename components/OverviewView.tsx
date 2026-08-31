@@ -395,6 +395,28 @@ export function OverviewView({
               </p>
             </div>
             {visible.length ? (
+              <>
+              <div className="topology-minimap">
+                <div>
+                  <span className="panel-label">TOPOLOGY OVERVIEW</span>
+                  <small>Choose a point to focus its source context.</small>
+                </div>
+                <svg viewBox="0 0 180 80" aria-label="Topology minimap">
+                  {edges.map((edge) => {
+                    const source = visible.find((node) => node.id === edge.source);
+                    const target = visible.find((node) => node.id === edge.target);
+                    if (!source || !target) return null;
+                    const a = graphPos(source);
+                    const b = graphPos(target);
+                    return <line key={`mini-${edge.id}`} x1={8 + (a.x / 760) * 164} y1={8 + (a.y / graphHeight) * 64} x2={8 + (b.x / 760) * 164} y2={8 + (b.y / graphHeight) * 64} />;
+                  })}
+                  {visible.map((node) => {
+                    const point = graphPos(node);
+                    const select = () => selectNode(node.id);
+                    return <circle key={`mini-${node.id}`} className={selected?.id === node.id ? "selected" : ""} cx={8 + (point.x / 760) * 164} cy={8 + (point.y / graphHeight) * 64} r={selected?.id === node.id ? 3 : 2} onClick={select} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } }} role="button" tabIndex={0} aria-label={`Focus ${node.label || node.id} in topology`} />;
+                  })}
+                </svg>
+              </div>
               <div className="topology-canvas">
                 <svg
                   viewBox={`0 0 760 ${graphHeight}`}
@@ -530,6 +552,7 @@ export function OverviewView({
                   })}
                 </div>
               </div>
+              </>
             ) : (
               <div className="topology-empty">
                 <Icon name="search" size={18} />
