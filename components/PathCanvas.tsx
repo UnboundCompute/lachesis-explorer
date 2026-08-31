@@ -308,6 +308,7 @@ export function PathCanvas({
                 role="button"
                 tabIndex={0}
                 aria-pressed={selected}
+                aria-keyshortcuts="ArrowLeft ArrowRight Home End"
                 aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${repeatedIds.has(item.id) ? `, revisit ${occurrenceNumbers[start + index]}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
               >
                 <title>{item.node.label || item.node.id}</title>
