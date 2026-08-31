@@ -643,7 +643,7 @@ export function OverviewView({
                   })}
                 </svg>
               </div>
-              <div className="topology-canvas">
+              <div className="topology-canvas" role="region" aria-label="Interactive graph topology canvas">
                 <svg
                   viewBox={`0 0 760 ${graphHeight}`}
                   style={{ height: `${graphHeight * topologyZoom}px`, width: `${Math.max(100, topologyZoom * 100)}%` }}

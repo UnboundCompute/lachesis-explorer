@@ -222,7 +222,7 @@ export function PathCanvas({
         </div>
       )}
 
-      <div className="canvas-viewport">
+      <div className="canvas-viewport" role="region" aria-label={`${title} graph canvas`}>
         <svg
           viewBox={viewBox}
           style={{ width: `${zoom * 100}%`, minWidth: `${Math.max(420, 620 * zoom)}px`, height: `${270 * zoom}px` }}
