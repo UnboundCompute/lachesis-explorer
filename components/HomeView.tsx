@@ -582,7 +582,7 @@ export function HomeView({
                   {filter === "all"
                     ? "All"
                     : filter === "lead"
-                      ? "Open"
+                      ? "Lead"
                       : filter === "reported"
                         ? "Reported"
                       : filter === "inconclusive"
