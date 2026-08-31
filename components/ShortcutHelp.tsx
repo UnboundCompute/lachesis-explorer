@@ -9,6 +9,7 @@ type Props = {
 
 const shortcuts = [
   ["⌘ K / Ctrl K", "Open the jump menu"],
+  ["Home / End", "Jump to the first or last result in the jump menu"],
   ["/", "Focus path search while tracing"],
   ["[ / ]", "Move to the previous or next path step"],
   ["← / →", "Change graph-path direction"],
