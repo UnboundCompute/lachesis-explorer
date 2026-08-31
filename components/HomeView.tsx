@@ -274,7 +274,7 @@ export function HomeView({
           </p>
         </div>
         <div className="briefing-actions">
-          <button className="load-bundle-action" onClick={onUpload} disabled={loadState.type === "loading"} aria-busy={loadState.type === "loading"}>
+          <button type="button" className="load-bundle-action" onClick={onUpload} disabled={loadState.type === "loading"} aria-busy={loadState.type === "loading"}>
             <span>
               <Icon name="upload" size={16} />
               <b>
@@ -410,6 +410,7 @@ export function HomeView({
               )}
               <div className="priority-actions">
                 <button
+                  type="button"
                   onClick={() =>
                     onFlow(priority.flow.id, priority.flow.sourceNodeId ?? priority.flow.steps[0].node_id)
                   }
@@ -420,7 +421,7 @@ export function HomeView({
                   </span>
                 </button>
                 {priority.sink && (
-                  <button onClick={() => onSink(priority.sink!.id)}>
+                  <button type="button" onClick={() => onSink(priority.sink!.id)}>
                     Compare reaching paths
                   </button>
                 )}
@@ -494,6 +495,7 @@ export function HomeView({
               </div>
               <div className="priority-actions">
                 <button
+                  type="button"
                   onClick={() =>
                     onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")
                   }
@@ -503,7 +505,7 @@ export function HomeView({
                     <Icon name="arrow" size={13} />
                   </span>
                 </button>
-                <button onClick={() => onView("map")}>Open full graph</button>
+                <button type="button" onClick={() => onView("map")}>Open full graph</button>
               </div>
             </>
           ) : metadataOnly ? (
@@ -515,7 +517,7 @@ export function HomeView({
                 does not include witness steps that can be inspected here.
               </p>
               <div className="priority-actions">
-                <button onClick={() => onView("map")}>
+                <button type="button" onClick={() => onView("map")}>
                   Explore the graph{" "}
                   <span className="action-orb">
                     <Icon name="arrow" size={13} />
@@ -532,7 +534,7 @@ export function HomeView({
                 included.
               </p>
               <div className="priority-actions">
-                <button onClick={() => onView("map")}>
+                <button type="button" onClick={() => onView("map")}>
                   Open full graph{" "}
                   <span className="action-orb">
                     <Icon name="arrow" size={13} />
@@ -714,6 +716,7 @@ export function HomeView({
         </div>
         <div className="reading-grid">
           <button
+            type="button"
             onClick={() =>
               metadataOnly
                 ? onView("map")
@@ -746,7 +749,7 @@ export function HomeView({
             </span>
             <Icon name="arrow" size={13} />
           </button>
-          <button onClick={() => onView("map")}>
+          <button type="button" onClick={() => onView("map")}>
             <span className="reading-metric">{app.nodes.length}</span>
             <span>
               <b>Graph topology</b>
@@ -757,6 +760,7 @@ export function HomeView({
             <Icon name="arrow" size={13} />
           </button>
           <button
+            type="button"
             onClick={() =>
               app.entries[0]
                 ? onEntry(0, app.entries[0].hops[0]?.node_id ?? "")
