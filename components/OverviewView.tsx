@@ -788,7 +788,7 @@ export function OverviewView({
                   {visible.some((node) => node.scope?.kind === "external" || node.scope?.kind === "generated") && <span><i className="legend-scope" />external / generated node</span>}
                   <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
                 </div>
-                <div className="topology-node-list" aria-label="Graph nodes">
+                <div className="topology-node-list" aria-label={neighborhoodOnly ? "Graph nodes in selected neighborhood" : "Graph nodes"}>
                   {topologyNodes.map((node) => {
                     const roles = rolesForNode(node.id);
                     return (
