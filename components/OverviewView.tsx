@@ -667,6 +667,7 @@ export function OverviewView({
                     aria-label={`${context.label}, ${context.nodes.length} symbols, ${context.outbound} outbound and ${context.inbound} inbound boundary transitions`}
                     onClick={() => {
                       const filterValue = context.service || context.repository;
+                      setMode("map");
                       setQuery(filterValue ? `${context.service ? "service" : "repo"}:${filterValue}` : "");
                       trackEvent(filterValue ? "semantic_filter_applied" : "semantic_filter_cleared", { surface: "architecture", filter: filterValue ? (context.service ? "service" : "repo") : "scope" });
                     }}
