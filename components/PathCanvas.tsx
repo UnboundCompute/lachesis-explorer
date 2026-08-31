@@ -70,6 +70,7 @@ export function PathCanvas({
   }
   const selectedRef = useRef<HTMLButtonElement>(null)
   const selectedGraphRef = useRef<SVGGElement>(null)
+  const focusAfterSelection = useRef(false)
   const selectedIndex = Math.max(
     0,
     requestedIndex != null && items[requestedIndex]?.id === selectedId
@@ -105,6 +106,10 @@ export function PathCanvas({
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     selectedGraphRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    if (focusAfterSelection.current) {
+      selectedGraphRef.current?.focus()
+      focusAfterSelection.current = false
+    }
   }, [selectedId, selectedIndex, start])
   useEffect(() => {
     setViewport('fit')
@@ -296,6 +301,7 @@ export function PathCanvas({
                           : -1
                   if (nextIndex >= 0 && nextIndex < items.length) {
                     event.preventDefault()
+                    focusAfterSelection.current = true
                     onSelect(items[nextIndex].id, nextIndex)
                   }
                 }}
