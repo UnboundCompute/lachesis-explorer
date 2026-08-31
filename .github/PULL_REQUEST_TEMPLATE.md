@@ -4,8 +4,8 @@
 
 ## Verification
 
-- [ ] `npm run check`
-- [ ] `npm run verify:bundles`
+- [ ] `corepack pnpm run check`
+- [ ] `corepack pnpm run verify:bundles`
 - [ ] `git diff --check`
 - [ ] Tested keyboard navigation and narrow viewport behavior when UI changed
 - [ ] Updated the graph contract or README when the bundle shape changed
