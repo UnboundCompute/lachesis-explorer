@@ -61,7 +61,12 @@ export function SinkView({
   const [pathsCopyState, setPathsCopyState] = useState<"idle" | "copied" | "failed">("idle");
   useEffect(() => {
     if (sink?.id) setSelectedId(sink.id);
-  }, [sink?.id]);
+    setShareState("idle");
+    setPathsCopyState("idle");
+  }, [app, sink?.id]);
+  useEffect(() => {
+    setMode("field");
+  }, [app]);
   if (!sink)
     return (
       <section className="workspace-empty">
