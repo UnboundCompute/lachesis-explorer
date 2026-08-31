@@ -24,6 +24,16 @@ function flowPath(flow: Flow, app: App) {
     .join(' → ')
 }
 
+function flowScopes(flow: Flow, app: App) {
+  const scopes: string[] = []
+  flow.steps.forEach((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id)
+    const scope = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository
+    if (scope && scopes.at(-1) !== scope) scopes.push(scope)
+  })
+  return scopes
+}
+
 function flowKind(flow: Flow) {
   const kind = flow.kind?.trim().toLowerCase()
   if (kind === 'call-path' || kind === 'callpath') return 'Call paths'
@@ -86,11 +96,13 @@ function DiffColumn({
         items.slice(0, 8).map((item) => {
           const flow = actionable ? app.flows.find((value) => value.id === item.id) : undefined
           const preview = previewFlows ? app.flows.find((value) => value.id === item.id) : undefined
+          const previewScopes = preview ? flowScopes(preview, app) : []
           const firstNodeId = flow?.steps[0]?.node_id
           return preview ? (
             <details className="diff-flow-preview" key={item.id}>
               <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps</small></summary>
               <p>{flowPath(preview, app) || "No step sequence available."}</p>
+              {previewScopes.length > 1 && <small className="diff-flow-context">Context: {previewScopes.join(' → ')}</small>}
               <button type="button" className="diff-copy-action" onClick={() => copyPreview(preview)}>{copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy sequence'}</button>
             </details>
           ) : flow && onOpenFlow && firstNodeId ? (
