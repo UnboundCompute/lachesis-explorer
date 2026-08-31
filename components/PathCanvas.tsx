@@ -69,6 +69,7 @@ export function PathCanvas({
     setZoom(next)
   }
   const selectedRef = useRef<HTMLButtonElement>(null)
+  const selectedGraphRef = useRef<SVGGElement>(null)
   const selectedIndex = Math.max(
     0,
     requestedIndex != null && items[requestedIndex]?.id === selectedId
@@ -103,6 +104,7 @@ export function PathCanvas({
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    selectedGraphRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }, [selectedId, selectedIndex, start])
   useEffect(() => {
     setViewport('fit')
@@ -273,6 +275,7 @@ export function PathCanvas({
               .replace(/[^a-z0-9]+/g, '-')}`
             return (
               <g
+                ref={selected ? selectedGraphRef : undefined}
                 key={`${item.id}-${start + index}`}
                 className={`path-node kind-${item.node.kind} scope-${scopeKind(item.node)}${repeatedIds.has(item.id) ? ' revisited' : ''} ${roleClass}${selected ? ' selected' : ''}`}
                 onClick={select}
