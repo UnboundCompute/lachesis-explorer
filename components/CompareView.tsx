@@ -5,7 +5,7 @@ import type { App, Flow } from '../lib/lachesis'
 import { copyText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
 
-type Props = { base: App; compare: App | null; onUpload: () => void; loading?: boolean; onOpenFlow?: (flowId: string, nodeId: string) => void }
+type Props = { base: App; compare: App | null; onUpload: () => void; loading?: boolean; onOpenFlow?: (flowId: string, nodeId: string) => void; onOpenNode?: (nodeId: string) => void }
 
 const ids = (values: { id: string }[]) => new Set(values.map((value) => value.id))
 
@@ -78,6 +78,8 @@ function DiffColumn({
   actionable = false,
   previewFlows = false,
   onOpenFlow,
+  openNodes = false,
+  onOpenNode,
 }: {
   label: string
   items: { id: string }[]
@@ -87,6 +89,8 @@ function DiffColumn({
   actionable?: boolean
   previewFlows?: boolean
   onOpenFlow?: (flowId: string, nodeId: string) => void
+  openNodes?: boolean
+  onOpenNode?: (nodeId: string) => void
 }) {
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const [expanded, setExpanded] = useState(false)
@@ -111,6 +115,7 @@ function DiffColumn({
           const preview = previewFlows ? app.flows.find((value) => value.id === item.id) : undefined
           const previewScopes = preview ? flowScopes(preview, app) : []
           const firstNodeId = flow?.steps[0]?.node_id
+          const node = openNodes ? app.nodes.find((value) => value.id === item.id) : undefined
           return preview ? (
             <details className="diff-flow-preview" key={item.id}>
               <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps</small></summary>
@@ -128,6 +133,16 @@ function DiffColumn({
             >
               <span>{itemLabel(item, app)}</span><small>Open ↗</small>
             </button>
+          ) : node && onOpenNode ? (
+            <button
+              type="button"
+              className="diff-item-action"
+              key={item.id}
+              title={`Open ${itemLabel(item, app)} in Graph`}
+              onClick={() => onOpenNode(node.id)}
+            >
+              <span>{itemLabel(item, app)}</span><small>Open ↗</small>
+            </button>
           ) : <p key={item.id} title={item.id}>{itemLabel(item, app)}</p>
         })
       ) : (
@@ -142,7 +157,7 @@ function DiffColumn({
   )
 }
 
-export function CompareView({ base, compare, onUpload, loading = false, onOpenFlow }: Props) {
+export function CompareView({ base, compare, onUpload, loading = false, onOpenFlow, onOpenNode }: Props) {
   const [showAllChanged, setShowAllChanged] = useState(false)
   useEffect(() => { setShowAllChanged(false) }, [base, compare])
   const securityMode =
@@ -214,7 +229,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
             <h3>{label}</h3>
             <div className="diff-columns">
               <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" previewFlows={label === pathGroup} />
-              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} />
+              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} openNodes={label === "Nodes"} onOpenNode={onOpenNode} />
             </div>
           </section>
         ))}

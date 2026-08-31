@@ -1176,6 +1176,12 @@ export default function Page() {
               setInspectorOpen(true);
               record("Opened changed graph path", nextFlow, "from revision diff");
             }}
+            onOpenNode={(nextNode) => {
+              setFocusNodeId(nextNode);
+              changeView("map");
+              setInspectorOpen(true);
+              record("Inspected removed graph node", app.nodes.find((node) => node.id === nextNode)?.label ?? nextNode, "from revision diff");
+            }}
           />
         </div>
       )}
