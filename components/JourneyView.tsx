@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
+import { copyText } from "../lib/clipboard";
 import { Icon } from "./Icon";
 import { PathCanvas, type PathItem } from "./PathCanvas";
 import { NodeInspector } from "./NodeInspector";
@@ -61,6 +62,7 @@ export function JourneyView({
   const entry = app.entries[entryIndex] ?? app.entries[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const [sequenceState, setSequenceState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedHopRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!entry) return;
@@ -150,6 +152,20 @@ export function JourneyView({
     const copied = await onShare(selectedIndex);
     setShareState(copied ? "copied" : "failed");
     window.setTimeout(() => setShareState("idle"), 1800);
+  }
+  async function copySequence() {
+    const sequence = items
+      .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${item.caption ? ` · ${item.caption}` : ""}`)
+      .join("\n");
+    try {
+      await copyText(`${entry.label}\n${sequence}`);
+      setSequenceState("copied");
+      trackEvent("path_sequence_copied", { surface: "journey" });
+      window.setTimeout(() => setSequenceState("idle"), 1800);
+    } catch {
+      setSequenceState("failed");
+      trackEvent("path_sequence_copy_failed", { surface: "journey" });
+    }
   }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
@@ -249,6 +265,9 @@ export function JourneyView({
             )}
             <button className="inspector-reopen" type="button" onClick={() => onView("map", hopId)}>
               See in graph
+            </button>
+            <button className="inspector-reopen" type="button" onClick={copySequence} aria-live="polite">
+              {sequenceState === "copied" ? "Sequence copied" : sequenceState === "failed" ? "Copy failed" : "Copy sequence"}
             </button>
             <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
               {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
