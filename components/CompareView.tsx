@@ -29,14 +29,32 @@ function flowKind(flow: Flow) {
   return flow.kind?.trim() || 'Graph paths'
 }
 
+function itemLabel(item: { id: string }, app: App) {
+  const node = app.nodes.find((value) => value.id === item.id)
+  if (node) return node.label || node.id
+  const flow = app.flows.find((value) => value.id === item.id)
+  if (flow) return flow.name
+  const entry = app.entries.find((value) => value.id === item.id)
+  if (entry) return entry.label
+  const edge = app.edges.find((value) => value.id === item.id)
+  if (edge) {
+    const source = app.nodes.find((value) => value.id === edge.source)?.label || edge.source
+    const target = app.nodes.find((value) => value.id === edge.target)?.label || edge.target
+    return `${source} → ${target}`
+  }
+  return item.id
+}
+
 function DiffColumn({
   label,
   items,
+  app,
   empty,
   className,
 }: {
   label: string
   items: { id: string }[]
+  app: App
   empty: string
   className: string
 }) {
@@ -44,7 +62,7 @@ function DiffColumn({
     <div>
       <span className={className}>{label} · {items.length}</span>
       {items.length ? (
-        items.slice(0, 8).map((item) => <p key={item.id}>{item.id}</p>)
+        items.slice(0, 8).map((item) => <p key={item.id} title={item.id}>{itemLabel(item, app)}</p>)
       ) : (
         <p className="diff-empty">{empty}</p>
       )}
@@ -122,8 +140,8 @@ export function CompareView({ base, compare, onUpload }: Props) {
           <section key={label}>
             <h3>{label}</h3>
             <div className="diff-columns">
-              <DiffColumn label="ADDED" items={result.added} empty="No additions" className="diff-added" />
-              <DiffColumn label="REMOVED" items={result.removed} empty="No removals" className="diff-removed" />
+              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" />
+              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" />
             </div>
           </section>
         ))}
