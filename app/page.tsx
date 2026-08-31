@@ -420,6 +420,7 @@ export default function Page() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         commandOpenerRef.current = document.activeElement as HTMLElement | null;
+        setMenu(false);
         setCommandOpen((open) => !open);
         return;
       }
@@ -826,6 +827,7 @@ export default function Page() {
         onUpload={() => fileRef.current?.click()}
         onCommand={() => {
           commandOpenerRef.current = document.activeElement as HTMLElement | null;
+          setMenu(false);
           setCommandOpen(true);
         }}
         dark={dark}
