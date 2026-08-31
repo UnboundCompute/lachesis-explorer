@@ -254,6 +254,12 @@ export function OverviewView({
     app.edges.some((edge) => edge.origins.some((origin) => origin !== "bundle"))
       ? { label: "derived", query: "edge:derived" }
       : null,
+    app.edges.some((edge) => edge.origins.includes("value-flow"))
+      ? { label: "value-derived", query: "origin:value-flow" }
+      : null,
+    app.edges.some((edge) => edge.origins.includes("request-path"))
+      ? { label: "request-derived", query: "origin:request-path" }
+      : null,
     app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
     ...[...new Set(app.nodes.map((node) => node.module || node.scope?.module).filter(Boolean))]
       .slice(0, 2)
