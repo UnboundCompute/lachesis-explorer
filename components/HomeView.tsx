@@ -568,7 +568,7 @@ export function HomeView({
             <b>{graphOnly ? app.flows.length : metadataOnly ? app.mcp.length : visibleFindings.length}</b>
           </div>
           {!graphOnly && !metadataOnly && (
-            <div className="queue-filters" aria-label="Filter evidence queue">
+            <div className="queue-filters" role="group" aria-label="Filter evidence queue">
               {(
                 ["all", "lead", "reported", "inconclusive", "refuted", "verified"] as QueueFilter[]
               ).map((filter) => (
