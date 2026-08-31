@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { Flow, Node } from '../lib/lachesis'
+import { trackEvent } from '../lib/analytics'
 
 type Props = { flows: Flow[]; nodes: Node[]; sinkId: string; selectedId: string; onSelect: (nodeId: string) => void; securityMode?: boolean }
 type Point = { id: string; x: number; y: number; node: Node; roles: Set<string>; lanes: Set<number> }
@@ -82,7 +83,7 @@ export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, 
   return <section className="convergence-canvas" aria-label={`Converging ${pathLabel}`}>
     <div className="convergence-filter" role="status">
       <span>{focusedOnly ? `Showing ${flows.length} focused paths.` : 'Showing every path that reaches this boundary.'}</span>
-      <button type="button" className={focusedOnly ? 'active' : ''} aria-pressed={focusedOnly} onClick={() => setFocusedOnly(value => !value)} disabled={!selectedId || allFlows.length < 2}>
+      <button type="button" className={focusedOnly ? 'active' : ''} aria-pressed={focusedOnly} onClick={() => { const next = !focusedOnly; setFocusedOnly(next); trackEvent('convergence_focus_toggled', { focused: next }) }} disabled={!selectedId || allFlows.length < 2}>
         {focusedOnly ? 'Show all paths' : 'Focus selected node'}
       </button>
     </div>
