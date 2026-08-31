@@ -112,6 +112,24 @@ function verify(file, bundle) {
   validateCatalog(file, ids, graph.files, "files");
   validateCatalog(file, ids, graph.modules, "modules");
   validateCatalog(file, ids, graph.entrypoints, "entrypoints");
+  if (Array.isArray(graph.modules)) {
+    const moduleIds = new Set(graph.modules.map((module, index) => String(module.id ?? module.path ?? module.name ?? `module_${index}`)));
+    for (const [index, module] of graph.modules.entries()) {
+      const moduleId = String(module.id ?? module.path ?? module.name ?? `module_${index}`);
+      if (module.parent_id != null || module.parentId != null) {
+        const parentId = String(module.parent_id ?? module.parentId);
+        if (!parentId) fail(file, `graph.modules[${index}].parent_id must not be empty`);
+        if (parentId === moduleId) fail(file, `graph.modules[${index}] cannot be its own parent`);
+        if (!moduleIds.has(parentId)) fail(file, `graph.modules[${index}] references a missing parent module`);
+      }
+      const nodeIds = new Set();
+      for (const nodeId of module.node_ids ?? []) {
+        const id = String(nodeId);
+        if (nodeIds.has(id)) fail(file, `graph.modules[${index}] duplicates node ID ${id}`);
+        nodeIds.add(id);
+      }
+    }
+  }
 
   const edgeIds = new Set();
   for (const [index, edge] of (graph.edges ?? []).entries()) {
