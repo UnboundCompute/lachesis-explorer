@@ -78,6 +78,13 @@ export function PathCanvas({
     },
   )
   const selectedItem = items[selectedIndex]
+  const occurrenceNumbers = items.reduce<number[]>((result, item, index) => {
+    result[index] = items.slice(0, index).filter((previous) => previous.id === item.id).length + 1
+    return result
+  }, [])
+  const idCounts = new Map<string, number>()
+  items.forEach((item) => idCounts.set(item.id, (idCounts.get(item.id) ?? 0) + 1))
+  const repeatedIds = new Set(items.filter((item) => (idCounts.get(item.id) ?? 0) > 1).map((item) => item.id))
   const boundaries = shown.reduce<Array<{ key: string; label: string; start: number; end: number }>>((result, item, index) => {
     const key = scopeKey(item.node)
     const previous = result.at(-1)
@@ -151,6 +158,7 @@ export function PathCanvas({
             {selectedItem.label} · {nodeLocation(selectedItem.node)}
             {selectedItem.node.scope && ` · ${scopeLabel(selectedItem.node)}`}
             {selectedItem.occurrenceId ? ` · occurrence ${selectedItem.occurrenceId}` : ''}
+            {repeatedIds.has(selectedItem.id) && ` · revisit ${occurrenceNumbers[selectedIndex]}`}
             {selectedItem.caption ? ` · ${selectedItem.caption}` : ''}
           </small>
           {(selectedItem.edge?.confidence || selectedItem.edge?.limitations?.length) && (
@@ -247,7 +255,7 @@ export function PathCanvas({
             return (
               <g
                 key={`${item.id}-${start + index}`}
-                className={`path-node kind-${item.node.kind} scope-${scopeKind(item.node)} ${roleClass}${selected ? ' selected' : ''}`}
+                className={`path-node kind-${item.node.kind} scope-${scopeKind(item.node)}${repeatedIds.has(item.id) ? ' revisited' : ''} ${roleClass}${selected ? ' selected' : ''}`}
                 onClick={select}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
@@ -258,7 +266,7 @@ export function PathCanvas({
                 role="button"
                 tabIndex={0}
                 aria-pressed={selected}
-                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
+                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${repeatedIds.has(item.id) ? `, revisit ${occurrenceNumbers[start + index]}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
               >
                 <title>{item.node.label || item.node.id}</title>
                 <circle className="node-halo" cx={point.x} cy={point.y} r="38" />
@@ -296,6 +304,7 @@ export function PathCanvas({
               <b>{item.label}</b>
               <small>
                 {item.node.label || item.node.id} · {nodeLocation(item.node)}
+                {repeatedIds.has(item.id) ? ` · revisit ${occurrenceNumbers[start + index]}` : ''}
                 {item.edge?.alias ? ' · alias' : ''}
                 {item.edge?.dynamic ? ' · dynamic' : ''}
               </small>
@@ -310,6 +319,7 @@ export function PathCanvas({
         <span><i className="legend-dynamic" />dynamic</span>
         <span><i className="legend-sink" />sink</span>
         {items.some((item) => item.node.scope?.kind === 'external' || item.node.scope?.kind === 'generated') && <span><i className="legend-scope" />external / generated context</span>}
+        {repeatedIds.size > 0 && <span><i className="legend-revisited" />revisited symbol</span>}
       </div>
     </div>
   )

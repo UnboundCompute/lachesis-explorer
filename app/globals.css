@@ -244,4 +244,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .edge-caption.exact{fill:var(--ink-3)}
 .convergence-edge-label{pointer-events:none;font:8px var(--mono);text-transform:uppercase}.convergence-edge-label.exact{fill:var(--ink-3)}.convergence-edge-label.alias{fill:var(--violet)}.convergence-edge-label.dynamic{fill:var(--amber)}
 .graph-legend .legend-scope,.topology-legend .legend-scope{height:7px;width:7px;border:1px dashed var(--amber);border-radius:50%;background:transparent}.topology-node.scope-generated circle{stroke:var(--violet)}
+.graph-legend .legend-revisited{height:7px;width:7px;border:1px dotted var(--cyan);border-radius:50%;background:transparent}
 .path-node.scope-external .node-body,.topology-node.scope-external circle{stroke:var(--amber);stroke-dasharray:4 3}.path-node.scope-generated .node-body,.topology-node.scope-generated circle{stroke:var(--violet);stroke-dasharray:2 3}.node-scope-kind{width:max-content!important;padding:3px 6px;border:1px solid var(--line-strong);border-radius:999px;color:var(--amber)!important;font-size:7px!important;text-transform:uppercase}.node-scope-kind.scope-kind-generated{color:var(--violet)!important}
+.path-node.revisited .node-body{stroke-dasharray:1 3}.path-node.revisited .node-halo{fill:color-mix(in srgb,var(--cyan) 7%,transparent)}
