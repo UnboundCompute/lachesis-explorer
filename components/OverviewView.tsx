@@ -604,6 +604,15 @@ export function OverviewView({
                     {neighborhoodOnly ? "Show full filtered graph" : "Focus selected neighborhood"}
                   </button>
                 )}
+                {visible.length > 32 && !neighborhoodOnly && (
+                  <button
+                    type="button"
+                    className="neighborhood-toggle"
+                    onClick={() => setMode("architecture")}
+                  >
+                    Large graph · group by module
+                  </button>
+                )}
                 {graphViewModified && (
                   <button
                     type="button"
