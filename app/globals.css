@@ -108,6 +108,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .diff-flow-context{display:block;margin:0 0 6px 14px;color:var(--brand-strong);font:7px/1.5 var(--mono);overflow-wrap:anywhere}.query-chips .node-order.active{border-color:var(--line-strong);background:var(--brand-wash);color:var(--brand-strong)}
 .topology-participation{color:var(--brand-strong)!important}
 .diff-more{color:var(--brand)!important;font-weight:700}.diff-expand{margin-top:8px;padding:5px 0;border:0;background:transparent;color:var(--brand);font:700 7px var(--mono);cursor:pointer}.diff-expand:hover,.diff-expand:focus-visible{color:var(--brand-strong);text-decoration:underline;text-underline-offset:3px;outline:2px solid var(--cyan);outline-offset:3px}.changed-expand{display:block}
+.diff-columns p small{display:block;margin-top:3px;color:var(--ink-3);font:7px var(--mono)}
 .path-node:focus-visible .node-body,.convergence-node:focus-visible .convergence-body,.topology-node:focus-visible circle{stroke:var(--cyan)!important;stroke-width:3!important}
 .step-nav{display:flex;gap:4px}.step-nav button:disabled{cursor:not-allowed;opacity:.38}
 .step-nav-hint{display:inline-flex;align-items:center;gap:3px;margin-left:2px;color:var(--ink-3);font:7px var(--mono)}.step-nav-hint kbd{padding:3px 5px;border:1px solid var(--line);border-radius:5px;background:var(--canvas-raised);box-shadow:0 1px 0 var(--line)}

@@ -80,6 +80,7 @@ function DiffColumn({
   onOpenFlow,
   openNodes = false,
   onOpenNode,
+  comparisonOnly = false,
 }: {
   label: string
   items: { id: string }[]
@@ -91,6 +92,7 @@ function DiffColumn({
   onOpenFlow?: (flowId: string, nodeId: string) => void
   openNodes?: boolean
   onOpenNode?: (nodeId: string) => void
+  comparisonOnly?: boolean
 }) {
   const [copyState, setCopyState] = useState<{ id: string; status: 'copied' | 'failed' } | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -143,7 +145,7 @@ function DiffColumn({
             >
               <span>{itemLabel(item, app)}</span><small>Open ↗</small>
             </button>
-          ) : <p key={item.id} title={item.id}>{itemLabel(item, app)}</p>
+          ) : <p key={item.id} title={item.id}><span>{itemLabel(item, app)}</span>{comparisonOnly && <small>Comparison only</small>}</p>
         })
       ) : (
         <p className="diff-empty">{empty}</p>
@@ -228,7 +230,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           <section key={label}>
             <h3>{label}</h3>
             <div className="diff-columns">
-              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" previewFlows={label === pathGroup} />
+              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" previewFlows={label === pathGroup} comparisonOnly={label !== pathGroup} />
               <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} openNodes={label === "Nodes"} onOpenNode={onOpenNode} />
             </div>
           </section>
