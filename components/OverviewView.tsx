@@ -449,6 +449,18 @@ export function OverviewView({
                 {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
               </button>
             )}
+            {!inspectorOpen && visible.length > 0 && (
+              <button
+                type="button"
+                className="inspector-reopen"
+                onClick={() => setInspectorOpen(true)}
+                aria-expanded={inspectorOpen}
+                aria-controls="source-inspector"
+              >
+                <Icon name="code" size={13} />
+                Show source
+              </button>
+            )}
             <div className="overview-switch">
               <button
                 type="button"
