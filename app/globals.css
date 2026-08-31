@@ -276,5 +276,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:500px){.convergence-selected{display:block;width:max-content;max-width:100%;margin:5px 0 0}}
 .query-chips{min-width:0;flex-wrap:wrap}
 .convergence-filter{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);color:var(--ink-3);font:8px var(--mono)}.convergence-filter span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.convergence-filter button{flex:none;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--ink-2);font:8px var(--mono)}.convergence-filter button:hover,.convergence-filter button.active{border-color:var(--line-strong);background:var(--brand-wash);color:var(--brand-strong)}
-.convergence-canvas{display:flex;flex-direction:column}.convergence-bar{order:1}.convergence-filter{order:2}.convergence-viewport{order:3}.convergence-legend{order:4}.convergence-index-list{order:5}
+.convergence-canvas{display:flex;flex-direction:column}
 @media(max-width:500px){.convergence-filter{align-items:flex-start;flex-direction:column}.convergence-filter span{width:100%;white-space:normal}.convergence-filter button{width:100%}}
