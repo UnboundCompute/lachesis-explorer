@@ -285,7 +285,7 @@ export function TraceView({
   }
   async function copySequence() {
     const sequence = items
-      .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${item.caption ? ` · ${item.caption}` : ""}`)
+      .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${item.relation ? ` · via ${item.relation}` : ""}${item.caption ? ` · ${item.caption}` : ""}`)
       .join("\n");
     try {
       await copyText(`${flow.name}\n${sequence}`);
