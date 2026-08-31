@@ -32,6 +32,15 @@ function requireOptionalNonNegativeIntegers(file, value, fields, label) {
   if (present.length) requireNonNegativeIntegers(file, value, present, label);
 }
 
+function validateScope(file, scope, label) {
+  if (scope == null) return;
+  if (typeof scope !== "object" || Array.isArray(scope)) fail(file, `${label} must be an object`);
+  for (const field of ["repository", "service", "package", "module", "kind", "label"]) {
+    if (scope[field] != null && (typeof scope[field] !== "string" || scope[field].trim() === ""))
+      fail(file, `${label}.${field} must be a non-empty string when supplied`);
+  }
+}
+
 function validateNodes(file, ids, steps, label, { required = true } = {}) {
   if (!Array.isArray(steps)) fail(file, `${label} steps must be an array`);
   if (required && steps.length === 0) fail(file, `${label} must contain at least one step`);
@@ -91,6 +100,7 @@ function verify(file, bundle) {
       requireNonEmptyStrings(file, node, ["id", "kind", "file", "label", "snippet"], label);
       requireNonNegativeIntegers(file, node, ["line"], label);
       requireOptionalNonNegativeIntegers(file, node, ["column", "end_line", "end_column"], label);
+      validateScope(file, node.scope, `${label}.scope`);
     });
     const coverage = graph.coverage;
     if (coverage?.included_nodes != null || coverage?.indexed_nodes != null)
