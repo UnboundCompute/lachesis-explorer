@@ -74,7 +74,7 @@ function DiffColumn({
           const firstNodeId = flow?.steps[0]?.node_id
           return preview ? (
             <details className="diff-flow-preview" key={item.id}>
-              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview</small></summary>
+              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps</small></summary>
               <p>{flowPath(preview, app) || "No step sequence available."}</p>
             </details>
           ) : flow && onOpenFlow && firstNodeId ? (
