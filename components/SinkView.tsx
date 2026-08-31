@@ -20,6 +20,7 @@ type Props = {
   sinkId: string;
   setSinkId: (id: string) => void;
   onOpenFlow: (flowId: string, nodeId: string, position?: number) => void;
+  onEntry?: (entryIndex: number, nodeId: string) => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map") => void;
   onShare?: (sinkId: string) => Promise<boolean>;
@@ -30,6 +31,7 @@ export function SinkView({
   sinkId,
   setSinkId,
   onOpenFlow,
+  onEntry,
   onRecord,
   onView,
   onShare,
@@ -300,6 +302,7 @@ export function SinkView({
           node={selected}
           app={app}
           onFlow={onOpenFlow}
+          onEntry={onEntry}
           onClose={() => setInspectorOpen(false)}
         />
       )}

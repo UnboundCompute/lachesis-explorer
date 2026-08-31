@@ -1019,6 +1019,18 @@ export default function Page() {
           sinkId={sinkId}
           setSinkId={setSinkId}
           onRecord={record}
+          onEntry={(nextIndex, nextNode) => {
+            changeView("journey");
+            setEntryIndex(nextIndex);
+            setHopId(nextNode);
+            setHopIndex(positionForEntry(app, nextIndex, nextNode));
+            setInspectorOpen(true);
+            record(
+              "Opened connected request path",
+              app.entries[nextIndex]?.label ?? "Unknown entry",
+              "from convergence inspector",
+            );
+          }}
           onOpenFlow={(nextFlow, nextNode, originalPosition) => {
             changeView("trace");
             setFlowId(nextFlow);
