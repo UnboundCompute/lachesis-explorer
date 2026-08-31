@@ -426,11 +426,12 @@ export function OverviewView({
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
   const canvasOrder = neighborhoodOnly ? topologyNodes : orderedVisible;
-  const graphPos = (node: Node) => pos(Math.max(0, canvasOrder.indexOf(node)));
+  const canvasIndexes = new Map(canvasOrder.map((node, index) => [node.id, index]));
+  const graphPos = (node: Node) => pos(Math.max(0, canvasIndexes.get(node.id) ?? 0));
   const graphHeight = Math.max(300, Math.ceil(canvasOrder.length / 4) * 92 + 110);
   const graphViewModified = Boolean(query || neighborhoodOnly || topologyZoom !== 1 || nodeOrder !== "path");
   const labelIndex = (node: Node) =>
-    String(Math.max(0, canvasOrder.indexOf(node)) + 1).padStart(2, "0");
+    String(Math.max(0, canvasIndexes.get(node.id) ?? 0) + 1).padStart(2, "0");
   async function shareNode() {
     if (!selected || !onShare) return;
     const copied = await onShare(selected.id);
