@@ -25,6 +25,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Check patch formatting
+        run: git diff --check
       - name: Verify bundle fixtures
         run: pnpm verify:bundles
       - name: Typecheck and build
