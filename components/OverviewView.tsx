@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { App, Node } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { Icon } from "./Icon";
@@ -286,6 +286,10 @@ export function OverviewView({
   const selected = inspectorOpen && visible.length
     ? visible.find((node) => node.id === selectedId) ?? visible[0]
     : undefined;
+  const topologySelectedRef = useRef<SVGGElement>(null);
+  useEffect(() => {
+    topologySelectedRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [selectedId]);
   const focusActive = Boolean(inspectorOpen && selected);
   const connectedIds = new Set(
     selected
@@ -700,6 +704,7 @@ export function OverviewView({
                     const roleClasses = roles.map((role) => `role-${role.replace(/[^a-z0-9]+/g, "-")}`).join(" ");
                     return (
                       <g
+                        ref={selected?.id === node.id ? topologySelectedRef : undefined}
                         key={node.id}
                         className={`topology-node kind-${node.kind} scope-${nodeScopeKind(node)} ${roleClasses}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
                         onClick={select}
