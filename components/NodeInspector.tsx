@@ -34,6 +34,15 @@ const originLabel = (origin: string) =>
       : origin === "request-path"
         ? "request path"
         : origin;
+function contextRoute(app: App, nodeIds: string[]) {
+  const route: string[] = [];
+  nodeIds.forEach((nodeId) => {
+    const node = app.nodes.find((item) => item.id === nodeId);
+    const context = node ? scopeDisplay(node) : "Unscoped";
+    if (context !== "Unscoped" && route.at(-1) !== context) route.push(context);
+  });
+  return route.join(" → ");
+}
 type Props = {
   node: Node;
   contextRole?: string;
@@ -218,7 +227,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow,
                         onFlow(flow.id, node.id)
                       }
                     >
-                      <span>{flow.name} · {flow.kind || "graph path"} · {flow.steps.length} symbols</span>
+                      <span>{flow.name} · {flow.kind || "graph path"} · {flow.steps.length} symbols{contextRoute(app, flow.steps.map((step) => step.node_id)) ? ` · ${contextRoute(app, flow.steps.map((step) => step.node_id))}` : ""}</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
@@ -243,7 +252,7 @@ export function NodeInspector({ node, contextRole, onClose, app, onNode, onFlow,
                         )
                       }
                     >
-                      <span>{entry.label} · {entry.hops.length} hops</span>
+                      <span>{entry.label} · {entry.hops.length} hops{contextRoute(app, entry.hops.map((hop) => hop.node_id)) ? ` · ${contextRoute(app, entry.hops.map((hop) => hop.node_id))}` : ""}</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
