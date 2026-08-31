@@ -740,6 +740,8 @@ export function OverviewView({
                             return;
                           }
                           const index = canvasOrder.findIndex((item) => item.id === node.id);
+                          const isNavigationKey = ["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"].includes(event.key);
+                          if (isNavigationKey) event.preventDefault();
                           const nextIndex = event.key === "ArrowRight"
                             ? index + 1
                             : event.key === "ArrowLeft"
@@ -754,7 +756,6 @@ export function OverviewView({
                                       ? canvasOrder.length - 1
                                       : -1;
                           if (nextIndex >= 0 && nextIndex < canvasOrder.length) {
-                            event.preventDefault();
                             focusAfterSelection.current = true;
                             selectNode(canvasOrder[nextIndex].id);
                           }
