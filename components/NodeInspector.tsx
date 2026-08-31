@@ -130,7 +130,9 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
   function closeInspector() {
     onClose();
     window.requestAnimationFrame(() => {
-      document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus();
+      const sourceTrigger = document.querySelector<HTMLButtonElement>('[aria-controls="source-inspector"]');
+      if (sourceTrigger) sourceTrigger.focus();
+      else document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus();
     });
   }
   return (
