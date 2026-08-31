@@ -238,5 +238,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .topology-node{cursor:pointer}.topology-node circle{transition:fill 240ms var(--ease),stroke 240ms var(--ease),transform 240ms var(--ease);transform-box:fill-box;transform-origin:center}.topology-node:hover circle{stroke:var(--cyan);transform:scale(1.06)}
 .bundle-mode{color:var(--ink-3);font:700 8px var(--mono);text-transform:uppercase}
 .context-meta{flex-wrap:wrap}
+.neighborhood-toggle{display:inline-block;margin-left:10px;padding:5px 7px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--brand-strong);font:7px var(--mono);cursor:pointer}.neighborhood-toggle:hover{background:var(--brand-wash)}
 .edge-caption.exact{fill:var(--ink-3)}
 .convergence-edge-label{pointer-events:none;font:8px var(--mono);text-transform:uppercase}.convergence-edge-label.exact{fill:var(--ink-3)}.convergence-edge-label.alias{fill:var(--violet)}.convergence-edge-label.dynamic{fill:var(--amber)}

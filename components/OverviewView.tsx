@@ -116,12 +116,14 @@ export function OverviewView({
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [neighborhoodOnly, setNeighborhoodOnly] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
     setSelectedId(app.nodes[0]?.id ?? "");
     setQuery("");
     setExpandedModule(null);
     setShareState("idle");
+    setNeighborhoodOnly(false);
   }, [app]);
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; nodes: Node[] }>();
@@ -213,6 +215,11 @@ export function OverviewView({
         ]
       : [],
   );
+  const topologyNodes = neighborhoodOnly && selected
+    ? visible.filter((node) => connectedIds.has(node.id))
+    : visible;
+  const topologyIds = new Set(topologyNodes.map((node) => node.id));
+  const topologyEdges = edges.filter((edge) => topologyIds.has(edge.source) && topologyIds.has(edge.target));
   const flowCount = (nodeId: string) =>
     app.flows.filter((flow) =>
       flow.steps.some((step) => step.node_id === nodeId),
@@ -418,6 +425,16 @@ export function OverviewView({
                 {visible.length
                   ? summary
                   : `No nodes match “${query}”. Clear the filter to restore the full topology.`}
+                {selected && visible.length > 1 && (
+                  <button
+                    type="button"
+                    className="neighborhood-toggle"
+                    aria-pressed={neighborhoodOnly}
+                    onClick={() => setNeighborhoodOnly((value) => !value)}
+                  >
+                    {neighborhoodOnly ? "Show full filtered graph" : "Focus selected neighborhood"}
+                  </button>
+                )}
               </p>
             </div>
             {visible.length ? (
@@ -428,7 +445,7 @@ export function OverviewView({
                   <small>Choose a point to focus its source context.</small>
                 </div>
                 <svg viewBox="0 0 180 80" aria-label="Topology minimap">
-                  {edges.map((edge) => {
+                  {topologyEdges.map((edge) => {
                     const source = visible.find((node) => node.id === edge.source);
                     const target = visible.find((node) => node.id === edge.target);
                     if (!source || !target) return null;
@@ -436,7 +453,7 @@ export function OverviewView({
                     const b = graphPos(target);
                     return <line className={crossesScope(source, target) ? "boundary" : ""} key={`mini-${edge.id}`} x1={8 + (a.x / 760) * 164} y1={8 + (a.y / graphHeight) * 64} x2={8 + (b.x / 760) * 164} y2={8 + (b.y / graphHeight) * 64} />;
                   })}
-                  {visible.map((node) => {
+                  {topologyNodes.map((node) => {
                     const point = graphPos(node);
                     const select = () => selectNode(node.id);
                     return <circle key={`mini-${node.id}`} className={selected?.id === node.id ? "selected" : ""} cx={8 + (point.x / 760) * 164} cy={8 + (point.y / graphHeight) * 64} r={selected?.id === node.id ? 3 : 2} onClick={select} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } }} role="button" tabIndex={0} aria-label={`Focus ${node.label || node.id} in topology`} />;
@@ -470,7 +487,7 @@ export function OverviewView({
                       </marker>
                     ))}
                   </defs>
-                  {edges.map((edge) => {
+                  {topologyEdges.map((edge) => {
                     const source = visible.find(
                         (node) => node.id === edge.source,
                       ),
@@ -506,7 +523,7 @@ export function OverviewView({
                       </g>
                     );
                   })}
-                  {visible.map((node) => {
+                  {topologyNodes.map((node) => {
                     const p = graphPos(node);
                     const select = () => selectNode(node.id);
                     const roles = rolesForNode(node.id);
