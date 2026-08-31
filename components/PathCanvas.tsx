@@ -133,6 +133,7 @@ export function PathCanvas({
       <div className="canvas-bar">
         <div>
           <span className="canvas-title">{title}</span>
+          <span className="canvas-direction">Read left → right</span>
           <span className="canvas-count">
             {focused ? `${start + 1}–${end} of ` : ''}
             {items.length} {itemUnit}
