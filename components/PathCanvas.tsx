@@ -278,7 +278,7 @@ export function PathCanvas({
                 ref={selected ? selectedGraphRef : undefined}
                 key={`${item.id}-${start + index}`}
                 className={`path-node kind-${item.node.kind} scope-${scopeKind(item.node)}${repeatedIds.has(item.id) ? ' revisited' : ''} ${roleClass}${selected ? ' selected' : ''}`}
-                onClick={select}
+                onClick={(event) => { event.currentTarget.focus(); select() }}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()

@@ -630,7 +630,7 @@ export function OverviewView({
                   {topologyNodes.map((node) => {
                     const point = graphPos(node);
                     const select = () => selectNode(node.id);
-                    return <circle key={`mini-${node.id}`} className={selected?.id === node.id ? "selected" : ""} cx={8 + (point.x / 760) * 164} cy={8 + (point.y / graphHeight) * 64} r={selected?.id === node.id ? 3 : 2} onClick={select} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } }} role="button" tabIndex={0} aria-pressed={selected?.id === node.id} aria-label={`Focus ${node.label || node.id}${nodeScopeLabel(node) !== "Unscoped nodes" ? ` in ${nodeScopeLabel(node)}` : ""} in topology`} />;
+                    return <circle key={`mini-${node.id}`} className={selected?.id === node.id ? "selected" : ""} cx={8 + (point.x / 760) * 164} cy={8 + (point.y / graphHeight) * 64} r={selected?.id === node.id ? 3 : 2} onClick={(event) => { event.currentTarget.focus(); select(); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } }} role="button" tabIndex={0} aria-pressed={selected?.id === node.id} aria-label={`Focus ${node.label || node.id}${nodeScopeLabel(node) !== "Unscoped nodes" ? ` in ${nodeScopeLabel(node)}` : ""} in topology`} />;
                   })}
                 </svg>
               </div>
@@ -707,7 +707,7 @@ export function OverviewView({
                         ref={selected?.id === node.id ? topologySelectedRef : undefined}
                         key={node.id}
                         className={`topology-node kind-${node.kind} scope-${nodeScopeKind(node)} ${roleClasses}${selected?.id === node.id ? " selected" : ""}${focusActive && !connectedIds.has(node.id) ? " dimmed" : ""}`}
-                        onClick={select}
+                        onClick={(event) => { event.currentTarget.focus(); select(); }}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
