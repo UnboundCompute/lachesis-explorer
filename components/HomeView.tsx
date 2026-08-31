@@ -264,7 +264,7 @@ export function HomeView({
           <h1>{title}</h1>
           <p>
             {metadataOnly
-              ? "This bundle includes security records without witness steps. Explore the graph structure while the exporter adds a traceable path."
+              ? "This bundle includes linked records without witness steps. Explore the graph structure while the exporter adds a traceable path."
               : graphOnly
               ? app.bundle.description ||
                 (graphFocus
@@ -510,11 +510,11 @@ export function HomeView({
             </>
           ) : metadataOnly ? (
             <div className="briefing-empty">
-              <h2>Security metadata without a traceable path</h2>
+              <h2>Linked records without a traceable path</h2>
               <p>
-                {app.mcp.length} security record{app.mcp.length === 1 ? "" : "s"}{" "}
+                {app.mcp.length} linked record{app.mcp.length === 1 ? "" : "s"}{" "}
                 {app.mcp.length === 1 ? "is" : "are"} attached, but the bundle
-                does not include witness steps that can be inspected here.
+                does not include path steps that can be inspected here.
               </p>
               <div className="priority-actions">
                 <button type="button" onClick={() => onView("map")}>
@@ -556,10 +556,10 @@ export function HomeView({
         <aside className="evidence-queue">
           <div className="queue-heading">
             <div>
-              <span>{graphOnly ? "Graph index" : metadataOnly ? "Security metadata" : "Evidence queue"}</span>
+              <span>{graphOnly ? "Graph index" : metadataOnly ? "Linked records" : "Evidence queue"}</span>
               <small>
                 {metadataOnly
-                  ? "Records without traceable witness steps"
+                  ? "Records without traceable path steps"
                   : graphOnly
                   ? "Paths available to explore"
                   : "Choose a lead to keep it in context"}
@@ -635,7 +635,7 @@ export function HomeView({
           {!queueItems.length && (
             <div className="queue-empty">
               {metadataOnly
-                ? "These records need witness steps before they can be traced."
+                ? "These records need path steps before they can be traced."
                 : graphOnly
                   ? graphFocus
                     ? "This bundle has no security overlay; explore its graph paths instead."
@@ -736,10 +736,10 @@ export function HomeView({
                     .size}
             </span>
             <span>
-              <b>{metadataOnly ? "Security records" : graphOnly ? "Graph paths" : "Execution boundaries"}</b>
+              <b>{metadataOnly ? "Linked records" : graphOnly ? "Graph paths" : "Execution boundaries"}</b>
               <small>
                 {metadataOnly
-                  ? "Open the graph while these records await traceable witness steps."
+                  ? "Open the graph while these records await traceable path steps."
                   : graphOnly && graphFocus
                   ? "Trace a bundled path through its connected symbols."
                   : graphOnly
