@@ -180,6 +180,7 @@ export function SinkView({
             ).length;
             return (
               <button
+                type="button"
                 key={item.id}
                 className={item.id === sink.id ? "selected" : ""}
                 aria-pressed={item.id === sink.id}
@@ -279,7 +280,14 @@ export function SinkView({
             <b>{overlaps.length}</b>
           </div>
         </div>
-        {mode === "field" ? (
+        {!flows.length ? (
+          <div className="convergence-empty" role="status">
+            <span className="empty-target"><Icon name="target" size={18} /></span>
+            <h3>No bundled paths reach this boundary</h3>
+            <p>The node is present in the graph, but this bundle does not include a traceable {pathNoun}. Inspect its surrounding relationships to understand where it sits.</p>
+            <button type="button" onClick={() => onView("map", sink.id)}>Inspect in graph <Icon name="arrow" size={12} /></button>
+          </div>
+        ) : mode === "field" ? (
           <ConvergenceCanvas
             flows={flows}
             nodes={app.nodes}
