@@ -657,8 +657,9 @@ export function OverviewView({
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
                       <small>
-                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)} · {flowCount(node.id)} paths · {entryCount(node.id)} requests
+                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
+                      <small className="topology-participation">{flowCount(node.id)} graph paths · {entryCount(node.id)} request paths</small>
                     </button>
                     );
                   })}
