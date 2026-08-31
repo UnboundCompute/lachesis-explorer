@@ -936,6 +936,7 @@ export default function Page() {
           loadState={loadState}
           isDemo={isDemo}
           onUpload={() => fileRef.current?.click()}
+          onDismiss={() => setLoadState({ type: "idle", message: "" })}
         />
       )}
       {view === "home" && (
@@ -947,6 +948,7 @@ export default function Page() {
           onLoadSample={loadCodeSample}
           onLoadSecuritySample={loadSecuritySample}
           onView={(next) => changeView(next)}
+          onDismiss={() => setLoadState({ type: "idle", message: "" })}
           direction={direction}
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");

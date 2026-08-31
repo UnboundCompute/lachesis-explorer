@@ -12,12 +12,14 @@ export function Intro({
   loadState,
   isDemo,
   onUpload,
+  onDismiss,
 }: {
   view: View;
   app: App;
   loadState: LoadState;
   isDemo: boolean;
   onUpload: () => void;
+  onDismiss: () => void;
 }) {
   const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
   const bundleMode = securityMode
@@ -128,7 +130,8 @@ export function Intro({
           role={loadState.type === "error" ? "alert" : "status"}
         >
           <i />
-          {loadState.message}
+          <span>{loadState.message}</span>
+          <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
         </p>
       )}
     </section>

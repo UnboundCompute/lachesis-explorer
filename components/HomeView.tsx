@@ -16,6 +16,7 @@ type Props = {
   onLoadSample: () => void;
   onLoadSecuritySample: () => void;
   onView: (view: "map" | "investigate" | "trace" | "journey") => void;
+  onDismiss: () => void;
   direction: "backward" | "forward";
   onFlow: (flowId: string, nodeId: string) => void;
   onSink: (sinkId: string) => void;
@@ -138,6 +139,7 @@ export function HomeView({
   onLoadSample,
   onLoadSecuritySample,
   onView,
+  onDismiss,
   direction,
   onFlow,
   onSink,
@@ -338,7 +340,8 @@ export function HomeView({
           role={loadState.type === "error" ? "alert" : "status"}
         >
           <i />
-          {loadState.message}
+          <span>{loadState.message}</span>
+          <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
         </p>
       )}
 
