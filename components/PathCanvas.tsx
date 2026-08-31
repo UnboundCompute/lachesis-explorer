@@ -60,6 +60,7 @@ export function PathCanvas({
     title === 'Code path' ? 'symbols' : title === 'Request path' ? 'hops' : 'nodes'
   const [viewport, setViewport] = useState<'fit' | 'reset'>('fit')
   const [focused, setFocused] = useState(false)
+  const [zoom, setZoom] = useState(1)
   const selectedRef = useRef<HTMLButtonElement>(null)
   const selectedIndex = Math.max(
     0,
@@ -143,10 +144,15 @@ export function PathCanvas({
             type="button"
             className={viewport === 'reset' ? 'active' : ''}
             aria-pressed={viewport === 'reset'}
-            onClick={() => setViewport('reset')}
+            onClick={() => { setViewport('reset'); setZoom(1) }}
           >
             Reset
           </button>
+          <div className="zoom-controls" aria-label="Path zoom">
+            <button type="button" onClick={() => setZoom((value) => Math.max(.75, Number((value - .1).toFixed(1))))} aria-label="Zoom path out">−</button>
+            <output>{Math.round(zoom * 100)}%</output>
+            <button type="button" onClick={() => setZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom path in">+</button>
+          </div>
         </div>
       </div>
 
@@ -198,6 +204,7 @@ export function PathCanvas({
       <div className="canvas-viewport">
         <svg
           viewBox={viewBox}
+          style={{ width: `${zoom * 100}%`, minWidth: `${Math.max(420, 620 * zoom)}px`, height: `${270 * zoom}px` }}
           aria-label={`Interactive ${title.toLowerCase()}`}
           focusable="false"
         >
