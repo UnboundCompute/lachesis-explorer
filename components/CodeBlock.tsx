@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { trackEvent } from '../lib/analytics'
+import { copyText } from '../lib/clipboard'
 
 type CopyState='idle'|'copied'|'failed'
 
@@ -10,8 +11,7 @@ export function CodeBlock({children}:{children:string}) {
   const [state,setState]=useState<CopyState>('idle')
   async function copy(){
     try{
-      if(!navigator.clipboard)throw new Error('Clipboard unavailable')
-      await navigator.clipboard.writeText(children)
+      await copyText(children)
       setState('copied')
       trackEvent('code_copied')
     }catch{
