@@ -268,14 +268,17 @@ export function OverviewView({
     : visible;
   const topologyIds = new Set(topologyNodes.map((node) => node.id));
   const topologyEdges = edges.filter((edge) => topologyIds.has(edge.source) && topologyIds.has(edge.target));
+  const participation = useMemo(() => {
+    const flows = new Map<string, number>();
+    const entries = new Map<string, number>();
+    app.flows.forEach((flow) => new Set(flow.steps.map((step) => step.node_id)).forEach((nodeId) => flows.set(nodeId, (flows.get(nodeId) ?? 0) + 1)));
+    app.entries.forEach((entry) => new Set(entry.hops.map((hop) => hop.node_id)).forEach((nodeId) => entries.set(nodeId, (entries.get(nodeId) ?? 0) + 1)));
+    return { flows, entries };
+  }, [app]);
   const flowCount = (nodeId: string) =>
-    app.flows.filter((flow) =>
-      flow.steps.some((step) => step.node_id === nodeId),
-    ).length;
+    participation.flows.get(nodeId) ?? 0;
   const entryCount = (nodeId: string) =>
-    app.entries.filter((entry) =>
-      entry.hops.some((hop) => hop.node_id === nodeId),
-    ).length;
+    participation.entries.get(nodeId) ?? 0;
   const rolesForNode = (nodeId: string) =>
     [...new Set(app.flows.flatMap((flow) => flow.steps.filter((step) => step.node_id === nodeId).map((step) => step.role.trim().toLowerCase())))];
   const chokePoints = app.nodes
