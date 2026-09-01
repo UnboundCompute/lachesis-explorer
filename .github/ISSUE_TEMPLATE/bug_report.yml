@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a reproducible problem in Explorer.
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please avoid attaching proprietary source or sensitive bundles. A reduced fixture is best.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Firefox 142, Safari 18, Chrome 140
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Explorer revision
+      description: Commit or release used, if known.
+  - type: textarea
+    id: bundle
+    attributes:
+      label: Bundle shape
+      description: Schema version and whether the issue occurs with a fixture or local bundle. Do not include sensitive source.
+      placeholder: 2.0 graph-first bundle; reproduced with public/code-exploration-bundle.json
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Load ...
+        2. Open ...
+        3. Select ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

@@ -5,6 +5,7 @@ const resources = [
   { label: 'Main site', href: 'https://unboundcompute.com/', detail: 'UnboundCompute' },
   { label: 'Trace demo', href: 'https://trace.unboundcompute.com/', detail: 'See the proof' },
   { label: 'Security blog', href: 'https://security.unboundcompute.com/', detail: 'Research notes' },
+  { label: 'Explorer on GitHub', href: 'https://github.com/UnboundCompute/lachesis-explorer', detail: 'UI, issues & docs' },
   { label: 'Lachesis on GitHub', href: 'https://github.com/UnboundCompute/lachesis', detail: 'Source & docs' },
 ]
 

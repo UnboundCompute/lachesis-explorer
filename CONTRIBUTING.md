@@ -5,14 +5,15 @@ Thanks for helping improve Lachesis Explorer.
 ## Development
 
 1. Fork or branch from the current default branch.
-2. Install dependencies with `npm install`.
-3. Start the app with `npm run dev`.
+2. Install dependencies with `corepack pnpm install --frozen-lockfile` (or `npm install` as a
+   non-frozen fallback).
+3. Start the app with `corepack pnpm dev` (or `npm run dev`).
 4. Make focused changes and keep the existing bundle contract intact.
 5. Run the checks below before opening a pull request.
 
 ```bash
-npx tsc --noEmit
-npm run build
+corepack pnpm run check
+corepack pnpm run verify:bundles
 git diff --check
 ```
 

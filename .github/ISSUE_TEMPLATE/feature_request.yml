@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest an improvement to code-graph exploration.
+title: "[feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What code-understanding task is currently difficult?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed interaction
+      description: Describe the desired workflow or interface.
+    validations:
+      required: true
+  - type: textarea
+    id: bundle
+    attributes:
+      label: Bundle contract impact
+      description: Note any new graph entity, path field, or evidence metadata required.

@@ -1,7 +1,6 @@
 {
   "name": "lachesis-explorer",
   "version": "0.1.0",
-  "private": true,
   "description": "Browser companion for Lachesis — read a compiler-precise code property graph: trace where values come from and go, and walk request callpaths, straight from a bundle.json. No server or model in the loop.",
   "license": "MIT",
   "homepage": "https://lachesis.unboundcompute.com",
@@ -13,6 +12,9 @@
     "url": "https://github.com/UnboundCompute/lachesis-explorer/issues"
   },
   "author": "UnboundCompute",
+  "engines": {
+    "node": ">=20"
+  },
   "keywords": [
     "code-property-graph",
     "static-analysis",
@@ -28,7 +30,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run build"
+    "check": "npm run typecheck && npm run verify:bundles && npm run build",
+    "verify:bundles": "node scripts/verify-bundles.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

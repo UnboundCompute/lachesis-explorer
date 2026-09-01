@@ -1,18 +1,389 @@
-'use client'
-import { useState } from 'react'
-import type { App, Node } from '../lib/lachesis'
-import { Icon } from './Icon'
-import { trackEvent } from '../lib/analytics'
+"use client";
+import { useEffect, useRef, useState } from "react";
+import type { App, Node } from "../lib/lachesis";
+import { Icon } from "./Icon";
+import { trackEvent } from "../lib/analytics";
+import { copyText } from "../lib/clipboard";
 
-const descriptions:Record<string,string>={sink:'Execution boundary or sensitive effect reached by this path.',route:'Request entrypoint represented in the code graph.',guard:'Control that checks identity, state, or authorization.',call:'A resolved call site connecting this path to another function.',service:'Application service participating in this request path.',assignment:'A value definition or reassignment in the flow.'}
-type Props={node:Node;onClose:()=>void;app?:App}
+const descriptions: Record<string, string> = {
+  sink: "Execution boundary or external effect represented in the code graph.",
+  route: "Request entrypoint represented in the code graph.",
+  guard: "Control that checks identity, state, or authorization.",
+  call: "A resolved call site connecting this path to another function.",
+  service: "Application service participating in this request path.",
+  assignment: "A value definition or reassignment in the flow.",
+  function: "A callable symbol resolved in the code graph.",
+  method: "A method symbol resolved in the code graph.",
+  class: "A type or class symbol that organizes related behavior.",
+  query: "A query-building or query-execution symbol in the graph.",
+  effect: "An external effect or operation represented in the graph.",
+  expression: "An expression or operation participating in the analyzed code path.",
+  parameter: "An input parameter carrying a value into a symbol or expression.",
+  variable: "A local or scoped variable represented in the graph.",
+  literal: "A literal value represented as a graph node.",
+};
+const scopeIdentity = (node: Node) =>
+  node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.module, node.scope.kind].filter(Boolean).join(" · ") : "";
+const scopeDisplay = (node: Node) =>
+  node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped";
+const originLabel = (origin: string) =>
+  origin === "bundle"
+    ? "explicit edge"
+    : origin === "value-flow"
+      ? "graph path"
+      : origin === "request-path"
+        ? "request path"
+        : origin;
+function contextRoute(app: App, nodeIds: string[]) {
+  const route: string[] = [];
+  nodeIds.forEach((nodeId) => {
+    const node = app.nodes.find((item) => item.id === nodeId);
+    const context = node ? scopeDisplay(node) : "Unscoped";
+    if (context !== "Unscoped" && route.at(-1) !== context) route.push(context);
+  });
+  return route.join(" → ");
+}
+type Props = {
+  node: Node;
+  contextRole?: string;
+  contextNote?: string;
+  contextOccurrence?: string;
+  onClose: () => void;
+  app?: App;
+  onNode?: (nodeId: string) => void;
+  onFlow?: (flowId: string, nodeId: string) => void;
+  onEntry?: (entryIndex: number, nodeId: string) => void;
+};
 
-export function NodeInspector({node,onClose,app}:Props){
-  const [copied,setCopied]=useState(false)
-  const location=`${node.file}:${node.line}${node.column?`:${node.column}`:''}`
-  const flows=app?.flows.filter(flow=>flow.steps.some(step=>step.node_id===node.id))??[]
-  const entries=app?.entries.filter(entry=>entry.hops.some(hop=>hop.node_id===node.id))??[]
-  const relationships=app?.edges.filter(edge=>edge.source===node.id||edge.target===node.id)??[]
-  async function copyLocation(){await navigator.clipboard?.writeText(location);setCopied(true);trackEvent('source_location_copied');window.setTimeout(()=>setCopied(false),1200)}
-  return <aside className="detail-panel"><div className="inspector-heading"><span className={`kind-badge kind-${node.kind}`}><i/>{node.kind}</span><span className="node-identity">{node.id}</span><button className="inspector-close" onClick={onClose} aria-label="Close source inspector"><Icon name="close" size={13}/></button></div><div className="inspector-source"><span className="panel-label">SOURCE LOCATION</span><h3>{node.file||'Unknown file'}</h3><div className="location-row"><span className="line-number">line {node.line||'—'}{node.column?` · column ${node.column}`:''}</span><button onClick={copyLocation} aria-label="Copy source location"><Icon name="code" size={12}/>{copied?'Copied':'Copy'}</button></div><pre className="source-code"><code>{node.snippet||node.label||'Source unavailable in this bundle.'}</code></pre></div><div className="detail-rule"/><span className="panel-label">WHAT THIS NODE MEANS</span><p className="detail-copy">{descriptions[node.kind]||'A node participating in the selected graph path.'}</p>{app&&<><div className="detail-rule"/><span className="panel-label">WHY IT IS INCLUDED</span><p className="detail-copy">This node is present in {flows.length} value flow{flows.length===1?'':'s'}, {entries.length} request path{entries.length===1?'':'s'}, and {relationships.length} normalized relationship{relationships.length===1?'':'s'} in this bundle.</p><div className="inspector-context"><span className="panel-label">CONNECTED EVIDENCE</span>{flows.length>0&&<div><small>VALUE FLOWS</small>{flows.slice(0,4).map(flow=><span key={flow.id}>{flow.name}</span>)}</div>}{entries.length>0&&<div><small>REQUEST PATHS</small>{entries.slice(0,4).map(entry=><span key={entry.id}>{entry.label}</span>)}</div>}{relationships.length>0&&<div><small>RELATIONSHIPS</small>{relationships.slice(0,4).map(edge=><span key={edge.id}>{edge.source===node.id?'→':'←'} {edge.relation||edge.alias||'connected'}{edge.dynamic?' · dynamic':''}</span>)}</div>}{!flows.length&&!entries.length&&!relationships.length&&<p>No connected evidence records in this bundle.</p>}</div></>}<dl className="node-facts"><div><dt>Kind</dt><dd>{node.kind}</dd></div><div><dt>Graph ID</dt><dd>{node.id}</dd></div>{app&&<><div><dt>Value flows</dt><dd>{flows.length}</dd></div><div><dt>Request paths</dt><dd>{entries.length}</dd></div></>}</dl></aside>
+export function NodeInspector({ node, contextRole, contextNote, contextOccurrence, onClose, app, onNode, onFlow, onEntry }: Props) {
+  const inspectorRef = useRef<HTMLElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+  const [snippetCopied, setSnippetCopied] = useState(false);
+  const [snippetCopyError, setSnippetCopyError] = useState(false);
+  const [showAllConnections, setShowAllConnections] = useState(false);
+  const location = node.file
+    ? `${node.file}:${node.line || "—"}${node.column ? `:${node.column}` : ""}`
+    : node.id;
+  const hasSourceLocation = Boolean(node.file);
+  const range =
+    node.endLine && node.endLine !== node.line
+      ? `lines ${node.line}–${node.endLine}`
+      : `line ${node.line || "—"}`;
+  const snippet = node.snippet || node.label || "";
+  const flows =
+    app?.flows.filter((flow) =>
+      flow.steps.some((step) => step.node_id === node.id),
+    ) ?? [];
+  const entries =
+    app?.entries.filter((entry) =>
+      entry.hops.some((hop) => hop.node_id === node.id),
+    ) ?? [];
+  const relationships =
+    app?.edges.filter(
+      (edge) => edge.source === node.id || edge.target === node.id,
+    ) ?? [];
+  const securityContext = Boolean(
+    app?.findings.some((flow) =>
+      flow.steps.some((step) => step.node_id === node.id),
+    ),
+  );
+  const incoming = relationships.filter(
+    (edge) => edge.target === node.id,
+  ).length;
+  const outgoing = relationships.filter(
+    (edge) => edge.source === node.id,
+  ).length;
+  useEffect(() => {
+    inspectorRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    const activeElement = document.activeElement;
+    if (
+      activeElement &&
+      activeElement !== document.body &&
+      !inspectorRef.current?.contains(activeElement)
+    ) {
+      inspectorRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+    setCopied(false);
+    setCopyError(false);
+    setSnippetCopied(false);
+    setSnippetCopyError(false);
+    setShowAllConnections(false);
+  }, [node.id, contextRole, contextOccurrence]);
+  async function copyLocation() {
+    try {
+      await copyText(location);
+      setCopyError(false);
+      setCopied(true);
+      trackEvent("source_location_copied");
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+      setCopyError(true);
+    }
+  }
+  async function copySnippet() {
+    if (!snippet) return;
+    try {
+      await copyText(snippet);
+      setSnippetCopyError(false);
+      setSnippetCopied(true);
+      trackEvent("source_snippet_copied");
+      window.setTimeout(() => setSnippetCopied(false), 1200);
+    } catch {
+      setSnippetCopied(false);
+      setSnippetCopyError(true);
+    }
+  }
+  function closeInspector() {
+    onClose();
+    window.requestAnimationFrame(() => {
+      const sourceTrigger = document.querySelector<HTMLButtonElement>('[aria-controls="source-inspector"]');
+      if (sourceTrigger) sourceTrigger.focus();
+      else document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus();
+    });
+  }
+  return (
+    <aside id="source-inspector" ref={inspectorRef} className="detail-panel" aria-label={`Source inspector for ${node.label || node.id}`}>
+      <p className="sr-only" aria-live="polite">
+        Selected {node.kind} {node.label || node.id}, source {location}.
+      </p>
+      <div className="inspector-heading">
+        <span className={`kind-badge kind-${node.kind}`}>
+          <i />
+          {node.kind}
+        </span>
+        {contextRole && <span className={`path-role role-${contextRole.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{contextRole}</span>}
+        <span className="node-identity" title={`Graph ID: ${node.id}`}>
+          ID · {node.id.length > 10 ? `…${node.id.slice(-8)}` : node.id}
+        </span>
+        <button
+          type="button"
+          className="inspector-close"
+          onClick={closeInspector}
+          aria-label="Close source inspector"
+        >
+          <Icon name="close" size={13} />
+        </button>
+      </div>
+      <div className="inspector-source">
+        <span className="panel-label">
+          {hasSourceLocation ? "SOURCE LOCATION" : "SOURCE LOCATION UNAVAILABLE"}
+        </span>
+        <h3>{node.file || "This bundle has no file mapping"}</h3>
+        <div className="inspector-symbol">
+          <b>{node.label || node.id}</b>
+          {node.qualifiedName && node.qualifiedName !== node.label && (
+            <small>{node.qualifiedName}</small>
+          )}
+          {node.signature && <code>{node.signature}</code>}
+          {node.module && <span>module {node.module}</span>}
+          {node.scope && (node.scope.label || node.scope.service || node.scope.package || node.scope.module || node.scope.repository) && (
+            <span className="node-scope-context">
+              scope {node.scope.label || node.scope.service || node.scope.package || node.scope.module || node.scope.repository}
+            </span>
+          )}
+          {node.scope?.kind && (
+            <span className={`node-scope-kind scope-kind-${node.scope.kind.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>
+              {node.scope.kind} boundary
+            </span>
+          )}
+        </div>
+        <div className="location-row">
+          <span className="line-number">{hasSourceLocation ? <>{range}{node.column ? ` · column ${node.column}` : ""}</> : <>Graph ID · {node.id}</>}</span>
+          <button type="button" onClick={copyLocation} aria-label={hasSourceLocation ? "Copy source location" : "Copy graph ID"}>
+            <Icon name="code" size={12} />
+            {copied ? "Copied" : copyError ? "Retry" : hasSourceLocation ? "Copy" : "Copy ID"}
+          </button>
+          <span className="sr-only" aria-live="polite">{copied ? "Source location copied." : copyError ? "Source location could not be copied." : ""}</span>
+        </div>
+        <pre className="source-code">
+          <code>{snippet || "Source unavailable in this bundle."}</code>
+        </pre>
+        {!snippet && (
+          <p className="source-unavailable-note">
+            This bundle includes graph evidence for the node, but not its source text. Any available location, graph ID, and connected paths remain available below.
+          </p>
+        )}
+        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet} title={!snippet ? "No source snippet is available in this bundle" : undefined}>
+          <Icon name="code" size={12} />
+          {snippetCopied ? "Snippet copied" : snippetCopyError ? "Retry copy" : "Copy snippet"}
+        </button>
+        <span className="sr-only" aria-live="polite">{snippetCopied ? "Source snippet copied." : snippetCopyError ? "Source snippet could not be copied." : ""}</span>
+      </div>
+      <div className="detail-rule" />
+      <span className="panel-label">WHAT THIS NODE MEANS</span>
+      <p className="detail-copy">
+        {descriptions[node.kind] ||
+          (contextRole
+            ? "A node participating in the selected graph path."
+            : "A node participating in the loaded code graph.")}
+      </p>
+      {(contextNote || contextOccurrence) && (
+        <div className="node-documentation">
+          <span className="panel-label">SELECTED PATH CONTEXT</span>
+          {contextNote && <p>{contextNote}</p>}
+          {contextOccurrence && <p>Occurrence · {contextOccurrence}</p>}
+        </div>
+      )}
+      {node.documentation && (
+        <div className="node-documentation">
+          <span className="panel-label">DOCUMENTATION</span>
+          <p>{node.documentation}</p>
+        </div>
+      )}
+      {app && (
+        <>
+          <div className="detail-rule" />
+          <span className="panel-label">WHY IT IS INCLUDED</span>
+          <p className="detail-copy">
+            This node is present in {flows.length} graph path
+            {flows.length === 1 ? "" : "s"}, {entries.length} request path
+            {entries.length === 1 ? "" : "s"}, and {relationships.length}{" "}
+            normalized relationship{relationships.length === 1 ? "" : "s"} in
+            this bundle.
+          </p>
+          <div className="inspector-context">
+            <span className="panel-label">{securityContext ? "CONNECTED EVIDENCE" : "CONNECTED CONTEXT"}</span>
+            {flows.length > 0 && (
+              <div>
+                <small>GRAPH PATHS</small>
+                {(showAllConnections ? flows : flows.slice(0, 4)).map((flow) =>
+                  onFlow ? (
+                    <button
+                      type="button"
+                      className="connected-link"
+                      key={flow.id}
+                      onClick={() =>
+                        onFlow(flow.id, node.id)
+                      }
+                    >
+                      <span>{flow.name} · {flow.kind || "graph path"} · {flow.steps.length} symbols{contextRoute(app, flow.steps.map((step) => step.node_id)) ? ` · ${contextRoute(app, flow.steps.map((step) => step.node_id))}` : ""}</span>
+                      <Icon name="arrow" size={11} />
+                    </button>
+                  ) : (
+                    <span key={flow.id}>{flow.name}</span>
+                  ),
+                )}
+              </div>
+            )}
+            {entries.length > 0 && (
+              <div>
+                <small>REQUEST PATHS</small>
+                {(showAllConnections ? entries : entries.slice(0, 4)).map((entry) =>
+                  onEntry ? (
+                    <button
+                      type="button"
+                      className="connected-link"
+                      key={entry.id}
+                      onClick={() =>
+                        onEntry(
+                          app.entries.findIndex((item) => item.id === entry.id),
+                          node.id,
+                        )
+                      }
+                    >
+                      <span>{entry.label} · {entry.hops.length} hops{contextRoute(app, entry.hops.map((hop) => hop.node_id)) ? ` · ${contextRoute(app, entry.hops.map((hop) => hop.node_id))}` : ""}</span>
+                      <Icon name="arrow" size={11} />
+                    </button>
+                  ) : (
+                    <span key={entry.id}>{entry.label}</span>
+                  ),
+                )}
+              </div>
+            )}
+            {relationships.length > 0 && (
+              <div>
+                <small>RELATIONSHIPS</small>
+                {(showAllConnections ? relationships : relationships.slice(0, 4)).map((edge) => {
+                  const peerId =
+                    edge.source === node.id ? edge.target : edge.source;
+                  const peer = app.nodes.find((item) => item.id === peerId);
+                  const peerFlow = app.flows.find((flow) => flow.steps.some((step) => step.node_id === peerId));
+                  const peerEntry = app.entries.find((entry) => entry.hops.some((hop) => hop.node_id === peerId));
+                  const crossesBoundary = Boolean(peer && scopeIdentity(node) && scopeIdentity(peer) && scopeIdentity(node) !== scopeIdentity(peer));
+                    return (
+                      <div className="relationship-item" key={edge.id}>
+                        <span>
+                          {edge.source === node.id ? "→ leads to" : "← receives from"}{" "}
+                          {(onNode || peerFlow && onFlow || peerEntry && onEntry) ? <button type="button" className="relationship-peer" aria-label={`${onNode ? "Focus" : peerFlow && onFlow ? "Open graph path for" : "Open request path for"} ${peer?.label || peerId}`} onClick={() => onNode ? onNode(peerId) : peerFlow && onFlow ? onFlow(peerFlow.id, peerId) : onEntry?.(app.entries.findIndex((item) => item.id === peerEntry!.id), peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
+                        </span>
+                        {(edge.origins?.length || edge.dynamic || edge.alias || edge.confidence) && (
+                          <small className="relationship-signals">
+                            {edge.origins?.map((origin) => <em key={origin}>{originLabel(origin)}</em>)}
+                            {edge.dynamic && <em>dynamic</em>}
+                            {edge.alias && <em>alias</em>}
+                            {edge.confidence && <em>{edge.confidence} confidence</em>}
+                          </small>
+                        )}
+                        {edge.limitations?.length ? (
+                          <small className="relationship-caveat">
+                            <i />
+                            {edge.limitations.join(" · ")}
+                          </small>
+                        ) : null}
+                        {crossesBoundary && peer && (
+                          <small className="relationship-boundary">
+                            <i />
+                            {scopeDisplay(node)} → {scopeDisplay(peer)}
+                          </small>
+                        )}
+                      </div>
+                    );
+                })}
+              </div>
+            )}
+            {(flows.length > 4 || entries.length > 4 || relationships.length > 4) && (
+              <button
+                type="button"
+                className="connections-toggle"
+                onClick={() => setShowAllConnections((open) => !open)}
+              >
+                {showAllConnections
+                  ? "Show fewer connections"
+                  : `Show all connections · ${flows.length + entries.length + relationships.length}`}
+              </button>
+            )}
+            {!flows.length && !entries.length && !relationships.length && (
+              <p>{securityContext ? "No connected evidence records in this bundle." : "No connected paths or relationships in this bundle."}</p>
+            )}
+          </div>
+        </>
+      )}
+      <dl className="node-facts">
+        <div>
+          <dt>Kind</dt>
+          <dd>{node.kind}</dd>
+        </div>
+        <div>
+          <dt>Graph ID</dt>
+          <dd>{node.id}</dd>
+        </div>
+        {app && (
+          <>
+            <div>
+              <dt>Incoming</dt>
+              <dd>{incoming}</dd>
+            </div>
+            <div>
+              <dt>Outgoing</dt>
+              <dd>{outgoing}</dd>
+            </div>
+          </>
+        )}
+        {app && (
+          <>
+            <div>
+              <dt>Graph paths</dt>
+              <dd>{flows.length}</dd>
+            </div>
+            <div>
+              <dt>Request paths</dt>
+              <dd>{entries.length}</dd>
+            </div>
+          </>
+        )}
+      </dl>
+    </aside>
+  );
 }

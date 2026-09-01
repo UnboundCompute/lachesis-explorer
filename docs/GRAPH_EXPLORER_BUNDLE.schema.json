@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lachesis.unboundcompute.com/schemas/graph-explorer-bundle-2.0.json",
+  "title": "Lachesis Explorer graph-first bundle",
+  "description": "Machine-readable contract for a Lachesis Explorer 2.0 bundle.",
+  "type": "object",
+  "required": ["format", "schema_version", "meta", "graph"],
+  "properties": {
+    "format": { "const": "lachesis-explorer-bundle" },
+    "schema_version": { "const": "2.0" },
+    "meta": { "$ref": "#/$defs/meta" },
+    "graph": { "$ref": "#/$defs/graph" },
+    "paths": { "$ref": "#/$defs/paths" },
+    "mcp": { "type": "array", "items": { "$ref": "#/$defs/mcp" } },
+    "security": { "$ref": "#/$defs/security" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "meta": {
+      "type": "object",
+      "required": ["repository", "language", "revision", "lines", "indexed_nodes"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "language": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "description": "Exporter-authored summary of what this graph projection represents." },
+        "lines": { "type": "integer", "minimum": 0 },
+        "indexed_nodes": { "type": "integer", "minimum": 0 },
+        "generated_at": { "type": "string" },
+        "fixture": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "graph": {
+      "type": "object",
+      "required": ["nodes"],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/node" }
+        },
+        "edges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/edge" }
+        },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/file" } },
+        "modules": { "type": "array", "items": { "$ref": "#/$defs/module" } },
+        "entrypoints": { "type": "array", "items": { "$ref": "#/$defs/entrypoint" } },
+        "capabilities": { "type": "array", "items": { "type": "string" } },
+        "coverage": { "$ref": "#/$defs/coverage" }
+      },
+      "additionalProperties": true
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "kind", "file", "line", "label", "snippet"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "file": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 0 },
+        "column": { "type": "integer", "minimum": 0 },
+        "end_line": { "type": "integer", "minimum": 0 },
+        "end_column": { "type": "integer", "minimum": 0 },
+        "label": { "type": "string", "minLength": 1 },
+        "qualified_name": { "type": "string" },
+        "module": { "type": "string" },
+        "scope": { "$ref": "#/$defs/scope", "description": "Optional repository, service, package, and module context used to render path boundaries." },
+        "signature": { "type": "string" },
+        "documentation": { "type": "string" },
+        "snippet": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "repository": { "type": "string" },
+        "service": { "type": "string" },
+        "package": { "type": "string" },
+        "module": { "type": "string" },
+        "kind": { "type": "string" },
+        "label": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "file": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "path": { "type": "string" },
+        "name": { "type": "string" },
+        "module": { "type": "string" },
+        "language": { "type": "string" },
+        "lines": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "module": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "label": { "type": "string" },
+        "path": { "type": "string" },
+        "parent_id": { "type": "string", "minLength": 1 },
+        "parentId": { "type": "string", "minLength": 1 },
+        "node_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      },
+      "additionalProperties": true
+    },
+    "entrypoint": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "type": "string" },
+        "node_id": { "type": "string", "minLength": 1 },
+        "nodeId": { "type": "string", "minLength": 1 },
+        "file": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["source", "target"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Stable edge identity; must be unique within graph.edges when supplied." },
+        "source": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string" },
+        "relation": { "type": "string" },
+        "alias": { "type": "boolean" },
+        "dynamic": { "type": "boolean" },
+        "confidence": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "scope": { "type": "string" },
+        "included_nodes": { "type": "integer", "minimum": 0 },
+        "indexed_nodes": { "type": "integer", "minimum": 0 },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "values": { "type": "array", "items": { "$ref": "#/$defs/value_path" } },
+        "requests": { "type": "array", "items": { "$ref": "#/$defs/request_path" } },
+        "value_flows": { "type": "array", "items": { "$ref": "#/$defs/value_path" }, "description": "Compatibility alias for values." },
+        "request_paths": { "type": "array", "items": { "$ref": "#/$defs/request_path" }, "description": "Compatibility alias for requests." }
+      },
+      "additionalProperties": true
+    },
+    "value_path": {
+      "type": "object",
+      "required": ["steps"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1, "description": "Exporter-defined path purpose, such as value-flow or data-flow; not a security verdict." },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "source_node": { "type": "string", "minLength": 1 },
+        "sink_node": { "type": "string", "minLength": 1 },
+        "confidence": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } }
+      },
+      "additionalProperties": true
+    },
+    "request_path": {
+      "type": "object",
+      "required": ["hops"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "entry": { "type": "string" },
+        "entry_node": { "type": "string" },
+        "kind": { "type": "string" },
+        "description": { "type": "string" },
+        "confidence": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } },
+        "hops": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/hop" } }
+      },
+      "additionalProperties": true
+    },
+    "step": {
+      "type": "object",
+      "required": ["node_id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Stable occurrence identity within this path." },
+        "node_id": { "type": "string", "minLength": 1 },
+        "role": { "type": "string" },
+        "note": { "type": "string" },
+        "edge": { "$ref": "#/$defs/edge_context" }
+      },
+      "additionalProperties": true
+    },
+    "hop": {
+      "type": "object",
+      "required": ["node_id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Stable occurrence identity within this request path." },
+        "node_id": { "type": "string", "minLength": 1 },
+        "edge_label": { "type": "string" },
+        "caption": { "type": "string" },
+        "confidence": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } },
+        "layout": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "edge_context": {
+      "type": "object",
+      "properties": {
+        "relation": { "type": "string" },
+        "alias": { "type": "boolean" },
+        "dynamic": { "type": "boolean" },
+        "confidence": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "mcp": {
+      "type": "object",
+      "properties": {
+        "for": { "type": "string" },
+        "flow": { "type": "string" },
+        "tool": { "type": "string" },
+        "verb": { "type": "string" },
+        "args": {},
+        "result_summary": { "type": "string" },
+        "hops": { "type": "integer", "minimum": 0 },
+        "nodes": { "type": ["integer", "array"] },
+        "node_ids": { "type": "array", "items": { "type": "string" } },
+        "indirections": { "type": "integer", "minimum": 0 },
+        "confidence": { "type": "string" },
+        "origin": { "type": "string" },
+        "status": { "type": "string" },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "findings": { "type": "array", "items": { "type": "object" } }
+      },
+      "additionalProperties": true
+    }
+  }
+}
