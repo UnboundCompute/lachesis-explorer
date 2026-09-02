@@ -1090,6 +1090,7 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
           }}
+          onShare={(params) => copyInvestigationLink(params)}
         />
       )}
       {view === "journey" && (
@@ -1123,6 +1124,7 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
           }}
+          onShare={(params) => copyInvestigationLink(params)}
         />
       )}
       {view === "investigate" && (

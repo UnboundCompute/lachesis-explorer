@@ -28,6 +28,7 @@ type Props = {
   onView: (view: "journey" | "map", nodeId?: string) => void;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
+  onShare?: (params: Record<string, string>) => Promise<boolean>;
 };
 type NodeIndex = ReadonlyMap<string, App["nodes"][number]>;
 
@@ -168,6 +169,7 @@ export function TraceView({
   onView,
   onFlow,
   onEntry,
+  onShare,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   const nodeById = useMemo(() => new Map(app.nodes.map((node) => [node.id, node])), [app.nodes]);
@@ -175,11 +177,13 @@ export function TraceView({
   const [searchText, setSearchText] = useState("");
   const [previousFlowId, setPreviousFlowId] = useState("");
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedFlowRef = useRef<HTMLButtonElement>(null);
   const previousDirection = useRef(direction);
   useEffect(() => {
     if (!flow) return;
     setExplanationState("idle");
+    setShareState("idle");
     const ordered = direction === "backward" ? flow.steps : [...flow.steps].reverse();
     if (previousDirection.current !== direction) {
       const next = Math.max(0, ordered.length - 1 - selectedPosition);
@@ -346,6 +350,22 @@ export function TraceView({
       trackEvent("path_explanation_copy_failed", { surface: "trace" });
     }
   }
+  async function sharePath() {
+    if (!onShare) return;
+    const params: Record<string, string> = {
+      view: "trace",
+      flow: flow.id,
+      node: stepId,
+      direction,
+      step_index: String(selectedIndex),
+    };
+    const occurrence = items[selectedIndex]?.occurrenceId;
+    if (occurrence) params.step_occurrence = occurrence;
+    if (query) params.filter = query;
+    const copied = await onShare(params);
+    setShareState(copied ? "copied" : "failed");
+    window.setTimeout(() => setShareState("idle"), 1800);
+  }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="sidebar">
@@ -503,6 +523,11 @@ export function TraceView({
             <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
               {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
             </button>
+            {onShare && (
+              <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
+                {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+              </button>
+            )}
             <div className="step-nav" aria-label="Path step navigation">
               <button
                 className="inspector-reopen"

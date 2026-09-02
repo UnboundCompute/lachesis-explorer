@@ -43,6 +43,7 @@ type Props = {
   onView: (view: "trace" | "map", nodeId?: string) => void;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
+  onShare?: (params: Record<string, string>) => Promise<boolean>;
 };
 export function JourneyView({
   app,
@@ -59,6 +60,7 @@ export function JourneyView({
   onView,
   onFlow,
   onEntry,
+  onShare,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
   const nodeById = useMemo(() => new Map(app.nodes.map((node) => [node.id, node])), [app.nodes]);
@@ -66,6 +68,7 @@ export function JourneyView({
   const [entrySearch, setEntrySearch] = useState("");
   const [previousEntryIndex, setPreviousEntryIndex] = useState<number | null>(null);
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedHopRef = useRef<HTMLButtonElement>(null);
   const visibleEntries = useMemo(() => {
     const term = entrySearch.trim().toLowerCase();
@@ -100,6 +103,7 @@ export function JourneyView({
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
     setExplanationState("idle");
+    setShareState("idle");
   }, [app, entryIndex, hopId, position]);
   useEffect(() => {
     selectedHopRef.current?.scrollIntoView({ block: "nearest" });
@@ -202,6 +206,20 @@ export function JourneyView({
       setExplanationState("failed");
       trackEvent("path_explanation_copy_failed", { surface: "journey" });
     }
+  }
+  async function shareEntry() {
+    if (!onShare) return;
+    const params: Record<string, string> = {
+      view: "journey",
+      entry: entry.id,
+      hop: hopId,
+      hop_index: String(selectedIndex),
+    };
+    const occurrence = items[selectedIndex]?.occurrenceId;
+    if (occurrence) params.hop_occurrence = occurrence;
+    const copied = await onShare(params);
+    setShareState(copied ? "copied" : "failed");
+    window.setTimeout(() => setShareState("idle"), 1800);
   }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
@@ -334,6 +352,11 @@ export function JourneyView({
             <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
               {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
             </button>
+            {onShare && (
+              <button className="inspector-reopen" type="button" onClick={shareEntry} aria-live="polite">
+                {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+              </button>
+            )}
             <div className="step-nav" role="group" aria-label="Request flow step navigation">
               <button
                 className="inspector-reopen"
