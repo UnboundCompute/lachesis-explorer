@@ -90,6 +90,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `22e98a9` — clarify the hero’s line-count fact as Repository LOC rather than Source
 - `9c85707` — return to bundle context after activation and wrap long evidence metrics at narrow widths
 - `106d43c` — raise upload success/error notice actions to the mobile touch-target minimum
+- `c962f4f` — raise populated Compare summaries, copy actions, expansion controls, and search clear to mobile touch targets
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
