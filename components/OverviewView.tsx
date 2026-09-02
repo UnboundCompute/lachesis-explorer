@@ -473,10 +473,11 @@ export function OverviewView({
                 type="button"
                 className="share-control"
                 onClick={shareNode}
-                aria-label={securityMode ? "Copy link to selected graph node" : "Copy portable note for selected symbol"}
+                aria-label={securityMode ? "Copy link to selected graph node" : "Copy Markdown explanation for selected symbol"}
+                title={securityMode ? "Copy a shareable link to this graph node" : "Copy a portable Markdown explanation of this symbol"}
                 aria-live="polite"
               >
-                {shareState === "copied" ? (securityMode ? "Link copied" : "Note copied") : shareState === "failed" ? "Copy failed" : securityMode ? "Copy link" : "Copy note"}
+                {shareState === "copied" ? (securityMode ? "Link copied" : "Markdown copied") : shareState === "failed" ? "Copy failed" : securityMode ? "Copy link" : "Copy Markdown"}
               </button>
             )}
             {!inspectorOpen && visible.length > 0 && (
