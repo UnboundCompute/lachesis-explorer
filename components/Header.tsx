@@ -16,7 +16,7 @@ const primary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'compare', label: 'Compare', detail: 'Review revisions' },
 ]
 const secondary: Array<{ id: View; label: string; detail: string }> = [
-  { id: 'journey', label: 'Request flow', detail: 'Walk from entrypoint to effect' },
+  { id: 'journey', label: 'Request flow', detail: 'Walk from starting point to effect' },
   { id: 'investigate', label: 'What reaches here', detail: 'Compare incoming paths' },
   { id: 'install', label: 'Setup', detail: 'Build graphs locally' },
 ]

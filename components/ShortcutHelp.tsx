@@ -8,9 +8,9 @@ type Props = {
 };
 
 const shortcuts = [
-  ["⌘ K / Ctrl K", "Open the jump menu"],
-  ["Home / End", "Jump to the first or last jump-menu result, or graph node"],
-  ["/", "Focus path search while tracing"],
+  ["⌘ K / Ctrl K", "Open the jump menu for views, paths, and symbols"],
+  ["Home / End", "Jump to the first or last item in the current list or path"],
+  ["/", "Focus path or symbol search"],
   ["[ / ]", "Move to the previous or next path step"],
   ["← / →", "Move between nodes when a graph node is focused; otherwise change trace direction"],
   ["↑ / ↓", "Move between rows in the topology view"],
@@ -68,7 +68,7 @@ export function ShortcutHelp({ opener, onClose }: Props) {
         <header>
           <div>
             <span className="panel-label">QUICK REFERENCE</span>
-            <h2 id="shortcut-help-title">Read the graph faster.</h2>
+        <h2 id="shortcut-help-title">Understand the code faster.</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="Close shortcut help">
             ×

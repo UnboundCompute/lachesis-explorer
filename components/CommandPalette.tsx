@@ -77,7 +77,7 @@ export function CommandPalette({
       [
         {
           id: "view-home",
-          label: "Open understanding home",
+          label: "Open Understand home",
           meta: "View",
           run: () => onView("home"),
         },
@@ -179,7 +179,7 @@ export function CommandPalette({
           .map((node) => ({
             id: `sink-${node.id}`,
             label: node.label || node.id,
-          meta: `Sink · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"}`,
+          meta: `${app.findings.length > 0 || app.bundle.projection === "security projection" ? "Sink" : "Destination"} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"}`,
             run: () => onSink(node.id),
           })),
       ].filter(
