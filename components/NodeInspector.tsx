@@ -30,8 +30,13 @@ function sourceUrlFor(app: App | undefined, node: Node) {
   if (!app?.bundle.sourceUrlTemplate || !node.file) return undefined;
   const template = app.bundle.sourceUrlTemplate;
   if (!template.includes("{file}")) return undefined;
+  const encodedFile = node.file
+    .split(/[\\/]/)
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
   const url = template
-    .replaceAll("{file}", node.file)
+    .replaceAll("{file}", encodedFile)
     .replaceAll("{line}", String(node.line || 1))
     .replaceAll("{end_line}", String(node.endLine || node.line || 1))
     .replaceAll("{revision}", encodeURIComponent(app.commit));
