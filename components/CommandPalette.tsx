@@ -71,7 +71,15 @@ function sourceCoverage(app: App, steps: Array<{ node_id: string }>) {
 
 function matchesCommand(command: Command, query: string) {
   const haystack = `${command.label} ${command.meta} ${command.keywords ?? ""}`.toLowerCase();
-  return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => haystack.includes(term));
+  return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => {
+    const [key, ...rest] = term.split(":");
+    if (!rest.length) return haystack.includes(term);
+    const value = rest.join(":");
+    if (key === "file") return command.id.startsWith("file-") && haystack.includes(value);
+    if (key === "path") return command.id.startsWith("flow-") && haystack.includes(value);
+    if (["kind", "module", "scope", "service", "repo", "repository"].includes(key)) return haystack.includes(value);
+    return haystack.includes(value);
+  });
 }
 
 function matchingNodeId(
