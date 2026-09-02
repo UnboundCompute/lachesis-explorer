@@ -114,21 +114,21 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
               <span>{item.label}</span><small>{item.detail}</small>
             </button>
           ))}
-          <div className="more-views" ref={moreRef}>
-            <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
-              <span>More</span><small>Focused views</small><Icon name="chevron" size={11} />
-            </button>
-            {moreOpen && (
-              <div id="more-analysis-menu" className="more-menu" role="menu" aria-label="More analysis views">
-                {secondary.map(item => (
-                  <button type="button" key={item.id} role="menuitem" tabIndex={-1} aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
-                    <span><b>{item.label}</b><small>{item.detail}</small></span><Icon name="arrow" size={12} />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </nav>
+        <div className="more-views" ref={moreRef}>
+          <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
+            <span>More</span><small>Focused views</small><Icon name="chevron" size={11} />
+          </button>
+          {moreOpen && (
+            <div id="more-analysis-menu" className="more-menu" role="menu" aria-label="More analysis views">
+              {secondary.map(item => (
+                <button type="button" key={item.id} role="menuitem" tabIndex={-1} aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
+                  <span><b>{item.label}</b><small>{item.detail}</small></span><Icon name="arrow" size={12} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="header-actions">
           <button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14} /><span>Jump</span><kbd>⌘K /</kbd></button>
           <button type="button" className="theme-toggle" suppressHydrationWarning aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`} onClick={() => { setDark(!dark); trackEvent('theme_toggled', { theme: dark ? 'light' : 'dark' }) }}><Icon name={dark ? 'sun' : 'moon'} size={15} /><span>{dark ? 'Light' : 'Dark'}</span></button>
