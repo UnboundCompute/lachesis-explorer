@@ -149,9 +149,11 @@ export function HomeView({
 }: Props) {
   const [selectedId, setSelectedId] = useState(app.findings[0]?.id ?? "");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+  const [queueSearch, setQueueSearch] = useState("");
   useEffect(() => {
     setSelectedId(app.findings[0]?.id ?? "");
     setQueueFilter("all");
+    setQueueSearch("");
   }, [app]);
   const findings = useMemo(
     () =>
@@ -196,13 +198,26 @@ export function HomeView({
       return flowCount(b) - flowCount(a) || stepCount(b) - stepCount(a);
     })[0];
   const visibleFindings = useMemo(
-    () =>
-      queueFilter === "all"
-        ? findings
-        : findings.filter(
-            (item) => evidenceStatus(item.evidence) === queueFilter,
-          ),
-    [findings, queueFilter],
+    () => {
+      const term = queueSearch.trim().toLowerCase();
+      return findings.filter((item) => {
+        const matchesStatus = queueFilter === "all" || evidenceStatus(item.evidence) === queueFilter;
+        if (!matchesStatus) return false;
+        if (!term) return true;
+        const nodes = item.flow.steps
+          .map((step) => app.nodes.find((node) => node.id === step.node_id))
+          .filter(Boolean);
+        return [
+          item.flow.name,
+          item.flow.kind,
+          item.flow.description,
+          item.evidence?.result_summary,
+          ...item.flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation]),
+          ...nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module] : []),
+        ].filter(Boolean).join(" ").toLowerCase().includes(term);
+      });
+    },
+    [app, findings, queueFilter, queueSearch],
   );
   const priority =
     visibleFindings.find((item) => item.flow.id === selectedId) ??
@@ -744,6 +759,18 @@ export function HomeView({
               ))}
             </div>
           )}
+          {!graphOnly && !metadataOnly && (
+            <label className="search queue-search">
+              <Icon name="search" size={14} />
+              <input
+                value={queueSearch}
+                onChange={(event) => setQueueSearch(event.target.value)}
+                placeholder="Find a path, symbol, file, or code…"
+                aria-label="Search evidence paths by path, symbol, file, or source code"
+              />
+              {queueSearch && <button type="button" onClick={() => setQueueSearch("")} aria-label="Clear evidence search">×</button>}
+            </label>
+          )}
           <div className="queue-list">
             {queueItems.map((item, index) => (
               <button
@@ -790,9 +817,9 @@ export function HomeView({
                     ? "This bundle has no security overlay; explore its graph paths instead."
                     : "No paths were included; open the full graph to browse its structure."
                 : "No findings match this filter."}
-              {!graphOnly && !metadataOnly && queueFilter !== "all" && (
-                <button type="button" onClick={() => setQueueFilter("all")}>
-                  Show all findings
+              {!graphOnly && !metadataOnly && (queueFilter !== "all" || queueSearch) && (
+                <button type="button" onClick={() => { setQueueFilter("all"); setQueueSearch(""); }}>
+                  Show all matching findings
                 </button>
               )}
             </div>
