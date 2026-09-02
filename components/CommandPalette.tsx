@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { flowDisplayName, type App } from "../lib/lachesis";
+import { entryDisplayName, flowDisplayName, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 
@@ -226,7 +226,7 @@ export function CommandPalette({
         })),
         ...app.entries.map((entry, index) => ({
           id: `entry-${entry.id}`,
-          label: entry.label,
+          label: entryDisplayName(entry, app.nodes, app.entries),
           meta: `Request flow · ${entry.hops.length} steps · ${sourceCoverage(app, entry.hops)}`,
           keywords: entry.hops.flatMap((hop) => {
             const node = app.nodes.find((item) => item.id === hop.node_id);

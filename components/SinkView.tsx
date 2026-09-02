@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import type { App } from "../lib/lachesis";
+import { entryDisplayName, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
 import { ConvergenceCanvas } from "./ConvergenceCanvas";
@@ -499,12 +499,12 @@ export function SinkView({
                 const sharedHop = entry.hops.find((hop) => flowNodes.has(hop.node_id));
                 const entryIndex = app.entries.findIndex((item) => item.id === entry.id);
                 const sharedCount = entry.hops.filter((hop) => flowNodes.has(hop.node_id)).length;
-                const content = <><i />{entry.label}<small>{sharedCount} shared</small></>;
+                const content = <><i />{entryDisplayName(entry, app.nodes, app.entries)}<small>{sharedCount} shared</small></>;
                 return onEntry && entryIndex >= 0 ? (
                   <button type="button" className="overlap-item" key={entry.id} onClick={() => {
                     onRecord("Opened overlapping request flow", entry.id, `from ${sink.label || sink.id}`);
                     onEntry(entryIndex, sharedHop?.node_id ?? entry.hops[0]?.node_id ?? "");
-                  }} aria-label={`Open ${entry.label}, ${sharedCount} shared steps`}>
+                  }} aria-label={`Open ${entryDisplayName(entry, app.nodes, app.entries)}, ${sharedCount} shared steps`}>
                     {content}<Icon name="arrow" size={11} />
                   </button>
                 ) : <span key={entry.id}>{content}</span>;
