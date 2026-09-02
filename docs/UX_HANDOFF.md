@@ -152,6 +152,8 @@ The Codex in-app browser runtime currently reports no available browsers (`[]`).
 
 Settled light-theme validation with the real `libxml2` bundle at 390px and 1440px confirmed readable primary and secondary text, preserved semantic accent colors, no horizontal overflow, and no browser errors. The first phone screenshot was captured during the intentional theme transition; the settled render is the authoritative result.
 
+The populated Compare workspace was also visually checked at 390px with the real `libxml2` bundle: active History appears only when navigation state exists, comparison actions meet the touch-target minimum, the success notice remains readable, and the dense diff sections stay within the viewport.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
