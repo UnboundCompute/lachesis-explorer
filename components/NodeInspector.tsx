@@ -7,10 +7,10 @@ import { copyText } from "../lib/clipboard";
 
 const descriptions: Record<string, string> = {
   sink: "Execution boundary or external effect represented in the code graph.",
-  route: "Request entrypoint represented in the code graph.",
+  route: "Starting point represented in the code graph.",
   guard: "Control that checks identity, state, or authorization.",
   call: "A resolved call site connecting this path to another function.",
-  service: "Application service participating in this request path.",
+  service: "Application service participating in this request flow.",
   assignment: "A value definition or reassignment in the flow.",
   function: "A callable symbol resolved in the code graph.",
   method: "A method symbol resolved in the code graph.",
@@ -28,11 +28,11 @@ const scopeDisplay = (node: Node) =>
   node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped";
 const originLabel = (origin: string) =>
   origin === "bundle"
-    ? "explicit edge"
+    ? "recorded connection"
     : origin === "value-flow"
       ? "graph path"
       : origin === "request-path"
-        ? "request path"
+        ? "request flow"
         : origin;
 function contextRoute(app: App, nodeIds: string[]) {
   const route: string[] = [];
@@ -326,8 +326,8 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
                         {(edge.origins?.length || edge.dynamic || edge.alias || edge.confidence) && (
                           <small className="relationship-signals">
                             {edge.origins?.map((origin) => <em key={origin}>{originLabel(origin)}</em>)}
-                            {edge.dynamic && <em>dynamic</em>}
-                            {edge.alias && <em>alias</em>}
+                            {edge.dynamic && <em>runtime-dependent</em>}
+                            {edge.alias && <em>alternate name</em>}
                             {edge.confidence && <em>{edge.confidence} confidence</em>}
                           </small>
                         )}
