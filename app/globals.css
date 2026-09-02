@@ -3,6 +3,7 @@
 @import 'shadcn/tailwind.css';
 
 .node-row-context{color:var(--ink-2)!important}
+.topology-match{color:var(--cyan)!important}
 .source-copy{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--canvas-raised);color:var(--ink-3);font:7px var(--mono)}
 .source-copy:hover:not(:disabled){border-color:var(--line-strong);color:var(--brand)}
 .source-copy:disabled{cursor:not-allowed;opacity:.5}

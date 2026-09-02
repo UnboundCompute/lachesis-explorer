@@ -86,6 +86,25 @@ function matchesFlow(app: App, flow: Flow, query: string) {
   });
 }
 
+function flowMatchLabel(app: App, flow: Flow, query: string) {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return "";
+  const nodes = flow.steps
+    .map((step) => app.nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean);
+  const fields = [
+    { label: "source", values: nodes.flatMap((node) => node ? [node.snippet] : []) },
+    { label: "documentation", values: nodes.flatMap((node) => node ? [node.documentation] : []) },
+    { label: "signature", values: nodes.flatMap((node) => node ? [node.signature] : []) },
+    { label: "symbol", values: nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.id] : []) },
+    { label: "file", values: nodes.flatMap((node) => node ? [node.file, node.module, node.scope?.module] : []) },
+  ];
+  const match = fields.find(({ values }) =>
+    terms.some((term) => values.some((value) => value?.toLowerCase().includes(term))),
+  );
+  return match ? `Found in ${match.label}` : "";
+}
+
 function pathKindLabel(flow: Flow, securityPath: boolean) {
   if (securityPath) return "Security witness";
   const kind = flow.kind?.trim().toLowerCase();
@@ -383,6 +402,7 @@ export function TraceView({
                       : pathKindLabel(item, false)} {" · "}
                     {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "non-direct"} · {flowLocation(app, item)}
                   </small>
+                  {query && flowMatchLabel(app, item, query) && <small className="node-row-context">{flowMatchLabel(app, item, query)}</small>}
                   <small className="node-row-context">
                     {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary ?? flowLocation(app, item)}
                   </small>

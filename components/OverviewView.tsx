@@ -129,6 +129,22 @@ function matches(node: Node, query: string, app: App) {
     });
 }
 
+function nodeMatchLabel(node: Node, query: string) {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return "";
+  const fields = [
+    { label: "source", values: [node.snippet] },
+    { label: "documentation", values: [node.documentation] },
+    { label: "signature", values: [node.signature] },
+    { label: "symbol", values: [node.label, node.qualifiedName, node.id] },
+    { label: "file", values: [node.file, node.module, node.scope?.module] },
+  ];
+  const match = fields.find(({ values }) =>
+    terms.some((term) => values.some((value) => value?.toLowerCase().includes(term))),
+  );
+  return match ? `Found in ${match.label}` : "";
+}
+
 export function OverviewView({
   app,
   mode: controlledMode,
@@ -840,6 +856,7 @@ export function OverviewView({
                       <small>
                         {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
+                      {query && nodeMatchLabel(node, query) && <small className="topology-match">{nodeMatchLabel(node, query)}</small>}
                       <small className="topology-participation">{flowCount(node.id)} graph paths · {entryCount(node.id)} request flows</small>
                     </button>
                     );
