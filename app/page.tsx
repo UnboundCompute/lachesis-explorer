@@ -1004,6 +1004,7 @@ export default function Page() {
           loadState={loadState}
           onUpload={() => fileRef.current?.click()}
           onReviewCoverage={() => {
+            setMapQuery("");
             setMapMode("health");
             changeView("map");
           }}
