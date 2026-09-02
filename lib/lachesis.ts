@@ -99,8 +99,16 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
   return point && Number.isFinite(Number(point.x)) ? {x:Number(point.x), y:Number(point.y ?? 110)} : undefined
 }
 
-function normalizeNode(n:any,i:number):Node {
+function normalizeNodeLegacy(n:any,i:number):Node {
   return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end_column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),scope:normalizeScope(n.scope??n.context??n.boundary),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??''),sourceWindow:normalizeSourceWindow(n.source_window??n.sourceWindow)}
+}
+
+function normalizeNode(n:any,i:number):Node {
+  const node = normalizeNodeLegacy(n, i)
+  if (node.endColumn == null && n.end_column == null && n.location?.end?.column != null) {
+    return { ...node, endColumn: Number(n.location.end.column) }
+  }
+  return node
 }
 
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }
