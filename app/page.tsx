@@ -507,6 +507,11 @@ export default function Page() {
     }
     setView(next);
     record("Changed view", viewLabels[next], "");
+    if (next !== view) {
+      window.requestAnimationFrame(() => {
+        workspaceRef.current?.focus({ preventScroll: false });
+      });
+    }
   }
 
   function changeMapMode(next: OverviewMode) {
