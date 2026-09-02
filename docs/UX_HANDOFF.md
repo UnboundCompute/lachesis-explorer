@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `a4dfa69` — make Jump understand the same file/module/path filters as Explore
 - `070589f` — show `<1%` instead of misleading `0%` for tiny projections
 - `86d55e5` — give hidden graph and comparison upload inputs accessible names
 - `a52d1f2` — preserve security sample identity across URL rewrites and reloads
