@@ -901,7 +901,7 @@ export function OverviewView({
               <div className="topology-minimap">
                 <div>
                   <span className="panel-label">MAP OVERVIEW</span>
-                  <small>Choose a symbol to focus its source context.</small>
+                  <small>Overview only · use the node list below to focus source context.</small>
                 </div>
                 <div className="topology-zoom" role="group" aria-label="Topology zoom controls">
                   <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out"><Icon name="minus" size={13} /></button>
@@ -909,7 +909,7 @@ export function OverviewView({
                   <button type="button" onClick={() => setTopologyZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom topology in"><Icon name="plus" size={13} /></button>
                   <button type="button" onClick={() => setTopologyZoom(1)}>Reset</button>
                 </div>
-                <svg viewBox="0 0 180 80" aria-label="Topology minimap">
+                <svg viewBox="0 0 180 80" aria-hidden="true">
                   {topologyEdges.map((edge) => {
                     const source = visibleById.get(edge.source);
                     const target = visibleById.get(edge.target);
@@ -920,8 +920,7 @@ export function OverviewView({
                   })}
                   {topologyNodes.map((node) => {
                     const point = graphPos(node);
-                    const select = () => selectNode(node.id);
-                    return <circle key={`mini-${node.id}`} className={selected?.id === node.id ? "selected" : ""} cx={8 + (point.x / 760) * 164} cy={8 + (point.y / graphHeight) * 64} r={selected?.id === node.id ? 3 : 2} onClick={(event) => { event.currentTarget.focus(); select(); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } }} role="button" tabIndex={0} aria-pressed={selected?.id === node.id} aria-label={`Focus ${node.label || node.id}${nodeScopeLabel(node) !== "Unscoped nodes" ? ` in ${nodeScopeLabel(node)}` : ""} in topology`} />;
+                    return <circle key={`mini-${node.id}`} className={selected?.id === node.id ? "selected" : ""} cx={8 + (point.x / 760) * 164} cy={8 + (point.y / graphHeight) * 64} r={selected?.id === node.id ? 3 : 2} />;
                   })}
                 </svg>
               </div>
@@ -1031,6 +1030,7 @@ export function OverviewView({
                         aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}${node.scope?.kind ? `, ${node.scope.kind} boundary` : ""}, ${nodeLocation(node)}`}
                       >
                         <title>{node.label || node.id}</title>
+                        <circle className="topology-hit-area" cx={p.x} cy={p.y} r="30" aria-hidden="true" />
                         <circle cx={p.x} cy={p.y} r="24" />
                         <text x={p.x} y={p.y + 4} textAnchor="middle">
                           {labelIndex(node)}
