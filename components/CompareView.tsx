@@ -95,6 +95,34 @@ function matchesQuery(text: string, query: string) {
   return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => text.includes(term))
 }
 
+function matchingFlowNodeId(flow: Flow, app: App, query: string) {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter((term) => term && !term.includes(":"));
+  if (!terms.length) return flow.steps[0]?.node_id ?? "";
+  const match = flow.steps.find((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    const haystack = [
+      step.role,
+      step.note,
+      step.edge?.relation,
+      node?.label,
+      node?.qualifiedName,
+      node?.signature,
+      node?.documentation,
+      node?.snippet,
+      node?.sourceWindow?.lines.join(" "),
+      node?.file,
+      node?.module,
+      node?.scope?.label,
+      node?.scope?.service,
+      node?.scope?.package,
+      node?.scope?.module,
+      node?.scope?.repository,
+    ].filter(Boolean).join(" ").toLowerCase();
+    return terms.every((term) => haystack.includes(term));
+  });
+  return match?.node_id ?? flow.steps[0]?.node_id ?? "";
+}
+
 function DiffColumn({
   label,
   items,
@@ -148,7 +176,7 @@ function DiffColumn({
           const flow = actionable ? app.flows.find((value) => value.id === item.id) : undefined
           const preview = previewFlows ? app.flows.find((value) => value.id === item.id) : undefined
           const previewScopes = preview ? flowScopes(preview, app) : []
-          const firstNodeId = flow?.steps[0]?.node_id
+          const firstNodeId = flow ? matchingFlowNodeId(flow, app, query) : undefined
           const node = openNodes ? app.nodes.find((value) => value.id === item.id) : undefined
           return preview ? (
             <details className="diff-flow-preview" key={item.id}>
@@ -296,7 +324,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
         </div>
         {visibleChangedPaths.length ? (
           (showAllChanged ? visibleChangedPaths : visibleChangedPaths.slice(0, 8)).map((item) => (
-            <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, item.base.steps[0]?.node_id ?? "")} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
+            <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, matchingFlowNodeId(item.base, base, comparisonQuery))} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
               <b>{item.base.name}</b>
               <div>
                 <span><small>BASE</small>{flowPath(item.base, base)}</span>
