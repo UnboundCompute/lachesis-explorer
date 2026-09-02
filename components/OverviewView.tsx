@@ -470,6 +470,11 @@ export function OverviewView({
   function returnToPreviousNode() {
     if (!previousNode) return;
     setSelectionHistory((current) => current.slice(0, -1));
+    if (!visible.some((node) => node.id === previousNode.id)) {
+      setSearchText("");
+      setQuery("");
+      setNeighborhoodOnly(false);
+    }
     setSelectedId(previousNode.id);
     setInspectorOpen(true);
     onFocusNode?.(previousNode.id);
