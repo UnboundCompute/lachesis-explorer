@@ -297,6 +297,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .source-unavailable-note{margin:-7px 0 12px;color:var(--amber);font:8px/1.5 var(--mono)}
 .canvas-direction{margin-left:8px;color:var(--brand-strong);font:7px var(--mono);letter-spacing:.04em}.convergence-canvas .canvas-title::after{content:' · read left → right';color:var(--brand-strong);font:7px var(--mono);font-weight:400;letter-spacing:.04em}
 @media(max-width:760px){.topology-minimap{align-items:flex-start;flex-wrap:wrap;gap:10px}.topology-minimap>div:first-child{flex:1 1 180px;min-width:0}.topology-minimap>svg{flex:1 1 100%;width:100%;max-width:none}}
+.path-reading-cue span{font-size:9px}.path-reading-cue strong{font-size:11px}.path-reading-cue small{font-size:9px}.path-index-list b{font-size:9px}.path-index-list small{font-size:8px}.source-copy{font-size:8px}.source-unavailable-note{font-size:9px}.filter-context{font-size:8px}.health-detail p{font-size:9px}
 .path-canvas .canvas-bar>div:first-child,.convergence-bar>div:first-child{min-width:0}.convergence-selected{display:inline-block;max-width:min(300px,42vw)}
 @media(max-width:500px){.convergence-selected{display:block;width:max-content;max-width:100%;margin:5px 0 0}}
 .query-chips{min-width:0;flex-wrap:wrap}
