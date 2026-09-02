@@ -70,7 +70,7 @@ export function Intro({
   const included = app.coverage.includedNodes ?? app.nodes.length;
   const indexed = app.coverage.indexedNodes ?? included;
   return (
-    <section className="context-strip">
+    <section className={`context-strip context-strip-${view}`}>
       <div className="context-copy">
         <div className="context-meta">
           <span className="context-kicker">{kicker}</span>

@@ -375,6 +375,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:760px){.query-intents{align-items:stretch;flex-direction:column}.query-intents>span{margin-bottom:2px}.query-intents button{min-height:44px;width:100%}}
 @media(max-width:760px){
   /* Keep every frequently used mobile action inside the same touch-size rhythm. */
+  .context-strip-map .context-copy p{display:none}
   .filter-toggle{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border:1px solid var(--line-strong);border-radius:999px;background:var(--brand-wash);color:var(--brand-strong);font:8px var(--mono)}
   .filter-suggestion-list{display:contents}
   .filter-suggestion-list:not(.expanded) button:nth-child(n+4){display:none}
