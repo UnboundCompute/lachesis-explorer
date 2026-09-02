@@ -150,6 +150,10 @@ export function JourneyView({
   const firstNode = nodeById.get(entry.hops[0]?.node_id ?? "");
   const lastNode = nodeById.get(entry.hops.at(-1)?.node_id ?? "");
   const contextRoute = entryScopes(entry, nodeById);
+  const sourcePreviewCount = entry.hops.filter((hop) => {
+    const node = nodeById.get(hop.node_id);
+    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+  }).length;
   const items: PathItem[] = entry.hops.map((hop) => ({
     id: hop.node_id,
     occurrenceId: hop.id,
@@ -339,16 +343,12 @@ export function JourneyView({
             <span className="panel-label">SELECTED REQUEST</span>
             <h2>{entry.label}</h2>
             {entry.description && <p className="path-description">{entry.description}</p>}
-            {(entry.confidence || entry.limitations?.length) && (
-              <p className="path-meta">
-                {entry.confidence && <span>{entry.confidence} confidence</span>}
-                {entry.limitations?.length ? <span>{entry.limitations.length} known limitation{entry.limitations.length === 1 ? "" : "s"}</span> : null}
-                {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
-              </p>
-            )}
-            {!entry.confidence && !entry.limitations?.length && contextRoute.length > 1 && (
-              <p className="path-meta"><span>context: {contextRoute.join(" → ")}</span></p>
-            )}
+            <p className="path-meta">
+              {entry.confidence && <span>{entry.confidence} confidence</span>}
+              <span>{sourcePreviewCount} / {entry.hops.length} source previews</span>
+              {entry.limitations?.length ? <span>{entry.limitations.length} known limitation{entry.limitations.length === 1 ? "" : "s"}</span> : null}
+              {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
+            </p>
           </div>
           <div className="toolbar-actions">
             {previousEntry && (
