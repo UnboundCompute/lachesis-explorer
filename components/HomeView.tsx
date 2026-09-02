@@ -816,10 +816,12 @@ export function HomeView({
                   ? graphFocus
                     ? "This bundle has no security overlay; explore its graph paths instead."
                     : "No paths were included; open the full graph to browse its structure."
-                : "No findings match this filter."}
+                : queueSearch
+                  ? `No findings match “${queueSearch}”${queueFilter !== "all" ? " with this status filter" : ""}.`
+                  : "No findings match this filter."}
               {!graphOnly && !metadataOnly && (queueFilter !== "all" || queueSearch) && (
                 <button type="button" onClick={() => { setQueueFilter("all"); setQueueSearch(""); }}>
-                  Show all matching findings
+                  {queueSearch ? "Clear search and filters" : "Show all findings"}
                 </button>
               )}
             </div>
