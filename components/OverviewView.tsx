@@ -432,6 +432,8 @@ export function OverviewView({
     { label: "Graph paths", value: app.flows.length },
     { label: "Request flows", value: app.entries.length },
     { label: "Linked records", value: app.mcp.length },
+    { label: "Source text included", value: `${app.nodes.filter((node) => node.snippet.trim()).length} / ${app.nodes.length}` },
+    { label: "Documented symbols", value: `${app.nodes.filter((node) => node.documentation?.trim()).length} / ${app.nodes.length}` },
     { label: "Unmapped nodes", value: app.nodes.filter((node) => !node.file).length },
     {
       label: "Missing layouts",
@@ -1082,6 +1084,18 @@ export function OverviewView({
                 <p>
                   <i />
                   Some nodes do not include a source file location.
+                </p>
+              )}
+              {app.nodes.some((node) => !node.snippet.trim()) && (
+                <p>
+                  <i />
+                  Some nodes include graph structure without source text; their relationships remain inspectable.
+                </p>
+              )}
+              {app.nodes.some((node) => !node.documentation?.trim()) && (
+                <p>
+                  <i />
+                  Documentation is only available for symbols that the exporter reported.
                 </p>
               )}
               {!app.mcp.length && (
