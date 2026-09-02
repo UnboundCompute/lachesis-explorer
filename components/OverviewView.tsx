@@ -546,6 +546,7 @@ export function OverviewView({
       setQuery("");
       setNeighborhoodOnly(false);
     }
+    focusAfterSelection.current = true;
     setSelectedId(previousNode.id);
     setInspectorOpen(true);
     onFocusNode?.(previousNode.id);
