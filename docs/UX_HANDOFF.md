@@ -192,6 +192,8 @@ The settled 390px render then revealed a second recovery issue: before `fa2be43`
 
 The request-flow desktop/phone pass found direct lens URLs restoring at `scrollY=73`, hiding the first heading line behind the sticky shell. After `d1c5801`, direct Trace, Request Flow, Boundary, Explore, Compare, and Setup URLs settle at `scrollY=0`; their headings begin at 122px below a 72px mobile header, with no clipping.
 
+The tablet breakpoint pass found the fixed History pill covering the lower path-reading card at 761–900px, even though the document itself had no horizontal overflow. After the follow-up tablet rule, History returns to normal document flow from 761px through 1024px, remains a 44px control, and stays floating only on wider desktop layouts; the Trace workspace was visually rechecked at 800px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
