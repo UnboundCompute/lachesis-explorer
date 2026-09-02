@@ -1,7 +1,8 @@
 import codeExplorationBundle from '../public/code-exploration-bundle.json'
 
 export type NodeScope = { repository?: string; service?: string; package?: string; module?: string; kind?: string; label?: string }
-export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; scope?: NodeScope; signature?: string; documentation?: string; snippet: string }
+export type SourceWindow = { startLine: number; lines: string[]; highlightStart?: number; highlightEnd?: number }
+export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; scope?: NodeScope; signature?: string; documentation?: string; snippet: string; sourceWindow?: SourceWindow }
 export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { relation?: string; alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
 export type Flow = { id: string; name: string; steps: Step[]; kind?: string; description?: string; sourceNodeId?: string; sinkNodeId?: string; confidence?: string; limitations?: string[] }
 export type GuardEvidence = { verdict?: string; note?: string; items?: {node_id?:string;effect?:string}[] }
@@ -53,6 +54,22 @@ function normalizeScope(raw: unknown): NodeScope | undefined {
   return Object.keys(scope).length ? scope : undefined
 }
 
+function normalizeSourceWindow(raw: unknown): SourceWindow | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
+  const value = raw as Record<string, unknown>
+  if (!Array.isArray(value.lines) || !value.lines.length) return undefined
+  const startLine = Number(value.start_line ?? value.startLine ?? 0)
+  if (!Number.isInteger(startLine) || startLine < 0) return undefined
+  const highlightStart = Number(value.highlight_start ?? value.highlightStart ?? 0)
+  const highlightEnd = Number(value.highlight_end ?? value.highlightEnd ?? 0)
+  return {
+    startLine,
+    lines: value.lines.map(String),
+    ...(Number.isInteger(highlightStart) && highlightStart > 0 ? { highlightStart } : {}),
+    ...(Number.isInteger(highlightEnd) && highlightEnd > 0 ? { highlightEnd } : {}),
+  }
+}
+
 function flowRelation(step: Step, pathKind = 'value-flow') {
   const role = step.role.trim().toLowerCase()
   const fallback = pathKind === 'call-path' || pathKind === 'callpath'
@@ -83,7 +100,7 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
 }
 
 function normalizeNode(n:any,i:number):Node {
-  return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.end_column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),scope:normalizeScope(n.scope??n.context??n.boundary),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??'')}
+  return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end_column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),scope:normalizeScope(n.scope??n.context??n.boundary),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??''),sourceWindow:normalizeSourceWindow(n.source_window??n.sourceWindow)}
 }
 
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }

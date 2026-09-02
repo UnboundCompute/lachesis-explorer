@@ -92,10 +92,16 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       ? `lines ${node.line}–${node.endLine}`
       : `line ${node.line || "—"}`;
   const sourceSnippet = node.snippet || "";
+  const sourceText = sourceSnippet || node.sourceWindow?.lines.join("\n") || "";
   const sourceUrl = sourceUrlFor(app, node);
-  const snippetLines = sourceSnippet
-    ? sourceSnippet.split(/\r?\n/)
-    : ["Source unavailable in this bundle."];
+  const sourceLines = node.sourceWindow?.lines?.length
+    ? node.sourceWindow.lines
+    : sourceSnippet
+      ? sourceSnippet.split(/\r?\n/)
+      : ["Source unavailable in this bundle."];
+  const sourceStartLine = node.sourceWindow?.startLine || node.line || 1;
+  const highlightedStart = node.sourceWindow?.highlightStart || (sourceSnippet ? 1 : 0);
+  const highlightedEnd = node.sourceWindow?.highlightEnd || highlightedStart;
   const flows =
     app?.flows.filter((flow) =>
       flow.steps.some((step) => step.node_id === node.id),
@@ -162,9 +168,9 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     }
   }
   async function copySnippet() {
-    if (!sourceSnippet) return;
+    if (!sourceText) return;
     try {
-      await copyText(sourceSnippet);
+      await copyText(sourceText);
       setSnippetCopyError(false);
       setSnippetCopied(true);
       trackEvent("source_snippet_copied");
@@ -294,24 +300,24 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             View all symbols in this file <Icon name="arrow" size={11} />
           </button>
         )}
-        <pre className="source-code source-context" aria-label={sourceSnippet ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>
+        <pre className="source-code source-context" aria-label={sourceSnippet || node.sourceWindow ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>
           <code>
-            {snippetLines.map((line, index) => (
-              <span className={`source-line${sourceSnippet && index === 0 ? " selected" : ""}`} key={`${node.id}-${index}`}>
-                <span className="source-line-number">{sourceSnippet ? (node.line || 1) + index : "—"}</span>
+            {sourceLines.map((line, index) => (
+              <span className={`source-line${index + 1 >= highlightedStart && index + 1 <= highlightedEnd ? " selected" : ""}`} key={`${node.id}-${index}`}>
+                <span className="source-line-number">{sourceSnippet || node.sourceWindow ? sourceStartLine + index : "—"}</span>
                 <span className="source-line-code">{line || " "}</span>
               </span>
             ))}
           </code>
         </pre>
-        {!sourceSnippet && (
+        {!sourceSnippet && !node.sourceWindow && (
           <p className="source-unavailable-note">
             This bundle includes graph evidence for the node, but not its source text. Any available location, graph ID, and connected paths remain available below.
           </p>
         )}
-        <button className="source-copy" type="button" onClick={copySnippet} disabled={!sourceSnippet} title={!sourceSnippet ? "No source snippet is available in this bundle" : undefined}>
+        <button className="source-copy" type="button" onClick={copySnippet} disabled={!sourceText} title={!sourceText ? "No source text is available in this bundle" : undefined}>
           <Icon name="code" size={12} />
-          {snippetCopied ? "Snippet copied" : snippetCopyError ? "Retry copy" : "Copy snippet"}
+          {snippetCopied ? "Source copied" : snippetCopyError ? "Retry copy" : node.sourceWindow ? "Copy source window" : "Copy snippet"}
         </button>
         <span className="sr-only" aria-live="polite">{snippetCopied ? "Source snippet copied." : snippetCopyError ? "Source snippet could not be copied." : ""}</span>
         <button className="source-copy context-copy" type="button" onClick={copyContext}>

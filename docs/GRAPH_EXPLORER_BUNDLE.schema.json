@@ -70,7 +70,11 @@
         "scope": { "$ref": "#/$defs/scope", "description": "Optional repository, service, package, and module context used to render path boundaries." },
         "signature": { "type": "string" },
         "documentation": { "type": "string" },
-        "snippet": { "type": "string", "minLength": 1 }
+        "snippet": { "type": "string", "minLength": 1 },
+        "source_window": {
+          "$ref": "#/$defs/source_window",
+          "description": "Optional surrounding source lines for reading context. Lines are one-based from start_line."
+        }
       },
       "additionalProperties": true
     },
@@ -85,6 +89,17 @@
         "label": { "type": "string" }
       },
       "additionalProperties": true
+    },
+    "source_window": {
+      "type": "object",
+      "required": ["start_line", "lines"],
+      "properties": {
+        "start_line": { "type": "integer", "minimum": 0 },
+        "lines": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "highlight_start": { "type": "integer", "minimum": 1 },
+        "highlight_end": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
     },
     "file": {
       "type": "object",
