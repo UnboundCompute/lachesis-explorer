@@ -367,6 +367,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
   .inspector-context .connected-link{min-height:44px;padding-block:8px}
   .overlap-list>.overlap-item{min-height:44px}
   .topology-zoom button{min-width:44px;height:44px}
+  .topology-node-list button,.choke-panel button{min-height:44px}
   .zoom-controls button,.canvas-actions button,.segmented button,.convergence-filter button{min-width:44px;min-height:44px}
   .context-home{min-height:44px;padding-block:8px}
 }
