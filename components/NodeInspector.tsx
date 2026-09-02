@@ -62,6 +62,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
   const [snippetCopied, setSnippetCopied] = useState(false);
   const [snippetCopyError, setSnippetCopyError] = useState(false);
   const [showAllConnections, setShowAllConnections] = useState(false);
+  const [connectionsOpen, setConnectionsOpen] = useState(true);
   const location = node.file
     ? `${node.file}:${node.line || "—"}${node.column ? `:${node.column}` : ""}`
     : node.id;
@@ -112,6 +113,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     setSnippetCopied(false);
     setSnippetCopyError(false);
     setShowAllConnections(false);
+    setConnectionsOpen(true);
   }, [node.id, contextRole, contextOccurrence]);
   async function copyLocation() {
     try {
@@ -243,9 +245,13 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         </div>
       )}
       {app && (
-        <details className="inspector-disclosure">
+        <details
+          className="inspector-disclosure"
+          open={connectionsOpen}
+          onToggle={(event) => setConnectionsOpen(event.currentTarget.open)}
+        >
           <summary>
-            <span>Where this appears</span>
+            <span>Connected context</span>
             <small>{flows.length + entries.length + relationships.length} connection{flows.length + entries.length + relationships.length === 1 ? "" : "s"}</small>
           </summary>
           <div className="inspector-disclosure-body">
