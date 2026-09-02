@@ -105,6 +105,11 @@ adjacent scope changes to render boundary segments, highlight cross-context edge
 external or generated nodes. Missing scope is supported for older bundles; those nodes fall back to
 file and module context. Scope is descriptive graph context, not a security conclusion.
 
+For source reading, nodes may also provide `parent_id` for their enclosing symbol and a
+`source_window` containing surrounding lines plus optional highlight bounds. A node must provide
+either a non-empty `snippet` or a non-empty `source_window`; this lets the Explorer preserve useful
+context even when an exporter cannot reduce a whole symbol to one short snippet.
+
 At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional `meta.source_url_template` can link a selected symbol to a browsable source host using `{file}`, `{line}`, `{end_line}`, and `{revision}` placeholders. The Explorer validates the result as HTTP(S) and never infers a hosting provider. Optional fields include:
 
 ```json
@@ -114,7 +119,7 @@ At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_
   "meta": { "repository": "owner/repo", "description": "A short human-readable bundle description", "source_url_template": "https://github.com/owner/repo/blob/{revision}/{file}#L{line}", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
   "graph": {
     "nodes": [
-      { "id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "scope": { "repository": "owner/app", "service": "web-api", "package": "search" }, "snippet": "function search() {}" }
+      { "id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "scope": { "repository": "owner/app", "service": "web-api", "package": "search" }, "snippet": "function search() {}", "source_window": { "start_line": 1, "lines": ["function search() {}"] } }
     ],
     "edges": [],
     "files": [],
