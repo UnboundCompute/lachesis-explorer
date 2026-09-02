@@ -126,7 +126,7 @@ export function CommandPalette({
         ...app.entries.map((entry, index) => ({
           id: `entry-${entry.id}`,
           label: entry.label,
-          meta: `Request path · ${entry.hops.length} hops`,
+          meta: `Request flow · ${entry.hops.length} steps`,
           run: () => onEntry(index, entry.hops[0]?.node_id ?? ""),
         })),
         ...app.nodes.map((node) => ({

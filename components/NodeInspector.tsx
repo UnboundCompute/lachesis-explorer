@@ -253,7 +253,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
           <div className="detail-rule" />
           <p className="detail-copy">
             This node is present in {flows.length} graph path
-            {flows.length === 1 ? "" : "s"}, {entries.length} request path
+            {flows.length === 1 ? "" : "s"}, {entries.length} request flow
             {entries.length === 1 ? "" : "s"}, and {relationships.length}{" "}
             normalized relationship{relationships.length === 1 ? "" : "s"} in
             this bundle.
@@ -284,7 +284,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             )}
             {entries.length > 0 && (
               <div>
-                <small>REQUEST PATHS</small>
+                <small>REQUEST FLOWS</small>
                 {(showAllConnections ? entries : entries.slice(0, 4)).map((entry) =>
                   onEntry ? (
                     <button
@@ -298,7 +298,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
                         )
                       }
                     >
-                      <span>{entry.label} · {entry.hops.length} hops{contextRoute(app, entry.hops.map((hop) => hop.node_id)) ? ` · ${contextRoute(app, entry.hops.map((hop) => hop.node_id))}` : ""}</span>
+                      <span>{entry.label} · {entry.hops.length} steps{contextRoute(app, entry.hops.map((hop) => hop.node_id)) ? ` · ${contextRoute(app, entry.hops.map((hop) => hop.node_id))}` : ""}</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
@@ -321,7 +321,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
                       <div className="relationship-item" key={edge.id}>
                         <span>
                           {edge.source === node.id ? "→ leads to" : "← receives from"}{" "}
-                          {(onNode || peerFlow && onFlow || peerEntry && onEntry) ? <button type="button" className="relationship-peer" aria-label={`${onNode ? "Focus" : peerFlow && onFlow ? "Open graph path for" : "Open request path for"} ${peer?.label || peerId}`} onClick={() => onNode ? onNode(peerId) : peerFlow && onFlow ? onFlow(peerFlow.id, peerId) : onEntry?.(app.entries.findIndex((item) => item.id === peerEntry!.id), peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
+                          {(onNode || peerFlow && onFlow || peerEntry && onEntry) ? <button type="button" className="relationship-peer" aria-label={`${onNode ? "Focus" : peerFlow && onFlow ? "Open graph path for" : "Open request flow for"} ${peer?.label || peerId}`} onClick={() => onNode ? onNode(peerId) : peerFlow && onFlow ? onFlow(peerFlow.id, peerId) : onEntry?.(app.entries.findIndex((item) => item.id === peerEntry!.id), peerId)}>{peer?.label || peerId}</button> : (peer?.label || peerId)} · {edge.relation || "connected"}
                         </span>
                         {(edge.origins?.length || edge.dynamic || edge.alias || edge.confidence) && (
                           <small className="relationship-signals">
@@ -400,7 +400,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
               <dd>{flows.length}</dd>
             </div>
             <div>
-              <dt>Request paths</dt>
+              <dt>Request flows</dt>
               <dd>{entries.length}</dd>
             </div>
           </>

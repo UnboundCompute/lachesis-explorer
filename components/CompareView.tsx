@@ -182,7 +182,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           <span>＋</span>
         </button>
         <div className="compare-steps">
-          <div><b>01</b><span><strong>Added</strong><small>New nodes, relationships, paths, and request paths.</small></span></div>
+          <div><b>01</b><span><strong>Added</strong><small>New nodes, relationships, paths, and request flows.</small></span></div>
           <div><b>02</b><span><strong>Removed</strong><small>Items absent from the comparison bundle.</small></span></div>
           <div><b>03</b><span><strong>Changed</strong><small>Same path IDs with a different kind or step sequence.</small></span></div>
         </div>
@@ -208,7 +208,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
     ['Nodes', nodes],
     ['Relationships', edges],
     [pathGroup, paths],
-    ['Request paths', entries],
+    ['Request flows', entries],
   ] as const
 
   return (

@@ -308,7 +308,7 @@ export function HomeView({
               <Icon name="arrow" size={14} />
             </button>
             <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
-              <span><b>What happens after an entrypoint?</b><small>Walk the request from handler to effect.</small></span>
+              <span><b>What happens after a starting point?</b><small>Walk the request from handler to effect.</small></span>
               <Icon name="arrow" size={14} />
             </button>
             <button type="button" onClick={() => onView("map")}>
@@ -446,7 +446,7 @@ export function HomeView({
           <span>01</span>
           <div>
             <b>Choose a path</b>
-            <small>{graphFocus ? `Start with a ${pathKindLabel(graphFocus)} or request path.` : "Open the graph to inspect its relationships."}</small>
+            <small>{graphFocus ? `Start with a ${pathKindLabel(graphFocus)} or request flow.` : "Open the graph to inspect its relationships."}</small>
           </div>
         </li>
         <li>
@@ -819,7 +819,7 @@ export function HomeView({
           </button>
           <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
             <b>What calls this code?</b>
-            <small>{firstEntry ? "Walk a request from entrypoint to effect." : "No request paths in this bundle."}</small>
+            <small>{firstEntry ? "Walk a request from starting point to effect." : "No request flows in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
           <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
@@ -900,7 +900,7 @@ export function HomeView({
           >
             <span className="reading-metric">{app.entries.length}</span>
             <span>
-              <b>Request paths</b>
+              <b>Request flows</b>
               <small>
                 {incompletePaths
                   ? `${incompletePaths} use derived layout`

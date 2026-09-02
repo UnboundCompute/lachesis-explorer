@@ -904,7 +904,7 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
             record(
-              "Opened request path",
+              "Opened request flow",
               app.entries[nextIndex]?.label ?? "Unknown entry",
               "via command palette",
             );
@@ -1000,7 +1000,7 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
             record(
-              "Opened request path",
+              "Opened request flow",
               app.entries[nextIndex]?.label ?? "Unknown entry",
               "from briefing",
             );
@@ -1101,7 +1101,7 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextNode));
             setInspectorOpen(true);
             record(
-              "Opened connected request path",
+              "Opened connected request flow",
               app.entries[nextIndex]?.label ?? "Unknown entry",
               "from convergence inspector",
             );
@@ -1160,7 +1160,7 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
             record(
-              "Opened connected request path",
+              "Opened connected request flow",
               app.entries[nextIndex]?.label ?? "Unknown entry",
               "from graph",
             );

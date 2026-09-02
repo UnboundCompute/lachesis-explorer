@@ -268,7 +268,7 @@ export function OverviewView({
       ? { label: "Value paths", query: "origin:value-flow" }
       : null,
     app.edges.some((edge) => edge.origins.includes("request-path"))
-      ? { label: "Request paths", query: "origin:request-path" }
+      ? { label: "Request flows", query: "origin:request-path" }
       : null,
     app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
     ...[...new Set(app.nodes.map((node) => node.module || node.scope?.module).filter(Boolean))]
@@ -403,7 +403,7 @@ export function OverviewView({
     { label: "Derived relationships", value: app.edges.filter((edge) => edge.origins.some((origin) => origin !== "bundle")).length },
     { label: "Uncertain relationships", value: app.edges.filter((edge) => Boolean(edge.confidence || edge.limitations?.length)).length },
     { label: "Graph paths", value: app.flows.length },
-    { label: "Request paths", value: app.entries.length },
+    { label: "Request flows", value: app.entries.length },
     { label: "Linked records", value: app.mcp.length },
     { label: "Unmapped nodes", value: app.nodes.filter((node) => !node.file).length },
     {
@@ -425,7 +425,7 @@ export function OverviewView({
     trackEvent("topology_node_selected");
   }
   const summary = selected
-    ? `${selected.label || selected.id} appears in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request path${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} recorded relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
+      ? `${selected.label || selected.id} appears in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request flow${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} recorded relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
     : visible.length
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
@@ -572,7 +572,7 @@ export function OverviewView({
                 className={`node-order${nodeOrder === "centrality" ? " active" : ""}`}
                 aria-pressed={nodeOrder === "centrality"}
                 aria-label="Order nodes by graph-path participation, request-path participation, and relationship degree"
-                title="Rank by graph paths, request paths, and relationship degree"
+                title="Rank by graph paths, request flows, and relationship degree"
                 onClick={() => {
                   const next = nodeOrder === "path" ? "centrality" : "path";
                   setNodeOrder(next);
@@ -829,14 +829,14 @@ export function OverviewView({
                       onClick={() => selectNode(node.id)}
                       aria-pressed={selected?.id === node.id}
                       aria-current={selected?.id === node.id ? "step" : undefined}
-                      aria-label={`${node.label || node.id}, ${node.kind}, ${flowCount(node.id)} graph paths, ${entryCount(node.id)} request paths, ${nodeLocation(node)}`}
+                      aria-label={`${node.label || node.id}, ${node.kind}, ${flowCount(node.id)} graph paths, ${entryCount(node.id)} request flows, ${nodeLocation(node)}`}
                     >
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
                       <small>
                         {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
-                      <small className="topology-participation">{flowCount(node.id)} graph paths · {entryCount(node.id)} request paths</small>
+                      <small className="topology-participation">{flowCount(node.id)} graph paths · {entryCount(node.id)} request flows</small>
                     </button>
                     );
                   })}
@@ -1027,7 +1027,7 @@ export function OverviewView({
               {app.entries.some((entry) => !entry.hasLayout) && (
                 <p>
                   <i />
-                  Some request paths use derived layout coordinates.
+                  Some request flows use derived layout coordinates.
                 </p>
               )}
               {app.nodes.some((node) => !node.file) && (

@@ -58,7 +58,7 @@ export function PathCanvas({
   title = 'Evidence path',
 }: Props) {
   const itemUnit =
-    title === 'Code path' ? 'symbols' : title === 'Request path' ? 'hops' : 'nodes'
+    title === 'Code path' ? 'symbols' : title === 'Request flow' ? 'steps' : 'nodes'
   const [viewport, setViewport] = useState<'fit' | 'reset'>('fit')
   const [focused, setFocused] = useState(false)
   const [zoom, setZoom] = useState(1)

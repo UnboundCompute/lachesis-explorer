@@ -90,10 +90,10 @@ export function JourneyView({
   if (!entry)
     return (
       <section className="workspace-empty">
-        <h2>No request paths in this bundle</h2>
+        <h2>No request flows in this bundle</h2>
         <p>
           {app.flows.length
-            ? "Graph paths are still available. Open one to follow its symbols and relationships."
+            ? "Code paths are still available. Open one to follow its symbols and relationships."
             : "Open the graph to inspect the structure included in this bundle."}
         </p>
         <button
@@ -101,7 +101,7 @@ export function JourneyView({
           type="button"
           onClick={() => onView(app.flows.length ? "trace" : "map")}
         >
-          <span>{app.flows.length ? "Open graph paths" : "Open graph"}</span>
+          <span>{app.flows.length ? "Open code paths" : "Open graph"}</span>
           <span className="button-icon">
             <Icon name="arrow" size={14} />
           </span>
@@ -162,7 +162,7 @@ export function JourneyView({
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="journey-rail">
         <label className="panel-label" htmlFor="entrypoint-select">
-          ENTRYPOINT
+          STARTING POINT
         </label>
         <select
           id="entrypoint-select"
@@ -177,21 +177,21 @@ export function JourneyView({
             onInspectorOpen();
             if (selectedEntry)
               onRecord(
-                "Opened request path",
+                "Opened request flow",
                 selectedEntry.label,
-                `${selectedEntry.hops.length} hops`,
+                `${selectedEntry.hops.length} steps`,
               );
             trackEvent("callpath_selected");
           }}
         >
           {app.entries.map((item, index) => (
             <option value={index} key={item.id}>
-              {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""} · {item.hops.length} hops
+              {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""} · {item.hops.length} steps
             </option>
           ))}
         </select>
         <div className="panel-label hops-label">
-          PATH HOPS <span>{entry.hops.length}</span>
+          PATH STEPS <span>{entry.hops.length}</span>
         </div>
         <div className="hop-list">
           {entry.hops.map((hop, index) => {
@@ -261,7 +261,7 @@ export function JourneyView({
             <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
               {explanationState === "copied" ? "Explanation copied" : explanationState === "failed" ? "Copy failed" : "Copy explanation"}
             </button>
-            <div className="step-nav" role="group" aria-label="Request path step navigation">
+            <div className="step-nav" role="group" aria-label="Request flow step navigation">
               <button
                 className="inspector-reopen"
                 type="button"
@@ -280,7 +280,7 @@ export function JourneyView({
               >
                 Next
               </button>
-              <span className="step-nav-hint" aria-label="Use left bracket and right bracket to navigate hops">
+              <span className="step-nav-hint" aria-label="Use left bracket and right bracket to navigate steps">
                 <kbd>[</kbd><kbd>]</kbd>
               </span>
             </div>
@@ -294,10 +294,10 @@ export function JourneyView({
         </div>
         <div
           className="trace-orientation"
-          aria-label="Selected request path summary"
+          aria-label="Selected request flow summary"
         >
           <div>
-            <span>ENTRYPOINT</span>
+            <span>STARTING POINT</span>
             <b>{firstNode?.label || entry.label}</b>
             <small>
               {nodeLocation(firstNode)}
@@ -307,14 +307,14 @@ export function JourneyView({
             <span />
           </i>
           <div>
-            <span>LAST OBSERVED HOP</span>
+            <span>LAST OBSERVED STEP</span>
             <b>{lastNode?.label || "Unknown symbol"}</b>
             <small>
               {nodeLocation(lastNode)}
             </small>
           </div>
           <div className="trace-orientation-fact">
-            <span>HOP / TOTAL</span>
+            <span>STEP / TOTAL</span>
             <b>
               {selectedIndex + 1} / {items.length}
             </b>
@@ -326,7 +326,7 @@ export function JourneyView({
         </div>
         <PathCanvas
           items={items}
-          title="Request path"
+          title="Request flow"
           selectedId={hopId}
           selectedIndex={selectedIndex}
           onSelect={(id, index) => {
@@ -350,7 +350,7 @@ export function JourneyView({
           evidence={evidence}
           fallbackTool="journey"
           fallbackArgs={entry.label}
-          fallbackSummary={`${entry.hops.length} visible hops from the selected entrypoint.`}
+          fallbackSummary={`${entry.hops.length} visible steps from the selected starting point.`}
           nodeCount={entry.hops.length}
           variant="path"
         />

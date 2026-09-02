@@ -199,7 +199,7 @@ export function TraceView({
           This bundle contains graph structure, but no graph paths were
           included for tracing.{" "}
           {app.entries.length
-            ? "Follow a request path instead."
+            ? "Follow a request flow instead."
             : "Open the graph to inspect its structure."}
         </p>
         <button
@@ -208,7 +208,7 @@ export function TraceView({
           onClick={() => onView(app.entries.length ? "journey" : "map")}
         >
           <span>
-            {app.entries.length ? "Open request paths" : "Open graph"}
+            {app.entries.length ? "Open request flows" : "Open graph"}
           </span>
           <span className="button-icon">
             <Icon name="arrow" size={14} />
@@ -514,7 +514,7 @@ export function TraceView({
             </small>
           </div>
           <div className="trace-orientation-fact">
-            <span>STEP / HOPS</span>
+            <span>STEP / TOTAL</span>
             <b>
               {selectedIndex + 1} / {items.length}
             </b>
