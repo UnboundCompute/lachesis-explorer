@@ -922,6 +922,7 @@ export default function Page() {
           onView={changeView}
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -950,9 +951,7 @@ export default function Page() {
             );
           }}
           onNode={(nextNode) => {
-            setFocusNodeId(nextNode);
-            changeView("map");
-            setInspectorOpen(true);
+            openNodeInMap(nextNode);
             record(
               "Inspected graph node",
               app.nodes.find((node) => node.id === nextNode)?.label ?? nextNode,
@@ -1018,6 +1017,7 @@ export default function Page() {
           direction={direction}
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -1111,6 +1111,7 @@ export default function Page() {
           }}
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -1144,6 +1145,7 @@ export default function Page() {
           }}
           onOpenFlow={(nextFlow, nextNode, originalPosition) => {
             changeView("trace");
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
             const selectedFlow = app.flows.find((flow) => flow.id === nextFlow);
@@ -1183,6 +1185,7 @@ export default function Page() {
           }
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -1219,9 +1222,7 @@ export default function Page() {
               record("Opened changed graph path", nextFlow, "from revision diff");
             }}
             onOpenNode={(nextNode) => {
-              setFocusNodeId(nextNode);
-              changeView("map");
-              setInspectorOpen(true);
+              openNodeInMap(nextNode);
               record("Inspected removed graph node", app.nodes.find((node) => node.id === nextNode)?.label ?? nextNode, "from revision diff");
             }}
           />
