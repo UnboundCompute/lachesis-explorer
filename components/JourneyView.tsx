@@ -15,13 +15,15 @@ function nodeLocation(node: App["nodes"][number] | undefined) {
 function nodeContext(node: App["nodes"][number] | undefined) {
   return node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository || "";
 }
-function entryContext(entry: App["entries"][number], app: App) {
-  return nodeContext(app.nodes.find((node) => node.id === entry.hops[0]?.node_id));
+type NodeIndex = ReadonlyMap<string, App["nodes"][number]>;
+
+function entryContext(entry: App["entries"][number], nodeById: NodeIndex) {
+  return nodeContext(nodeById.get(entry.hops[0]?.node_id ?? ""));
 }
-function entryScopes(entry: App["entries"][number], app: App) {
+function entryScopes(entry: App["entries"][number], nodeById: NodeIndex) {
   const scopes: string[] = [];
   entry.hops.forEach((hop) => {
-    const scope = nodeContext(app.nodes.find((node) => node.id === hop.node_id));
+    const scope = nodeContext(nodeById.get(hop.node_id));
     if (scope && scopes.at(-1) !== scope) scopes.push(scope);
   });
   return scopes;
@@ -59,6 +61,7 @@ export function JourneyView({
   onEntry,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
+  const nodeById = useMemo(() => new Map(app.nodes.map((node) => [node.id, node])), [app.nodes]);
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   const [entrySearch, setEntrySearch] = useState("");
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
@@ -68,17 +71,17 @@ export function JourneyView({
     if (!term) return app.entries;
     return app.entries.filter((item) => {
       const nodes = item.hops
-        .map((hop) => app.nodes.find((node) => node.id === hop.node_id))
+        .map((hop) => nodeById.get(hop.node_id))
         .filter(Boolean);
       return [
         item.label,
         item.description,
-        entryContext(item, app),
+        entryContext(item, nodeById),
         ...item.hops.flatMap((hop) => [hop.edge_label, hop.caption]),
         ...nodes.flatMap((node) => node ? [node.label, node.file, node.module, node.scope?.module] : []),
       ].join(" ").toLowerCase().includes(term);
     });
-  }, [app, entrySearch]);
+  }, [app, entrySearch, nodeById]);
   const entryOptions = entry && visibleEntries.includes(entry)
     ? visibleEntries
     : entry
@@ -133,19 +136,15 @@ export function JourneyView({
         </button>
       </section>
     );
-  const selected = app.nodes.find((node) => node.id === hopId) ?? app.nodes[0];
+  const selected = nodeById.get(hopId) ?? app.nodes[0];
   const evidence = app.mcp.find((item) => item.for === entry.id);
-  const firstNode = app.nodes.find(
-    (node) => node.id === entry.hops[0]?.node_id,
-  );
-  const lastNode = app.nodes.find(
-    (node) => node.id === entry.hops.at(-1)?.node_id,
-  );
-  const contextRoute = entryScopes(entry, app);
+  const firstNode = nodeById.get(entry.hops[0]?.node_id ?? "");
+  const lastNode = nodeById.get(entry.hops.at(-1)?.node_id ?? "");
+  const contextRoute = entryScopes(entry, nodeById);
   const items: PathItem[] = entry.hops.map((hop) => ({
     id: hop.node_id,
     occurrenceId: hop.id,
-    node: app.nodes.find((node) => node.id === hop.node_id) ?? app.nodes[0],
+    node: nodeById.get(hop.node_id) ?? app.nodes[0],
     label: hop.edge_label,
     caption: hop.caption,
     relation: hop.edge_label,
@@ -232,7 +231,7 @@ export function JourneyView({
             const index = app.entries.indexOf(item);
             return (
               <option value={index} key={item.id}>
-                {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""} · {item.hops.length} steps
+                {item.label}{entryContext(item, nodeById) ? ` · ${entryContext(item, nodeById)}` : ""} · {item.hops.length} steps
               </option>
             );
           })}
@@ -242,7 +241,7 @@ export function JourneyView({
         </div>
         <div className="hop-list">
           {entry.hops.map((hop, index) => {
-            const rowNode = app.nodes.find((item) => item.id === hop.node_id);
+            const rowNode = nodeById.get(hop.node_id);
             return (
             <button
               type="button"
@@ -250,7 +249,7 @@ export function JourneyView({
               ref={selectedIndex === index ? selectedHopRef : undefined}
               className={selectedIndex === index ? "hop-row selected" : "hop-row"}
               onClick={() => {
-                const node = app.nodes.find((item) => item.id === hop.node_id);
+                const node = nodeById.get(hop.node_id);
                 setSelectedPosition(index);
                 onPositionChange?.(index);
                 setHopId(hop.node_id);
@@ -377,7 +376,7 @@ export function JourneyView({
           selectedId={hopId}
           selectedIndex={selectedIndex}
           onSelect={(id, index) => {
-            const node = app.nodes.find((item) => item.id === id);
+            const node = nodeById.get(id);
             setSelectedPosition(index);
             onPositionChange?.(index);
             setHopId(id);
