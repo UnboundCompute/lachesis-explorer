@@ -367,7 +367,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
   .overlap-list>.overlap-item{min-height:44px}
   .topology-zoom button{min-width:44px;height:44px}
   .zoom-controls button,.canvas-actions button,.segmented button,.convergence-filter button{min-width:44px;min-height:44px}
-  .context-home{min-height:36px;padding-block:8px}
+  .context-home{min-height:44px;padding-block:8px}
 }
 .query-intents{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px;color:var(--ink-3);font:9px var(--mono)}.query-intents>span{margin-right:2px}.query-intents button{min-height:34px;padding:7px 9px;border:1px solid color-mix(in srgb,var(--brand) 35%,var(--line));border-radius:8px;background:var(--brand-wash);color:var(--brand-strong);font:700 9px/1.3 var(--mono);text-align:left}.query-intents button:hover,.query-intents button:focus-visible{border-color:var(--brand);background:color-mix(in srgb,var(--brand-wash) 76%,var(--brand) 24%)}
 @media(max-width:760px){.query-intents{align-items:stretch;flex-direction:column}.query-intents>span{margin-bottom:2px}.query-intents button{min-height:44px;width:100%}}
+@media(max-width:760px){
+  /* Keep every frequently used mobile action inside the same touch-size rhythm. */
+  .mobile-navigation-controls button{width:44px;min-width:44px;height:44px;min-height:44px}
+  .overview-switch button,.filter-hints button,.query-chips button,.queue-filters button,.lens-switch button,.inspector-reopen,.share-control,.entry-select,.copy-button,.footer-help,.resource-list a,.understand-primary,.understand-secondary,.understand-search button,.understand-coverage-detail button,.understand-footer button,.understand-path>button,.briefing-source-search button,.path-pins-heading button,.path-pin,.filter-context button,.inspector-neighborhood-list button,.relationship-peer,.reading-guide summary,[aria-label="Copy source location"],[aria-label="Copy graph ID"]{min-width:44px;min-height:44px}
+  .understand-search input,.briefing-source-search input,.query-composer input,.search input,.compare-search input{min-height:44px}
+}
