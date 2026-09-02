@@ -23,8 +23,10 @@ const secondary: Array<{ id: View; label: string; detail: string }> = [
 
 export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles }: Props) {
   const [moreOpen, setMoreOpen] = useState(false)
+  const [mobileLensOpen, setMobileLensOpen] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)
   const moreTriggerRef = useRef<HTMLButtonElement>(null)
+  const mobileLensRef = useRef<HTMLDivElement>(null)
   const appPickerRef = useRef<HTMLDivElement>(null)
   const appTriggerRef = useRef<HTMLButtonElement>(null)
 
@@ -66,6 +68,22 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
   }, [moreOpen])
 
   useEffect(() => {
+    if (!mobileLensOpen) return
+    function close(event: MouseEvent) {
+      if (!mobileLensRef.current?.contains(event.target as Node)) setMobileLensOpen(false)
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMobileLensOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [mobileLensOpen])
+
+  useEffect(() => {
     if (!menu) return
     appPickerRef.current?.querySelector<HTMLButtonElement>('.upload-action')?.focus()
     function close(event: MouseEvent) {
@@ -97,9 +115,12 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
   function choose(next: View) {
     setView(next)
     setMoreOpen(false)
+    setMobileLensOpen(false)
     setMenu(false)
     trackEvent('view_changed', { view: next })
   }
+
+  const currentLens = [...primary, ...secondary].find(item => item.id === view) ?? primary[0]
 
   return (
     <div className="topbar-wrap">
@@ -115,8 +136,22 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
             </button>
           ))}
         </nav>
+        <div className="mobile-lens-picker" ref={mobileLensRef}>
+          <button type="button" className="mobile-lens-trigger" aria-expanded={mobileLensOpen} aria-controls="mobile-analysis-menu" aria-haspopup="menu" onClick={() => { setMenu(false); setMobileLensOpen(open => !open) }}>
+            <span><small>Current lens</small><b>{currentLens.label}</b></span><Icon name="chevron" size={12} />
+          </button>
+          {mobileLensOpen && (
+            <div id="mobile-analysis-menu" className="mobile-lens-menu" role="menu" aria-label="Analysis lenses">
+              {[...primary, ...secondary].map(item => (
+                <button type="button" key={item.id} role="menuitem" aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
+                  <span><b>{item.label}</b><small>{item.detail}</small></span><Icon name="arrow" size={12} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="more-views" ref={moreRef}>
-          <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
+          <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMobileLensOpen(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
             <span>More</span><small>Focused views</small><Icon name="chevron" size={11} />
           </button>
           {moreOpen && (
