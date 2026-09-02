@@ -571,15 +571,15 @@ export function OverviewView({
                 type="button"
                 className={`node-order${nodeOrder === "centrality" ? " active" : ""}`}
                 aria-pressed={nodeOrder === "centrality"}
-                aria-label="Order nodes by graph-path participation, request-path participation, and relationship degree"
-                title="Rank by graph paths, request flows, and relationship degree"
+                aria-label="Sort symbols by path relevance or how connected they are"
+                title="Sort by path relevance or connection count"
                 onClick={() => {
                   const next = nodeOrder === "path" ? "centrality" : "path";
                   setNodeOrder(next);
                   trackEvent("graph_node_order_changed", { order: next });
                 }}
               >
-                {nodeOrder === "path" ? "Order: path" : "Order: centrality"}
+                {nodeOrder === "path" ? "Sort: path relevance" : "Sort: most connected"}
               </button>
             )}
           </div>
