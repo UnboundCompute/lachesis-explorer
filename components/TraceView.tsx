@@ -5,6 +5,7 @@ import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainFlow } from "../lib/explanations";
 import { Icon } from "./Icon";
+import { readLocal, writeLocal } from "../lib/storage";
 import { PathCanvas, type PathItem } from "./PathCanvas";
 import { NodeInspector } from "./NodeInspector";
 import { EvidencePanel } from "./EvidencePanel";
@@ -253,6 +254,7 @@ export function TraceView({
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
   const [downloadState, setDownloadState] = useState<"idle" | "downloaded" | "failed">("idle");
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const [pinnedFlowIds, setPinnedFlowIds] = useState<string[]>([]);
   const selectedFlowRef = useRef<HTMLButtonElement>(null);
   const previousDirection = useRef(direction);
   useEffect(() => {
@@ -277,6 +279,15 @@ export function TraceView({
     setSearchText("");
     setPreviousFlowId("");
   }, [app]);
+  const pinnedKey = `lachesis-pinned-paths:${app.name || "untitled"}:${app.commit || "unknown"}`;
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(readLocal(pinnedKey) ?? "[]");
+      setPinnedFlowIds(Array.isArray(stored) ? stored.filter((id): id is string => typeof id === "string" && app.flows.some(item => item.id === id)).slice(0, 6) : []);
+    } catch {
+      setPinnedFlowIds([]);
+    }
+  }, [pinnedKey, app.flows]);
   useEffect(() => {
     setSearchText(query);
   }, [query]);
@@ -329,6 +340,7 @@ export function TraceView({
     () => app.flows.filter((item) => matchesFlow(app, item, query, nodeById)),
     [app, nodeById, query],
   );
+  const pinnedFlows = pinnedFlowIds.map((id) => app.flows.find((item) => item.id === id)).filter(Boolean) as Flow[];
   const steps =
     direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const evidence = app.mcp.find((item) => item.for === flow.id);
@@ -390,6 +402,15 @@ export function TraceView({
   const previousFlow = app.flows.find((item) => item.id === previousFlowId);
   function rememberFlow(nextFlowId: string) {
     if (flow?.id && nextFlowId !== flow.id) setPreviousFlowId(flow.id);
+  }
+  function togglePinned() {
+    if (!flow) return;
+    const next = pinnedFlowIds.includes(flow.id)
+      ? pinnedFlowIds.filter((id) => id !== flow.id)
+      : [flow.id, ...pinnedFlowIds].slice(0, 6);
+    setPinnedFlowIds(next);
+    writeLocal(pinnedKey, JSON.stringify(next));
+    trackEvent("path_pin_toggled", { pinned: next.includes(flow.id) });
   }
   function returnToPreviousFlow() {
     if (!previousFlow) return;
@@ -476,6 +497,16 @@ export function TraceView({
             aria-label="Search paths by name, symbol, file, module, documentation, or source code"
           />
         </label>
+        {pinnedFlows.length > 0 && (
+          <section className="path-pins" aria-label="Pinned graph paths">
+            <div className="path-pins-heading"><span className="panel-label">PINNED PATHS</span><button type="button" onClick={() => { setPinnedFlowIds([]); writeLocal(pinnedKey, "[]"); }}>Clear pins</button></div>
+            {pinnedFlows.map((item) => (
+              <button type="button" key={item.id} className={item.id === flow.id ? "path-pin selected" : "path-pin"} onClick={() => { onFlow(item.id, item.sourceNodeId ?? item.steps[0]?.node_id ?? ""); onInspectorOpen(); onRecord("Opened pinned graph path", item.id, `${item.steps.length} symbols`); }}>
+                <span><b>{flowDisplayName(item, app.nodes, app.flows)}</b><small>{pathKindLabel(item, app.findings.some((finding) => finding.id === item.id))} · {item.steps.length} symbols</small></span><Icon name="arrow" size={11} />
+              </button>
+            ))}
+          </section>
+        )}
         <div className="filter-hints" role="group" aria-label="Quick path filters">
           {filterSuggestions.map((suggestion) => (
             <button
@@ -625,6 +656,9 @@ export function TraceView({
             )}
             <button className="inspector-reopen" type="button" onClick={() => onView("map", stepId)}>
               Open in Explore
+            </button>
+            <button className={pinnedFlowIds.includes(flow.id) ? "inspector-reopen pin-toggle active" : "inspector-reopen pin-toggle"} type="button" onClick={togglePinned} aria-pressed={pinnedFlowIds.includes(flow.id)} title={pinnedFlowIds.includes(flow.id) ? "Remove this path from your pinned working set" : "Keep this path in your pinned working set"}>
+              <Icon name="pin" size={13} /> {pinnedFlowIds.includes(flow.id) ? "Pinned" : "Pin path"}
             </button>
             <div className="toolbar-share-actions" role="group" aria-label="Share this path context">
               <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
