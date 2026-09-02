@@ -145,6 +145,7 @@ export function PathCanvas({
           <span className="canvas-title">{title}</span>
           <span className="canvas-direction">Read left → right</span>
           <span className="canvas-count">
+            {selectedItem ? `step ${selectedIndex + 1} / ${items.length} · ` : ''}
             {focused ? `${start + 1}–${end} of ` : ''}
             {items.length} {itemUnit}
           </span>
