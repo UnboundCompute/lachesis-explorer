@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { App, Evidence, Flow, Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
@@ -159,6 +159,11 @@ export function HomeView({
     setQueueSearch("");
     setSourceSearch("");
   }, [app]);
+  function submitSourceSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = sourceSearch.trim();
+    if (query) onSearch?.(query);
+  }
   const findings = useMemo(
     () =>
       app.findings
@@ -308,12 +313,7 @@ export function HomeView({
             {onSearch && (
               <form
                 className="understand-search"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const query = sourceSearch.trim();
-                  if (!query) return;
-                  onSearch(query);
-                }}
+                onSubmit={submitSourceSearch}
               >
                 <Icon name="search" size={15} />
                 <input
@@ -535,6 +535,21 @@ export function HomeView({
           {loadState.type === "error" && <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>}
           <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
         </p>
+      )}
+
+      {onSearch && (
+        <form className="briefing-source-search" onSubmit={submitSourceSearch}>
+          <Icon name="search" size={15} />
+          <label htmlFor="briefing-source-search-input">Find a symbol or file in this codebase</label>
+          <input
+            id="briefing-source-search-input"
+            value={sourceSearch}
+            onChange={(event) => setSourceSearch(event.target.value)}
+            placeholder="e.g. src/routes/search.ts or normalize"
+            aria-label="Find a symbol, file, or source text in this codebase"
+          />
+          <button type="submit" disabled={!sourceSearch.trim()}>Find</button>
+        </form>
       )}
 
       <div className="triage-board">
