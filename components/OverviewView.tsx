@@ -48,6 +48,35 @@ const nodeScopeKind = (node: Node) =>
   node.scope?.kind?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "";
 const hasSource = (node: Node) => Boolean(node.snippet.trim() || node.sourceWindow?.lines.length);
 
+function relatedNodeIds(app: App, value: string, direction: "incoming" | "outgoing") {
+  const matchedIds = new Set(
+    app.nodes
+      .filter((candidate) =>
+        [candidate.id, candidate.label, candidate.qualifiedName]
+          .filter(Boolean)
+          .some((item) => item!.toLowerCase().includes(value)),
+      )
+      .map((candidate) => candidate.id),
+  );
+  const seen = new Set(matchedIds);
+  let frontier = [...matchedIds];
+  while (frontier.length) {
+    const next = new Set<string>();
+    app.edges.forEach((edge) => {
+      const candidate = direction === "incoming"
+        ? frontier.includes(edge.target) ? edge.source : undefined
+        : frontier.includes(edge.source) ? edge.target : undefined;
+      if (candidate && !seen.has(candidate)) {
+        seen.add(candidate);
+        next.add(candidate);
+      }
+    });
+    frontier = [...next];
+  }
+  matchedIds.forEach((id) => seen.delete(id));
+  return seen;
+}
+
 function matches(node: Node, query: string, app: App) {
   return query
     .trim()
@@ -111,20 +140,7 @@ function matches(node: Node, query: string, app: App) {
               flow.steps.some((step) => step.node_id === node.id),
           );
         if (key === "calls" || key === "reaches") {
-          const targetIds = new Set(
-            app.nodes
-              .filter((candidate) =>
-                [candidate.id, candidate.label, candidate.qualifiedName]
-                  .filter(Boolean)
-                  .some((item) => item!.toLowerCase().includes(value)),
-              )
-              .map((candidate) => candidate.id),
-          );
-          return app.edges.some((edge) =>
-            key === "calls"
-              ? edge.source === node.id && targetIds.has(edge.target)
-              : edge.target === node.id && targetIds.has(edge.source),
-          );
+          return relatedNodeIds(app, value, key === "calls" ? "incoming" : "outgoing").has(node.id);
         }
       }
       return [
