@@ -26,6 +26,22 @@ const scopeIdentity = (node: Node) =>
   node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.module, node.scope.kind].filter(Boolean).join(" · ") : "";
 const scopeDisplay = (node: Node) =>
   node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped";
+function sourceUrlFor(app: App | undefined, node: Node) {
+  if (!app?.bundle.sourceUrlTemplate || !node.file) return undefined;
+  const template = app.bundle.sourceUrlTemplate;
+  const url = template
+    .replaceAll("{file}", node.file)
+    .replaceAll("{line}", String(node.line || 1))
+    .replaceAll("{end_line}", String(node.endLine || node.line || 1))
+    .replaceAll("{revision}", encodeURIComponent(app.commit));
+  if (/\{(?:file|line|end_line|revision)\}/.test(url)) return undefined;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
 const originLabel = (origin: string) =>
   origin === "bundle"
     ? "recorded connection"
@@ -74,6 +90,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       ? `lines ${node.line}–${node.endLine}`
       : `line ${node.line || "—"}`;
   const sourceSnippet = node.snippet || "";
+  const sourceUrl = sourceUrlFor(app, node);
   const snippetLines = sourceSnippet
     ? sourceSnippet.split(/\r?\n/)
     : ["Source unavailable in this bundle."];
@@ -245,6 +262,18 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             <Icon name="code" size={12} />
             {copied ? "Copied" : copyError ? "Retry" : hasSourceLocation ? "Copy location" : "Copy ID"}
           </button>
+          {sourceUrl && (
+            <a
+              className="source-open"
+              href={sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => trackEvent("source_repository_opened")}
+            >
+              <Icon name="arrow" size={11} />
+              Open source
+            </a>
+          )}
           <span className="sr-only" aria-live="polite">{copied ? `${hasSourceLocation ? "Source location" : "Graph ID"} copied.` : copyError ? `${hasSourceLocation ? "Source location" : "Graph ID"} could not be copied.` : ""}</span>
         </div>
         <pre className="source-code source-context" aria-label={sourceSnippet ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>

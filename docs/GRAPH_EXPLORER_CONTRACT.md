@@ -27,6 +27,7 @@ rather than loaded as a successful snapshot.
     "language": "typescript",
     "revision": "9f6c2ad",
     "description": "Request and value paths through the search flow.",
+    "source_url_template": "https://github.com/example/app/blob/{revision}/{file}#L{line}",
     "lines": 28416,
     "indexed_nodes": 193057
   },
@@ -102,6 +103,14 @@ and navigation ambiguous.
 
 Entrypoints identify places a developer can start, including HTTP routes,
 CLI commands, jobs, event handlers, public APIs, and exported functions.
+
+When a bundle can link back to a browsable source repository, `meta.source_url_template`
+may provide an HTTP(S) template with `{file}`, `{line}`, `{end_line}`, and
+`{revision}` placeholders. The Explorer only renders an external source link
+when this field is present and produces a valid HTTP(S) URL; it never guesses a
+hosting provider from the repository name. Producers should include the line
+range fragment when their host supports it, for example
+`https://github.com/example/app/blob/{revision}/{file}#L{line}-L{end_line}`.
 
 ## Paths and security
 

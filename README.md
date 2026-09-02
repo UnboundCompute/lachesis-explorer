@@ -104,13 +104,13 @@ adjacent scope changes to render boundary segments, highlight cross-context edge
 external or generated nodes. Missing scope is supported for older bundles; those nodes fall back to
 file and module context. Scope is descriptive graph context, not a security conclusion.
 
-At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional fields include:
+At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional `meta.source_url_template` can link a selected symbol to a browsable source host using `{file}`, `{line}`, `{end_line}`, and `{revision}` placeholders. The Explorer validates the result as HTTP(S) and never infers a hosting provider. Optional fields include:
 
 ```json
 {
   "format": "lachesis-explorer-bundle",
   "schema_version": "2.0",
-  "meta": { "repository": "owner/repo", "description": "A short human-readable bundle description", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
+  "meta": { "repository": "owner/repo", "description": "A short human-readable bundle description", "source_url_template": "https://github.com/owner/repo/blob/{revision}/{file}#L{line}", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
   "graph": {
     "nodes": [
       { "id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "scope": { "repository": "owner/app", "service": "web-api", "package": "search" }, "snippet": "function search() {}" }
