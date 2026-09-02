@@ -96,6 +96,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `65b1c32` — keep dimmed focused-topology nodes and edges legible as surrounding context
 - `9c1e790` — normalize loaded-bundle Understand notices and Explore context rows to mobile touch targets
 - `64db4f9` — raise History drawer close, note, export, and clear actions to mobile touch targets
+- `0ef924b` — normalize Command Palette and Shortcut Help controls at narrow widths
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
