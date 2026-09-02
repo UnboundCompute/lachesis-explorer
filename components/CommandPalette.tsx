@@ -375,8 +375,8 @@ export function CommandPalette({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Find a path, symbol, file, code, or view…"
-            aria-label="Search views, paths, symbols, files, documentation, and source code"
+            placeholder="Find a path, symbol, file, filter, code, or view…"
+            aria-label="Search views, paths, symbols, files, filters, documentation, and source code"
             aria-controls="command-results"
             role="combobox"
             aria-expanded="true"
