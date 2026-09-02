@@ -45,6 +45,8 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `e9525c2` — add file/line context to connected-symbol concentration rows
+- `451a316` — preserve focused graph neighborhoods when opening Explore from Trace
 - `661a735` — make Explore open the module lens by default while preserving focused topology entry
 - `44e3771` — lead duplicate path labels with endpoint symbols and raise path-list metadata size
 - `ed58008` — replace overlapping mobile lens tabs with an explicit current-lens picker
