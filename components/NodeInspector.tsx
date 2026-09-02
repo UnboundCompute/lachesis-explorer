@@ -80,6 +80,7 @@ type Props = {
 
 export function NodeInspector({ node, contextRole, contextNote, contextOccurrence, onClose, app, onNode, onFile, onFlow, onEntry }: Props) {
   const inspectorRef = useRef<HTMLElement>(null);
+  const mountedRef = useRef(false);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const [snippetCopied, setSnippetCopied] = useState(false);
@@ -155,6 +156,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     inspectorRef.current?.scrollTo({ top: 0, behavior: "auto" });
     const activeElement = document.activeElement;
     if (
+      mountedRef.current &&
       activeElement &&
       activeElement !== document.body &&
       !inspectorRef.current?.contains(activeElement)
@@ -169,6 +171,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     setContextCopyError(false);
     setShowAllConnections(false);
     setConnectionsOpen(true);
+    mountedRef.current = true;
   }, [node.id, contextRole, contextOccurrence]);
   async function copyLocation() {
     try {

@@ -232,7 +232,8 @@ export default function Page() {
       return;
     }
     if (previousView.current !== view) {
-      workspaceRef.current?.focus();
+      workspaceRef.current?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: "auto" });
       previousView.current = view;
     }
   }, [view]);
@@ -574,7 +575,8 @@ export default function Page() {
     record("Changed view", viewLabels[next], "");
     if (next !== view) {
       window.requestAnimationFrame(() => {
-        workspaceRef.current?.focus({ preventScroll: false });
+        workspaceRef.current?.focus({ preventScroll: true });
+        window.scrollTo({ top: 0, behavior: "auto" });
       });
     }
   }
