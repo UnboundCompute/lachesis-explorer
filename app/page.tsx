@@ -514,6 +514,14 @@ export default function Page() {
     }
   }
 
+  function openNodeInMap(nodeId: string) {
+    setFocusNodeId(nodeId);
+    setMapQuery("");
+    setMapMode("map");
+    setMapNeighborhoodOnly(false);
+    changeView("map");
+  }
+
   function changeMapMode(next: OverviewMode) {
     if (next !== mapMode && urlReady.current && view === "map") {
       const params = new URLSearchParams(window.location.search);
@@ -1047,8 +1055,8 @@ export default function Page() {
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
           onView={(next: "journey" | "map", nextNode) => {
-            if (next === "map" && nextNode) setFocusNodeId(nextNode);
-            changeView(next);
+            if (next === "map" && nextNode) openNodeInMap(nextNode);
+            else changeView(next);
           }}
           onFlow={(nextFlow, nextNode) => {
             setFlowId(nextFlow);
@@ -1079,8 +1087,8 @@ export default function Page() {
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
           onView={(next: "trace" | "map", nextNode) => {
-            if (next === "map" && nextNode) setFocusNodeId(nextNode);
-            changeView(next);
+            if (next === "map" && nextNode) openNodeInMap(nextNode);
+            else changeView(next);
           }}
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
@@ -1129,8 +1137,8 @@ export default function Page() {
             setInspectorOpen(true);
           }}
           onView={(next, nextNode) => {
-            if (next === "map" && nextNode) setFocusNodeId(nextNode);
-            changeView(next);
+            if (next === "map" && nextNode) openNodeInMap(nextNode);
+            else changeView(next);
           }}
           onShare={(nextSink) =>
             copyInvestigationLink({ view: "investigate", sink: nextSink })
