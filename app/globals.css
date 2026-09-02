@@ -423,6 +423,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .topology-edge.dimmed{opacity:.24}.topology-node.dimmed{opacity:.34}
 .topology-node .topology-hit-area,.topology-node.selected .topology-hit-area{fill:transparent!important;stroke:transparent!important;stroke-width:0}.topology-node:focus-visible .topology-hit-area{filter:none!important}
 @media(max-width:760px){.briefing-notice>button{min-width:44px;min-height:44px}.briefing-notice .notice-action{min-height:44px}.context-row{min-height:44px}}
+.briefing-notice .notice-link{display:inline-flex;align-items:center;justify-content:center;padding:5px 7px;border:1px solid currentColor;border-radius:6px;color:inherit;font:700 8px var(--mono);text-decoration:none;white-space:nowrap}
+@media(max-width:360px){.briefing-notice{flex-wrap:wrap}.briefing-notice>span{flex:1 1 calc(100% - 14px)}.briefing-notice .notice-action{margin-left:0}.briefing-notice>button:last-child{margin-left:auto}}
 @media(max-width:760px){.trail-drawer header button{width:44px;height:44px;min-width:44px;min-height:44px}.casefile-notes button{min-height:44px}.trail-actions button{min-height:44px}}
 @media(max-width:760px){.command-search input{min-height:44px}.command-close{width:44px;height:44px;min-width:44px;min-height:44px}.help-dialog header button{width:44px;height:44px;min-width:44px;min-height:44px}.help-done{min-height:44px}}
 @media(max-width:920px) and (min-width:761px){

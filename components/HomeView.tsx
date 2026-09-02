@@ -338,6 +338,10 @@ export function HomeView({
           <p className={`briefing-notice ${loadState.type}`} role={loadState.type === "error" ? "alert" : "status"}>
             <i />
             <span>{loadState.message}</span>
+            {loadState.type === "error" && <>
+              <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>
+              <a className="notice-action notice-link" href="https://github.com/UnboundCompute/lachesis-explorer/blob/main/docs/GRAPH_EXPLORER_CONTRACT.md" target="_blank" rel="noreferrer">Open bundle contract</a>
+            </>}
               <button type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
           </p>
         )}
@@ -532,7 +536,10 @@ export function HomeView({
         >
           <i />
           <span>{loadState.message}</span>
-          {loadState.type === "error" && <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>}
+          {loadState.type === "error" && <>
+            <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>
+            <a className="notice-action notice-link" href="https://github.com/UnboundCompute/lachesis-explorer/blob/main/docs/GRAPH_EXPLORER_CONTRACT.md" target="_blank" rel="noreferrer">Open bundle contract</a>
+          </>}
           <button type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
         </p>
       )}
