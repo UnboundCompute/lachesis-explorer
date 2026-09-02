@@ -1,4 +1,4 @@
-import type { App, Flow } from '../lib/lachesis'
+import { flowDisplayName, type App, type Flow } from '../lib/lachesis'
 
 type Props = {
   app: App
@@ -63,7 +63,7 @@ export function EvidenceMatrix({ app, flows, sinkId, onOpenFlow, securityMode = 
                     onClick={() => onOpenFlow(flow.id, sinkId, sinkIndex < 0 ? undefined : sinkIndex)}
                   >
                     <span>{String(index + 1).padStart(2, '0')} · </span>
-                    {flow.name}
+                    {flowDisplayName(flow, app.nodes, app.flows)}
                   </button>
                 </th>
                 <td>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { App, Flow } from '../lib/lachesis'
+import { entryDisplayName, flowDisplayName, type App, type Flow } from '../lib/lachesis'
 import { copyText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
 
@@ -72,9 +72,9 @@ function itemLabel(item: { id: string }, app: App) {
   const node = app.nodes.find((value) => value.id === item.id)
   if (node) return node.label || node.id
   const flow = app.flows.find((value) => value.id === item.id)
-  if (flow) return flow.name
+  if (flow) return flowDisplayName(flow, app.nodes, app.flows)
   const entry = app.entries.find((value) => value.id === item.id)
-  if (entry) return entry.label
+  if (entry) return entryDisplayName(entry, app.nodes, app.entries)
   const edge = app.edges.find((value) => value.id === item.id)
   if (edge) {
     const source = app.nodes.find((value) => value.id === edge.source)?.label || edge.source
@@ -166,7 +166,7 @@ function DiffColumn({
   useEffect(() => { setCopyState(null); setExpanded(false) }, [app, itemIdentity])
   async function copyPreview(flow: Flow) {
     try {
-      await copyText(`${flow.name}\n${flowSequence(flow, app)}`)
+      await copyText(`${flowDisplayName(flow, app.nodes, app.flows)}\n${flowSequence(flow, app)}`)
       setCopyState({ id: flow.id, status: 'copied' })
       trackEvent('revision_path_copied')
     } catch {
