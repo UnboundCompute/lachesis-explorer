@@ -297,6 +297,18 @@ export function HomeView({
           </p>
         )}
 
+        {app.coverage.limitations.length > 0 && (
+          <aside className="understand-coverage" aria-label="Bundle coverage note">
+            <div>
+              <span className="panel-label">WHAT THIS BUNDLE INCLUDES</span>
+              <p>
+                {app.coverage.includedNodes ?? app.nodes.length} of {app.coverage.indexedNodes ?? app.nodes.length} indexed nodes are available here. Paths and source context reflect this bundle’s included projection.
+              </p>
+            </div>
+            <small>{app.coverage.limitations[0]}{app.coverage.limitations.length > 1 ? ` · +${app.coverage.limitations.length - 1} more` : ""}</small>
+          </aside>
+        )}
+
         <section className="understand-questions" aria-labelledby="understand-questions-title">
           <div className="understand-section-heading">
             <h2 id="understand-questions-title">What do you want to understand?</h2>
