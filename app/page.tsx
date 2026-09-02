@@ -67,6 +67,15 @@ function bundleImportError(error: unknown, subject: string, kept: string) {
   return `${detail} ${guidance} ${kept}`;
 }
 
+function bundleLoadSummary(next: App) {
+  const counts = `${next.nodes.length} nodes · ${next.flows.length} paths · ${next.edges.length} relationships`;
+  const indexed = next.coverage.indexedNodes;
+  const scope = indexed != null && indexed > next.nodes.length
+    ? ` Showing a focused projection of ${indexed.toLocaleString()} indexed nodes.`
+    : "";
+  return `${counts}.${scope}`;
+}
+
 function stepAtPosition(app: App, flowId: string, position: number, direction: "backward" | "forward") {
   const flow = app.flows.find((item) => item.id === flowId);
   if (!flow) return undefined;
@@ -789,10 +798,10 @@ export default function Page() {
     setLoadState({
       type: restored || !pending ? "success" : "error",
       message: restored
-        ? `Loaded ${next.name || "bundle.json"} and restored the local investigation link.`
+        ? `Loaded ${next.name || "bundle.json"} and restored the local investigation link. ${bundleLoadSummary(next)}`
         : pending
-          ? `Loaded ${next.name || "bundle.json"}, but its linked evidence IDs were not found. Opened the first available evidence.`
-          : `Loaded ${next.name || "bundle.json"}.`,
+          ? `Loaded ${next.name || "bundle.json"}, but its linked evidence IDs were not found. Opened the first available evidence. ${bundleLoadSummary(next)}`
+          : `Loaded ${next.name || "bundle.json"}. ${bundleLoadSummary(next)}`,
     });
     const recent: RecentBundle = {
       name: next.name || "Untitled bundle",
