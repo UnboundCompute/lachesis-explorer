@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `9445bcb` — keep the populated Compare upload action explicit about loading a comparison bundle
 - `85e4f88` — keep mobile History in document flow so it cannot cover evidence rows
 - `6f46872` — clarify that the contextual upload action replaces the active bundle
 - `b9429cc` — remove the redundant Understand landing-page eyebrow after a rendered mobile/desktop audit
@@ -164,6 +165,8 @@ The latest Understand landing pass removed the redundant “CODE UNDERSTANDING W
 The comparison follow-up found the shared contextual upload action still labeled “Load bundle.json” after a bundle was active, while Compare correctly used “Load another.” After `6f46872`, non-home lenses consistently say “Load another bundle”; empty and populated Compare states remain unambiguous and overflow-free at 390px.
 
 The next mobile pass reproduced the fixed History control covering Trace evidence rows at 390px. After `85e4f88`, History is a labeled, 44px control in normal document flow on narrow screens; a cross-lens sweep across Understand, Trace, Request Flow, Boundary, Explore, and Compare found no History/evidence overlap and no horizontal overflow.
+
+The populated Compare pass also found the header action label “Load another” ambiguous beside the separate active-bundle upload action. After `9445bcb`, both empty and populated comparison states identify the target as “Load comparison bundle”; the 131.6px desktop/mobile control fits without overflow and remains 44px high on phones.
 
 ## Safe next session
 
