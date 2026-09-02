@@ -239,10 +239,10 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
     return (
       <section className="compare-empty">
         <span className="context-kicker">REVISION DIFF</span>
-        <h2>Compare two {securityMode ? 'evidence' : 'graph'} bundles.</h2>
+        <h2>Compare two code graph bundles.</h2>
         <p>
           Load a second bundle to see added, removed, and changed{' '}
-          {securityMode ? 'evidence' : 'graph structure'} without replacing the active investigation.
+          graph structure{securityMode ? ' and any reported security context' : ''} without replacing the active investigation.
         </p>
         <button type="button" className="context-upload" onClick={onUpload} disabled={loading} aria-busy={loading}>
           <span>Load comparison bundle</span>
