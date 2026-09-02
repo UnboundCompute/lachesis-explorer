@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { App, Node } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
-import { copyText } from "../lib/clipboard";
+import { copyText, downloadText } from "../lib/clipboard";
 import { explainNode } from "../lib/explanations";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
@@ -169,6 +169,7 @@ export function OverviewView({
   const setMode = setControlledMode ?? setLocalMode;
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const [linkState, setLinkState] = useState<"idle" | "copied" | "failed">("idle");
+  const [downloadState, setDownloadState] = useState<"idle" | "downloaded" | "failed">("idle");
   const [searchText, setSearchText] = useState("");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -188,6 +189,7 @@ export function OverviewView({
     setExpandedModule(null);
     setShareState("idle");
     setLinkState("idle");
+    setDownloadState("idle");
     setSearchText("");
     setNeighborhoodOnly(false);
     setTopologyZoom(1);
@@ -524,6 +526,19 @@ export function OverviewView({
     setLinkState(copied ? "copied" : "failed");
     window.setTimeout(() => setLinkState("idle"), 1800);
   }
+  function downloadNodeExplanation() {
+    if (!selected) return;
+    try {
+      const filename = `${(selected.label || "lachesis-symbol").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64) || "lachesis-symbol"}.md`;
+      downloadText(explainNode(app, selected, window.location.href), filename);
+      setDownloadState("downloaded");
+      trackEvent("node_explanation_downloaded");
+      window.setTimeout(() => setDownloadState("idle"), 1800);
+    } catch {
+      setDownloadState("failed");
+      trackEvent("node_explanation_download_failed");
+    }
+  }
 
   return (
     <section
@@ -571,6 +586,18 @@ export function OverviewView({
                 aria-live="polite"
               >
                 {linkState === "copied" ? "Link copied" : linkState === "failed" ? "Copy failed" : "Copy link"}
+              </button>
+            )}
+            {selected && !securityMode && (
+              <button
+                type="button"
+                className="share-control"
+                onClick={downloadNodeExplanation}
+                aria-label="Download Markdown explanation for selected symbol"
+                title="Save a portable Markdown explanation of this symbol"
+                aria-live="polite"
+              >
+                {downloadState === "downloaded" ? "Markdown saved" : downloadState === "failed" ? "Download failed" : "Download .md"}
               </button>
             )}
             {!inspectorOpen && visible.length > 0 && (
