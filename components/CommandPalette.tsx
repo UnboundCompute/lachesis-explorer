@@ -60,6 +60,11 @@ function nodeContext(node: App["nodes"][number]) {
   return node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || node.module || "graph node";
 }
 
+function matchesCommand(command: Command, query: string) {
+  const haystack = `${command.label} ${command.meta} ${command.keywords ?? ""}`.toLowerCase();
+  return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => haystack.includes(term));
+}
+
 export function CommandPalette({
   app,
   onClose,
@@ -201,7 +206,7 @@ export function CommandPalette({
       ].filter(
         (command) =>
           !normalized ||
-          `${command.label} ${command.meta} ${(command as Command).keywords ?? ""}`.toLowerCase().includes(normalized),
+          matchesCommand(command, normalized),
       ),
     [app, normalized, onView, onFlow, onEntry, onSink, onNode],
   );
