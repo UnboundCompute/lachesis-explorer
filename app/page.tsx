@@ -478,7 +478,7 @@ export default function Page() {
         setDragActive(false);
         return;
       }
-      if (editing || inDialog || event.defaultPrevented) return;
+      if (editing || inDialog || event.defaultPrevented || target.closest("button, a, [role='button'], [role='option']")) return;
       if (event.key === "/") {
         const searchSelector = view === "trace"
           ? ".sidebar .search input"
