@@ -914,7 +914,7 @@ export function HomeView({
             <Icon name="arrow" size={12} />
           </button>
           <button type="button" onClick={() => firstEntry ? onEntry(0, firstEntry.hops[0]?.node_id ?? "") : onView("map")}>
-            <b>What calls this code?</b>
+            <b>Which request flow should I follow?</b>
             <small>{firstEntry ? "Walk a request from starting point to effect." : "No request flows in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>

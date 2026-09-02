@@ -661,6 +661,7 @@ export function OverviewView({
         <div className="query-composer">
           <Icon name="search" size={15} />
           <input
+            id="graph-filter"
             value={searchText || query}
             onChange={(event) => {
               setSearchText(event.target.value);
@@ -668,6 +669,7 @@ export function OverviewView({
             }}
             placeholder="Search symbols, files, modules, or code…"
             aria-label="Search graph nodes by symbol, file, module, service, documentation, or source code"
+            aria-describedby="graph-filter-help"
           />
           <span className="sr-only" aria-live="polite">
             {query ? `${visible.length} graph nodes match the current filter.` : "Showing all graph nodes."}
@@ -720,6 +722,9 @@ export function OverviewView({
             )}
           </div>
         </div>
+        <p id="graph-filter-help" className="query-syntax-help">
+          Filters: <code>kind:</code> <code>file:</code> <code>module:</code> <code>has:source</code> <code>edge:dynamic</code>
+        </p>
         {mode === "map" && (
           <>
             <div className="map-summary">
