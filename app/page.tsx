@@ -614,6 +614,7 @@ export default function Page() {
     setMapMode("map");
     setMapQuery(`file:${file}`);
     setMapNeighborhoodOnly(false);
+    setFocusNodeId("");
     changeView("map");
     trackEvent("source_file_explored");
   }
