@@ -567,7 +567,7 @@ export function HomeView({
                   <Icon name="target" size={18} />
                 </span>
                 <div>
-                  <h2>{priority.flow.name}</h2>
+                  <h2>{flowDisplayName(priority.flow, app.nodes, app.flows)}</h2>
                   <p>
                     {nodeLocation(priority.sink)}
                   </p>
@@ -641,7 +641,7 @@ export function HomeView({
                   <Icon name="code" size={18} />
                 </span>
                 <div>
-                  <h2>{graphFocus.name}</h2>
+                  <h2>{flowDisplayName(graphFocus, app.nodes, app.flows)}</h2>
                   <p>Suggested starting path · code understanding</p>
                 </div>
               </div>
@@ -833,7 +833,7 @@ export function HomeView({
                 aria-pressed={
                   item.flow.id === (priority?.flow.id ?? graphFocus?.id)
                 }
-                aria-label={`Select ${item.flow.name}, ${flowContext(item.flow, app)}`}
+                  aria-label={`Select ${flowDisplayName(item.flow, app.nodes, app.flows)}, ${flowContext(item.flow, app)}`}
                 onClick={() =>
                   graphOnly
                     ? onFlow(item.flow.id, direction === "forward" ? item.flow.steps.at(-1)?.node_id ?? "" : item.flow.sourceNodeId ?? item.flow.steps[0]?.node_id ?? "")
@@ -844,7 +844,7 @@ export function HomeView({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <span className="queue-copy">
-                  <b>{item.flow.name}</b>
+                  <b>{flowDisplayName(item.flow, app.nodes, app.flows)}</b>
                   <small>
                     {graphOnly
                       ? `${pathKindLabel(item.flow)} · ${item.flow.steps.length} symbols · ${pathLocation(item.flow, app)}`
