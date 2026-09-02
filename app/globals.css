@@ -390,3 +390,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
   .mobile-navigation-controls{width:100%;margin:-1px 0 0;padding:0 8px 6px;justify-content:flex-start;border-top:0;border-radius:0 0 14px 14px;background:color-mix(in srgb,var(--canvas-raised) 90%,transparent);box-shadow:0 12px 30px rgba(0,0,0,.13)}
 }
 .evidence-metrics{flex-wrap:wrap;gap:8px 18px}.evidence-metrics>div{min-width:0}
+@media(max-width:760px){.import-notice>button{min-width:44px;min-height:44px}.import-notice .notice-action{min-height:44px}}
