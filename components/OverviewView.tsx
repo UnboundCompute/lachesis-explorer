@@ -172,6 +172,7 @@ export function OverviewView({
   const [localNeighborhoodOnly, setLocalNeighborhoodOnly] = useState(false);
   const [topologyZoom, setTopologyZoom] = useState(1);
   const [showAllTopology, setShowAllTopology] = useState(false);
+  const [selectionHistory, setSelectionHistory] = useState<string[]>([]);
   const [localNodeOrder, setLocalNodeOrder] = useState<OverviewNodeOrder>("path");
   const nodeOrder = controlledNodeOrder ?? localNodeOrder;
   const setNodeOrder = setControlledNodeOrder ?? setLocalNodeOrder;
@@ -187,6 +188,7 @@ export function OverviewView({
     setNeighborhoodOnly(false);
     setTopologyZoom(1);
     setShowAllTopology(false);
+    setSelectionHistory([]);
     if (!setControlledNodeOrder) setLocalNodeOrder("path");
   }, [app]);
   const contexts = useMemo(() => {
@@ -450,6 +452,9 @@ export function OverviewView({
   ];
   function selectNode(id: string) {
     const node = app.nodes.find((item) => item.id === id);
+    if (node && id !== selectedId && selectedId) {
+      setSelectionHistory((current) => [...current.filter((item) => item !== selectedId), selectedId].slice(-20));
+    }
     setSelectedId(id);
     setInspectorOpen(true);
     onFocusNode?.(id);
@@ -460,6 +465,16 @@ export function OverviewView({
         `${node.file || "Source unavailable"}:${node.line || "—"}`,
       );
     trackEvent("topology_node_selected");
+  }
+  const previousNode = app.nodes.find((node) => node.id === selectionHistory.at(-1));
+  function returnToPreviousNode() {
+    if (!previousNode) return;
+    setSelectionHistory((current) => current.slice(0, -1));
+    setSelectedId(previousNode.id);
+    setInspectorOpen(true);
+    onFocusNode?.(previousNode.id);
+    onRecord("Returned to graph node", previousNode.label || previousNode.id, nodeLocation(previousNode));
+    trackEvent("topology_selection_reversed");
   }
   const summary = selected
       ? `${selected.label || selected.id} appears in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request flow${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} recorded relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
@@ -505,6 +520,16 @@ export function OverviewView({
             </p>
           </div>
           <div className="overview-heading-actions">
+            {previousNode && (
+              <button
+                type="button"
+                className="inspector-reopen selection-back"
+                onClick={returnToPreviousNode}
+                title={`Return to ${previousNode.label || previousNode.id}`}
+              >
+                ← Back to {previousNode.label || previousNode.id}
+              </button>
+            )}
             {selected && (!securityMode || onShare) && (
               <button
                 type="button"
