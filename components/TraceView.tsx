@@ -75,9 +75,11 @@ function matchesFlow(app: App, flow: Flow, query: string) {
     const haystack = [
       flow.name,
       flow.kind,
+      flow.description,
       ...flow.steps.map((step) => step.role),
+      ...flow.steps.flatMap((step) => [step.note, step.edge?.relation]),
       ...nodes.flatMap((node) =>
-        node ? [node.label, node.file, node.kind, node.qualifiedName, node.signature, node.documentation, node.snippet] : [],
+        node ? [node.label, node.file, node.kind, node.qualifiedName, node.signature, node.documentation, node.snippet, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [],
       ),
     ]
       .join(" ")
