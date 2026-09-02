@@ -18,6 +18,43 @@ function nodeContext(node: App["nodes"][number] | undefined) {
 const hasSource = (node: App["nodes"][number] | undefined) => Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
 type NodeIndex = ReadonlyMap<string, App["nodes"][number]>;
 
+function matchingHopIndex(entry: App["entries"][number], query: string, nodeById: NodeIndex) {
+  const terms = query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((term) => term && !term.includes(":"));
+  if (!terms.length) return -1;
+  const entryHaystack = [
+    entry.label,
+    entry.description,
+    entryContext(entry, nodeById),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  const hopTerms = terms.filter((term) => !entryHaystack.includes(term));
+  if (!hopTerms.length) return -1;
+
+  return entry.hops.findIndex((hop) => {
+    const node = nodeById.get(hop.node_id);
+    const haystack = [
+      hop.edge_label,
+      hop.caption,
+      node?.label,
+      node?.file,
+      node?.module,
+      node?.scope?.module,
+      node?.snippet,
+      node?.sourceWindow?.lines.join(" "),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return hopTerms.every((term) => haystack.includes(term));
+  });
+}
+
 function entryContext(entry: App["entries"][number], nodeById: NodeIndex) {
   return nodeContext(nodeById.get(entry.hops[0]?.node_id ?? ""));
 }
@@ -287,10 +324,14 @@ export function JourneyView({
           onChange={(event) => {
             const next = Number(event.target.value);
             const selectedEntry = app.entries[next];
+            const matchingHop = selectedEntry
+              ? matchingHopIndex(selectedEntry, entrySearch, nodeById)
+              : -1;
+            const nextPosition = matchingHop >= 0 ? matchingHop : 0;
             rememberEntry(next);
             setEntryIndex(next);
-            setHopId(selectedEntry?.hops[0]?.node_id ?? "");
-            onPositionChange?.(0);
+            setHopId(selectedEntry?.hops[nextPosition]?.node_id ?? "");
+            onPositionChange?.(nextPosition);
             onInspectorOpen();
             if (selectedEntry)
               onRecord(
