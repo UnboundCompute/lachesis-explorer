@@ -109,6 +109,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `0c39665` — remove the nested Compare `main` landmark and keep one accessible workspace landmark
 - `24015a3` — preserve a named `main` landmark in empty Trace, Request Flow, and Boundary workspaces
 - `c2b3918` — scope minimap SVG styling so zoom icons keep their intended size
+- `231d825` — prevent Boundary action labels from shrinking and clipping inside the lens switch
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
@@ -152,7 +153,7 @@ The Codex in-app browser runtime currently reports no available browsers (`[]`).
 
 Settled light-theme validation with the real `libxml2` bundle at 390px and 1440px confirmed readable primary and secondary text, preserved semantic accent colors, no horizontal overflow, and no browser errors. The first phone screenshot was captured during the intentional theme transition; the settled render is the authoritative result.
 
-The populated Compare workspace was also visually checked at 390px with the real `libxml2` bundle: active History appears only when navigation state exists, comparison actions meet the touch-target minimum, the success notice remains readable, and the dense diff sections stay within the viewport.
+The populated Compare workspace was also visually checked at 390px with the real `libxml2` bundle: active History appears only when navigation state exists, comparison actions meet the touch-target minimum, the success notice remains readable, and the dense diff sections stay within the viewport. A Boundary pass reproduced clipped “Copy link”, “Copy paths”, and “Open in Explore” labels at 390px; after `231d825`, the actions preserve their intrinsic widths (67px, 65px, and 85px), expose complete labels, and the page remains within the viewport at 390px and 1440px.
 
 ## Safe next session
 
