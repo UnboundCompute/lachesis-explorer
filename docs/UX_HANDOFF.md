@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `a52d1f2` — preserve security sample identity across URL rewrites and reloads
 - `0b3901b` — prevent initial Trace/convergence canvases from scrolling into inspectors
 - `ce9ab61` — make empty Trace/Journey context states honest instead of showing stale step counts
 - `e072e07` — keep Trace navigation anchored to the heading instead of the deep inspector
