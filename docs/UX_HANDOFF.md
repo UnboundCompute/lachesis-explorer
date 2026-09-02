@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `1ed3bfe` — add bounded Back/Forward controls for URL-backed investigation states
 - `d20f191` — advertise structured filters in the Jump search affordance
 - `a4dfa69` — make Jump understand the same file/module/path filters as Explore
 - `070589f` — show `<1%` instead of misleading `0%` for tiny projections
