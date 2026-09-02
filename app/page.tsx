@@ -1001,6 +1001,7 @@ export default function Page() {
         ref={fileRef}
         type="file"
         accept=".json,application/json"
+        aria-label="Load a graph bundle"
         hidden
         onChange={(event) => {
           upload(event.target.files?.[0]);
@@ -1011,6 +1012,7 @@ export default function Page() {
         ref={compareFileRef}
         type="file"
         accept=".json,application/json"
+        aria-label="Load a comparison bundle"
         hidden
         onChange={(event) => uploadComparison(event.target.files?.[0])}
       />
