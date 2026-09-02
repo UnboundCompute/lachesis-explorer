@@ -15,7 +15,7 @@ function codeBlock(snippet: string) {
 }
 
 function sourceText(node?: Node) {
-  return node?.snippet || node?.sourceWindow?.lines.join("\n") || "";
+  return node?.sourceWindow?.lines.join("\n") || node?.snippet || "";
 }
 
 function repositoryHeader(app: App) {

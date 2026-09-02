@@ -97,7 +97,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       ? `lines ${node.line}–${node.endLine}`
       : `line ${node.line || "—"}`;
   const sourceSnippet = node.snippet || "";
-  const sourceText = sourceSnippet || node.sourceWindow?.lines.join("\n") || "";
+  const sourceText = node.sourceWindow?.lines.join("\n") || sourceSnippet;
   const sourceUrl = sourceUrlFor(app, node);
   const sourceLines = node.sourceWindow?.lines?.length
     ? node.sourceWindow.lines
