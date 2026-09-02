@@ -386,7 +386,7 @@ export function CommandPalette({
             }
           />
           <kbd>esc</kbd>
-          <button type="button" className="command-close" onClick={onClose} aria-label="Close jump menu">×</button>
+          <button type="button" className="command-close" onClick={onClose} aria-label="Close jump menu"><Icon name="close" size={16} /></button>
         </div>
         {query.trim() && (
           <p className="command-results-status" role="status">

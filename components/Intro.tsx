@@ -129,7 +129,7 @@ export function Intro({
           <i />
           <span>{loadState.message}</span>
           {loadState.type === "error" && <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>}
-          <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
+          <button type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
         </p>
       )}
     </section>

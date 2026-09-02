@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Icon } from "./Icon";
 
 type Props = {
   opener?: HTMLElement | null;
@@ -71,7 +72,7 @@ export function ShortcutHelp({ opener, onClose }: Props) {
         <h2 id="shortcut-help-title">Understand the code faster.</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="Close shortcut help">
-            ×
+            <Icon name="close" size={16} />
           </button>
         </header>
         <p>Every lens keeps the same path-reading controls, so you can stay on the evidence instead of hunting for buttons.</p>
