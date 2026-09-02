@@ -96,7 +96,7 @@ export function Intro({
             <dd>{app.language || "Unknown"}</dd>
           </div>
           <div>
-            <dt>Source</dt>
+            <dt>Repository LOC</dt>
             <dd>{app.lines > 0 ? `${app.lines.toLocaleString()} lines` : "Not reported"}</dd>
           </div>
           <div>
