@@ -252,9 +252,15 @@ export default function Page() {
       return;
     }
     if (previousView.current !== view) {
-      workspaceRef.current?.focus({ preventScroll: true });
-      window.scrollTo({ top: 0, behavior: "auto" });
       previousView.current = view;
+      const frame = window.requestAnimationFrame(() => {
+        workspaceRef.current?.focus({ preventScroll: true });
+        window.scrollTo({ top: 0, behavior: "auto" });
+        window.requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        });
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [view]);
 
