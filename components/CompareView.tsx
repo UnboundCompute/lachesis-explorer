@@ -45,6 +45,14 @@ function flowScopes(flow: Flow, app: App) {
   return scopes
 }
 
+function sourceCoverage(flow: Flow, app: App) {
+  const available = flow.steps.filter((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+  }).length;
+  return `${available}/${flow.steps.length} source previews`;
+}
+
 function flowKind(flow: Flow) {
   const kind = flow.kind?.trim().toLowerCase()
   if (kind === 'call-path' || kind === 'callpath') return 'Call paths'
@@ -75,7 +83,7 @@ function diffSearchText(item: { id: string }, app: App) {
   const edge = app.edges.find((value) => value.id === item.id)
   return [
     itemLabel(item, app),
-    node?.qualifiedName, node?.signature, node?.documentation, node?.snippet,
+    node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.sourceWindow?.lines.join(" "),
     node?.file, node?.module, node?.scope?.label, node?.scope?.service,
     flow?.description, flow ? flowPath(flow, app) : undefined,
     flow?.steps.flatMap((step) => [step.role, step.note, step.edge?.relation]).join(" "),
@@ -144,7 +152,7 @@ function DiffColumn({
           const node = openNodes ? app.nodes.find((value) => value.id === item.id) : undefined
           return preview ? (
             <details className="diff-flow-preview" key={item.id}>
-              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps</small></summary>
+              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps · {sourceCoverage(preview, app)}</small></summary>
               <p>{flowPath(preview, app) || "No step sequence available."}</p>
               {previewScopes.length > 1 && <small className="diff-flow-context">Context: {previewScopes.join(' → ')}</small>}
               <button type="button" className="diff-copy-action" onClick={() => copyPreview(preview)}>{copyState?.id === preview.id && copyState.status === 'copied' ? 'Copied' : copyState?.id === preview.id && copyState.status === 'failed' ? 'Copy failed' : 'Copy sequence'}</button>
@@ -295,7 +303,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
                 <i>→</i>
                 <span><small>COMPARISON</small>{flowPath(item.compare, compare)}</span>
               </div>
-              {onOpenFlow && <small className="changed-flow-action">Open base path in Trace ↗</small>}
+              {onOpenFlow && <small className="changed-flow-action">Open base path in Trace ↗ · {sourceCoverage(item.base, base)} · comparison {sourceCoverage(item.compare, compare)}</small>}
             </button>
           ))
         ) : (
