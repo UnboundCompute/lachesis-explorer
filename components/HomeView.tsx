@@ -306,7 +306,7 @@ export function HomeView({
             <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} ready to follow</dd></div>
             <div><dt>Request flows</dt><dd>{app.entries.length.toLocaleString()} starting points</dd></div>
             <div><dt>Files</dt><dd>{(app.files.length || new Set(app.nodes.map((node) => node.file).filter(Boolean)).size).toLocaleString()} in this bundle</dd></div>
-            <div><dt>Source previews</dt><dd>{app.nodes.filter((node) => node.snippet.trim()).length.toLocaleString()} of {app.nodes.length.toLocaleString()} symbols</dd></div>
+            <div><dt>Source previews</dt><dd>{app.nodes.filter((node) => node.snippet.trim() || node.sourceWindow?.lines.length).length.toLocaleString()} of {app.nodes.length.toLocaleString()} symbols</dd></div>
           </dl>
         </header>
 

@@ -14,6 +14,10 @@ function codeBlock(snippet: string) {
   return snippet.split("\n").map((line) => `    ${line}`).join("\n");
 }
 
+function sourceText(node?: Node) {
+  return node?.snippet || node?.sourceWindow?.lines.join("\n") || "";
+}
+
 function repositoryHeader(app: App) {
   return [
     `Repository: ${app.name || "Untitled bundle"}`,
@@ -38,7 +42,7 @@ export function explainFlow(app: App, flow: Flow, direction: "backward" | "forwa
     return `${index + 1}. **${node?.label || step.node_id}** — ${relation}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${step.note ? `\n   ${step.note}` : ""}`;
   }).join("\n");
 
-  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${steps.length} symbols.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(selectedNode?.snippet || "")}${explorerReference(url)}`;
+  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${steps.length} symbols.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${explorerReference(url)}`;
 }
 
 export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?: string) {
@@ -50,7 +54,7 @@ export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?
     return `${index + 1}. **${node?.label || hop.node_id}** — ${hop.edge_label || "calls"}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${hop.caption ? `\n   ${hop.caption}` : ""}`;
   }).join("\n");
 
-  return `# ${entry.label}\n\n${entry.description || `A request flow through ${entry.hops.length} symbols.`}\n\n${repositoryHeader(app)}\n\n## Request flow\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedHop?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(selectedNode?.snippet || "")}${explorerReference(url)}`;
+  return `# ${entry.label}\n\n${entry.description || `A request flow through ${entry.hops.length} symbols.`}\n\n${repositoryHeader(app)}\n\n## Request flow\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedHop?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${explorerReference(url)}`;
 }
 
 export function explainNode(app: App, node: Node, url?: string) {
@@ -69,5 +73,5 @@ export function explainNode(app: App, node: Node, url?: string) {
   const pathNames = flows.slice(0, 8).map((flow) => `- ${flow.name}`).join("\n");
   const entryNames = entries.slice(0, 8).map((entry) => `- ${entry.label}`).join("\n");
 
-  return `# ${node.label || node.id}\n\n${node.documentation || `A ${node.kind} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${node.kind}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n## Source\n\n${codeBlock(node.snippet || "")}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${explorerReference(url)}`;
+  return `# ${node.label || node.id}\n\n${node.documentation || `A ${node.kind} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${node.kind}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n## Source\n\n${codeBlock(sourceText(node))}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${explorerReference(url)}`;
 }

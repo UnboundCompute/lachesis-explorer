@@ -208,7 +208,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       contextNote ? `\n${contextNote}` : "",
       node.documentation ? `\n## Documentation\n\n${node.documentation}` : "",
       connections.length ? `\n## Connected relationships\n\n${connections.join("\n")}` : "",
-      sourceSnippet ? `\n## Source\n\n\`\`\`${app?.language || ""}\n${sourceSnippet}\n\`\`\`` : "",
+      sourceText ? `\n## Source\n\n\`\`\`${app?.language || ""}\n${sourceText}\n\`\`\`` : "",
     ].filter(Boolean).join("\n");
     try {
       await copyText(body);
