@@ -89,6 +89,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `29c5599` — preserve two-line endpoint and file context for long Trace path labels on mobile
 - `22e98a9` — clarify the hero’s line-count fact as Repository LOC rather than Source
 - `9c85707` — return to bundle context after activation and wrap long evidence metrics at narrow widths
+- `106d43c` — raise upload success/error notice actions to the mobile touch-target minimum
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
