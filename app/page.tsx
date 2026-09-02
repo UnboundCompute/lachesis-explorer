@@ -966,6 +966,7 @@ export default function Page() {
               "via command palette",
             );
           }}
+          onFile={openSourceFile}
         />
       )}
       {helpOpen && (

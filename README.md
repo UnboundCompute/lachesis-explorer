@@ -29,7 +29,7 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Copy readable graph-path, request-path, or converging-path sequences with relationships, source locations, and scope context.
 - Move through value-flow and request-path steps sequentially with Previous/Next controls.
 - Use `[` and `]` to step backward or forward while reading a path; text inputs are unaffected.
-- Search symbols by label, qualified name, file, module, or graph ID from the universal command palette.
+- Search symbols by label, qualified name, file, module, or graph ID—and open any cataloged file directly—from the universal command palette.
 - Browse the graph hierarchy from module to file to symbol in the System Map.
 - Reorder topology nodes by path order or centrality across graph paths, request paths, and relationships.
 - Keep a local-only list of recent bundle metadata without storing bundle contents.

@@ -13,6 +13,7 @@ type Props = {
   onEntry: (index: number, hopId: string) => void;
   onSink: (sinkId: string) => void;
   onNode: (nodeId: string) => void;
+  onFile: (file: string) => void;
   opener?: HTMLElement | null;
 };
 type Command = {
@@ -73,6 +74,7 @@ export function CommandPalette({
   onEntry,
   onSink,
   onNode,
+  onFile,
   opener,
 }: Props) {
   const [query, setQuery] = useState("");
@@ -156,19 +158,13 @@ export function CommandPalette({
           keywords: [node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module, node.scope?.module].filter(Boolean).join(" "),
           run: () => onNode(node.id),
         })),
-        ...app.files.flatMap((file) => {
-          const node = app.nodes.find((item) => item.file === file.path);
-          return node
-            ? [
-                {
-                  id: `file-${file.id}`,
-                  label: file.path,
-                  meta: `File · ${file.lines ?? "?"} lines`,
-                  run: () => onNode(node.id),
-                },
-              ]
-            : [];
-        }),
+        ...app.files.map((file) => ({
+          id: `file-${file.id}`,
+          label: `Open ${file.path}`,
+          meta: `File · ${file.lines ?? "?"} lines${file.module ? ` · ${file.module}` : ""}`,
+          keywords: file.path,
+          run: () => onFile(file.path),
+        })),
         ...app.modules.flatMap((module) => {
           const node = app.nodes.find(
             (item) =>
@@ -208,7 +204,7 @@ export function CommandPalette({
           !normalized ||
           matchesCommand(command, normalized),
       ),
-    [app, normalized, onView, onFlow, onEntry, onSink, onNode],
+    [app, normalized, onView, onFlow, onEntry, onSink, onNode, onFile],
   );
   const visibleCommands = commands.slice(0, 80);
   useEffect(() => setActive(0), [query]);
