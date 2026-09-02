@@ -380,13 +380,13 @@ export function CommandPalette({
           <kbd>esc</kbd>
           <button type="button" className="command-close" onClick={onClose} aria-label="Close jump menu">×</button>
         </div>
+        {query.trim() && (
+          <p className="command-results-status" role="status">
+            {commands.length} {commands.length === 1 ? "result" : "results"}
+            {commands.length > visibleCommands.length ? " · refine to see more" : ""}
+          </p>
+        )}
         <div className="command-results" id="command-results" role="listbox" aria-label="Jump results">
-          {query.trim() && (
-            <p className="command-results-status" role="status">
-              {commands.length} {commands.length === 1 ? "result" : "results"}
-              {commands.length > visibleCommands.length ? " · refine to see more" : ""}
-            </p>
-          )}
           {visibleCommands.length ? (
             visibleCommands.map((command, index) => (
               <button
