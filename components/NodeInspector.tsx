@@ -243,9 +243,14 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         </div>
       )}
       {app && (
-        <>
+        <details className="inspector-disclosure">
+          <summary>
+            <span>Where this appears</span>
+            <small>{flows.length + entries.length + relationships.length} connection{flows.length + entries.length + relationships.length === 1 ? "" : "s"}</small>
+          </summary>
+          <div className="inspector-disclosure-body">
+          <>
           <div className="detail-rule" />
-          <span className="panel-label">WHERE THIS APPEARS</span>
           <p className="detail-copy">
             This node is present in {flows.length} graph path
             {flows.length === 1 ? "" : "s"}, {entries.length} request path
@@ -358,8 +363,15 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
               <p>{securityContext ? "No connected evidence records in this bundle." : "No connected paths or relationships in this bundle."}</p>
             )}
           </div>
-        </>
+          </>
+          </div>
+        </details>
       )}
+      <details className="inspector-disclosure inspector-facts-disclosure">
+        <summary>
+          <span>Graph facts</span>
+          <small>{incoming} in · {outgoing} out</small>
+        </summary>
       <dl className="node-facts">
         <div>
           <dt>Kind</dt>
@@ -394,6 +406,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
           </>
         )}
       </dl>
+      </details>
     </aside>
   );
 }
