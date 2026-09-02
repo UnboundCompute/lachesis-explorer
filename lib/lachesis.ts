@@ -147,9 +147,10 @@ function assertExplicitEdgeIds(items:EdgeSeed[], label:string) {
 function assertGraphV2Nodes(nodes:Node[]) {
   for (const [index, node] of nodes.entries()) {
     const label = `Graph node ${index}`
-    for (const [field, value] of [['id', node.id], ['kind', node.kind], ['file', node.file], ['label', node.label], ['snippet', node.snippet]] as const) {
+    for (const [field, value] of [['id', node.id], ['kind', node.kind], ['file', node.file], ['label', node.label]] as const) {
       if (!value.trim()) throw new Error(`${label}.${field} must be a non-empty string.`)
     }
+    if (!node.snippet.trim() && !node.sourceWindow?.lines.length) throw new Error(`${label} must include a snippet or source_window.`)
     const locations: Array<[string, number | undefined]> = [['line', node.line], ['column', node.column], ['endLine', node.endLine], ['endColumn', node.endColumn]]
     for (const [field, value] of locations) {
       if (value != null && (!Number.isInteger(value) || value < 0)) throw new Error(`${label}.${field} must be a non-negative integer.`)
