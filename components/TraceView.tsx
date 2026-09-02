@@ -757,7 +757,7 @@ export function TraceView({
             <b>{indirectSteps}</b>
           </div>
         </div>
-        <details className="reading-guide">
+        <details className="reading-guide" open>
           <summary>
             <span>How to read this path</span>
             <small>3 quick steps</small>
