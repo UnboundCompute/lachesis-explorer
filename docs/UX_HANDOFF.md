@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `97d0d31` — preserve the requested view during initial deep-link restoration
 - `9ba705c` — clarify the request-flow question and expose graph filter syntax
 - `e9525c2` — add file/line context to connected-symbol concentration rows
 - `451a316` — preserve focused graph neighborhoods when opening Explore from Trace
