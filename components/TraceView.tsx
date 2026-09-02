@@ -309,7 +309,7 @@ export function TraceView({
   }, [flow, direction, stepId, selectedPosition]);
   if (!flow)
     return (
-      <section className="workspace-empty">
+      <main className="workspace-empty" aria-label="Graph path workspace">
         <span className="empty-target">
           <Icon name="code" size={22} />
         </span>
@@ -333,7 +333,7 @@ export function TraceView({
             <Icon name="arrow" size={14} />
           </span>
         </button>
-      </section>
+      </main>
     );
   const selected = nodeById.get(stepId) ?? app.nodes[0];
   const visible = useMemo(

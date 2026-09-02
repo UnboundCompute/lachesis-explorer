@@ -213,7 +213,7 @@ export function JourneyView({
   }, [entry, hopId, selectedPosition]);
   if (!entry)
     return (
-      <section className="workspace-empty">
+      <main className="workspace-empty" aria-label="Request flow workspace">
         <h2>No request flows in this bundle</h2>
         <p>
           {app.flows.length
@@ -230,7 +230,7 @@ export function JourneyView({
             <Icon name="arrow" size={14} />
           </span>
         </button>
-      </section>
+      </main>
     );
   const selected = nodeById.get(hopId) ?? app.nodes[0];
   const evidence = app.mcp.find((item) => item.for === entry.id);

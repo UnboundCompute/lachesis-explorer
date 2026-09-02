@@ -138,7 +138,7 @@ export function SinkView({
   ].filter((suggestion): suggestion is { label: string; query: string } => Boolean(suggestion));
   if (!sink)
     return (
-      <section className="workspace-empty">
+      <main className="workspace-empty" aria-label="Boundary workspace">
         <span className="empty-target">
           <Icon name="target" size={22} />
         </span>
@@ -157,7 +157,7 @@ export function SinkView({
             <Icon name="arrow" size={14} />
           </span>
         </button>
-      </section>
+      </main>
     );
   const allFlows = app.flows.filter((flow) =>
     flow.steps.some((step) => step.node_id === sink.id),
