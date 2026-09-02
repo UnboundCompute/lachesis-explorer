@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `8c7db31` — keep long secondary lens names readable in the compact phone header
 - `5ba7118` — preserve the full active-lens label at 320–360px without widening the shell
 - `c6b51df` — give the compact Active bundle control an explicit accessible name and tooltip
 - `e8f3c16` — remove the duplicated REVISION DIFF kicker from Compare panels
@@ -179,6 +180,8 @@ The latest Compare render showed “REVISION DIFF” twice—once in the shared 
 The header audit found that the compact Active bundle control hid its visible text and chevron at phone widths without a reliable accessible name. After `c6b51df`, it announces “Open active bundle context for demo/atlas-commerce” and exposes a matching tooltip at 390px and 1440px; the context dialog still opens and closes normally with no overflow.
 
 The narrow popup pass then reproduced the active “Explore” label truncating to “Explo…” at 320px. After `5ba7118` (with the follow-up CSS consolidation in `11693c6`), the label’s rendered width is fully readable at 320px, 360px, and 390px, with zero document overflow.
+
+The follow-up lens matrix found that “Request flow” and “What reaches here” still truncated at 320px. After `8c7db31`, the phone header uses “Requests” and “Boundary” only at ≤360px, retains the full wording in the lens menu and accessible label, and keeps exactly one visible label with no overflow at 320px and 390px.
 
 ## Safe next session
 
