@@ -212,6 +212,7 @@ export function OverviewView({
   const [localNeighborhoodOnly, setLocalNeighborhoodOnly] = useState(false);
   const [topologyZoom, setTopologyZoom] = useState(1);
   const [showAllTopology, setShowAllTopology] = useState(false);
+  const [showAllFilters, setShowAllFilters] = useState(false);
   const [selectionHistory, setSelectionHistory] = useState<string[]>([]);
   const [localNodeOrder, setLocalNodeOrder] = useState<OverviewNodeOrder>("path");
   const hasMountedOverview = useRef(false);
@@ -229,6 +230,7 @@ export function OverviewView({
     setLinkState("idle");
     setDownloadState("idle");
     setSearchText("");
+    setShowAllFilters(false);
     if (!setControlledNeighborhoodOnly) setLocalNeighborhoodOnly(false);
     setTopologyZoom(1);
     setShowAllTopology(false);
@@ -237,6 +239,7 @@ export function OverviewView({
   }, [app]);
   useEffect(() => {
     setSearchText(query);
+    if (query) setShowAllFilters(true);
   }, [query]);
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; module?: string; nodes: Node[]; inbound: number; outbound: number }>();
@@ -727,22 +730,33 @@ export function OverviewView({
             {query ? `${visible.length} graph nodes match the current filter.` : "Showing all graph nodes."}
           </span>
           <div className="query-chips">
-            {filterSuggestions.map((suggestion) => (
-              <button
-                type="button"
-                key={suggestion.query}
-                onClick={() => {
-                  setSearchText(suggestion.label);
-                  setQuery(suggestion.query);
-                  trackEvent("semantic_filter_applied", {
-                    surface: "topology",
-                    filter: suggestion.query.split(":", 1)[0] || "text",
-                  });
-                }}
-              >
-                {suggestion.label}
-              </button>
-            ))}
+            <button
+              type="button"
+              className="filter-toggle"
+              aria-expanded={showAllFilters}
+              onClick={() => setShowAllFilters((current) => !current)}
+            >
+              {showAllFilters ? "Fewer filters" : `More filters (${filterSuggestions.length})`}
+            </button>
+            <div className={`filter-suggestion-list${showAllFilters ? " expanded" : ""}`}>
+              {filterSuggestions.map((suggestion) => (
+                <button
+                  type="button"
+                  key={suggestion.query}
+                  onClick={() => {
+                    setSearchText(suggestion.label);
+                    setQuery(suggestion.query);
+                    setShowAllFilters(true);
+                    trackEvent("semantic_filter_applied", {
+                      surface: "topology",
+                      filter: suggestion.query.split(":", 1)[0] || "text",
+                    });
+                  }}
+                >
+                  {suggestion.label}
+                </button>
+              ))}
+            </div>
             {query && (
               <button
                 type="button"

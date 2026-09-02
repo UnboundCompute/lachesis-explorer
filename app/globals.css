@@ -328,6 +328,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .path-canvas .canvas-bar>div:first-child,.convergence-bar>div:first-child{min-width:0}.convergence-selected{display:inline-block;max-width:min(300px,42vw)}
 @media(max-width:500px){.convergence-selected{display:block;width:max-content;max-width:100%;margin:5px 0 0}}
 .query-chips{min-width:0;flex-wrap:wrap}
+.filter-suggestion-list{display:contents}.filter-toggle{display:none}
 .query-syntax-help{margin:7px 2px 0;color:var(--ink-3);font:8px/1.45 var(--mono)}.query-syntax-help code{color:var(--ink-2);font-weight:700}
 .convergence-filter{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);color:var(--ink-3);font:8px var(--mono)}.convergence-filter span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.convergence-filter button{flex:none;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--ink-2);font:8px var(--mono)}.convergence-filter button:hover,.convergence-filter button.active{border-color:var(--line-strong);background:var(--brand-wash);color:var(--brand-strong)}
 .convergence-canvas{display:flex;flex-direction:column}
@@ -373,6 +374,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:760px){.query-intents{align-items:stretch;flex-direction:column}.query-intents>span{margin-bottom:2px}.query-intents button{min-height:44px;width:100%}}
 @media(max-width:760px){
   /* Keep every frequently used mobile action inside the same touch-size rhythm. */
+  .filter-toggle{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border:1px solid var(--line-strong);border-radius:999px;background:var(--brand-wash);color:var(--brand-strong);font:8px var(--mono)}
+  .filter-suggestion-list{display:contents}
+  .filter-suggestion-list:not(.expanded) button:nth-child(n+4){display:none}
   .mobile-navigation-controls button{width:44px;min-width:44px;height:44px;min-height:44px}
   .overview-switch button,.filter-hints button,.query-chips button,.queue-filters button,.lens-switch button,.inspector-reopen,.share-control,.entry-select,.copy-button,.footer-help,.resource-list a,.understand-primary,.understand-secondary,.understand-search button,.understand-coverage-detail button,.understand-footer button,.understand-path>button,.briefing-source-search button,.path-pins-heading button,.path-pin,.filter-context button,.inspector-neighborhood-list button,.relationship-peer,.reading-guide summary,[aria-label="Copy source location"],[aria-label="Copy graph ID"]{min-width:44px;min-height:44px}
   .understand-search input,.briefing-source-search input,.query-composer input,.search input,.compare-search input{min-height:44px}
