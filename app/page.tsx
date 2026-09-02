@@ -470,13 +470,31 @@ export default function Page() {
         return;
       }
       if (editing || inDialog || event.defaultPrevented) return;
-      if (event.key === "/" && view === "trace") {
+      if (event.key === "/") {
+        const searchSelector = view === "trace"
+          ? ".sidebar .search input"
+          : view === "map"
+            ? ".query-composer input"
+            : view === "journey"
+              ? ".entry-search input"
+              : view === "investigate"
+                ? ".sink-search input"
+                : view === "compare"
+                  ? ".compare-search input"
+                  : "";
+        const search = searchSelector
+          ? document.querySelector<HTMLInputElement>(searchSelector)
+          : null;
         event.preventDefault();
-        document.querySelector<HTMLInputElement>(".search input")?.focus();
-      }
-      if (event.key === "/" && view === "map") {
-        event.preventDefault();
-        document.querySelector<HTMLInputElement>(".query-composer input")?.focus();
+        if (search) {
+          search.focus();
+          return;
+        }
+        setMenu(false);
+        setHelpOpen(false);
+        commandOpenerRef.current = document.activeElement as HTMLElement | null;
+        setCommandOpen(true);
+        return;
       }
       if (view === "trace" && event.key === "ArrowLeft") {
         setDirection("backward");
