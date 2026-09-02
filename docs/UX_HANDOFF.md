@@ -85,6 +85,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `5d64b55` — collapse secondary Explore filters on mobile while preserving active filter visibility
 - `7598a5f` — keep ordinary text searches compact while auto-expanding structured filters
 - `6c9fda7` — raise Explore graph-area and boundary rows to the mobile touch-target minimum
+- `0b87f31` — remove duplicated Map hero copy on mobile so the Explore workspace starts sooner
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
