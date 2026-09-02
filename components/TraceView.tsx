@@ -101,7 +101,7 @@ function matchingStepIndex(flow: Flow, query: string, nodeById: NodeIndex) {
     .trim()
     .toLowerCase()
     .split(/\s+/)
-    .filter((term) => term && !term.includes(":"));
+    .filter(Boolean);
   if (!terms.length) return -1;
 
   return flow.steps.findIndex((step) => {
@@ -128,7 +128,32 @@ function matchingStepIndex(flow: Flow, query: string, nodeById: NodeIndex) {
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
-    return terms.every((term) => haystack.includes(term));
+    return terms.every((term) => {
+      const [key, ...rest] = term.split(":");
+      const value = rest.join(":");
+      if (rest.length) {
+        if (key === "file") return node?.file.toLowerCase().includes(value);
+        if (key === "kind") return node?.kind.toLowerCase().includes(value);
+        if (key === "module") return [node?.module, node?.scope?.module].some((item) => item?.toLowerCase().includes(value));
+        if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+          return [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package, node?.scope?.module]
+            .some((item) => item?.toLowerCase().includes(value));
+        }
+        if (key === "role") return step.role.toLowerCase().includes(value);
+        if (key === "confidence") return step.edge?.confidence?.toLowerCase().includes(value) ?? false;
+        if (key === "edge") {
+          if (value === "alias") return Boolean(step.edge?.alias);
+          if (value === "dynamic") return Boolean(step.edge?.dynamic);
+          if (value === "uncertain") return Boolean(step.edge?.confidence || step.edge?.limitations?.length);
+        }
+        if (key === "has" && (value === "source" || value === "source-preview")) return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+        if (key === "has" && (value === "source-gap" || value === "missing-source")) return !node?.snippet.trim() && !node?.sourceWindow?.lines.length;
+        if (key === "has" && value === "mcp") return true;
+        if (key === "path") return true;
+        return false;
+      }
+      return haystack.includes(term);
+    });
   });
 }
 

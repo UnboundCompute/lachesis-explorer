@@ -76,11 +76,22 @@ function matchesCommand(command: Command, query: string) {
 
 function matchingNodeId(
   app: App,
-  steps: Array<{ node_id: string; role?: string; note?: string; edge?: { relation?: string } }>,
+  steps: Array<{
+    node_id: string;
+    role?: string;
+    note?: string;
+    edge?: {
+      relation?: string;
+      alias?: boolean;
+      dynamic?: boolean;
+      confidence?: string;
+      limitations?: string[];
+    };
+  }>,
   query: string,
 ) {
-  const terms = query.trim().toLowerCase().split(/\s+/).filter((term) => term && !term.includes(":"));
-  if (!terms.length) return steps[0]?.node_id ?? "";
+  const scopedTerms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!scopedTerms.length) return steps[0]?.node_id ?? "";
   const match = steps.find((step) => {
     const node = app.nodes.find((item) => item.id === step.node_id);
     const haystack = [
@@ -101,7 +112,32 @@ function matchingNodeId(
       node?.scope?.module,
       node?.scope?.repository,
     ].filter(Boolean).join(" ").toLowerCase();
-    return terms.every((term) => haystack.includes(term));
+    return scopedTerms.every((term) => {
+      const [key, ...rest] = term.split(":");
+      const value = rest.join(":");
+      if (rest.length) {
+        if (key === "file") return node?.file.toLowerCase().includes(value);
+        if (key === "kind") return node?.kind.toLowerCase().includes(value);
+        if (key === "module") return [node?.module, node?.scope?.module].some((item) => item?.toLowerCase().includes(value));
+        if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+          return [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package, node?.scope?.module]
+            .some((item) => item?.toLowerCase().includes(value));
+        }
+        if (key === "role") return step.role?.toLowerCase().includes(value) ?? false;
+        if (key === "confidence") return step.edge?.confidence?.toLowerCase().includes(value) ?? false;
+        if (key === "edge") {
+          if (value === "alias") return Boolean(step.edge?.alias);
+          if (value === "dynamic") return Boolean(step.edge?.dynamic);
+          if (value === "uncertain") return Boolean(step.edge?.confidence || step.edge?.limitations?.length);
+        }
+        if (key === "has" && (value === "source" || value === "source-preview")) return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+        if (key === "has" && (value === "source-gap" || value === "missing-source")) return !node?.snippet.trim() && !node?.sourceWindow?.lines.length;
+        if (key === "has" && value === "mcp") return true;
+        if (key === "path") return true;
+        return false;
+      }
+      return haystack.includes(term);
+    });
   });
   return match?.node_id ?? steps[0]?.node_id ?? "";
 }
