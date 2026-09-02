@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `86d55e5` — give hidden graph and comparison upload inputs accessible names
 - `a52d1f2` — preserve security sample identity across URL rewrites and reloads
 - `0b3901b` — prevent initial Trace/convergence canvases from scrolling into inspectors
 - `ce9ab61` — make empty Trace/Journey context states honest instead of showing stale step counts
