@@ -303,10 +303,12 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
               href={sourceUrl}
               target="_blank"
               rel="noreferrer"
+              aria-label={`Open ${location} in the source repository (opens in a new tab)`}
+              title={`Open ${location} in the source repository`}
               onClick={() => trackEvent("source_repository_opened")}
             >
               <Icon name="arrow" size={11} />
-              Open source
+              Open repository
             </a>
           )}
           <span className="sr-only" aria-live="polite">{copied ? `${hasSourceLocation ? "Source location" : "Graph ID"} copied.` : copyError ? `${hasSourceLocation ? "Source location" : "Graph ID"} could not be copied.` : ""}</span>
