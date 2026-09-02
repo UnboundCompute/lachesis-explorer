@@ -61,6 +61,14 @@ function nodeContext(node: App["nodes"][number]) {
   return node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || node.module || "graph node";
 }
 
+function sourceCoverage(app: App, steps: Array<{ node_id: string }>) {
+  const available = steps.filter((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+  }).length;
+  return `${available}/${steps.length} source previews`;
+}
+
 function matchesCommand(command: Command, query: string) {
   const haystack = `${command.label} ${command.meta} ${command.keywords ?? ""}`.toLowerCase();
   return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => haystack.includes(term));
@@ -173,7 +181,7 @@ export function CommandPalette({
         ...app.flows.map((flow) => ({
           id: `flow-${flow.id}`,
           label: flow.name,
-          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
+          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${sourceCoverage(app, flow.steps)} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
           keywords: flow.steps.flatMap((step) => {
             const node = app.nodes.find((item) => item.id === step.node_id);
             return node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [];
@@ -183,7 +191,7 @@ export function CommandPalette({
         ...app.entries.map((entry, index) => ({
           id: `entry-${entry.id}`,
           label: entry.label,
-          meta: `Request flow · ${entry.hops.length} steps`,
+          meta: `Request flow · ${entry.hops.length} steps · ${sourceCoverage(app, entry.hops)}`,
           keywords: entry.hops.flatMap((hop) => {
             const node = app.nodes.find((item) => item.id === hop.node_id);
             return [hop.edge_label, hop.caption, node?.label, node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.sourceWindow?.lines.join(" "), node?.file, node?.module];
