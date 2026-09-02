@@ -77,7 +77,7 @@ function matchesFlow(app: App, flow: Flow, query: string) {
       flow.kind,
       ...flow.steps.map((step) => step.role),
       ...nodes.flatMap((node) =>
-        node ? [node.label, node.file, node.kind] : [],
+        node ? [node.label, node.file, node.kind, node.qualifiedName, node.signature, node.documentation, node.snippet] : [],
       ),
     ]
       .join(" ")
@@ -307,8 +307,8 @@ export function TraceView({
               setSearchText(event.target.value);
               setQuery(event.target.value);
             }}
-            placeholder="Search by path, symbol, file, or module…"
-            aria-label="Search paths by name, symbol, file, or module"
+            placeholder="Search paths, symbols, files, or code…"
+            aria-label="Search paths by name, symbol, file, module, documentation, or source code"
           />
         </label>
         <div className="filter-hints" role="group" aria-label="Quick path filters">

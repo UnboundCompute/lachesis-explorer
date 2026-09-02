@@ -119,6 +119,9 @@ function matches(node: Node, query: string, app: App) {
         node.scope?.service,
         node.scope?.repository,
         node.scope?.package,
+        node.signature,
+        node.documentation,
+        node.snippet,
       ]
         .join(" ")
         .toLowerCase()
@@ -531,8 +534,8 @@ export function OverviewView({
               setSearchText(event.target.value);
               setQuery(event.target.value);
             }}
-            placeholder="Search symbols, files, modules, or services…"
-            aria-label="Search graph nodes by symbol, file, module, or service"
+            placeholder="Search symbols, files, modules, or code…"
+            aria-label="Search graph nodes by symbol, file, module, service, documentation, or source code"
           />
           <span className="sr-only" aria-live="polite">
             {query ? `${visible.length} graph nodes match the current filter.` : "Showing all graph nodes."}
