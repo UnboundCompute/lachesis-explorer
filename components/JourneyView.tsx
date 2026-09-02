@@ -64,6 +64,7 @@ export function JourneyView({
   const nodeById = useMemo(() => new Map(app.nodes.map((node) => [node.id, node])), [app.nodes]);
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   const [entrySearch, setEntrySearch] = useState("");
+  const [previousEntryIndex, setPreviousEntryIndex] = useState<number | null>(null);
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedHopRef = useRef<HTMLButtonElement>(null);
   const visibleEntries = useMemo(() => {
@@ -89,6 +90,7 @@ export function JourneyView({
       : visibleEntries;
   useEffect(() => {
     setEntrySearch("");
+    setPreviousEntryIndex(null);
   }, [app]);
   useEffect(() => {
     if (!entry) return;
@@ -155,6 +157,25 @@ export function JourneyView({
       ? selectedPosition
       : items.findIndex((item) => item.id === hopId),
   );
+  const previousEntry = previousEntryIndex == null ? undefined : app.entries[previousEntryIndex];
+  function rememberEntry(nextIndex: number) {
+    if (entry && nextIndex !== entryIndex) setPreviousEntryIndex(entryIndex);
+  }
+  function returnToPreviousEntry() {
+    if (!previousEntry) return;
+    const currentIndex = entryIndex;
+    setPreviousEntryIndex(currentIndex);
+    setEntryIndex(previousEntryIndex!);
+    setHopId(previousEntry.hops[0]?.node_id ?? "");
+    onPositionChange?.(0);
+    onInspectorOpen();
+    onRecord("Returned to request flow", previousEntry.label, `${previousEntry.hops.length} steps`);
+    trackEvent("callpath_reversed");
+  }
+  function openConnectedEntry(nextIndex: number, nextHopId: string) {
+    rememberEntry(nextIndex);
+    onEntry(nextIndex, nextHopId);
+  }
   function moveHop(delta: number) {
     const next = items[selectedIndex + delta];
     if (!next) return;
@@ -214,6 +235,7 @@ export function JourneyView({
           onChange={(event) => {
             const next = Number(event.target.value);
             const selectedEntry = app.entries[next];
+            rememberEntry(next);
             setEntryIndex(next);
             setHopId(selectedEntry?.hops[0]?.node_id ?? "");
             onPositionChange?.(0);
@@ -296,6 +318,11 @@ export function JourneyView({
             )}
           </div>
           <div className="toolbar-actions">
+            {previousEntry && (
+              <button type="button" className="inspector-reopen selection-back" onClick={returnToPreviousEntry} title={`Return to ${previousEntry.label}`}>
+                ← Back to previous flow
+              </button>
+            )}
             {!inspectorOpen && (
               <button className="inspector-reopen" type="button" onClick={onInspectorOpen} aria-expanded={inspectorOpen} aria-controls="source-inspector">
                 Show source
@@ -409,7 +436,7 @@ export function JourneyView({
           contextOccurrence={items[selectedIndex]?.occurrenceId}
           app={app}
           onFlow={onFlow}
-          onEntry={onEntry}
+          onEntry={openConnectedEntry}
           onClose={onInspectorClose}
         />
       )}
