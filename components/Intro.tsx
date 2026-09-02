@@ -34,15 +34,12 @@ export function Intro({
       "See what happens after a starting point.",
       "Walk a focused request flow from its first handler to its final effect.",
     ],
-    investigate: securityMode
-      ? [
-          "Start at the effect. Reveal every converging value.",
-          "Compare the bundled paths that reach one execution boundary without turning overlap into a claim.",
-        ]
-      : [
-          "See everything that reaches this code.",
-          "Compare the bundled paths that meet at one destination, then open any path in context.",
-        ],
+    investigate: [
+      "See everything that reaches this code.",
+      securityMode
+        ? "Compare bundled paths that meet at one destination, then inspect the source and keep the reported security context visible."
+        : "Compare bundled paths that meet at one destination, then open any path in context.",
+    ],
     map: [
       "Build a mental model of the codebase.",
       "Explore modules, relationships, important symbols, and the graph data available to answer questions.",

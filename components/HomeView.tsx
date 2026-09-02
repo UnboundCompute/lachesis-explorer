@@ -262,9 +262,9 @@ export function HomeView({
   const guardVerdict = priority?.evidence?.guards?.verdict;
   const title =
     leadCount || unresolvedCount
-      ? `${leadCount} lead${leadCount === 1 ? "" : "s"} and ${unresolvedCount} unresolved path${unresolvedCount === 1 ? "" : "s"} deserve review.`
+      ? "Start with the paths that need a closer read."
       : reportedCount
-        ? `${reportedCount} reported path${reportedCount === 1 ? " is" : "s are"} ready to inspect.`
+        ? "Start with a bundled path, then verify it in source."
         : metadataOnly
         ? "Linked records are present, but no traceable path steps are available."
         : graphOnly
@@ -461,7 +461,7 @@ export function HomeView({
                 (graphFocus
                   ? "Start with a bundled path, then move through the symbols and relationships that make the behavior understandable."
                   : "This bundle contains graph structure but no bundled paths. Open the graph to inspect its relationships directly.")
-              : "Start with the strongest witness, inspect what controls it, and keep uncertainty visible. Lachesis shows the path the bundle contains—not a vulnerability verdict."}
+              : "Start with the strongest bundled path, follow its symbols and handoffs, and inspect the source. Security status and uncertainty stay visible when the bundle reports them."}
           </p>
         </div>
         <div className="briefing-actions">
