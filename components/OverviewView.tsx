@@ -734,11 +734,12 @@ export function OverviewView({
               type="button"
               className="filter-toggle"
               aria-expanded={showAllFilters}
+              aria-controls="graph-filter-suggestions"
               onClick={() => setShowAllFilters((current) => !current)}
             >
               {showAllFilters ? "Fewer filters" : `More filters (${filterSuggestions.length})`}
             </button>
-            <div className={`filter-suggestion-list${showAllFilters ? " expanded" : ""}`}>
+            <div id="graph-filter-suggestions" className={`filter-suggestion-list${showAllFilters ? " expanded" : ""}`}>
               {filterSuggestions.map((suggestion) => (
                 <button
                   type="button"
@@ -1139,6 +1140,7 @@ export function OverviewView({
                     type="button"
                     className="module-row"
                     aria-expanded={expandedModule === module.id}
+                    aria-controls={`module-symbols-${module.id.replace(/[^a-zA-Z0-9_-]+/g, "-")}`}
                     onClick={() =>
                       setExpandedModule(
                         expandedModule === module.id ? null : module.id,
@@ -1161,8 +1163,7 @@ export function OverviewView({
                     </span>
                     <em>{expandedModule === module.id ? "−" : "+"}</em>
                   </button>
-                  {expandedModule === module.id && (
-                    <div className="module-symbols">
+                  <div id={`module-symbols-${module.id.replace(/[^a-zA-Z0-9_-]+/g, "-")}`} className="module-symbols" hidden={expandedModule !== module.id}>
                       {[
                         ...new Set(
                           module.nodes.map(
@@ -1191,8 +1192,7 @@ export function OverviewView({
                             ))}
                         </div>
                       ))}
-                    </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </section>
