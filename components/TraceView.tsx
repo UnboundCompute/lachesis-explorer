@@ -29,11 +29,13 @@ type Props = {
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
 };
-function matchesFlow(app: App, flow: Flow, query: string) {
+type NodeIndex = ReadonlyMap<string, App["nodes"][number]>;
+
+function matchesFlow(app: App, flow: Flow, query: string, nodeById: NodeIndex) {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (!terms.length) return true;
   const nodes = flow.steps
-    .map((step) => app.nodes.find((node) => node.id === step.node_id))
+    .map((step) => nodeById.get(step.node_id))
     .filter(Boolean);
   return terms.every((term) => {
     const [key, ...rest] = term.split(":");
@@ -88,11 +90,11 @@ function matchesFlow(app: App, flow: Flow, query: string) {
   });
 }
 
-function flowMatchLabel(app: App, flow: Flow, query: string) {
+function flowMatchLabel(app: App, flow: Flow, query: string, nodeById: NodeIndex) {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (!terms.length) return "";
   const nodes = flow.steps
-    .map((step) => app.nodes.find((node) => node.id === step.node_id))
+    .map((step) => nodeById.get(step.node_id))
     .filter(Boolean);
   const fields = [
     { label: "source", values: nodes.flatMap((node) => node ? [node.snippet] : []) },
@@ -116,9 +118,9 @@ function pathKindLabel(flow: Flow, securityPath: boolean) {
   return flow.kind?.trim() || "Graph path";
 }
 
-function flowLocation(app: App, flow: Flow) {
+function flowLocation(app: App, flow: Flow, nodeById: NodeIndex) {
   const nodes = flow.steps
-    .map((step) => app.nodes.find((node) => node.id === step.node_id))
+    .map((step) => nodeById.get(step.node_id))
     .filter(Boolean);
   const location = (node: (typeof app.nodes)[number]) =>
     `${node.file || "source unavailable"}:${node.line || "—"}`;
@@ -130,10 +132,10 @@ function flowLocation(app: App, flow: Flow) {
     : `${location(first)} → ${location(last)}`;
 }
 
-function flowScopes(app: App, flow: Flow) {
+function flowScopes(app: App, flow: Flow, nodeById: NodeIndex) {
   const scopes: string[] = [];
   flow.steps.forEach((step) => {
-    const node = app.nodes.find((item) => item.id === step.node_id);
+    const node = nodeById.get(step.node_id);
     const scope = node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository;
     if (scope && scopes.at(-1) !== scope) scopes.push(scope);
   });
@@ -168,6 +170,7 @@ export function TraceView({
   onEntry,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
+  const nodeById = useMemo(() => new Map(app.nodes.map((node) => [node.id, node])), [app.nodes]);
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   const [searchText, setSearchText] = useState("");
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
@@ -237,10 +240,10 @@ export function TraceView({
         </button>
       </section>
     );
-  const selected = app.nodes.find((node) => node.id === stepId) ?? app.nodes[0];
+  const selected = nodeById.get(stepId) ?? app.nodes[0];
   const visible = useMemo(
-    () => app.flows.filter((item) => matchesFlow(app, item, query)),
-    [app, query],
+    () => app.flows.filter((item) => matchesFlow(app, item, query, nodeById)),
+    [app, nodeById, query],
   );
   const steps =
     direction === "backward" ? flow.steps : [...flow.steps].reverse();
@@ -270,16 +273,16 @@ export function TraceView({
       .slice(0, 2)
       .map((service) => ({ label: service!, query: `service:${service}` })),
   ].filter(Boolean) as { label: string; query: string }[];
-  const firstNode = app.nodes.find((node) => node.id === (flow.sourceNodeId ?? flow.steps[0]?.node_id));
-  const lastNode = app.nodes.find((node) => node.id === (flow.sinkNodeId ?? flow.steps.at(-1)?.node_id));
-  const contextRoute = flowScopes(app, flow);
+  const firstNode = nodeById.get(flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "");
+  const lastNode = nodeById.get(flow.sinkNodeId ?? flow.steps.at(-1)?.node_id ?? "");
+  const contextRoute = flowScopes(app, flow, nodeById);
   const indirectSteps = flow.steps.filter(
     (step) => step.edge?.alias || step.edge?.dynamic,
   ).length;
   const items: PathItem[] = steps.map((step) => ({
     id: step.node_id,
     occurrenceId: step.id,
-    node: app.nodes.find((node) => node.id === step.node_id) ?? app.nodes[0],
+    node: nodeById.get(step.node_id) ?? app.nodes[0],
     label: step.role,
     caption: step.note,
     relation: step.edge?.relation ?? (step.role === "transforms" ? "transforms" : step.role === "used by" ? "used by" : step.role === "sink" ? "value flows to" : undefined),
@@ -402,14 +405,14 @@ export function TraceView({
                       : app.mcp.some((evidence) => evidence.for === item.id)
                         ? `Bundle-backed ${pathKindLabel(item, false).toLowerCase()}`
                       : pathKindLabel(item, false)} {" · "}
-                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "non-direct"} · {flowLocation(app, item)}
+                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "non-direct"} · {flowLocation(app, item, nodeById)}
                   </small>
-                  {query && flowMatchLabel(app, item, query) && <small className="node-row-context">{flowMatchLabel(app, item, query)}</small>}
+                  {query && flowMatchLabel(app, item, query, nodeById) && <small className="node-row-context">{flowMatchLabel(app, item, query, nodeById)}</small>}
                   <small className="node-row-context">
-                    {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary ?? flowLocation(app, item)}
+                    {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary ?? flowLocation(app, item, nodeById)}
                   </small>
-                  {flowScopes(app, item).length > 1 && (
-                    <small className="node-row-context">Context: {flowScopes(app, item).join(" → ")}</small>
+                    {flowScopes(app, item, nodeById).length > 1 && (
+                    <small className="node-row-context">Context: {flowScopes(app, item, nodeById).join(" → ")}</small>
                   )}
                 </span>
               </button>
@@ -552,7 +555,7 @@ export function TraceView({
           selectedId={stepId}
           selectedIndex={selectedIndex}
           onSelect={(id, index) => {
-            const node = app.nodes.find((item) => item.id === id);
+            const node = nodeById.get(id);
             setSelectedPosition(index);
             onPositionChange?.(index);
             setStepId(id);
