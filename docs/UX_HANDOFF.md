@@ -204,6 +204,8 @@ The light-theme pass found Compare’s empty-state onboarding explanations rende
 
 The real-bundle upload pass reproduced the viewport settling at `scrollY=95` after activation, leaving Trace’s first heading behind the sticky header. After `activate()` gained a two-frame scroll restoration, uploaded `libxml2` content settles at `scrollY=0` with the heading below the header at 320px, 390px, 800px, and 1440px.
 
+The keyboard-focus pass found all primary search inputs computing to `outline: none` without a focused parent surface. After the focus-state fix, Trace, Request Flow, Boundary, reaching-path search, and Explore query inputs expose a consistent cyan focus ring through `:focus-within`, with no viewport overflow at 390px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
