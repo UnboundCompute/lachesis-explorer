@@ -442,15 +442,20 @@ export function indirectionCount(flow: Flow, evidence?: Evidence) {
 export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
   const duplicate = allFlows.filter((item) => item.name === flow.name).length > 1
   if (!duplicate) return flow.name
-  const locations = flow.steps
+  const pathNodes = flow.steps
     .map((step) => nodes.find((node) => node.id === step.node_id))
-    .filter(Boolean)
-    .map((node) => `${node!.file || "source unavailable"}:${node!.line || "—"}`)
+    .filter(Boolean) as Node[]
+  const locations = pathNodes
+    .map((node) => `${node.file || "source unavailable"}:${node.line || "—"}`)
   if (!locations.length) return flow.name
   const route = locations.length > 1 && locations[0] !== locations.at(-1)
     ? `${locations[0]} → ${locations.at(-1)}`
     : locations[0]
-  return `${flow.name} · ${route}`
+  const labels = pathNodes.map((node) => node.label || node.qualifiedName || node.id)
+  const endpoints = labels.length > 1 && labels[0] !== labels.at(-1)
+    ? `${labels[0]} → ${labels.at(-1)}`
+    : labels[0]
+  return `${endpoints} · ${flow.name} · ${route}`
 }
 
 export function entryDisplayName(entry: Entry, nodes: Node[], allEntries: Entry[]) {
