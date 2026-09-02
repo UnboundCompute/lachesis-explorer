@@ -61,6 +61,8 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
   const [copyError, setCopyError] = useState(false);
   const [snippetCopied, setSnippetCopied] = useState(false);
   const [snippetCopyError, setSnippetCopyError] = useState(false);
+  const [contextCopied, setContextCopied] = useState(false);
+  const [contextCopyError, setContextCopyError] = useState(false);
   const [showAllConnections, setShowAllConnections] = useState(false);
   const [connectionsOpen, setConnectionsOpen] = useState(true);
   const location = node.file
@@ -112,6 +114,8 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     setCopyError(false);
     setSnippetCopied(false);
     setSnippetCopyError(false);
+    setContextCopied(false);
+    setContextCopyError(false);
     setShowAllConnections(false);
     setConnectionsOpen(true);
   }, [node.id, contextRole, contextOccurrence]);
@@ -138,6 +142,47 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     } catch {
       setSnippetCopied(false);
       setSnippetCopyError(true);
+    }
+  }
+  async function copyContext() {
+    const meaning = descriptions[node.kind] ||
+      (contextRole
+        ? "A node participating in the selected graph path."
+        : "A node participating in the loaded code graph.");
+    const connections = relationships.map((edge) => {
+      const peerId = edge.source === node.id ? edge.target : edge.source;
+      const peer = app?.nodes.find((item) => item.id === peerId);
+      const direction = edge.source === node.id ? "leads to" : "receives from";
+      return `- ${direction} ${peer?.label || peerId} (${edge.relation || "connected"})`;
+    });
+    const body = [
+      `# ${node.label || node.id}`,
+      "",
+      `- Type: ${node.kind}`,
+      `- Location: ${location}`,
+      contextRole ? `- Role in selected path: ${contextRole}` : "",
+      contextOccurrence ? `- Occurrence: ${contextOccurrence}` : "",
+      node.qualifiedName && node.qualifiedName !== node.label ? `- Qualified name: ${node.qualifiedName}` : "",
+      node.signature ? `- Signature: ${node.signature}` : "",
+      node.module ? `- Module: ${node.module}` : "",
+      "",
+      "## Meaning",
+      "",
+      meaning,
+      contextNote ? `\n${contextNote}` : "",
+      node.documentation ? `\n## Documentation\n\n${node.documentation}` : "",
+      connections.length ? `\n## Connected relationships\n\n${connections.join("\n")}` : "",
+      sourceSnippet ? `\n## Source\n\n\`\`\`${app?.language || ""}\n${sourceSnippet}\n\`\`\`` : "",
+    ].filter(Boolean).join("\n");
+    try {
+      await copyText(body);
+      setContextCopyError(false);
+      setContextCopied(true);
+      trackEvent("source_context_copied");
+      window.setTimeout(() => setContextCopied(false), 1600);
+    } catch {
+      setContextCopied(false);
+      setContextCopyError(true);
     }
   }
   function closeInspector() {
@@ -222,6 +267,11 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
           {snippetCopied ? "Snippet copied" : snippetCopyError ? "Retry copy" : "Copy snippet"}
         </button>
         <span className="sr-only" aria-live="polite">{snippetCopied ? "Source snippet copied." : snippetCopyError ? "Source snippet could not be copied." : ""}</span>
+        <button className="source-copy context-copy" type="button" onClick={copyContext}>
+          <Icon name="spark" size={12} />
+          {contextCopied ? "Context copied" : contextCopyError ? "Retry copy" : "Copy context"}
+        </button>
+        <span className="sr-only" aria-live="polite">{contextCopied ? "Symbol context copied as Markdown." : contextCopyError ? "Symbol context could not be copied." : ""}</span>
       </div>
       <div className="detail-rule" />
       <span className="panel-label">WHAT THIS NODE MEANS</span>
