@@ -25,6 +25,7 @@ export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, 
   const [zoom, setZoom] = useState(1)
   const [focusedOnly, setFocusedOnly] = useState(false)
   const flowIdentity = allFlows.map(flow => `${flow.id}:${flow.steps.map(step => step.node_id).join(',')}`).join('|')
+  const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
   useEffect(() => { setZoom(1); setFocusedOnly(false) }, [flowIdentity, sinkId, selectedId])
   const flows = focusedOnly && selectedId
     ? allFlows.filter(flow => flow.steps.some(step => step.node_id === selectedId))
@@ -58,13 +59,13 @@ export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, 
       const distance = Math.max(...items.map(item => item.distance))
       const lanes = new Set(items.map(item => item.lane))
       const y = items.reduce((sum, item) => sum + 72 + item.lane * 82, 0) / items.length
-      const node = nodes.find(item => item.id === id)
+      const node = nodeById.get(id)
       if (node) points.set(id, { id, x: 690 - distance * 142, y, node, roles: new Set(items.map(item => item.role)), lanes })
     })
     const width = Math.max(760, Math.max(...[...points.values()].map(point => point.x)) + 70)
     const height = Math.max(250, flows.length * 82 + 92)
     return { points, edges: [...edges.values()], width, height }
-  }, [flows, nodes, sinkId])
+  }, [flows, nodeById, sinkId])
   const ordered = [...graph.points.values()].sort((a, b) => a.x - b.x || a.y - b.y)
   const selectedPoint = selectedId ? graph.points.get(selectedId) : undefined
   const selectedRef = useRef<HTMLButtonElement>(null)
