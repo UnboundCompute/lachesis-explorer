@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { App } from "../lib/lachesis";
+import { entryDisplayName, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainEntry } from "../lib/explanations";
@@ -455,7 +455,7 @@ export function JourneyView({
         <div className="toolbar">
           <div>
             <span className="panel-label">SELECTED REQUEST</span>
-            <h2>{entry.label}</h2>
+            <h2>{entryDisplayName(entry, app.nodes, app.entries)}</h2>
             {entry.description && <p className="path-description">{entry.description}</p>}
             <p className="path-meta">
               {entry.confidence && <span>{entry.confidence} confidence</span>}
@@ -466,7 +466,7 @@ export function JourneyView({
           </div>
           <div className="toolbar-actions">
             {previousEntry && (
-              <button type="button" className="inspector-reopen selection-back" onClick={returnToPreviousEntry} title={`Return to ${previousEntry.label}`}>
+              <button type="button" className="inspector-reopen selection-back" onClick={returnToPreviousEntry} title={`Return to ${entryDisplayName(previousEntry, app.nodes, app.entries)}`}>
                 ← Back to previous flow
               </button>
             )}
@@ -528,7 +528,7 @@ export function JourneyView({
         >
           <div>
             <span>STARTING POINT</span>
-            <b>{firstNode?.label || entry.label}</b>
+            <b>{firstNode?.label || entryDisplayName(entry, app.nodes, app.entries)}</b>
             <small>
               {nodeLocation(firstNode)}
             </small>
@@ -579,7 +579,7 @@ export function JourneyView({
         <EvidencePanel
           evidence={evidence}
           fallbackTool="journey"
-          fallbackArgs={entry.label}
+          fallbackArgs={entryDisplayName(entry, app.nodes, app.entries)}
           fallbackSummary={`${entry.hops.length} visible steps from the selected starting point.`}
           nodeCount={entry.hops.length}
           variant="path"
