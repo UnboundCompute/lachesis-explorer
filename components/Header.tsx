@@ -193,7 +193,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           <button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14} /><span>Jump</span><kbd>⌘K /</kbd></button>
           <button type="button" className="theme-toggle" suppressHydrationWarning aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`} onClick={() => { setDark(!dark); trackEvent('theme_toggled', { theme: dark ? 'light' : 'dark' }) }}><Icon name={dark ? 'sun' : 'moon'} size={15} /><span>{dark ? 'Light' : 'Dark'}</span></button>
           <div className="app-picker" ref={appPickerRef}>
-            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-controls={menu ? "bundle-context-menu" : undefined} aria-haspopup="dialog">
+            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-label={`Open active bundle context for ${app.name || "current bundle"}`} title="Open active bundle context" aria-expanded={menu} aria-controls={menu ? "bundle-context-menu" : undefined} aria-haspopup="dialog">
               <span className="status-dot" /><span><small>Active bundle</small><b>{app.name || 'Untitled bundle'}</b></span><Icon name="chevron" size={14} />
             </button>
             {menu && (
