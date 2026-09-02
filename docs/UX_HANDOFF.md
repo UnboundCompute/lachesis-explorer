@@ -91,6 +91,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `9c85707` — return to bundle context after activation and wrap long evidence metrics at narrow widths
 - `106d43c` — raise upload success/error notice actions to the mobile touch-target minimum
 - `c962f4f` — raise populated Compare summaries, copy actions, expansion controls, and search clear to mobile touch targets
+- `d5a6f9c` — raise Trace and investigation empty-state recovery actions to the mobile touch-target minimum
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
