@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `0f5f952` — use the shared SVG icon system for history controls
 - `5721cb4` — improve mobile navigation placement and increase legibility of secondary labels
 - `a028be0` — expose bounded Back/Forward controls as a compact mobile pill
 - `1ed3bfe` — add bounded Back/Forward controls for URL-backed investigation states
