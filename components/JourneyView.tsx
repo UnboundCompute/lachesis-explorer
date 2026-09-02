@@ -256,10 +256,10 @@ export function JourneyView({
               </button>
             )}
             <button className="inspector-reopen" type="button" onClick={() => onView("map", hopId)}>
-              See in graph
+              Open in Explore
             </button>
             <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
-              {explanationState === "copied" ? "Explanation copied" : explanationState === "failed" ? "Copy failed" : "Copy explanation"}
+              {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
             </button>
             <div className="step-nav" role="group" aria-label="Request flow step navigation">
               <button

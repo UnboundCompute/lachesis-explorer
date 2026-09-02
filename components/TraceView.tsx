@@ -435,10 +435,10 @@ export function TraceView({
               </button>
             )}
             <button className="inspector-reopen" type="button" onClick={() => onView("map", stepId)}>
-              See in graph
+              Open in Explore
             </button>
             <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
-              {explanationState === "copied" ? "Explanation copied" : explanationState === "failed" ? "Copy failed" : "Copy explanation"}
+              {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
             </button>
             <div className="step-nav" aria-label="Path step navigation">
               <button

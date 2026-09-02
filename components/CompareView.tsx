@@ -131,7 +131,7 @@ function DiffColumn({
               type="button"
               className="diff-item-action"
               key={item.id}
-              title={`Open ${itemLabel(item, app)} in Graph Path`}
+              title={`Open ${itemLabel(item, app)} in Trace`}
               onClick={() => onOpenFlow(flow.id, firstNodeId)}
             >
               <span>{itemLabel(item, app)}</span><small>Open ↗</small>
@@ -254,7 +254,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
                 <i>→</i>
                 <span><small>COMPARISON</small>{flowPath(item.compare, compare)}</span>
               </div>
-              {onOpenFlow && <small className="changed-flow-action">Open base path in Graph Path ↗</small>}
+              {onOpenFlow && <small className="changed-flow-action">Open base path in Trace ↗</small>}
             </button>
           ))
         ) : (
