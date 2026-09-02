@@ -235,7 +235,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       {app && (
         <>
           <div className="detail-rule" />
-          <span className="panel-label">WHY IT IS INCLUDED</span>
+          <span className="panel-label">WHERE THIS APPEARS</span>
           <p className="detail-copy">
             This node is present in {flows.length} graph path
             {flows.length === 1 ? "" : "s"}, {entries.length} request path

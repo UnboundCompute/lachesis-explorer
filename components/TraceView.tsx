@@ -294,17 +294,17 @@ export function TraceView({
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="sidebar">
-        <span className="panel-label">GRAPH PATHS & SYMBOLS</span>
+        <span className="panel-label">PATHS TO EXPLORE</span>
         <label className="search">
           <Icon name="search" size={15} />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search paths: symbol, module:search, service:api, path:value-flow…"
-            aria-label="Filter graph paths"
+            placeholder="Search by path, symbol, file, or module…"
+            aria-label="Search paths by name, symbol, file, or module"
           />
         </label>
-        <div className="filter-hints" role="group" aria-label="Suggested semantic filters">
+        <div className="filter-hints" role="group" aria-label="Quick path filters">
           {filterSuggestions.map((suggestion) => (
             <button
               type="button"
@@ -406,7 +406,7 @@ export function TraceView({
       <main className="main-panel">
         <div className="toolbar">
           <div>
-            <span className="panel-label">SELECTED GRAPH PATH</span>
+            <span className="panel-label">FOLLOWING THIS PATH</span>
             <h2>
               <code>{flow.name}</code>
             </h2>
