@@ -57,12 +57,14 @@ export function SinkView({
     sink?.id ?? app.nodes[0]?.id ?? "",
   );
   const [sinkSearch, setSinkSearch] = useState("");
+  const [pathSearch, setPathSearch] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const [pathsCopyState, setPathsCopyState] = useState<"idle" | "copied" | "failed">("idle");
   useEffect(() => {
     if (sink?.id) setSelectedId(sink.id);
     setSinkSearch("");
+    setPathSearch("");
     setShareState("idle");
     setPathsCopyState("idle");
   }, [app, sink?.id]);
@@ -114,9 +116,24 @@ export function SinkView({
         </button>
       </section>
     );
-  const flows = app.flows.filter((flow) =>
+  const allFlows = app.flows.filter((flow) =>
     flow.steps.some((step) => step.node_id === sink.id),
   );
+  const flows = pathSearch.trim()
+    ? allFlows.filter((flow) => {
+        const nodes = flow.steps
+          .map((step) => app.nodes.find((node) => node.id === step.node_id))
+          .filter(Boolean);
+        const searchable = [
+          flow.name,
+          flow.kind,
+          flow.description,
+          ...flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation]),
+          ...nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module] : []),
+        ].filter(Boolean).join(" ").toLowerCase();
+        return pathSearch.trim().toLowerCase().split(/\s+/).every((term) => searchable.includes(term));
+      })
+    : allFlows;
   const flowNodes = new Set(
     flows.flatMap((flow) => flow.steps.map((step) => step.node_id)),
   );
@@ -325,12 +342,23 @@ export function SinkView({
             <b>{overlaps.length}</b>
           </div>
         </div>
+        <label className="search convergence-search">
+          <Icon name="search" size={14} />
+          <input
+            value={pathSearch}
+            onChange={(event) => setPathSearch(event.target.value)}
+            placeholder="Find a reaching path, symbol, file, or code…"
+            aria-label="Filter paths reaching this boundary by path, symbol, file, or source code"
+          />
+          {pathSearch && <button type="button" onClick={() => setPathSearch("")} aria-label="Clear reaching path filter">×</button>}
+        </label>
+        {pathSearch && <p className="convergence-search-status" role="status">{flows.length} of {allFlows.length} reaching {pathNounPlural} match</p>}
         {!flows.length ? (
           <div className="convergence-empty" role="status">
             <span className="empty-target"><Icon name="target" size={18} /></span>
-            <h3>No bundled paths reach this boundary</h3>
-            <p>The node is present in the graph, but this bundle does not include a traceable {pathNoun}. Inspect its surrounding relationships to understand where it sits.</p>
-            <button type="button" onClick={() => onView("map", sink.id)}>Inspect in graph <Icon name="arrow" size={12} /></button>
+            <h3>{pathSearch ? "No reaching paths match this search" : "No bundled paths reach this boundary"}</h3>
+            <p>{pathSearch ? "Try a different symbol, file, or path term." : `The node is present in the graph, but this bundle does not include a traceable ${pathNoun}. Inspect its surrounding relationships to understand where it sits.`}</p>
+            {pathSearch ? <button type="button" onClick={() => setPathSearch("")}>Clear path filter</button> : <button type="button" onClick={() => onView("map", sink.id)}>Inspect in graph <Icon name="arrow" size={12} /></button>}
           </div>
         ) : mode === "field" ? (
           <ConvergenceCanvas
