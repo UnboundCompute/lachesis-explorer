@@ -100,8 +100,10 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       ? sourceSnippet.split(/\r?\n/)
       : ["Source unavailable in this bundle."];
   const sourceStartLine = node.sourceWindow?.startLine || node.line || 1;
-  const highlightedStart = node.sourceWindow?.highlightStart || (sourceSnippet ? 1 : 0);
-  const highlightedEnd = node.sourceWindow?.highlightEnd || highlightedStart;
+  const inferredHighlightStart = node.sourceWindow ? Math.max(1, node.line - sourceStartLine + 1) : (sourceSnippet ? 1 : 0);
+  const inferredHighlightEnd = node.sourceWindow && node.endLine ? Math.max(inferredHighlightStart, node.endLine - sourceStartLine + 1) : inferredHighlightStart;
+  const highlightedStart = node.sourceWindow?.highlightStart || inferredHighlightStart;
+  const highlightedEnd = node.sourceWindow?.highlightEnd || inferredHighlightEnd;
   const flows =
     app?.flows.filter((flow) =>
       flow.steps.some((step) => step.node_id === node.id),

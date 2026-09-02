@@ -59,7 +59,7 @@ function normalizeSourceWindow(raw: unknown): SourceWindow | undefined {
   const value = raw as Record<string, unknown>
   if (!Array.isArray(value.lines) || !value.lines.length) return undefined
   const startLine = Number(value.start_line ?? value.startLine ?? 0)
-  if (!Number.isInteger(startLine) || startLine < 0) return undefined
+  if (!Number.isInteger(startLine) || startLine < 1) return undefined
   const highlightStart = Number(value.highlight_start ?? value.highlightStart ?? 0)
   const highlightEnd = Number(value.highlight_end ?? value.highlightEnd ?? 0)
   return {
