@@ -239,7 +239,6 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
   if (!compare) {
     return (
       <main className="compare-empty" aria-label="Revision comparison">
-        <span className="context-kicker">REVISION DIFF</span>
         <h2>Compare two code graph bundles.</h2>
         <p>
           Load a second bundle to see added, removed, and changed{' '}
@@ -289,7 +288,6 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
     <main className="compare-workspace" aria-label="Revision comparison">
       <header className="compare-heading">
         <div>
-          <span className="context-kicker">REVISION DIFF</span>
           <h2>{base.commit || 'base'} <span>→</span> {compare.commit || 'comparison'}</h2>
           <p>Deterministic ID and step comparisons. A missing item means it is absent from that bundle, not necessarily deleted from source. Removed paths open in the active bundle; added paths stay comparison-only here.</p>
         </div>
