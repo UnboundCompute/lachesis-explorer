@@ -206,6 +206,8 @@ The real-bundle upload pass reproduced the viewport settling at `scrollY=95` aft
 
 The keyboard-focus pass found all primary search inputs computing to `outline: none` without a focused parent surface. After the focus-state fix, Trace, Request Flow, Boundary, reaching-path search, and Explore query inputs expose a consistent cyan focus ring through `:focus-within`, with no viewport overflow at 390px.
 
+The theme contrast pass found selected Trace metadata at 3.22:1 against the dark green selection surface. After the selected-row contrast fix, supporting metadata measures 5.89:1 in dark theme and 4.76:1 in light theme. The pass also consolidated the reduced-motion policy into one explicit `animation:none` / `transition:none` rule, with reduced-motion menus still opening in their final visible state.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
