@@ -147,6 +147,7 @@ export function OverviewView({
   const mode = controlledMode ?? localMode;
   const setMode = setControlledMode ?? setLocalMode;
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const [searchText, setSearchText] = useState("");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [localNeighborhoodOnly, setLocalNeighborhoodOnly] = useState(false);
@@ -162,6 +163,7 @@ export function OverviewView({
     setQuery("");
     setExpandedModule(null);
     setShareState("idle");
+    setSearchText("");
     setNeighborhoodOnly(false);
     setTopologyZoom(1);
     if (!setControlledNodeOrder) setLocalNodeOrder("path");
@@ -243,7 +245,7 @@ export function OverviewView({
   const filterSuggestions = [
     ...[...new Set(app.flows.map((flow) => flow.kind).filter(Boolean))]
       .slice(0, 2)
-      .map((kind) => ({ label: kind!, query: `path:${kind}` })),
+      .map((kind) => ({ label: kind!.replace(/[-_]+/g, " "), query: `path:${kind}` })),
     securityMode
       ? { label: "sinks", query: "kind:sink" }
       : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
@@ -523,8 +525,11 @@ export function OverviewView({
         <div className="query-composer">
           <Icon name="search" size={15} />
           <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            value={searchText || query}
+            onChange={(event) => {
+              setSearchText(event.target.value);
+              setQuery(event.target.value);
+            }}
             placeholder="Search symbols, files, modules, or services…"
             aria-label="Search graph nodes by symbol, file, module, or service"
           />
@@ -537,6 +542,7 @@ export function OverviewView({
                 type="button"
                 key={suggestion.query}
                 onClick={() => {
+                  setSearchText(suggestion.label);
                   setQuery(suggestion.query);
                   trackEvent("semantic_filter_applied", {
                     surface: "topology",
@@ -552,6 +558,7 @@ export function OverviewView({
                 type="button"
                 className="query-clear"
                 onClick={() => {
+                  setSearchText("");
                   setQuery("");
                   trackEvent("semantic_filter_cleared", { surface: "topology" });
                 }}
@@ -629,6 +636,7 @@ export function OverviewView({
                     type="button"
                     className="query-clear"
                     onClick={() => {
+                      setSearchText("");
                       setQuery("");
                       setNeighborhoodOnly(false);
                       setTopologyZoom(1);
@@ -840,7 +848,7 @@ export function OverviewView({
                 <Icon name="search" size={18} />
                 <h3>{query ? "No nodes match this filter" : "No graph nodes in this bundle"}</h3>
                 <p>{query ? "Try another query or return to the complete graph." : "Load a bundle that includes graph nodes to inspect its structure here."}</p>
-                {query && <button type="button" onClick={() => setQuery("")}>Clear filter</button>}
+                {query && <button type="button" onClick={() => { setSearchText(""); setQuery(""); }}>Clear filter</button>}
               </div>
             )}
           </>
@@ -860,6 +868,7 @@ export function OverviewView({
                       const filterValue = context.service || context.repository || context.module;
                       const filterKey = context.service ? "service" : context.repository ? "repo" : context.module ? "module" : "scope";
                       setMode("map");
+                      setSearchText(filterValue || "");
                       setQuery(filterValue ? `${filterKey}:${filterValue}` : "");
                       setNeighborhoodOnly(false);
                       setTopologyZoom(1);
@@ -952,6 +961,7 @@ export function OverviewView({
                   onClick={() => {
                     if (!transition.query) return;
                     setMode("map");
+                    setSearchText(`${transition.source} → ${transition.target}`);
                     setQuery(transition.query);
                     setNeighborhoodOnly(false);
                     setTopologyZoom(1);

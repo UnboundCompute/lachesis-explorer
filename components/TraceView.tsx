@@ -148,6 +148,7 @@ export function TraceView({
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
+  const [searchText, setSearchText] = useState("");
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedFlowRef = useRef<HTMLButtonElement>(null);
   const previousDirection = useRef(direction);
@@ -168,6 +169,9 @@ export function TraceView({
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
   }, [app, flowId, direction, position, selectedPosition, stepId]);
+  useEffect(() => {
+    setSearchText("");
+  }, [app]);
   useEffect(() => {
     selectedFlowRef.current?.scrollIntoView({ block: "nearest" });
   }, [flowId, query]);
@@ -298,8 +302,11 @@ export function TraceView({
         <label className="search">
           <Icon name="search" size={15} />
           <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            value={searchText || query}
+            onChange={(event) => {
+              setSearchText(event.target.value);
+              setQuery(event.target.value);
+            }}
             placeholder="Search by path, symbol, file, or module…"
             aria-label="Search paths by name, symbol, file, or module"
           />
@@ -310,6 +317,7 @@ export function TraceView({
               type="button"
               key={suggestion.query}
               onClick={() => {
+                setSearchText(suggestion.label);
                 setQuery(suggestion.query);
                 trackEvent("semantic_filter_applied", {
                   surface: "trace",
@@ -325,6 +333,7 @@ export function TraceView({
               type="button"
               className="query-clear"
               onClick={() => {
+                setSearchText("");
                 setQuery("");
                 trackEvent("semantic_filter_cleared", { surface: "trace" });
               }}
@@ -336,7 +345,7 @@ export function TraceView({
         {query && !visible.some((item) => item.id === flow.id) && (
           <div className="filter-context" role="status">
             <span>Selected path is outside this filter.</span>
-            <button type="button" onClick={() => setQuery("")}>Show selected path</button>
+            <button type="button" onClick={() => { setSearchText(""); setQuery(""); }}>Show selected path</button>
           </div>
         )}
         <div className="node-list">
@@ -389,6 +398,7 @@ export function TraceView({
               <button
                 type="button"
                 onClick={() => {
+                  setSearchText("");
                   setQuery("");
                   trackEvent("semantic_filter_cleared", { surface: "trace" });
                 }}
