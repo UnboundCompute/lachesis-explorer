@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
-import { copyText } from "../lib/clipboard";
+import { copyText, downloadText } from "../lib/clipboard";
 import { explainEntry } from "../lib/explanations";
 import { Icon } from "./Icon";
 import { PathCanvas, type PathItem } from "./PathCanvas";
@@ -70,6 +70,7 @@ export function JourneyView({
   const [entrySearch, setEntrySearch] = useState("");
   const [previousEntryIndex, setPreviousEntryIndex] = useState<number | null>(null);
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
+  const [downloadState, setDownloadState] = useState<"idle" | "downloaded" | "failed">("idle");
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedHopRef = useRef<HTMLButtonElement>(null);
   const visibleEntries = useMemo(() => {
@@ -223,6 +224,18 @@ export function JourneyView({
     setShareState(copied ? "copied" : "failed");
     window.setTimeout(() => setShareState("idle"), 1800);
   }
+  function downloadExplanation() {
+    try {
+      const filename = `${(entry.label || "lachesis-request-flow").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64) || "lachesis-request-flow"}.md`;
+      downloadText(explainEntry(app, entry, selectedIndex, window.location.href), filename);
+      setDownloadState("downloaded");
+      trackEvent("path_explanation_downloaded", { surface: "journey" });
+      window.setTimeout(() => setDownloadState("idle"), 1800);
+    } catch {
+      setDownloadState("failed");
+      trackEvent("path_explanation_download_failed", { surface: "journey" });
+    }
+  }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="journey-rail">
@@ -354,6 +367,9 @@ export function JourneyView({
             <div className="toolbar-share-actions" role="group" aria-label="Share this request context">
               <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
                 {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
+              </button>
+              <button className="inspector-reopen share-explanation" type="button" onClick={downloadExplanation} aria-live="polite">
+                {downloadState === "downloaded" ? "Markdown saved" : downloadState === "failed" ? "Download failed" : "Download .md"}
               </button>
               {onShare && (
                 <button className="inspector-reopen" type="button" onClick={shareEntry} aria-live="polite">
