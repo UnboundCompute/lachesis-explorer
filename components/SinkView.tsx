@@ -312,6 +312,12 @@ export function SinkView({
             {sinkSearch && <button type="button" className="query-clear" onClick={() => setSinkSearch("")}>Clear</button>}
           </div>
         )}
+        {sinkSearch && !visibleSinks.some((item) => item.id === sink.id) && (
+          <div className="filter-context" role="status">
+            <span>Selected boundary is outside this filter.</span>
+            <button type="button" onClick={() => setSinkSearch("")}>Show selected boundary</button>
+          </div>
+        )}
         {sinkSearch && !visibleSinks.length && (
           <div className="selector-empty" role="status">
             <span>No boundaries match “{sinkSearch}”.</span>
