@@ -26,7 +26,7 @@
 
 :root {
   --canvas:#07100d; --canvas-raised:#0a1511; --surface:#0d1a15; --surface-2:#11231c; --surface-3:#172c24;
-  --ink:#e9f1ed; --ink-2:#a5b7af; --ink-3:#71877d; --ink-4:#536a5f; --line:#21382f; --line-strong:#315246;
+  --ink:#e9f1ed; --ink-2:#a5b7af; --ink-3:#7d9389; --ink-4:#536a5f; --line:#21382f; --line-strong:#315246;
   --brand:#58d6a1; --brand-strong:#7ae4b8; --brand-wash:#153b2d; --cyan:#70cfe2; --cyan-wash:#12333a;
   --amber:#e4b464; --amber-wash:#392a14; --coral:#f07868; --coral-wash:#3b1d19; --violet:#b5a5e8; --violet-wash:#292440;
   --shadow:0 28px 90px rgba(0,0,0,.28); --ease:cubic-bezier(.22,.76,.18,1); --mono:"Berkeley Mono","SFMono-Regular",Consolas,monospace;
