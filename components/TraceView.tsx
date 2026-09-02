@@ -69,6 +69,10 @@ function matchesFlow(app: App, flow: Flow, query: string, nodeById: NodeIndex) {
       }
       if (key === "has" && value === "mcp")
         return app.mcp.some((item) => item.for === flow.id);
+      if (key === "has" && (value === "source" || value === "source-preview"))
+        return nodes.some((node) => Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length));
+      if (key === "has" && (value === "source-gap" || value === "missing-source"))
+        return nodes.some((node) => !node?.snippet.trim() && !node?.sourceWindow?.lines.length);
       if (key === "path")
         return flow.kind?.toLowerCase().includes(value) ?? false;
       if (key === "role")
@@ -83,7 +87,7 @@ function matchesFlow(app: App, flow: Flow, query: string, nodeById: NodeIndex) {
       ...flow.steps.map((step) => step.role),
       ...flow.steps.flatMap((step) => [step.note, step.edge?.relation]),
       ...nodes.flatMap((node) =>
-        node ? [node.label, node.file, node.kind, node.qualifiedName, node.signature, node.documentation, node.snippet, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [],
+        node ? [node.label, node.file, node.kind, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [],
       ),
     ]
       .join(" ")
@@ -99,7 +103,7 @@ function flowMatchLabel(app: App, flow: Flow, query: string, nodeById: NodeIndex
     .map((step) => nodeById.get(step.node_id))
     .filter(Boolean);
   const fields = [
-    { label: "source", values: nodes.flatMap((node) => node ? [node.snippet] : []) },
+    { label: "source", values: nodes.flatMap((node) => node ? [node.snippet, node.sourceWindow?.lines.join(" ")] : []) },
     { label: "documentation", values: nodes.flatMap((node) => node ? [node.documentation] : []) },
     { label: "signature", values: nodes.flatMap((node) => node ? [node.signature] : []) },
     { label: "symbol", values: nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.id] : []) },
@@ -132,6 +136,14 @@ function flowLocation(app: App, flow: Flow, nodeById: NodeIndex) {
   return first.id === last.id
     ? location(first)
     : `${location(first)} → ${location(last)}`;
+}
+
+function sourceCoverage(flow: Flow, nodeById: NodeIndex) {
+  const available = flow.steps.filter((step) => {
+    const node = nodeById.get(step.node_id);
+    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+  }).length;
+  return { available, total: flow.steps.length };
 }
 
 function flowScopes(app: App, flow: Flow, nodeById: NodeIndex) {
@@ -281,6 +293,12 @@ export function TraceView({
       ? { label: "Needs review", query: "edge:uncertain" }
       : null,
     app.mcp.length ? { label: "Bundle-linked", query: "has:mcp" } : null,
+    app.flows.some((item) => sourceCoverage(item, nodeById).available > 0)
+      ? { label: "Has source", query: "has:source" }
+      : null,
+    app.flows.some((item) => sourceCoverage(item, nodeById).available < item.steps.length)
+      ? { label: "Source gaps", query: "has:source-gap" }
+      : null,
     ...[...new Set(app.nodes.map((node) => node.scope?.service).filter(Boolean))]
       .slice(0, 2)
       .map((service) => ({ label: service!, query: `service:${service}` })),
@@ -293,10 +311,7 @@ export function TraceView({
   const indirectSteps = flow.steps.filter(
     (step) => step.edge?.alias || step.edge?.dynamic,
   ).length;
-  const sourcePreviewCount = flow.steps.filter((step) => {
-    const node = nodeById.get(step.node_id);
-    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
-  }).length;
+  const sourcePreviewCount = sourceCoverage(flow, nodeById).available;
   const items: PathItem[] = steps.map((step) => ({
     id: step.node_id,
     occurrenceId: step.id,
@@ -473,6 +488,9 @@ export function TraceView({
                         ? `Bundle-backed ${pathKindLabel(item, false).toLowerCase()}`
                       : pathKindLabel(item, false)} {" · "}
                     {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "inferred links"} · {flowLocation(app, item, nodeById)}
+                  </small>
+                  <small className="node-row-context">
+                    Source: {sourceCoverage(item, nodeById).available} / {item.steps.length} previews
                   </small>
                   {query && flowMatchLabel(app, item, query, nodeById) && <small className="node-row-context">{flowMatchLabel(app, item, query, nodeById)}</small>}
                   <small className="node-row-context">
