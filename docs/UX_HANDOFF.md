@@ -200,6 +200,8 @@ The current typography pass found Explore’s visible codebase-area rows renderi
 
 The reduced-motion audit found the global preference rule compressing every animation and transition to `.01ms`, which can erase state-change feedback. After the accessibility fix, reduced-motion explicitly disables animation and transitions while preserving the resulting open/visible states; mobile lens menus and the active-bundle dialog were checked with `prefers-reduced-motion: reduce`, with no overflow or browser errors.
 
+The light-theme pass found Compare’s empty-state onboarding explanations rendering at 7px in both themes. After the copy-readability fix, the three “Added / Removed / Changed” explanations use 9px text with 13.05px line height; empty Compare remains overflow-free at 320px, 390px, 800px, and 1440px in dark and light themes.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
