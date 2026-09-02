@@ -357,7 +357,9 @@ export default function Page() {
     if (!urlInitialized) return;
     const params = new URLSearchParams();
     params.set("view", view);
+    const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
     if (!isDemo) params.set("scope", "local");
+    if (isDemo && securityMode) params.set("sample", "security");
     if (view === "trace") {
       params.set("flow", flowId);
       params.set("node", stepId);
