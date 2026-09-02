@@ -375,6 +375,11 @@ export function OverviewView({
   const queryTarget = selected ?? visible.find((node) =>
     app.edges.some((edge) => edge.source === node.id || edge.target === node.id),
   );
+  const activeQuestion = query.trim().startsWith("calls:")
+    ? "Showing paths into"
+    : query.trim().startsWith("reaches:")
+      ? "Showing paths from"
+      : "";
   const querySuggestions = queryTarget
     ? [
         app.edges.some((edge) => edge.target === queryTarget.id)
@@ -791,7 +796,7 @@ export function OverviewView({
         </div>
         {querySuggestions.length > 0 && (
           <div className="query-intents" role="group" aria-label={`Questions about ${queryTarget?.label || queryTarget?.id}`}>
-            <span>Ask about {queryTarget?.label || queryTarget?.id}</span>
+            <span aria-live="polite">{activeQuestion || "Ask about"} {queryTarget?.label || queryTarget?.id}</span>
             {querySuggestions.map((suggestion) => (
               <button
                 type="button"
