@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { entryDisplayName, flowDisplayName, type App, type Flow } from '../lib/lachesis'
+import { Icon } from './Icon'
 import { copyText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
 
@@ -246,7 +247,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
         </p>
         <button type="button" className="context-upload" onClick={onUpload} disabled={loading} aria-busy={loading}>
           <span>Load comparison bundle</span>
-          <span>＋</span>
+          <Icon name="plus" size={15} />
         </button>
         <div className="compare-steps">
           <div><b>01</b><span><strong>Added</strong><small>New nodes, relationships, paths, and request flows.</small></span></div>
@@ -307,7 +308,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           placeholder="Find changed symbols, files, paths, or code…"
           aria-label="Filter comparison changes by symbol, file, path, or source code"
         />
-        {comparisonQuery && <button type="button" onClick={() => setComparisonQuery("")} aria-label="Clear comparison filter">×</button>}
+        {comparisonQuery && <button type="button" onClick={() => setComparisonQuery("")} aria-label="Clear comparison filter"><Icon name="close" size={14} /></button>}
       </label>
       {comparisonQuery && <p className="compare-search-status" role="status">{visibleChangedPaths.length} changed paths match · added, removed, and changed lists are filtered too</p>}
       <div className="compare-grid">

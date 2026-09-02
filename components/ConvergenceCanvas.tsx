@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { Flow, Node } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
+import { Icon } from './Icon'
 
 type Props = { flows: Flow[]; nodes: Node[]; sinkId: string; selectedId: string; onSelect: (nodeId: string) => void; securityMode?: boolean }
 type Point = { id: string; x: number; y: number; node: Node; roles: Set<string>; lanes: Set<number> }
@@ -97,7 +98,7 @@ export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, 
     ? `Showing ${flows.length} paths containing ${selectedPoint?.node.label || selectedId}.`
     : focusDisabledReason || 'Showing every path that reaches this boundary.'
   return <section className="convergence-canvas" aria-label={`Converging ${pathLabel}`} aria-keyshortcuts="ArrowLeft ArrowRight Home End">
-    <header className="convergence-bar"><div><span className="canvas-title">Convergence field</span><span className="canvas-count">{flows.length} paths · {graph.points.size} unique nodes</span>{selectedPoint && <span className="convergence-selected" aria-live="polite">Selected · {selectedPoint.node.label || selectedPoint.id}</span>}</div><div className="zoom-controls" role="group" aria-label="Graph zoom"><button type="button" onClick={() => setZoom(value => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom out">−</button><output aria-live="polite">{Math.round(zoom * 100)}%</output><button type="button" onClick={() => setZoom(value => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom in">+</button><button type="button" onClick={() => setZoom(1)}>Reset</button></div></header>
+    <header className="convergence-bar"><div><span className="canvas-title">Convergence field</span><span className="canvas-count">{flows.length} paths · {graph.points.size} unique nodes</span>{selectedPoint && <span className="convergence-selected" aria-live="polite">Selected · {selectedPoint.node.label || selectedPoint.id}</span>}</div><div className="zoom-controls" role="group" aria-label="Graph zoom"><button type="button" onClick={() => setZoom(value => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom out"><Icon name="minus" size={13} /></button><output aria-live="polite">{Math.round(zoom * 100)}%</output><button type="button" onClick={() => setZoom(value => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom in"><Icon name="plus" size={13} /></button><button type="button" onClick={() => setZoom(1)}>Reset</button></div></header>
     <div className="convergence-filter" role="group" aria-label="Convergence display filter">
       <span aria-live="polite" aria-atomic="true">{focusStatus}</span>
       <button type="button" className={focusedOnly ? 'active' : ''} aria-pressed={focusedOnly} onClick={() => { const next = !focusedOnly; setFocusedOnly(next); trackEvent('convergence_focus_toggled', { focused: next }) }} disabled={Boolean(focusDisabledReason)} title={focusDisabledReason}>

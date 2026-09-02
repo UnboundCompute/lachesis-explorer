@@ -287,7 +287,7 @@ export function SinkView({
             placeholder="Find a boundary…"
             aria-label="Filter execution boundaries by name, file, module, service, or path count"
           />
-          {sinkSearch && <button type="button" onClick={() => setSinkSearch("")} aria-label="Clear boundary filter">×</button>}
+          {sinkSearch && <button type="button" onClick={() => setSinkSearch("")} aria-label="Clear boundary filter"><Icon name="close" size={14} /></button>}
         </label>
         <div className="entry-search-status" aria-live="polite">
           {sinkSearch ? `${visibleSinks.length} of ${sinks.length} boundaries match` : `${sinks.length} execution boundar${sinks.length === 1 ? "y" : "ies"}`}
@@ -443,7 +443,7 @@ export function SinkView({
             placeholder="Find a reaching path, symbol, file, or code…"
             aria-label="Filter paths reaching this boundary by path, symbol, file, or source code"
           />
-          {pathSearch && <button type="button" onClick={() => setPathSearch("")} aria-label="Clear reaching path filter">×</button>}
+          {pathSearch && <button type="button" onClick={() => setPathSearch("")} aria-label="Clear reaching path filter"><Icon name="close" size={14} /></button>}
         </label>
         {pathSearch && <p className="convergence-search-status" role="status">{flows.length} of {allFlows.length} reaching {pathNounPlural} match</p>}
         {(allFlows.some((flow) => flow.steps.some((step) => hasSource(nodeById.get(step.node_id)))) || allFlows.some((flow) => flow.steps.some((step) => !hasSource(nodeById.get(step.node_id))))) && (

@@ -822,9 +822,9 @@ export function OverviewView({
                   <small>Choose a symbol to focus its source context.</small>
                 </div>
                 <div className="topology-zoom" role="group" aria-label="Topology zoom controls">
-                  <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out">−</button>
+                  <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out"><Icon name="minus" size={13} /></button>
                   <output aria-live="polite">{Math.round(topologyZoom * 100)}%</output>
-                  <button type="button" onClick={() => setTopologyZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom topology in">+</button>
+                  <button type="button" onClick={() => setTopologyZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom topology in"><Icon name="plus" size={13} /></button>
                   <button type="button" onClick={() => setTopologyZoom(1)}>Reset</button>
                 </div>
                 <svg viewBox="0 0 180 80" aria-label="Topology minimap">

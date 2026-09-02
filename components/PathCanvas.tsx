@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { LayoutPoint, Node, Step } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
+import { Icon } from './Icon'
 
 export type PathItem = {
   id: string
@@ -186,9 +187,9 @@ export function PathCanvas({
             Reset
           </button>
           <div className="zoom-controls" role="group" aria-label="Path zoom">
-            <button type="button" onClick={() => adjustZoom(-.1)} aria-label="Zoom path out">−</button>
+            <button type="button" onClick={() => adjustZoom(-.1)} aria-label="Zoom path out"><Icon name="minus" size={13} /></button>
             <output aria-live="polite">{Math.round(zoom * 100)}%</output>
-            <button type="button" onClick={() => adjustZoom(.1)} aria-label="Zoom path in">+</button>
+            <button type="button" onClick={() => adjustZoom(.1)} aria-label="Zoom path in"><Icon name="plus" size={13} /></button>
           </div>
         </div>
       </div>

@@ -817,7 +817,7 @@ export function HomeView({
                 placeholder="Find a path, symbol, file, or code…"
                 aria-label="Search evidence paths by path, symbol, file, or source code"
               />
-              {queueSearch && <button type="button" onClick={() => setQueueSearch("")} aria-label="Clear evidence search">×</button>}
+              {queueSearch && <button type="button" onClick={() => setQueueSearch("")} aria-label="Clear evidence search"><Icon name="close" size={14} /></button>}
             </label>
           )}
           <div className="queue-list">

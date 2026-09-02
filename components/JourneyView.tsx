@@ -341,7 +341,7 @@ export function JourneyView({
             placeholder="Find a request flow…"
             aria-label="Filter request flows by starting point, symbol, file, or description"
           />
-          {entrySearch && <button type="button" onClick={() => setEntrySearch("")} aria-label="Clear request flow filter">×</button>}
+          {entrySearch && <button type="button" onClick={() => setEntrySearch("")} aria-label="Clear request flow filter"><Icon name="close" size={14} /></button>}
         </label>
         <div className="entry-search-status" aria-live="polite">
           {entrySearch ? `${visibleEntries.length} of ${app.entries.length} request flows match` : `${app.entries.length} request flow${app.entries.length === 1 ? "" : "s"}`}
