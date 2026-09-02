@@ -323,28 +323,6 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             Inside {parentNode.label || parentNode.id} <Icon name="arrow" size={11} />
           </button>
         )}
-        {childNodes.length > 0 && onNode && (
-          <div className="inspector-neighborhood inspector-contained">
-            <span className="panel-label">CONTAINS</span>
-            <p>Open a nested symbol without losing this file context.</p>
-            <div className="inspector-neighborhood-list">
-              {childNodes.map((child) => (
-                <button
-                  type="button"
-                  key={child.id}
-                  onClick={() => onNode(child.id)}
-                  aria-label={`Inspect ${child.label || child.id} at line ${child.line || "unknown"}`}
-                >
-                  <span>
-                    <b>{child.label || child.id}</b>
-                    <small>{child.kind} · line {child.line || "—"}</small>
-                  </span>
-                  <Icon name="arrow" size={11} />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <pre className="source-code source-context" aria-label={sourceSnippet || node.sourceWindow ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>
           <code>
             {sourceLines.map((line, index) => (
@@ -370,6 +348,28 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
           {contextCopied ? "Context copied" : contextCopyError ? "Retry copy" : "Copy context"}
         </button>
         <span className="sr-only" aria-live="polite">{contextCopied ? "Symbol context copied as Markdown." : contextCopyError ? "Symbol context could not be copied." : ""}</span>
+        {childNodes.length > 0 && onNode && (
+          <div className="inspector-neighborhood inspector-contained">
+            <span className="panel-label">CONTAINS</span>
+            <p>Open a nested symbol without losing this file context.</p>
+            <div className="inspector-neighborhood-list">
+              {childNodes.map((child) => (
+                <button
+                  type="button"
+                  key={child.id}
+                  onClick={() => onNode(child.id)}
+                  aria-label={`Inspect ${child.label || child.id} at line ${child.line || "unknown"}`}
+                >
+                  <span>
+                    <b>{child.label || child.id}</b>
+                    <small>{child.kind} · line {child.line || "—"}</small>
+                  </span>
+                  <Icon name="arrow" size={11} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <div className="detail-rule" />
       <span className="panel-label">WHAT THIS NODE MEANS</span>
