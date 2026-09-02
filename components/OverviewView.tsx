@@ -1143,7 +1143,7 @@ export function OverviewView({
                   <span className={`kind-dot kind-${item.node.kind}`} />
                   <b>{item.node.label || item.node.id}</b>
                   <small>
-                    {item.flows} flows · {item.entries} requests
+                    {nodeLocation(item.node)} · {item.flows} flows · {item.entries} requests
                   </small>
                 </button>
               ))}
