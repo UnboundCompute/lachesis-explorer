@@ -1370,27 +1370,25 @@ export default function Page() {
         />
       )}
       {view === "compare" && (
-        <div role="main" aria-label="Revision comparison">
-          <CompareView
-            base={app}
-            compare={compareApp}
-            loading={loadState.type === "loading"}
-            onUpload={() => compareFileRef.current?.click()}
-            onOpenFlow={(nextFlow, nextNode) => {
-              changeView("trace");
-              setQuery("");
-              setFlowId(nextFlow);
-              setStepId(nextNode);
-              setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
-              setInspectorOpen(true);
-              record("Opened changed graph path", nextFlow, "from revision diff");
-            }}
-            onOpenNode={(nextNode) => {
-              openNodeInMap(nextNode);
-              record("Inspected removed graph node", app.nodes.find((node) => node.id === nextNode)?.label ?? nextNode, "from revision diff");
-            }}
-          />
-        </div>
+        <CompareView
+          base={app}
+          compare={compareApp}
+          loading={loadState.type === "loading"}
+          onUpload={() => compareFileRef.current?.click()}
+          onOpenFlow={(nextFlow, nextNode) => {
+            changeView("trace");
+            setQuery("");
+            setFlowId(nextFlow);
+            setStepId(nextNode);
+            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            setInspectorOpen(true);
+            record("Opened changed graph path", nextFlow, "from revision diff");
+          }}
+          onOpenNode={(nextNode) => {
+            openNodeInMap(nextNode);
+            record("Inspected removed graph node", app.nodes.find((node) => node.id === nextNode)?.label ?? nextNode, "from revision diff");
+          }}
+        />
       )}
       {view === "install" && (
         <InstallView onUpload={() => fileRef.current?.click()} />
