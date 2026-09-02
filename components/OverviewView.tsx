@@ -247,22 +247,22 @@ export function OverviewView({
       .slice(0, 2)
       .map((kind) => ({ label: kind!.replace(/[-_]+/g, " "), query: `path:${kind}` })),
     securityMode
-      ? { label: "sinks", query: "kind:sink" }
+      ? { label: "Destinations", query: "kind:sink" }
       : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
     app.edges.some((edge) => edge.dynamic)
-      ? { label: "dynamic", query: "edge:dynamic" }
+      ? { label: "Runtime-dependent", query: "edge:dynamic" }
       : null,
     app.edges.some((edge) => edge.alias)
-      ? { label: "aliases", query: "edge:alias" }
+      ? { label: "Alternate names", query: "edge:alias" }
       : null,
     app.edges.some((edge) => edge.confidence || edge.limitations?.length)
-      ? { label: "uncertain", query: "edge:uncertain" }
+      ? { label: "Needs review", query: "edge:uncertain" }
       : null,
     app.edges.some((edge) => edge.origins.includes("bundle"))
-      ? { label: "explicit", query: "edge:explicit" }
+      ? { label: "Recorded links", query: "edge:explicit" }
       : null,
     app.edges.some((edge) => edge.origins.some((origin) => origin !== "bundle"))
-      ? { label: "derived", query: "edge:derived" }
+      ? { label: "Inferred links", query: "edge:derived" }
       : null,
     app.edges.some((edge) => edge.origins.includes("value-flow"))
       ? { label: "Value paths", query: "origin:value-flow" }
@@ -270,7 +270,7 @@ export function OverviewView({
     app.edges.some((edge) => edge.origins.includes("request-path"))
       ? { label: "Request flows", query: "origin:request-path" }
       : null,
-    app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
+    app.mcp.length ? { label: "Bundle-linked", query: "has:mcp" } : null,
     ...[...new Set(app.nodes.map((node) => node.module || node.scope?.module).filter(Boolean))]
       .slice(0, 2)
       .map((module) => ({ label: `Module · ${module}`, query: `module:${module}` })),

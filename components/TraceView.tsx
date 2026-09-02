@@ -233,18 +233,18 @@ export function TraceView({
       ? { label: pathKindLabel(flow, securityPath), query: `path:${flow.kind}` }
       : null,
     app.findings.length > 0 || app.bundle.projection === "security projection"
-      ? { label: "sink", query: "kind:sink" }
+      ? { label: "Destinations", query: "kind:sink" }
       : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
     app.edges.some((edge) => edge.dynamic)
-      ? { label: "dynamic", query: "edge:dynamic" }
+      ? { label: "Runtime-dependent", query: "edge:dynamic" }
       : null,
     app.edges.some((edge) => edge.alias)
-      ? { label: "aliases", query: "edge:alias" }
+      ? { label: "Alternate names", query: "edge:alias" }
       : null,
     app.edges.some((edge) => edge.confidence || edge.limitations?.length)
-      ? { label: "uncertain", query: "edge:uncertain" }
+      ? { label: "Needs review", query: "edge:uncertain" }
       : null,
-    app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
+    app.mcp.length ? { label: "Bundle-linked", query: "has:mcp" } : null,
     ...[...new Set(app.nodes.map((node) => node.scope?.service).filter(Boolean))]
       .slice(0, 2)
       .map((service) => ({ label: service!, query: `service:${service}` })),
