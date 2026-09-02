@@ -134,10 +134,20 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
   }, [view])
 
   function choose(next: View) {
+    const restoreMobileFocus = mobileLensOpen
+    const restoreMoreFocus = moreOpen
     setView(next)
     setMoreOpen(false)
     setMobileLensOpen(false)
     setMenu(false)
+    if (restoreMobileFocus || restoreMoreFocus) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (restoreMobileFocus) mobileLensRef.current?.querySelector<HTMLButtonElement>('.mobile-lens-trigger')?.focus()
+          if (restoreMoreFocus) moreTriggerRef.current?.focus()
+        })
+      })
+    }
     trackEvent('view_changed', { view: next })
   }
 
