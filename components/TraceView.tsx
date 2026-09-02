@@ -616,6 +616,17 @@ export function TraceView({
             <b>{indirectSteps}</b>
           </div>
         </div>
+        <details className="reading-guide">
+          <summary>
+            <span>How to read this path</span>
+            <small>3 quick steps</small>
+          </summary>
+          <div className="reading-guide-steps">
+            <div><b>01</b><span><strong>Choose a step</strong><small>Click a node or use Previous / Next to move through the path.</small></span></div>
+            <div><b>02</b><span><strong>Read the source</strong><small>The inspector keeps the symbol, location, and surrounding code beside the path.</small></span></div>
+            <div><b>03</b><span><strong>Follow the context</strong><small>Open a connected path, request flow, or file when you need the next layer.</small></span></div>
+          </div>
+        </details>
         <PathCanvas
           items={items}
           title={securityPath ? "Witness path" : "Code path"}
