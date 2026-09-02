@@ -165,7 +165,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           )}
         </div>
         <div className="header-actions">
-          <div className="navigation-controls" role="group" aria-label="Investigation navigation">
+          <div className="navigation-controls desktop-navigation-controls" role="group" aria-label="Investigation navigation">
             <button type="button" onClick={onGoBack} disabled={!canGoBack} aria-label="Go back in investigation" title={canGoBack ? "Go back in investigation" : "No earlier investigation state"}>‹</button>
             <button type="button" onClick={onGoForward} disabled={!canGoForward} aria-label="Go forward in investigation" title={canGoForward ? "Go forward in investigation" : "No later investigation state"}>›</button>
           </div>
@@ -197,6 +197,10 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           </div>
         </div>
       </header>
+      <div className="navigation-controls mobile-navigation-controls" role="group" aria-label="Investigation navigation">
+        <button type="button" onClick={onGoBack} disabled={!canGoBack} aria-label="Go back in investigation" title={canGoBack ? "Go back in investigation" : "No earlier investigation state"}>‹</button>
+        <button type="button" onClick={onGoForward} disabled={!canGoForward} aria-label="Go forward in investigation" title={canGoForward ? "Go forward in investigation" : "No later investigation state"}>›</button>
+      </div>
     </div>
   )
 }
