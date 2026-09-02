@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
 - `8c7db31` — keep long secondary lens names readable in the compact phone header
 - `5ba7118` — preserve the full active-lens label at 320–360px without widening the shell
 - `c6b51df` — give the compact Active bundle control an explicit accessible name and tooltip
@@ -182,6 +183,8 @@ The header audit found that the compact Active bundle control hid its visible te
 The narrow popup pass then reproduced the active “Explore” label truncating to “Explo…” at 320px. After `5ba7118` (with the follow-up CSS consolidation in `11693c6`), the label’s rendered width is fully readable at 320px, 360px, and 390px, with zero document overflow.
 
 The follow-up lens matrix found that “Request flow” and “What reaches here” still truncated at 320px. After `8c7db31`, the phone header uses “Requests” and “Boundary” only at ≤360px, retains the full wording in the lens menu and accessible label, and keeps exactly one visible label with no overflow at 320px and 390px.
+
+The 320px recovery-state pass then reproduced the shared Trace/Compare error notice extending 4px past the viewport because all three actions stayed on one row. After `261085b`, the notice wraps cleanly: recovery actions remain 44px high, the dismiss control moves to its own row, and both Trace and Compare are overflow-free at 320px and 390px.
 
 ## Safe next session
 
