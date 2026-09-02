@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
-import { flowDisplayName, type App } from '../lib/lachesis'
+import { entryDisplayName, flowDisplayName, type App } from '../lib/lachesis'
 import { readLocal, writeLocal } from '../lib/storage'
 import { downloadText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
@@ -18,7 +18,7 @@ function targetLabel(app:App,target:string){
   const flow=app.flows.find(item=>item.id===target||item.name===target)
   if(flow)return flowDisplayName(flow,app.nodes,app.flows)
   const entry=app.entries.find(item=>item.id===target||item.label===target)
-  return entry?.label||target
+  return entry ? entryDisplayName(entry,app.nodes,app.entries) : target
 }
 
 export function InvestigationTrail({app,items,onClear,onReplay}:{app:App;items:InvestigationEvent[];onClear:()=>void;onReplay?:(target:string)=>void}){

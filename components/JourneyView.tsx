@@ -267,7 +267,7 @@ export function JourneyView({
     setHopId(previousEntry.hops[0]?.node_id ?? "");
     onPositionChange?.(0);
     onInspectorOpen();
-    onRecord("Returned to request flow", previousEntry.label, `${previousEntry.hops.length} steps`);
+    onRecord("Returned to request flow", previousEntry.id, `${previousEntry.hops.length} steps`);
     trackEvent("callpath_reversed");
   }
   function openConnectedEntry(nextIndex: number, nextHopId: string) {
@@ -391,7 +391,7 @@ export function JourneyView({
             if (selectedEntry)
               onRecord(
                 "Opened request flow",
-                selectedEntry.label,
+                selectedEntry.id,
                 `${selectedEntry.hops.length} steps`,
               );
             trackEvent("callpath_selected");

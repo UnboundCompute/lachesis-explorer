@@ -502,7 +502,7 @@ export function SinkView({
                 const content = <><i />{entry.label}<small>{sharedCount} shared</small></>;
                 return onEntry && entryIndex >= 0 ? (
                   <button type="button" className="overlap-item" key={entry.id} onClick={() => {
-                    onRecord("Opened overlapping request flow", entry.label, `from ${sink.label || sink.id}`);
+                    onRecord("Opened overlapping request flow", entry.id, `from ${sink.label || sink.id}`);
                     onEntry(entryIndex, sharedHop?.node_id ?? entry.hops[0]?.node_id ?? "");
                   }} aria-label={`Open ${entry.label}, ${sharedCount} shared steps`}>
                     {content}<Icon name="arrow" size={11} />

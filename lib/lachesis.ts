@@ -453,4 +453,18 @@ export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
   return `${flow.name} · ${route}`
 }
 
+export function entryDisplayName(entry: Entry, nodes: Node[], allEntries: Entry[]) {
+  const duplicate = allEntries.filter((item) => item.label === entry.label).length > 1
+  if (!duplicate) return entry.label
+  const locations = entry.hops
+    .map((hop) => nodes.find((node) => node.id === hop.node_id))
+    .filter(Boolean)
+    .map((node) => `${node!.file || "source unavailable"}:${node!.line || "—"}`)
+  if (!locations.length) return entry.label
+  const route = locations.length > 1 && locations[0] !== locations.at(-1)
+    ? `${locations[0]} → ${locations.at(-1)}`
+    : locations[0]
+  return `${entry.label} · ${route}`
+}
+
 export const starter:App=normalize(codeExplorationBundle)
