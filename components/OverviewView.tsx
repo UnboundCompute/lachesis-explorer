@@ -140,7 +140,7 @@ function matches(node: Node, query: string, app: App) {
               flow.steps.some((step) => step.node_id === node.id),
           );
         if (key === "calls" || key === "reaches") {
-          return relatedNodeIds(app, value, key === "calls" ? "incoming" : "outgoing").has(node.id);
+          return node.id === value || relatedNodeIds(app, value, key === "calls" ? "incoming" : "outgoing").has(node.id);
         }
       }
       return [
