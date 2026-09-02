@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { App } from "../lib/lachesis";
+import { flowDisplayName, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 
@@ -216,7 +216,7 @@ export function CommandPalette({
         },
         ...app.flows.map((flow) => ({
           id: `flow-${flow.id}`,
-          label: flow.name,
+          label: flowDisplayName(flow, app.nodes, app.flows),
           meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${sourceCoverage(app, flow.steps)} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
           keywords: flow.steps.flatMap((step) => {
             const node = app.nodes.find((item) => item.id === step.node_id);
