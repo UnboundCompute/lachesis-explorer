@@ -83,6 +83,13 @@ export function CommandPalette({
   const dialogRef = useRef<HTMLElement>(null);
   const activeOptionRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(opener ?? null);
+  const filePaths = useMemo(
+    () => [...new Set([
+      ...app.files.map((file) => file.path).filter(Boolean),
+      ...app.nodes.map((node) => node.file).filter(Boolean),
+    ])],
+    [app.files, app.nodes],
+  );
   useEffect(() => {
     return () => openerRef.current?.focus();
   }, []);
@@ -137,7 +144,7 @@ export function CommandPalette({
           meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
           keywords: flow.steps.flatMap((step) => {
             const node = app.nodes.find((item) => item.id === step.node_id);
-            return node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [];
+            return node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [];
           }).concat([flow.description, ...flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation])]).filter(Boolean).join(" "),
           run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
         })),
@@ -147,7 +154,7 @@ export function CommandPalette({
           meta: `Request flow · ${entry.hops.length} steps`,
           keywords: entry.hops.flatMap((hop) => {
             const node = app.nodes.find((item) => item.id === hop.node_id);
-            return [hop.edge_label, hop.caption, node?.label, node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.file, node?.module];
+            return [hop.edge_label, hop.caption, node?.label, node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.sourceWindow?.lines.join(" "), node?.file, node?.module];
           }).filter(Boolean).join(" "),
           run: () => onEntry(index, entry.hops[0]?.node_id ?? ""),
         })),
@@ -155,16 +162,19 @@ export function CommandPalette({
           id: `node-${node.id}`,
           label: node.label || node.id,
           meta: `Symbol · ${node.kind} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
-          keywords: [node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module, node.scope?.module].filter(Boolean).join(" "),
+          keywords: [node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.module].filter(Boolean).join(" "),
           run: () => onNode(node.id),
         })),
-        ...app.files.map((file) => ({
-          id: `file-${file.id}`,
-          label: `Open ${file.path}`,
-          meta: `File · ${file.lines ?? "?"} lines${file.module ? ` · ${file.module}` : ""}`,
-          keywords: file.path,
-          run: () => onFile(file.path),
-        })),
+        ...filePaths.map((path) => {
+          const file = app.files.find((item) => item.path === path);
+          return {
+            id: `file-${path}`,
+            label: `Open ${path}`,
+            meta: `File · ${file?.lines ?? "?"} lines${file?.module ? ` · ${file.module}` : ""}`,
+            keywords: path,
+            run: () => onFile(path),
+          };
+        }),
         ...app.modules.flatMap((module) => {
           const node = app.nodes.find(
             (item) =>
@@ -204,7 +214,7 @@ export function CommandPalette({
           !normalized ||
           matchesCommand(command, normalized),
       ),
-    [app, normalized, onView, onFlow, onEntry, onSink, onNode, onFile],
+    [app, filePaths, normalized, onView, onFlow, onEntry, onSink, onNode, onFile],
   );
   const visibleCommands = commands.slice(0, 80);
   useEffect(() => setActive(0), [query]);
