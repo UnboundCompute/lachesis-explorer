@@ -313,6 +313,7 @@ export function OverviewView({
     }
   }, [inspectorOpen, onFocusNode, selectedId, visible]);
   const visibleIds = new Set(visible.map((node) => node.id));
+  const visibleById = useMemo(() => new Map(visible.map((node) => [node.id, node])), [visible]);
   const edges = app.edges.filter(
     (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
   );
@@ -757,8 +758,8 @@ export function OverviewView({
                 </div>
                 <svg viewBox="0 0 180 80" aria-label="Topology minimap">
                   {topologyEdges.map((edge) => {
-                    const source = visible.find((node) => node.id === edge.source);
-                    const target = visible.find((node) => node.id === edge.target);
+                    const source = visibleById.get(edge.source);
+                    const target = visibleById.get(edge.target);
                     if (!source || !target) return null;
                     const a = graphPos(source);
                     const b = graphPos(target);
@@ -799,10 +800,8 @@ export function OverviewView({
                     ))}
                   </defs>
                   {topologyEdges.map((edge) => {
-                    const source = visible.find(
-                        (node) => node.id === edge.source,
-                      ),
-                      target = visible.find((node) => node.id === edge.target);
+                    const source = visibleById.get(edge.source),
+                      target = visibleById.get(edge.target);
                     if (!source || !target) return null;
                     const a = graphPos(source),
                       b = graphPos(target);
