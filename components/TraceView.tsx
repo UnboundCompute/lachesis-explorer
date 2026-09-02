@@ -280,6 +280,8 @@ export function TraceView({
   ].filter(Boolean) as { label: string; query: string }[];
   const firstNode = nodeById.get(flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "");
   const lastNode = nodeById.get(flow.sinkNodeId ?? flow.steps.at(-1)?.node_id ?? "");
+  const displayedStart = direction === "forward" ? lastNode : firstNode;
+  const displayedEnd = direction === "forward" ? firstNode : lastNode;
   const contextRoute = flowScopes(app, flow, nodeById);
   const indirectSteps = flow.steps.filter(
     (step) => step.edge?.alias || step.edge?.dynamic,
@@ -473,9 +475,9 @@ export function TraceView({
             </h2>
             {flow.description && <p className="path-description">{flow.description}</p>}
             <div className="path-route-summary" aria-label="Graph path endpoints">
-              <span><small>Starts at</small><b>{firstNode?.label || firstNode?.id || "Not reported"}</b></span>
+              <span><small>Starts at</small><b>{displayedStart?.label || displayedStart?.id || "Not reported"}</b></span>
               <i aria-hidden="true">→</i>
-              <span><small>Ends at</small><b>{lastNode?.label || lastNode?.id || "Not reported"}</b></span>
+              <span><small>Ends at</small><b>{displayedEnd?.label || displayedEnd?.id || "Not reported"}</b></span>
             </div>
             <p className="path-meta">
               <span>{pathKindLabel(flow, securityPath)}</span>
@@ -559,9 +561,9 @@ export function TraceView({
         <div className="trace-orientation" aria-label="Selected path summary">
           <div>
             <span>START</span>
-            <b>{firstNode?.label || "Unknown symbol"}</b>
+            <b>{displayedStart?.label || "Unknown symbol"}</b>
             <small>
-              {nodeLocation(firstNode)}
+              {nodeLocation(displayedStart)}
             </small>
           </div>
           <i aria-hidden="true">
@@ -569,9 +571,9 @@ export function TraceView({
           </i>
           <div>
             <span>END</span>
-            <b>{lastNode?.label || "Unknown symbol"}</b>
+            <b>{displayedEnd?.label || "Unknown symbol"}</b>
             <small>
-              {nodeLocation(lastNode)}
+              {nodeLocation(displayedEnd)}
             </small>
           </div>
           <div className="trace-orientation-fact">
