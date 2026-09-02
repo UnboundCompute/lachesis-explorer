@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { App, Node } from "../lib/lachesis";
+import { entryDisplayName, flowDisplayName, type App, type Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
@@ -460,11 +460,11 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
                         onFlow(flow.id, node.id)
                       }
                     >
-                      <span>{flow.name} · {flow.kind || "graph path"} · {flow.steps.length} symbols{contextRoute(app, flow.steps.map((step) => step.node_id)) ? ` · ${contextRoute(app, flow.steps.map((step) => step.node_id))}` : ""}</span>
+                      <span>{flowDisplayName(flow, app.nodes, app.flows)} · {flow.kind || "graph path"} · {flow.steps.length} symbols{contextRoute(app, flow.steps.map((step) => step.node_id)) ? ` · ${contextRoute(app, flow.steps.map((step) => step.node_id))}` : ""}</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
-                    <span key={flow.id}>{flow.name}</span>
+                    <span key={flow.id}>{flowDisplayName(flow, app.nodes, app.flows)}</span>
                   ),
                 )}
               </div>
@@ -485,11 +485,11 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
                         )
                       }
                     >
-                      <span>{entry.label} · {entry.hops.length} steps{contextRoute(app, entry.hops.map((hop) => hop.node_id)) ? ` · ${contextRoute(app, entry.hops.map((hop) => hop.node_id))}` : ""}</span>
+                      <span>{entryDisplayName(entry, app.nodes, app.entries)} · {entry.hops.length} steps{contextRoute(app, entry.hops.map((hop) => hop.node_id)) ? ` · ${contextRoute(app, entry.hops.map((hop) => hop.node_id))}` : ""}</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
-                    <span key={entry.id}>{entry.label}</span>
+                    <span key={entry.id}>{entryDisplayName(entry, app.nodes, app.entries)}</span>
                   ),
                 )}
               </div>
