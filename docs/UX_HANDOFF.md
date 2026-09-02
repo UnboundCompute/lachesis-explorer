@@ -220,6 +220,8 @@ The keyboard-navigation pass found opening Jump/⌘K leaving focus on the trigge
 
 The import-recovery pass reproduced an invalid bundle alert rendering below the initial Understand viewport, leaving the user looking at the unchanged bundle with no visible failure state. After the error-state reveal, failed imports center the existing alert in view at 320px, 390px, and 800px; the current bundle remains intact and the document stays viewport-width.
 
+The Trace label pass found long analyzer expressions dominating the path selector, forcing users to parse repeated compiler-shaped names before reaching source metadata. After the compact label treatment, long paths use their truthful path kind and source location in the visible label while the exact analyzer name remains available in the title and full path header; same-location endpoints are also collapsed to avoid redundant coordinates. The real bundle was rechecked at 390px and 1440px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
