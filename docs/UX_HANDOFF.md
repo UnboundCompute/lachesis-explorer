@@ -99,6 +99,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `0ef924b` — normalize Command Palette and Shortcut Help controls at narrow widths
 - `8c1970b` — add a compact lens-picker header for the previously overflowing tablet breakpoint
 - `542921b` — extend the compact header through 920px to close the 901px breakpoint overflow gap
+- Trace source inspector audit at 320px — zero visible controls below 44px and no horizontal overflow with the real `libxml2` bundle
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
@@ -138,7 +139,7 @@ The app starts successfully with:
 corepack pnpm dev
 ```
 
-The Codex in-app browser runtime currently reports no available browsers (`[]`). Local Playwright is available and was used for bounded QA in this session: mobile lens navigation with the larger `libxml2` bundle, focused graph opening from Trace, filter guidance, post-upload status actions, bundle activation scroll restoration, History drawer actions, Command Palette and Shortcut Help dialogs, Active bundle menu, no horizontal overflow at 320px and 390px, and console/page-error checks. Use the local Playwright Chromium executable for future visual checks until the in-app connector becomes available.
+The Codex in-app browser runtime currently reports no available browsers (`[]`). Local Playwright is available and was used for bounded QA in this session: mobile lens navigation with the larger `libxml2` bundle, focused graph opening from Trace, filter guidance, post-upload status actions, bundle activation scroll restoration, History drawer actions, Command Palette and Shortcut Help dialogs, Active bundle menu, no horizontal overflow at 320px and 390px, and console/page-error checks. The latest narrow-screen pass also covered Trace’s real-bundle source inspector at 320px: all visible links, buttons, inputs, and summaries met the 44px target and the page stayed within the viewport. Use the local Playwright Chromium executable for future visual checks until the in-app connector becomes available.
 
 ## Safe next session
 
