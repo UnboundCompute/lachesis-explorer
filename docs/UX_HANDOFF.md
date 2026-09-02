@@ -214,6 +214,8 @@ The theme contrast pass found selected Trace metadata at 3.22:1 against the dark
 
 The cross-lens contrast pass then found the shared dark-theme `--ink-3` token at 4.27:1 on raised surfaces and 3.84:1 on selected rows. After the token adjustment, persistent muted text reaches at least 4.75:1 on raised surfaces and 4.50:1 on selected surfaces; decorative breadcrumb slashes remain intentionally excluded from the text threshold.
 
+The ultra-narrow responsive pass found Trace’s mobile panel contributing 40px of page-level horizontal overflow at 240px and 280px, even though its path canvas already had its own horizontal scroller. After the mobile panel overflow boundary was added, the document stays exactly viewport-width at 240px, 280px, and 300px while the path canvas remains independently scrollable; the Trace shell was visually rechecked at 240px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
