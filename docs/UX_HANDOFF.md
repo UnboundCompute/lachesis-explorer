@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `e8f3c16` — remove the duplicated REVISION DIFF kicker from Compare panels
 - `4cc87a4` — raise the focused skip-link target to the shared 44px accessibility minimum
 - `9445bcb` — keep the populated Compare upload action explicit about loading a comparison bundle
 - `85e4f88` — keep mobile History in document flow so it cannot cover evidence rows
@@ -170,6 +171,8 @@ The next mobile pass reproduced the fixed History control covering Trace evidenc
 The populated Compare pass also found the header action label “Load another” ambiguous beside the separate active-bundle upload action. After `9445bcb`, both empty and populated comparison states identify the target as “Load comparison bundle”; the 131.6px desktop/mobile control fits without overflow and remains 44px high on phones.
 
 The 320px interaction scan then found the focused “Skip to workspace” link at 30px high. After `4cc87a4`, it is 44px high when focused at 320px, 390px, and 1440px, while remaining visually hidden until keyboard focus; all tested widths remain overflow-free.
+
+The latest Compare render showed “REVISION DIFF” twice—once in the shared lens context and again inside both Compare states. After `e8f3c16`, the shared context is the only kicker; empty and populated Compare retain the same heading, actions, and zero overflow at 390px.
 
 ## Safe next session
 
