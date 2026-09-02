@@ -213,7 +213,7 @@ export function HomeView({
           item.flow.description,
           item.evidence?.result_summary,
           ...item.flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation]),
-          ...nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module] : []),
+          ...nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module] : []),
         ].filter(Boolean).join(" ").toLowerCase().includes(term);
       });
     },
