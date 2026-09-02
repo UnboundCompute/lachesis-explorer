@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `f91b2e5` — align the Understand source-search hit area with the other lenses
 - `13ec67f` — improve Trace path-name, metadata, and route-value reading hierarchy
 - `650145f` — improve graph handoff, neighborhood, and filter action hit areas
 - `a958678` — standardize Setup, status, Jump, and keyboard-help action icons
