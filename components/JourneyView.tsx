@@ -202,6 +202,12 @@ export function JourneyView({
         <div className="entry-search-status" aria-live="polite">
           {entrySearch ? `${visibleEntries.length} of ${app.entries.length} request flows match` : `${app.entries.length} request flow${app.entries.length === 1 ? "" : "s"}`}
         </div>
+        {entrySearch && !visibleEntries.length && (
+          <div className="selector-empty" role="status">
+            <span>No request flows match “{entrySearch}”.</span>
+            <button type="button" onClick={() => setEntrySearch("")}>Clear filter</button>
+          </div>
+        )}
         <select
           id="entrypoint-select"
           className="entry-select"

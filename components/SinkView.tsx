@@ -211,6 +211,12 @@ export function SinkView({
         <div className="entry-search-status" aria-live="polite">
           {sinkSearch ? `${visibleSinks.length} of ${sinks.length} boundaries match` : `${sinks.length} execution boundar${sinks.length === 1 ? "y" : "ies"}`}
         </div>
+        {sinkSearch && !visibleSinks.length && (
+          <div className="selector-empty" role="status">
+            <span>No boundaries match “{sinkSearch}”.</span>
+            <button type="button" onClick={() => setSinkSearch("")}>Clear filter</button>
+          </div>
+        )}
         <div className="sink-list">
           {sinkOptions.map((item) => {
             const count = app.flows.filter((flow) =>
