@@ -480,7 +480,7 @@ export default function Page() {
       }
       if (view === "trace" && event.key === "ArrowLeft") {
         setDirection("backward");
-        record("Changed direction", flowId, "comes from");
+        record("Changed path order", flowId, "start to end");
         trackEvent("trace_direction_changed", {
           direction: "backward",
           source: "keyboard",
@@ -488,7 +488,7 @@ export default function Page() {
       }
       if (view === "trace" && event.key === "ArrowRight") {
         setDirection("forward");
-        record("Changed direction", flowId, "goes to");
+        record("Changed path order", flowId, "end to start");
         trackEvent("trace_direction_changed", {
           direction: "forward",
           source: "keyboard",

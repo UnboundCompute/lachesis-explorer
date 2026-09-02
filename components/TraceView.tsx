@@ -453,20 +453,20 @@ export function TraceView({
                 <kbd>[</kbd><kbd>]</kbd>
               </span>
             </div>
-            <div className="segmented" aria-label="Trace direction">
+            <div className="segmented" aria-label="Path order">
               <button
                 type="button"
                 className={direction === "backward" ? "selected" : ""}
                 aria-pressed={direction === "backward"}
                 onClick={() => {
                   setDirection("backward");
-                  onRecord("Changed direction", flow.name, "comes from");
+                  onRecord("Changed path order", flow.name, "start to end");
                   trackEvent("trace_direction_changed", {
                     direction: "backward",
                   });
                 }}
               >
-                comes from
+                Start → end
               </button>
               <button
                 type="button"
@@ -474,13 +474,13 @@ export function TraceView({
                 aria-pressed={direction === "forward"}
                 onClick={() => {
                   setDirection("forward");
-                  onRecord("Changed direction", flow.name, "goes to");
+                  onRecord("Changed path order", flow.name, "end to start");
                   trackEvent("trace_direction_changed", {
                     direction: "forward",
                   });
                 }}
               >
-                goes to
+                End → start
               </button>
             </div>
           </div>
