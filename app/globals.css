@@ -391,3 +391,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 }
 .evidence-metrics{flex-wrap:wrap;gap:8px 18px}.evidence-metrics>div{min-width:0}
 @media(max-width:760px){.import-notice>button{min-width:44px;min-height:44px}.import-notice .notice-action{min-height:44px}}
+@media(max-width:760px){.compare-heading .secondary-button,.compare-search button,.diff-flow-preview summary,.diff-copy-action,.diff-item-action,.diff-expand{min-height:44px}.compare-search button{min-width:44px}.diff-flow-preview summary{padding-block:10px}.diff-copy-action{padding-block:8px}.diff-item-action{padding-block:10px}.diff-expand{padding-block:10px}}
