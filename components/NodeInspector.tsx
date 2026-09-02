@@ -311,6 +311,11 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
               Open repository
             </a>
           )}
+          {hasSourceLocation && !sourceUrl && (
+            <span className="source-link-note" title="Add bundle metadata.source_url_template to enable repository links">
+              Repository link not configured
+            </span>
+          )}
           <span className="sr-only" aria-live="polite">{copied ? `${hasSourceLocation ? "Source location" : "Graph ID"} copied.` : copyError ? `${hasSourceLocation ? "Source location" : "Graph ID"} could not be copied.` : ""}</span>
         </div>
         {hasSourceLocation && onFile && (
