@@ -89,6 +89,15 @@ export function PathCanvas({
     },
   )
   const selectedItem = items[selectedIndex]
+  const readingExplanation = selectedItem
+    ? selectedIndex === 0
+      ? 'The path starts here.'
+      : selectedIndex === items.length - 1
+        ? 'The path ends here.'
+        : selectedItem.relation
+          ? `This step continues the path via ${selectedItem.relation}.`
+          : 'This step continues the path.'
+    : ''
   const occurrenceNumbers = items.reduce<number[]>((result, item, index) => {
     result[index] = items.slice(0, index).filter((previous) => previous.id === item.id).length + 1
     return result
@@ -188,6 +197,7 @@ export function PathCanvas({
             {repeatedIds.has(selectedItem.id) && ` · revisit ${occurrenceNumbers[selectedIndex]}`}
             {selectedItem.caption ? ` · ${selectedItem.caption}` : ''}
           </small>
+          <p className="path-reading-explanation">{readingExplanation}</p>
           {(selectedItem.edge?.confidence || selectedItem.edge?.limitations?.length) && (
             <em>
               {selectedItem.edge.confidence
