@@ -335,11 +335,11 @@ export function HomeView({
             <p>Choose the question closest to the job in front of you.</p>
           </div>
           <div className="understand-question-list">
-            <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
+            <button type="button" onClick={() => graphFocus ? onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "") : onView("trace")}>
               <span><b>How does this behavior work?</b><small>{graphFocus ? "Follow one complete call or data path." : "No traceable code path is included in this bundle."}</small></span>
               <Icon name="arrow" size={14} />
             </button>
-            <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
+            <button type="button" onClick={() => firstEntry ? onEntry(0, firstEntry.hops[0]?.node_id ?? "") : onView("journey")}>
               <span><b>What happens after a starting point?</b><small>{firstEntry ? "Walk the request from handler to effect." : "No request flow is included in this bundle."}</small></span>
               <Icon name="arrow" size={14} />
             </button>
@@ -347,7 +347,7 @@ export function HomeView({
               <span><b>How is the codebase organized?</b><small>Explore modules and their relationships.</small></span>
               <Icon name="arrow" size={14} />
             </button>
-            <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
+            <button type="button" onClick={() => firstSink ? onSink(firstSink.id) : onView("investigate")}>
               <span><b>What reaches this code?</b><small>{firstSink ? "Compare paths that arrive at one destination." : "No destination is available in this bundle."}</small></span>
               <Icon name="arrow" size={14} />
             </button>
@@ -859,17 +859,17 @@ export function HomeView({
           <p>Choose a different question when the suggested path is not the one you need.</p>
         </div>
         <div className="question-list">
-          <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
+          <button type="button" onClick={() => graphFocus ? onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "") : onView("trace")}>
             <b>{pathQuestion(graphFocus).title}</b>
             <small>{graphFocus ? pathQuestion(graphFocus).detail : "No graph paths in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
-          <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
+          <button type="button" onClick={() => firstEntry ? onEntry(0, firstEntry.hops[0]?.node_id ?? "") : onView("journey")}>
             <b>What calls this code?</b>
             <small>{firstEntry ? "Walk a request from starting point to effect." : "No request flows in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
-          <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
+          <button type="button" onClick={() => firstSink ? onSink(firstSink.id) : onView("investigate")}>
             <b>What converges here?</b>
             <small>{firstSink ? "Compare paths that reach one boundary." : "No boundary nodes in this bundle."}</small>
             <Icon name="arrow" size={12} />
