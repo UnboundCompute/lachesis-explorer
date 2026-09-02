@@ -439,4 +439,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
   .zoom-controls button{width:44px}
   .topology-zoom button{min-width:44px;width:44px;height:44px}
 }
+.mobile-lens-label-compact{display:none!important}
 @media(max-width:360px){.topbar{gap:4px}.mobile-lens-trigger{padding-inline:5px}.mobile-lens-trigger b{font-size:9px}}
+@media(max-width:360px){.mobile-lens-label-full{display:none!important}.mobile-lens-label-compact{display:block!important}}

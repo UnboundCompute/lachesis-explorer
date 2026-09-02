@@ -142,6 +142,11 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
   }
 
   const currentLens = [...primary, ...secondary].find(item => item.id === view) ?? primary[0]
+  const compactLensLabel = currentLens.id === 'journey'
+    ? 'Requests'
+    : currentLens.id === 'investigate'
+      ? 'Boundary'
+      : currentLens.label
 
   return (
     <div className="topbar-wrap">
@@ -158,8 +163,8 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           ))}
         </nav>
         <div className="mobile-lens-picker" ref={mobileLensRef}>
-          <button type="button" className="mobile-lens-trigger" aria-expanded={mobileLensOpen} aria-controls={mobileLensOpen ? "mobile-analysis-menu" : undefined} aria-haspopup="menu" onClick={() => { setMenu(false); setMobileLensOpen(open => !open) }}>
-            <span><small>Current lens</small><b>{currentLens.label}</b></span><Icon name="chevron" size={12} />
+          <button type="button" className="mobile-lens-trigger" aria-label={`Current lens: ${currentLens.label}. Open analysis lens menu`} aria-expanded={mobileLensOpen} aria-controls={mobileLensOpen ? "mobile-analysis-menu" : undefined} aria-haspopup="menu" onClick={() => { setMenu(false); setMobileLensOpen(open => !open) }}>
+            <span><small>Current lens</small><b className="mobile-lens-label-full">{currentLens.label}</b><b className="mobile-lens-label-compact" aria-hidden="true">{compactLensLabel}</b></span><Icon name="chevron" size={12} />
           </button>
           {mobileLensOpen && (
             <div id="mobile-analysis-menu" className="mobile-lens-menu" role="menu" aria-label="Analysis lenses">
