@@ -547,7 +547,7 @@ export function TraceView({
               >
                 <span className="kind-dot" />
                 <span>
-                  <b>{item.name}</b>
+                  <b title={item.name}>{item.name}</b>
                   <small>
                     {app.findings.some((finding) => finding.id === item.id)
                       ? "Security witness"
