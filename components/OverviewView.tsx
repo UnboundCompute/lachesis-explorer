@@ -239,7 +239,7 @@ export function OverviewView({
   }, [app]);
   useEffect(() => {
     setSearchText(query);
-    if (query) setShowAllFilters(true);
+    if (/^\S+:/.test(query.trim())) setShowAllFilters(true);
   }, [query]);
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; module?: string; nodes: Node[]; inbound: number; outbound: number }>();
