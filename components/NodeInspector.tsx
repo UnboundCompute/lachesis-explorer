@@ -200,7 +200,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             <Icon name="code" size={12} />
             {copied ? "Copied" : copyError ? "Retry" : hasSourceLocation ? "Copy location" : "Copy ID"}
           </button>
-          <span className="sr-only" aria-live="polite">{copied ? "Source location copied." : copyError ? "Source location could not be copied." : ""}</span>
+          <span className="sr-only" aria-live="polite">{copied ? `${hasSourceLocation ? "Source location" : "Graph ID"} copied.` : copyError ? `${hasSourceLocation ? "Source location" : "Graph ID"} could not be copied.` : ""}</span>
         </div>
         <pre className="source-code source-context" aria-label={sourceSnippet ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>
           <code>
