@@ -321,11 +321,11 @@ export function HomeView({
           </div>
           <div className="understand-question-list">
             <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
-              <span><b>How does this behavior work?</b><small>Follow one complete call or data path.</small></span>
+              <span><b>How does this behavior work?</b><small>{graphFocus ? "Follow one complete call or data path." : "No traceable code path is included in this bundle."}</small></span>
               <Icon name="arrow" size={14} />
             </button>
             <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
-              <span><b>What happens after a starting point?</b><small>Walk the request from handler to effect.</small></span>
+              <span><b>What happens after a starting point?</b><small>{firstEntry ? "Walk the request from handler to effect." : "No request flow is included in this bundle."}</small></span>
               <Icon name="arrow" size={14} />
             </button>
             <button type="button" onClick={() => onView("map")}>
@@ -333,7 +333,7 @@ export function HomeView({
               <Icon name="arrow" size={14} />
             </button>
             <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
-              <span><b>What reaches this code?</b><small>Compare paths that arrive at one destination.</small></span>
+              <span><b>What reaches this code?</b><small>{firstSink ? "Compare paths that arrive at one destination." : "No destination is available in this bundle."}</small></span>
               <Icon name="arrow" size={14} />
             </button>
           </div>
