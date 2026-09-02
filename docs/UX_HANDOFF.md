@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `4cc87a4` — raise the focused skip-link target to the shared 44px accessibility minimum
 - `9445bcb` — keep the populated Compare upload action explicit about loading a comparison bundle
 - `85e4f88` — keep mobile History in document flow so it cannot cover evidence rows
 - `6f46872` — clarify that the contextual upload action replaces the active bundle
@@ -167,6 +168,8 @@ The comparison follow-up found the shared contextual upload action still labeled
 The next mobile pass reproduced the fixed History control covering Trace evidence rows at 390px. After `85e4f88`, History is a labeled, 44px control in normal document flow on narrow screens; a cross-lens sweep across Understand, Trace, Request Flow, Boundary, Explore, and Compare found no History/evidence overlap and no horizontal overflow.
 
 The populated Compare pass also found the header action label “Load another” ambiguous beside the separate active-bundle upload action. After `9445bcb`, both empty and populated comparison states identify the target as “Load comparison bundle”; the 131.6px desktop/mobile control fits without overflow and remains 44px high on phones.
+
+The 320px interaction scan then found the focused “Skip to workspace” link at 30px high. After `4cc87a4`, it is 44px high when focused at 320px, 390px, and 1440px, while remaining visually hidden until keyboard focus; all tested widths remain overflow-free.
 
 ## Safe next session
 
