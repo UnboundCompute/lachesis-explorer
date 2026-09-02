@@ -206,6 +206,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       contextRole ? `- Role in selected path: ${contextRole}` : "",
       contextOccurrence ? `- Occurrence: ${contextOccurrence}` : "",
       node.qualifiedName && node.qualifiedName !== node.label ? `- Qualified name: ${node.qualifiedName}` : "",
+      parentNode ? `- Enclosed by: ${parentNode.label || parentNode.id}` : "",
       node.signature ? `- Signature: ${node.signature}` : "",
       node.module ? `- Module: ${node.module}` : "",
       "",
@@ -214,6 +215,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       meaning,
       contextNote ? `\n${contextNote}` : "",
       node.documentation ? `\n## Documentation\n\n${node.documentation}` : "",
+      childNodes.length ? `\n## Contained symbols\n\n${childNodes.map((child) => `- ${child.label || child.id} (${child.kind}, line ${child.line || "—"})`).join("\n")}` : "",
       connections.length ? `\n## Connected relationships\n\n${connections.join("\n")}` : "",
       sourceText ? `\n## Source\n\n\`\`\`${app?.language || ""}\n${sourceText}\n\`\`\`` : "",
     ].filter(Boolean).join("\n");

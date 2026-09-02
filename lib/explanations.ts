@@ -58,6 +58,8 @@ export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?
 }
 
 export function explainNode(app: App, node: Node, url?: string) {
+  const parent = node.parentId ? app.nodes.find((item) => item.id === node.parentId) : undefined;
+  const children = app.nodes.filter((item) => item.parentId === node.id).slice(0, 12);
   const flows = app.flows.filter((flow) => flow.steps.some((step) => step.node_id === node.id));
   const entries = app.entries.filter((entry) => entry.hops.some((hop) => hop.node_id === node.id));
   const relationships = app.edges
@@ -73,5 +75,9 @@ export function explainNode(app: App, node: Node, url?: string) {
   const pathNames = flows.slice(0, 8).map((flow) => `- ${flow.name}`).join("\n");
   const entryNames = entries.slice(0, 8).map((entry) => `- ${entry.label}`).join("\n");
 
-  return `# ${node.label || node.id}\n\n${node.documentation || `A ${node.kind} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${node.kind}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n## Source\n\n${codeBlock(sourceText(node))}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${explorerReference(url)}`;
+  const hierarchy = [
+    parent ? `Enclosed by: **${parent.label || parent.id}**` : "",
+    children.length ? `\n## Contained symbols\n\n${children.map((child) => `- ${child.label || child.id} (${child.kind}, line ${child.line || "—"})`).join("\n")}` : "",
+  ].filter(Boolean).join("\n");
+  return `# ${node.label || node.id}\n\n${node.documentation || `A ${node.kind} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${node.kind}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n${hierarchy ? `${hierarchy}\n` : ""}## Source\n\n${codeBlock(sourceText(node))}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${explorerReference(url)}`;
 }
