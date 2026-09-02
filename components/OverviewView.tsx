@@ -171,6 +171,7 @@ export function OverviewView({
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [localNeighborhoodOnly, setLocalNeighborhoodOnly] = useState(false);
   const [topologyZoom, setTopologyZoom] = useState(1);
+  const [showAllTopology, setShowAllTopology] = useState(false);
   const [localNodeOrder, setLocalNodeOrder] = useState<OverviewNodeOrder>("path");
   const nodeOrder = controlledNodeOrder ?? localNodeOrder;
   const setNodeOrder = setControlledNodeOrder ?? setLocalNodeOrder;
@@ -185,6 +186,7 @@ export function OverviewView({
     setSearchText("");
     setNeighborhoodOnly(false);
     setTopologyZoom(1);
+    setShowAllTopology(false);
     if (!setControlledNodeOrder) setLocalNodeOrder("path");
   }, [app]);
   const contexts = useMemo(() => {
@@ -371,9 +373,15 @@ export function OverviewView({
       return score(b.id) - score(a.id) || visible.indexOf(a) - visible.indexOf(b);
     });
   }, [app.edges, nodeOrder, participation, visible]);
+  const topologyLimited = !neighborhoodOnly && !showAllTopology && orderedVisible.length > 48;
   const topologyNodes = neighborhoodOnly && selected
     ? orderedVisible.filter((node) => connectedIds.has(node.id))
-    : orderedVisible;
+    : topologyLimited
+      ? [
+          ...(selected ? [selected] : []),
+          ...orderedVisible.filter((node) => node.id !== selected?.id),
+        ].slice(0, 48)
+      : orderedVisible;
   const topologyIds = new Set(topologyNodes.map((node) => node.id));
   const topologyEdges = edges.filter((edge) => topologyIds.has(edge.source) && topologyIds.has(edge.target));
   const chokePoints = app.nodes
@@ -448,11 +456,11 @@ export function OverviewView({
     : visible.length
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
-  const canvasOrder = neighborhoodOnly ? topologyNodes : orderedVisible;
+  const canvasOrder = topologyNodes;
   const canvasIndexes = new Map(canvasOrder.map((node, index) => [node.id, index]));
   const graphPos = (node: Node) => pos(Math.max(0, canvasIndexes.get(node.id) ?? 0));
   const graphHeight = Math.max(300, Math.ceil(canvasOrder.length / 4) * 92 + 110);
-  const graphViewModified = Boolean(query || neighborhoodOnly || topologyZoom !== 1 || nodeOrder !== "path");
+  const graphViewModified = Boolean(query || neighborhoodOnly || topologyZoom !== 1 || nodeOrder !== "path" || showAllTopology);
   const labelIndex = (node: Node) =>
     String(Math.max(0, canvasIndexes.get(node.id) ?? 0) + 1).padStart(2, "0");
   async function shareNode() {
@@ -629,8 +637,8 @@ export function OverviewView({
                 <b>{visible.length ? rolesForNode(selected?.id ?? "").join(" / ") || selected?.kind || "—" : "—"}</b>
               </div>
               <p>
-                {visible.length
-                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${topologyNodes.length} connected context nodes.` : ""}`
+                  {visible.length
+                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${topologyNodes.length} connected context nodes.` : topologyLimited ? ` Showing the ${topologyNodes.length} most relevant nodes of ${visible.length}; open all to inspect the complete topology.` : ""}`
                   : `No nodes match “${query}”. Clear the filter to restore the full topology.`}
                 {selected && visible.length > 1 && (
                   <button
@@ -651,6 +659,24 @@ export function OverviewView({
                     Too many nodes? Group by module
                   </button>
                 )}
+                {topologyLimited && (
+                  <button
+                    type="button"
+                    className="neighborhood-toggle"
+                    onClick={() => setShowAllTopology(true)}
+                  >
+                    Show all {visible.length} nodes
+                  </button>
+                )}
+                {showAllTopology && visible.length > 48 && !neighborhoodOnly && (
+                  <button
+                    type="button"
+                    className="neighborhood-toggle"
+                    onClick={() => setShowAllTopology(false)}
+                  >
+                    Show focused {Math.min(48, visible.length)} nodes
+                  </button>
+                )}
                 {graphViewModified && (
                   <button
                     type="button"
@@ -661,6 +687,7 @@ export function OverviewView({
                       setNeighborhoodOnly(false);
                       setTopologyZoom(1);
                       setNodeOrder("path");
+                      setShowAllTopology(false);
                       trackEvent("graph_view_reset");
                     }}
                   >
