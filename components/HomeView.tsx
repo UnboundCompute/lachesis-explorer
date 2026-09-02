@@ -484,6 +484,7 @@ export function HomeView({
         >
           <i />
           <span>{loadState.message}</span>
+          {loadState.type === "error" && <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>}
           <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
         </p>
       )}

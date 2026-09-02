@@ -31,7 +31,7 @@ export function Intro({
       "Move through each call or data handoff, with the exact source beside it.",
     ],
     journey: [
-      "See what happens after an entrypoint.",
+      "See what happens after a starting point.",
       "Walk a focused request flow from its first handler to its final effect.",
     ],
     investigate: securityMode
@@ -60,7 +60,7 @@ export function Intro({
     view === "trace"
       ? "GRAPH-PATH LENS"
       : view === "journey"
-        ? "REQUEST-PATH LENS"
+        ? "REQUEST-FLOW LENS"
         : view === "investigate"
             ? securityMode
               ? "SINK-FIRST LENS"
@@ -131,6 +131,7 @@ export function Intro({
         >
           <i />
           <span>{loadState.message}</span>
+          {loadState.type === "error" && <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>}
           <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
         </p>
       )}
