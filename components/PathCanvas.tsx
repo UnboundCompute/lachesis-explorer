@@ -355,12 +355,13 @@ export function PathCanvas({
               onClick={() => onSelect(item.id, start + index)}
               aria-pressed={occurrenceSelected}
               aria-current={occurrenceSelected ? 'step' : undefined}
-                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
+                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.relation ? `, via ${item.relation}` : ''}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
             >
               <span>{String(start + index + 1).padStart(2, '0')}</span>
               <b>{item.label}</b>
               <small>
                 {item.node.label || item.node.id} · {item.node.scope ? `${scopeLabel(item.node)} · ` : ''}{nodeLocation(item.node)}
+                {item.relation ? ` · via ${item.relation}` : ''}
                 {repeatedIds.has(item.id) ? ` · revisit ${occurrenceNumbers[start + index]}` : ''}
                 {item.edge?.alias ? ' · alternate connection' : ''}
                 {item.edge?.dynamic ? ' · runtime-dependent connection' : ''}
