@@ -50,6 +50,16 @@ export function SinkView({
       ),
     [app],
   );
+  const nodeById = useMemo(() => new Map(app.nodes.map((node) => [node.id, node])), [app.nodes]);
+  const flowCountByNode = useMemo(() => {
+    const counts = new Map<string, number>();
+    app.flows.forEach((flow) => {
+      new Set(flow.steps.map((step) => step.node_id)).forEach((nodeId) => {
+        counts.set(nodeId, (counts.get(nodeId) ?? 0) + 1);
+      });
+    });
+    return counts;
+  }, [app.flows]);
   const sink = sinks.find((node) => node.id === sinkId) ?? sinks[0];
   const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
   const [mode, setMode] = useState<"field" | "matrix">("field");
@@ -75,7 +85,7 @@ export function SinkView({
     const term = sinkSearch.trim().toLowerCase();
     if (!term) return sinks;
     return sinks.filter((item) => {
-      const pathCount = app.flows.filter((flow) => flow.steps.some((step) => step.node_id === item.id)).length;
+      const pathCount = flowCountByNode.get(item.id) ?? 0;
       return [
         item.label,
         item.file,
@@ -87,7 +97,7 @@ export function SinkView({
         String(pathCount),
       ].join(" ").toLowerCase().includes(term);
     });
-  }, [app, sinkSearch, sinks]);
+  }, [app, flowCountByNode, sinkSearch, sinks]);
   const sinkOptions = sink && visibleSinks.includes(sink)
     ? visibleSinks
     : sink
@@ -122,7 +132,7 @@ export function SinkView({
   const flows = pathSearch.trim()
     ? allFlows.filter((flow) => {
         const nodes = flow.steps
-          .map((step) => app.nodes.find((node) => node.id === step.node_id))
+          .map((step) => nodeById.get(step.node_id))
           .filter(Boolean);
         const searchable = [
           flow.name,
@@ -140,7 +150,7 @@ export function SinkView({
   const overlaps = app.entries.filter((entry) =>
     entry.hops.some((hop) => flowNodes.has(hop.node_id)),
   );
-  const selected = app.nodes.find((node) => node.id === selectedId) ?? sink;
+  const selected = nodeById.get(selectedId) ?? sink;
   const selectedRole = flows
     .flatMap((flow) => flow.steps)
     .find((step) => step.node_id === selected.id)?.role;
@@ -161,13 +171,13 @@ export function SinkView({
       onRecord(
         "Focused sink",
         next.label || next.id,
-        `${app.flows.filter((flow) => flow.steps.some((step) => step.node_id === id)).length} ${pathNounPlural}`,
+        `${flowCountByNode.get(id) ?? 0} ${pathNounPlural}`,
       );
       trackEvent("sink_selected");
     }
   }
   function chooseNode(id: string) {
-    const node = app.nodes.find((item) => item.id === id);
+    const node = nodeById.get(id);
     setSelectedId(id);
     setInspectorOpen(true);
     if (node)
@@ -189,7 +199,7 @@ export function SinkView({
       .map((flow) => {
         const sequence = flow.steps
           .map((step, index) => {
-            const node = app.nodes.find((item) => item.id === step.node_id);
+            const node = nodeById.get(step.node_id);
             return `${String(index + 1).padStart(2, "0")}. ${step.role} — ${node?.label || step.node_id} · ${nodeLocation(node || app.nodes[0])}${nodeContext(node || app.nodes[0]) !== "Unscoped" ? ` · ${nodeContext(node || app.nodes[0])}` : ""}${step.edge?.relation ? ` · via ${step.edge.relation}` : ""}`;
           })
           .join("\n");
@@ -236,9 +246,7 @@ export function SinkView({
         )}
         <div className="sink-list">
           {sinkOptions.map((item) => {
-            const count = app.flows.filter((flow) =>
-              flow.steps.some((step) => step.node_id === item.id),
-            ).length;
+            const count = flowCountByNode.get(item.id) ?? 0;
             return (
               <button
                 type="button"
