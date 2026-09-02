@@ -439,4 +439,18 @@ export function indirectionCount(flow: Flow, evidence?: Evidence) {
   return evidence?.indirections ?? flow.steps.filter(step => step.edge?.alias || step.edge?.dynamic).length
 }
 
+export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
+  const duplicate = allFlows.filter((item) => item.name === flow.name).length > 1
+  if (!duplicate) return flow.name
+  const locations = flow.steps
+    .map((step) => nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean)
+    .map((node) => `${node!.file || "source unavailable"}:${node!.line || "—"}`)
+  if (!locations.length) return flow.name
+  const route = locations.length > 1 && locations[0] !== locations.at(-1)
+    ? `${locations[0]} → ${locations.at(-1)}`
+    : locations[0]
+  return `${flow.name} · ${route}`
+}
+
 export const starter:App=normalize(codeExplorationBundle)

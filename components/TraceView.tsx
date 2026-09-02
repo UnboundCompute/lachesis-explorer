@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { App, Flow } from "../lib/lachesis";
-import { indirectionCount } from "../lib/lachesis";
+import { flowDisplayName, indirectionCount, type App, type Flow } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainFlow } from "../lib/explanations";
@@ -547,7 +546,7 @@ export function TraceView({
               >
                 <span className="kind-dot" />
                 <span>
-                  <b title={item.name}>{item.name}</b>
+                  <b title={flowDisplayName(item, app.nodes, app.flows)}>{flowDisplayName(item, app.nodes, app.flows)}</b>
                   <small>
                     {app.findings.some((finding) => finding.id === item.id)
                       ? "Security witness"

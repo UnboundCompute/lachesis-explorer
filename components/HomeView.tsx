@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import type { App, Evidence, Flow, Node } from "../lib/lachesis";
+import { flowDisplayName, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -391,7 +391,7 @@ export function HomeView({
             <div className="understand-path">
               <div className="understand-path-copy">
                 <span>{pathKindLabel(graphFocus)} · {graphFocus.steps.length} symbols</span>
-                <h3>{graphFocus.name}</h3>
+                <h3>{flowDisplayName(graphFocus, app.nodes, app.flows)}</h3>
                 <p>{graphFocus.description || `Follow the path from ${startNode?.label || "its first symbol"} to ${endNode?.label || "its final symbol"}.`}</p>
               </div>
               <div className="understand-route" aria-label="Recommended path endpoints">
@@ -421,7 +421,7 @@ export function HomeView({
             <div className="understand-path-list">
               {otherPaths.map((flow) => (
                 <button type="button" key={flow.id} onClick={() => onFlow(flow.id, flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
-                  <span><b>{flow.name}</b><small>{pathKindLabel(flow)} · {flow.steps.length} symbols · {pathLocation(flow, app)}</small></span>
+                  <span><b>{flowDisplayName(flow, app.nodes, app.flows)}</b><small>{pathKindLabel(flow)} · {flow.steps.length} symbols · {pathLocation(flow, app)}</small></span>
                   <Icon name="arrow" size={13} />
                 </button>
               ))}
