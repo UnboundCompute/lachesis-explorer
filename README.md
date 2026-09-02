@@ -25,6 +25,7 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Move between lenses with browser Back/Forward; the URL restores the active lens, sink, path position, direction, and occurrence identity when the bundle is available.
 - Graph links also preserve the selected Graph lens—Topology, Architecture, or Health—and an active focused neighborhood, so a shared system-level view opens in the same reading mode.
 - Copy a selected symbol’s `file:line:column` location from the source inspector.
+- Open a selected symbol in its source repository when the bundle provides `meta.source_url_template`.
 - Copy readable graph-path, request-path, or converging-path sequences with relationships, source locations, and scope context.
 - Move through value-flow and request-path steps sequentially with Previous/Next controls.
 - Use `[` and `]` to step backward or forward while reading a path; text inputs are unaffected.
