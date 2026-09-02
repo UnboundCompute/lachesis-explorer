@@ -45,6 +45,10 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `661a735` — make Explore open the module lens by default while preserving focused topology entry
+- `44e3771` — lead duplicate path labels with endpoint symbols and raise path-list metadata size
+- `ed58008` — replace overlapping mobile lens tabs with an explicit current-lens picker
+
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
 - `39d08a3` — preserve request identity in Journey
