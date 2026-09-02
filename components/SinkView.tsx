@@ -91,7 +91,7 @@ export function SinkView({
     if (!term) return sinks;
     return sinks.filter((item) => {
       const pathCount = flowCountByNode.get(item.id) ?? 0;
-      return [
+      const haystack = [
         item.label,
         item.file,
         item.module,
@@ -100,7 +100,24 @@ export function SinkView({
         item.scope?.package,
         item.scope?.module,
         String(pathCount),
-      ].join(" ").toLowerCase().includes(term);
+      ].join(" ").toLowerCase();
+      return term.split(/\s+/).every((part) => {
+        const [key, ...rest] = part.split(":");
+        const value = rest.join(":");
+        if (rest.length) {
+          if (key === "has" && (value === "paths" || value === "path")) return pathCount > 0;
+          if (key === "has" && (value === "no-paths" || value === "no-path")) return pathCount === 0;
+          if (key === "file") return item.file.toLowerCase().includes(value);
+          if (key === "module") return [item.module, item.scope?.module].some((context) => context?.toLowerCase().includes(value));
+          if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+            return [item.scope?.label, item.scope?.repository, item.scope?.service, item.scope?.package, item.scope?.module]
+              .some((context) => context?.toLowerCase().includes(value));
+          }
+          if (key === "kind") return item.kind.toLowerCase().includes(value);
+          return false;
+        }
+        return haystack.includes(part);
+      });
     });
   }, [app, flowCountByNode, sinkSearch, sinks]);
   const sinkOptions = sink && visibleSinks.includes(sink)
@@ -108,6 +125,17 @@ export function SinkView({
     : sink
       ? [sink, ...visibleSinks]
       : visibleSinks;
+  const boundaryFilterSuggestions = [
+    sinks.some((item) => (flowCountByNode.get(item.id) ?? 0) > 0)
+      ? { label: "With paths", query: "has:paths" }
+      : null,
+    sinks.some((item) => (flowCountByNode.get(item.id) ?? 0) === 0)
+      ? { label: "No paths", query: "has:no-paths" }
+      : null,
+    ...[...new Set(sinks.map((item) => item.scope?.service).filter(Boolean))]
+      .slice(0, 2)
+      .map((service) => ({ label: service!, query: `service:${service}` })),
+  ].filter((suggestion): suggestion is { label: string; query: string } => Boolean(suggestion));
   if (!sink)
     return (
       <section className="workspace-empty">
@@ -264,6 +292,26 @@ export function SinkView({
         <div className="entry-search-status" aria-live="polite">
           {sinkSearch ? `${visibleSinks.length} of ${sinks.length} boundaries match` : `${sinks.length} execution boundar${sinks.length === 1 ? "y" : "ies"}`}
         </div>
+        {boundaryFilterSuggestions.length > 0 && (
+          <div className="filter-hints" role="group" aria-label="Quick boundary filters">
+            {boundaryFilterSuggestions.map((suggestion) => (
+              <button
+                type="button"
+                key={suggestion.query}
+                onClick={() => {
+                  setSinkSearch(suggestion.query);
+                  trackEvent("semantic_filter_applied", {
+                    surface: "boundary",
+                    filter: suggestion.query.split(":", 1)[0] || "text",
+                  });
+                }}
+              >
+                {suggestion.label}
+              </button>
+            ))}
+            {sinkSearch && <button type="button" className="query-clear" onClick={() => setSinkSearch("")}>Clear</button>}
+          </div>
+        )}
         {sinkSearch && !visibleSinks.length && (
           <div className="selector-empty" role="status">
             <span>No boundaries match “{sinkSearch}”.</span>
