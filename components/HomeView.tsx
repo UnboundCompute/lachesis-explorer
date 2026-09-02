@@ -277,6 +277,7 @@ export function HomeView({
       <main className="understand-home">
         <header className="understand-hero">
           <div className="understand-copy">
+            <span className="understand-eyebrow">CODE UNDERSTANDING WORKSPACE</span>
             <h1>Understand {app.name || "this codebase"}, one path at a time.</h1>
             <p>
               {app.bundle.description ||
@@ -292,7 +293,7 @@ export function HomeView({
                   className="understand-primary"
                   onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}
                 >
-                  Follow a recommended path <Icon name="arrow" size={14} />
+                  Follow “{graphFocus.name}” <Icon name="arrow" size={14} />
                 </button>
               )}
               <button type="button" className="understand-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
@@ -302,10 +303,10 @@ export function HomeView({
             </div>
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
-            <div><dt>Language</dt><dd>{app.language || "Not reported"}</dd></div>
-            <div><dt>Revision</dt><dd>{app.commit || "Not reported"}</dd></div>
-            <div><dt>Graph</dt><dd>{app.nodes.length} nodes · {app.edges.length} relationships</dd></div>
-            <div><dt>Coverage</dt><dd>{(app.coverage.includedNodes ?? app.nodes.length).toLocaleString()} shown of {(app.coverage.indexedNodes ?? app.nodes.length).toLocaleString()} indexed</dd></div>
+            <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} ready to follow</dd></div>
+            <div><dt>Request flows</dt><dd>{app.entries.length.toLocaleString()} starting points</dd></div>
+            <div><dt>Files</dt><dd>{(app.files.length || new Set(app.nodes.map((node) => node.file).filter(Boolean)).size).toLocaleString()} in this bundle</dd></div>
+            <div><dt>Source previews</dt><dd>{app.nodes.filter((node) => node.snippet.trim()).length.toLocaleString()} of {app.nodes.length.toLocaleString()} symbols</dd></div>
           </dl>
         </header>
 

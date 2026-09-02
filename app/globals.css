@@ -274,6 +274,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 /* Code understanding home — question first, graph mechanics second. */
 .understand-home{max-width:1180px;margin:0 auto;padding:64px 30px 48px}
 .understand-hero{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(270px,.55fr);align-items:end;gap:72px;padding-bottom:48px;border-bottom:1px solid var(--line)}
+.understand-eyebrow{display:block;margin-bottom:15px;color:var(--brand-strong);font:700 10px var(--mono);letter-spacing:.14em}
 .understand-copy h1{max-width:780px;margin:0;font:650 clamp(42px,5vw,70px)/.98 Söhne,"Avenir Next",ui-sans-serif,system-ui,sans-serif;letter-spacing:-.04em;text-wrap:balance}
 .understand-copy>p{max-width:690px;margin:20px 0 0;color:var(--ink-2);font-size:13px;line-height:1.65}
 .understand-copy>.understand-value{margin-top:9px;color:var(--ink-3);font-size:11px}
