@@ -20,10 +20,13 @@ function pathContextLabel(kind?: string, security = false) {
 function nodeContext(node?: App['nodes'][number]) {
   return node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository || ''
 }
+function nodeLocation(node?: App['nodes'][number]) {
+  return node?.file ? `${node.file}:${node.line || '—'}` : ''
+}
 export function InvestigationContext({app,view,flowId,stepId,stepIndex=0,entryIndex,hopId,hopIndex=0,sinkId,focusNodeId,onHome}:Props){
   if(view==='home')return null
   const flow=app.flows.find(item=>item.id===flowId),step=app.nodes.find(item=>item.id===stepId),entry=app.entries[entryIndex],hop=app.nodes.find(item=>item.id===hopId),sink=app.nodes.find(item=>item.id===sinkId),focused=app.nodes.find(item=>item.id===focusNodeId)
-  const withContext = (value: string | undefined, node?: App['nodes'][number]) => `${value||'—'}${nodeContext(node) ? ` · ${nodeContext(node)}` : ''}`
+  const withContext = (value: string | undefined, node?: App['nodes'][number]) => `${value||'—'}${nodeContext(node) ? ` · ${nodeContext(node)}` : ''}${nodeLocation(node) ? ` · ${nodeLocation(node)}` : ''}`
   const parts=view==='trace'?[[pathContextLabel(flow?.kind,app.findings.some(item=>item.id===flow?.id)),flow?.name],['STEP',withContext(`${stepIndex+1}/${flow?.steps.length??0} · ${step?.label||step?.id}`,step)]]:view==='journey'?[['REQUEST FLOW',entry?.label],['STEP',withContext(`${hopIndex+1}/${entry?.hops.length??0} · ${hop?.label||hop?.id}`,hop)]]:view==='investigate'?[['DESTINATION',withContext(sink?.label||sink?.id,sink)]]:view==='map'?[['EXPLORE',focused?withContext(focused.label||focused.id,focused):'Workspace']]:[[viewNames[view]||view,'Workspace']]
-  return <div className="investigation-context" aria-label="Current code exploration context" aria-live="polite" aria-atomic="true">{onHome ? <button type="button" className="context-home" onClick={onHome} title="Return to understanding home">{app.name||'Untitled bundle'}</button> : <span className="context-home">{app.name||'Untitled bundle'}</span>}{parts.map(([label,value])=><span key={label} className="context-crumb"><i>／</i><small>{label}</small><b>{value||'—'}</b></span>)}</div>
+  return <div className="investigation-context" aria-label="Current code exploration context" aria-live="polite" aria-atomic="true">{onHome ? <button type="button" className="context-home" onClick={onHome} title="Return to understanding home">{app.name||'Untitled bundle'}</button> : <span className="context-home">{app.name||'Untitled bundle'}</span>}{parts.map(([label,value])=><span key={label} className="context-crumb"><i>／</i><small>{label}</small><b title={value||'—'}>{value||'—'}</b></span>)}</div>
 }
