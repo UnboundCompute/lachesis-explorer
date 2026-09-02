@@ -66,6 +66,38 @@ function matchesCommand(command: Command, query: string) {
   return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => haystack.includes(term));
 }
 
+function matchingNodeId(
+  app: App,
+  steps: Array<{ node_id: string; role?: string; note?: string; edge?: { relation?: string } }>,
+  query: string,
+) {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter((term) => term && !term.includes(":"));
+  if (!terms.length) return steps[0]?.node_id ?? "";
+  const match = steps.find((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    const haystack = [
+      step.role,
+      step.note,
+      step.edge?.relation,
+      node?.label,
+      node?.qualifiedName,
+      node?.signature,
+      node?.documentation,
+      node?.snippet,
+      node?.sourceWindow?.lines.join(" "),
+      node?.file,
+      node?.module,
+      node?.scope?.label,
+      node?.scope?.service,
+      node?.scope?.package,
+      node?.scope?.module,
+      node?.scope?.repository,
+    ].filter(Boolean).join(" ").toLowerCase();
+    return terms.every((term) => haystack.includes(term));
+  });
+  return match?.node_id ?? steps[0]?.node_id ?? "";
+}
+
 export function CommandPalette({
   app,
   onClose,
@@ -146,7 +178,7 @@ export function CommandPalette({
             const node = app.nodes.find((item) => item.id === step.node_id);
             return node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [];
           }).concat([flow.description, ...flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation])]).filter(Boolean).join(" "),
-          run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
+          run: () => onFlow(flow.id, matchingNodeId(app, flow.steps, normalized)),
         })),
         ...app.entries.map((entry, index) => ({
           id: `entry-${entry.id}`,
@@ -156,7 +188,7 @@ export function CommandPalette({
             const node = app.nodes.find((item) => item.id === hop.node_id);
             return [hop.edge_label, hop.caption, node?.label, node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.sourceWindow?.lines.join(" "), node?.file, node?.module];
           }).filter(Boolean).join(" "),
-          run: () => onEntry(index, entry.hops[0]?.node_id ?? ""),
+          run: () => onEntry(index, matchingNodeId(app, entry.hops, normalized)),
         })),
         ...app.nodes.map((node) => ({
           id: `node-${node.id}`,
