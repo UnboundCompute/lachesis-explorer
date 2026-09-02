@@ -218,8 +218,9 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
   const edges = delta(base.edges, compare.edges)
   const paths = delta(base.flows, compare.flows)
   const entries = delta(base.entries, compare.entries)
+  const compareFlowsById = new Map(compare.flows.map((flow) => [flow.id, flow]))
   const changedPaths = base.flows
-    .map((flow) => ({ base: flow, compare: compare.flows.find((item) => item.id === flow.id) }))
+    .map((flow) => ({ base: flow, compare: compareFlowsById.get(flow.id) }))
     .filter(
       (item) =>
         item.compare &&
