@@ -455,7 +455,7 @@ export function TraceView({
                       : app.mcp.some((evidence) => evidence.for === item.id)
                         ? `Bundle-backed ${pathKindLabel(item, false).toLowerCase()}`
                       : pathKindLabel(item, false)} {" · "}
-                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "non-direct"} · {flowLocation(app, item, nodeById)}
+                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "inferred links"} · {flowLocation(app, item, nodeById)}
                   </small>
                   {query && flowMatchLabel(app, item, query, nodeById) && <small className="node-row-context">{flowMatchLabel(app, item, query, nodeById)}</small>}
                   <small className="node-row-context">
@@ -612,7 +612,7 @@ export function TraceView({
             </b>
           </div>
           <div className="trace-orientation-fact">
-              <span>{securityPath ? "INDIRECT" : "NON-DIRECT"}</span>
+              <span>{securityPath ? "INDIRECT" : "INFERRED LINKS"}</span>
             <b>{indirectSteps}</b>
           </div>
         </div>
