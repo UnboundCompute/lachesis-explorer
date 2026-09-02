@@ -58,6 +58,15 @@ const viewLabels: Record<View, string> = {
   install: "Setup",
 };
 
+function bundleImportError(error: unknown, subject: string, kept: string) {
+  const detail = error instanceof Error ? error.message : `Could not read ${subject}`;
+  const jsonError = detail === "This file is not valid JSON." || detail.includes("Unexpected token") || detail.includes("Unexpected end of JSON input");
+  const guidance = jsonError
+    ? "Fix the JSON syntax and try again."
+    : "Check docs/GRAPH_EXPLORER_CONTRACT.md for the required bundle shape.";
+  return `${detail} ${guidance} ${kept}`;
+}
+
 function stepAtPosition(app: App, flowId: string, position: number, direction: "backward" | "forward") {
   const flow = app.flows.find((item) => item.id === flowId);
   if (!flow) return undefined;
@@ -779,7 +788,7 @@ export default function Page() {
     } catch (error) {
       setLoadState({
         type: "error",
-        message: `${error instanceof Error ? error.message : "Could not read bundle.json"} The current bundle was kept.`,
+        message: bundleImportError(error, "bundle.json", "The current bundle was kept."),
       });
       trackEvent("bundle_load_failed");
     } finally {
@@ -852,7 +861,7 @@ export default function Page() {
     } catch (error) {
       setLoadState({
         type: "error",
-        message: `${error instanceof Error ? error.message : "Could not read comparison bundle"} The active bundle was kept.`,
+        message: bundleImportError(error, "comparison bundle", "The active bundle was kept."),
       });
       trackEvent("comparison_bundle_load_failed");
     } finally {
