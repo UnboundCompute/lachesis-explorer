@@ -31,6 +31,11 @@ function explorerReference(url?: string) {
   return `\n\n## Open in Lachesis\n\n${url}\n\nThe graph bundle is processed locally and is not embedded in this link.`;
 }
 
+function limitationsSection(limitations?: string[]) {
+  if (!limitations?.length) return "";
+  return `\n\n## Bundle limitations\n\n${limitations.map((limitation) => `- ${limitation}`).join("\n")}`;
+}
+
 export function explainFlow(app: App, flow: Flow, direction: "backward" | "forward", selectedIndex: number, url?: string) {
   const steps = direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const selectedStep = steps[selectedIndex] ?? steps[0];
@@ -42,7 +47,7 @@ export function explainFlow(app: App, flow: Flow, direction: "backward" | "forwa
     return `${index + 1}. **${node?.label || step.node_id}** — ${relation}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${step.note ? `\n   ${step.note}` : ""}`;
   }).join("\n");
 
-  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${steps.length} symbols.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${explorerReference(url)}`;
+  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${steps.length} symbols.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(flow.limitations)}${explorerReference(url)}`;
 }
 
 export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?: string) {
@@ -54,7 +59,7 @@ export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?
     return `${index + 1}. **${node?.label || hop.node_id}** — ${hop.edge_label || "calls"}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${hop.caption ? `\n   ${hop.caption}` : ""}`;
   }).join("\n");
 
-  return `# ${entry.label}\n\n${entry.description || `A request flow through ${entry.hops.length} symbols.`}\n\n${repositoryHeader(app)}\n\n## Request flow\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedHop?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${explorerReference(url)}`;
+  return `# ${entry.label}\n\n${entry.description || `A request flow through ${entry.hops.length} symbols.`}\n\n${repositoryHeader(app)}\n\n## Request flow\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedHop?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(entry.limitations)}${explorerReference(url)}`;
 }
 
 export function explainNode(app: App, node: Node, url?: string) {
