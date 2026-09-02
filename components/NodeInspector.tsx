@@ -70,7 +70,10 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     node.endLine && node.endLine !== node.line
       ? `lines ${node.line}–${node.endLine}`
       : `line ${node.line || "—"}`;
-  const snippet = node.snippet || node.label || "";
+  const sourceSnippet = node.snippet || "";
+  const snippetLines = sourceSnippet
+    ? sourceSnippet.split(/\r?\n/)
+    : ["Source unavailable in this bundle."];
   const flows =
     app?.flows.filter((flow) =>
       flow.steps.some((step) => step.node_id === node.id),
@@ -123,9 +126,9 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     }
   }
   async function copySnippet() {
-    if (!snippet) return;
+    if (!sourceSnippet) return;
     try {
-      await copyText(snippet);
+      await copyText(sourceSnippet);
       setSnippetCopyError(false);
       setSnippetCopied(true);
       trackEvent("source_snippet_copied");
@@ -197,15 +200,22 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
           </button>
           <span className="sr-only" aria-live="polite">{copied ? "Source location copied." : copyError ? "Source location could not be copied." : ""}</span>
         </div>
-        <pre className="source-code">
-          <code>{snippet || "Source unavailable in this bundle."}</code>
+        <pre className="source-code source-context" aria-label={sourceSnippet ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>
+          <code>
+            {snippetLines.map((line, index) => (
+              <span className={`source-line${sourceSnippet && index === 0 ? " selected" : ""}`} key={`${node.id}-${index}`}>
+                <span className="source-line-number">{sourceSnippet ? (node.line || 1) + index : "—"}</span>
+                <span className="source-line-code">{line || " "}</span>
+              </span>
+            ))}
+          </code>
         </pre>
-        {!snippet && (
+        {!sourceSnippet && (
           <p className="source-unavailable-note">
             This bundle includes graph evidence for the node, but not its source text. Any available location, graph ID, and connected paths remain available below.
           </p>
         )}
-        <button className="source-copy" type="button" onClick={copySnippet} disabled={!snippet} title={!snippet ? "No source snippet is available in this bundle" : undefined}>
+        <button className="source-copy" type="button" onClick={copySnippet} disabled={!sourceSnippet} title={!sourceSnippet ? "No source snippet is available in this bundle" : undefined}>
           <Icon name="code" size={12} />
           {snippetCopied ? "Snippet copied" : snippetCopyError ? "Retry copy" : "Copy snippet"}
         </button>
