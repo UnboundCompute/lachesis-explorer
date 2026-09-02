@@ -318,3 +318,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 /* Keep dense graph canvases bounded so source context and navigation stay reachable. */
 .topology-canvas,.convergence-viewport{max-height:min(620px,70dvh);overscroll-behavior:contain}
 @media(max-width:760px){.topology-canvas,.convergence-viewport{max-height:min(440px,55dvh)}}
+/* Keep supporting metadata readable without competing with titles or source. */
+.briefing-guide small,.finding-state,.priority-title p,.witness-route small,.judgment-row small,.priority-limitation,.queue-copy small,.queue-foot,.reading-grid small,.bundle-provenance,.node-documentation p,.relationship-item>span,.relationship-signals em,.relationship-caveat,.relationship-boundary,.topology-node-list small,.module-file>span,.module-file>button small,.trace-orientation span,.trace-orientation small,.entry-search-status,.convergence-search-status,.architecture-filter-note,.architecture-filter-empty,.selector-empty,.filter-hints button,.query-chips button,.queue-filters button{font-size:8px}
