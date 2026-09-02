@@ -265,18 +265,18 @@ export function OverviewView({
       ? { label: "derived", query: "edge:derived" }
       : null,
     app.edges.some((edge) => edge.origins.includes("value-flow"))
-      ? { label: "value-derived", query: "origin:value-flow" }
+      ? { label: "Value paths", query: "origin:value-flow" }
       : null,
     app.edges.some((edge) => edge.origins.includes("request-path"))
-      ? { label: "request-derived", query: "origin:request-path" }
+      ? { label: "Request paths", query: "origin:request-path" }
       : null,
     app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
     ...[...new Set(app.nodes.map((node) => node.module || node.scope?.module).filter(Boolean))]
       .slice(0, 2)
-      .map((module) => ({ label: `module:${module}`, query: `module:${module}` })),
+      .map((module) => ({ label: `Module · ${module}`, query: `module:${module}` })),
     ...[...new Set(app.nodes.map((node) => node.scope?.service).filter(Boolean))]
       .slice(0, 2)
-      .map((service) => ({ label: `service:${service}`, query: `service:${service}` })),
+      .map((service) => ({ label: `Service · ${service}`, query: `service:${service}` })),
   ].filter(Boolean) as { label: string; query: string }[];
   useEffect(() => {
     if (
