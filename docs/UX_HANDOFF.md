@@ -1,0 +1,100 @@
+# Lachesis Explorer UX handoff
+
+## Goal
+
+Make Lachesis Explorer the fastest way for a developer to understand an unfamiliar, complex codebase. The explorer should be more useful than reading source files directly by keeping a guided path, graph relationships, exact source context, and shareable explanation together.
+
+Lachesis remains security-oriented at the product level. Explorer is the code-understanding layer over the graph it produces; it is not meant to become a second security dashboard.
+
+## UX direction
+
+- Start with a developer question, not a graph dump.
+- Guide the user through one behavior, request flow, or boundary at a time.
+- Keep source, file/line location, relationship, and path position visible together.
+- Make graph uncertainty, missing source, and projection limits explicit.
+- Let users move between path, node, file, module, and connected context without losing their place.
+- Make explanations portable through Markdown and deep links.
+- Prefer simple, readable flows over adding advanced graph features without a comprehension benefit.
+
+## Current experience
+
+- **Understand:** first-run orientation, recommended starting path, question-based entry points, bundle coverage, source search, and partial-bundle empty states.
+- **Trace:** step-by-step graph paths with Previous/Next controls, direction switching, path canvas, source inspector, relationship captions, and path limitations.
+- **Request flow:** starting-point-to-effect reading flow with the same source context and navigation model.
+- **Explore:** topology, minimap, focused neighborhoods, module grouping, data-quality view, semantic search, and graph limits for dense bundles.
+- **What reaches here:** convergence/boundary view, evidence matrix, overlap context, and source-aware path filtering.
+- **Compare:** revision/path comparison with source coverage and portable path sequences.
+- **Jump:** keyboard-first search across views, paths, entries, nodes, files, modules, documentation, and source text.
+- **Source inspector:** source window/snippet, line and column, copy location, copy source/context, nearby symbols, parent/child context, connected paths, repository links, and honest missing-source states.
+- **History:** local investigation trail, notes, replay, and Markdown export with bundle context and limitations.
+
+## Bundle and sharing expectations
+
+The UI supports the graph bundle contract in `docs/GRAPH_EXPLORER_CONTRACT.md` and the schema in `docs/GRAPH_EXPLORER_BUNDLE.schema.json`.
+
+Important behavior:
+
+- A bundle can be a focused projection of a much larger indexed repository.
+- The UI must distinguish included nodes from indexed nodes.
+- Source is optional; missing source must not be presented as a broken repository link.
+- Relationship origins and uncertainty must remain visible.
+- Local deep links require the recipient to load the same local bundle.
+- Markdown exports include the selected context and known limitations so shared explanations do not overstate certainty.
+
+## Recent UX work
+
+The latest commits are small, focused slices. The most recent changes:
+
+- `b08c3f6` — clarify paths across analysis lenses
+- `5f6a67c` — clarify connected path context
+- `39d08a3` — preserve request identity in Journey
+- `40391a8` — disambiguate request-flow entries
+- `482f005` — replay exact request flows from history
+- `8b7fa23` — replay exact paths from history
+- `d0d90f3` — preserve path identity after navigation
+- `69f260b` — align the recommended path label
+- `8d05845` — summarize loaded bundle scope
+- `9cda095` — reduce repeated path metadata
+- `cc7f76a` / `693ef1f` — disambiguate Jump and Trace path results
+
+Also completed earlier in the project: README/OSS setup, resource links, privacy-preserving analytics/events, v2 bundle metadata and source URL templates, source-aware search, responsive/accessibility work, graph progressive disclosure, Markdown/deep-link sharing, and contract validation.
+
+## Validation status
+
+The following checks pass on the current branch:
+
+```bash
+corepack pnpm run check
+git diff --check
+node /Users/riyandhiman/.codex/skills/impeccable/scripts/detect.mjs --json app components lib
+```
+
+`pnpm run check` includes TypeScript, bundle verification, and production build. The UX detector currently reports no findings.
+
+## Real bundle used for review
+
+`libxml2-bundle.json` is an available local legacy/flow projection for manual testing. It contains approximately 26 included graph nodes, 16 paths, 10 relationships, and reports about 193,057 indexed nodes. It is intentionally untracked and should not be staged unless explicitly requested.
+
+## Browser validation blocker
+
+The app starts successfully with:
+
+```bash
+corepack pnpm dev
+```
+
+However, the Codex in-app browser runtime currently reports no available browsers (`[]`). Local Playwright was installed in the workspace, but that does not automatically provision the Codex browser connector. Visual interaction testing is therefore still outstanding: upload the real bundle, test navigation/clicks, source inspection, sharing, responsive layout, and dense graph behavior.
+
+## Safe next session
+
+Start a new Codex session in the same workspace and use this goal:
+
+> Continue Lachesis Explorer UX work from `docs/UX_HANDOFF.md`. The goal is to help developers understand complex codebases faster than direct source reading. First check whether browser interaction is available, then run the app with `libxml2-bundle.json` and test Understand, Trace, Jump, source inspection, History, sharing, and mobile behavior. Do not add speculative features; fix only verified UX issues and commit each coherent change.
+
+## Working rules
+
+- Preserve the four unrelated/untracked user files: `AGENTS.md`, `CLAUDE.md`, `libxml2-bundle.json`, and `next-env.d.ts`.
+- The current workspace also has user changes to `package.json` and `pnpm-lock.yaml` from installing Playwright; inspect before modifying or committing them.
+- Use `apply_patch` for edits.
+- Keep commits focused and descriptive.
+- Do not claim visual QA without an actual browser run.
