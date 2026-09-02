@@ -400,7 +400,7 @@ export function TraceView({
     onFlow(previousFlow.id, nextNode);
     onPositionChange?.(0);
     onInspectorOpen();
-    onRecord("Returned to graph path", previousFlow.name, `${previousFlow.steps.length} symbols`);
+    onRecord("Returned to graph path", previousFlow.id, `${previousFlow.steps.length} symbols`);
     trackEvent("trace_path_reversed");
   }
   function openConnectedFlow(nextFlowId: string, nextNodeId: string) {
@@ -538,7 +538,7 @@ export function TraceView({
                   onInspectorOpen();
                   onRecord(
                     "Opened graph path",
-                    item.name,
+                    item.id,
                     `${item.steps.length} nodes`,
                   );
                   trackEvent("flow_selected");
@@ -669,7 +669,7 @@ export function TraceView({
                 aria-pressed={direction === "backward"}
                 onClick={() => {
                   setDirection("backward");
-                  onRecord("Changed path order", flow.name, "start to end");
+                  onRecord("Changed path order", flow.id, "start to end");
                   trackEvent("trace_direction_changed", {
                     direction: "backward",
                   });
@@ -683,7 +683,7 @@ export function TraceView({
                 aria-pressed={direction === "forward"}
                 onClick={() => {
                   setDirection("forward");
-                  onRecord("Changed path order", flow.name, "end to start");
+                  onRecord("Changed path order", flow.id, "end to start");
                   trackEvent("trace_direction_changed", {
                     direction: "forward",
                   });

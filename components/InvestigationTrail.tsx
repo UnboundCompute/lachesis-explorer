@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
-import type { App } from '../lib/lachesis'
+import { flowDisplayName, type App } from '../lib/lachesis'
 import { readLocal, writeLocal } from '../lib/storage'
 import { downloadText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
@@ -16,7 +16,7 @@ function targetLabel(app:App,target:string){
     return `${node.label||node.id} · ${scope||location}`
   }
   const flow=app.flows.find(item=>item.id===target||item.name===target)
-  if(flow)return flow.name
+  if(flow)return flowDisplayName(flow,app.nodes,app.flows)
   const entry=app.entries.find(item=>item.id===target||item.label===target)
   return entry?.label||target
 }
