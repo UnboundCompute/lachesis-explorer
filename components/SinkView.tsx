@@ -56,17 +56,41 @@ export function SinkView({
   const [selectedId, setSelectedId] = useState(
     sink?.id ?? app.nodes[0]?.id ?? "",
   );
+  const [sinkSearch, setSinkSearch] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const [pathsCopyState, setPathsCopyState] = useState<"idle" | "copied" | "failed">("idle");
   useEffect(() => {
     if (sink?.id) setSelectedId(sink.id);
+    setSinkSearch("");
     setShareState("idle");
     setPathsCopyState("idle");
   }, [app, sink?.id]);
   useEffect(() => {
     setMode("field");
   }, [app]);
+  const visibleSinks = useMemo(() => {
+    const term = sinkSearch.trim().toLowerCase();
+    if (!term) return sinks;
+    return sinks.filter((item) => {
+      const pathCount = app.flows.filter((flow) => flow.steps.some((step) => step.node_id === item.id)).length;
+      return [
+        item.label,
+        item.file,
+        item.module,
+        item.scope?.label,
+        item.scope?.service,
+        item.scope?.package,
+        item.scope?.module,
+        String(pathCount),
+      ].join(" ").toLowerCase().includes(term);
+    });
+  }, [app, sinkSearch, sinks]);
+  const sinkOptions = sink && visibleSinks.includes(sink)
+    ? visibleSinks
+    : sink
+      ? [sink, ...visibleSinks]
+      : visibleSinks;
   if (!sink)
     return (
       <section className="workspace-empty">
@@ -174,8 +198,21 @@ export function SinkView({
           <span className="panel-label">EXECUTION BOUNDARIES</span>
           <span>{sinks.length}</span>
         </div>
+        <label className="search sink-search">
+          <Icon name="search" size={14} />
+          <input
+            value={sinkSearch}
+            onChange={(event) => setSinkSearch(event.target.value)}
+            placeholder="Find a boundary…"
+            aria-label="Filter execution boundaries by name, file, module, service, or path count"
+          />
+          {sinkSearch && <button type="button" onClick={() => setSinkSearch("")} aria-label="Clear boundary filter">×</button>}
+        </label>
+        <div className="entry-search-status" aria-live="polite">
+          {sinkSearch ? `${visibleSinks.length} of ${sinks.length} boundaries match` : `${sinks.length} execution boundar${sinks.length === 1 ? "y" : "ies"}`}
+        </div>
         <div className="sink-list">
-          {sinks.map((item) => {
+          {sinkOptions.map((item) => {
             const count = app.flows.filter((flow) =>
               flow.steps.some((step) => step.node_id === item.id),
             ).length;

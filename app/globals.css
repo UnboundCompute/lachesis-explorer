@@ -4,7 +4,7 @@
 
 .node-row-context{color:var(--ink-2)!important}
 .topology-match{color:var(--cyan)!important}
-.entry-search{margin:10px 0 0}.entry-search input{font-size:10px}.entry-search>button{width:22px;height:22px;display:grid;place-items:center;border:0;background:transparent;color:var(--ink-3);font:15px/1 sans-serif}.entry-search-status{margin:6px 2px 0;color:var(--ink-3);font:7px var(--mono)}
+.entry-search,.sink-search{margin:10px 0 0}.entry-search input,.sink-search input{font-size:10px}.entry-search>button,.sink-search>button{width:22px;height:22px;display:grid;place-items:center;border:0;background:transparent;color:var(--ink-3);font:15px/1 sans-serif}.entry-search-status{margin:6px 2px 0;color:var(--ink-3);font:7px var(--mono)}
 .source-copy{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--canvas-raised);color:var(--ink-3);font:7px var(--mono)}
 .source-copy:hover:not(:disabled){border-color:var(--line-strong);color:var(--brand)}
 .source-copy:disabled{cursor:not-allowed;opacity:.5}
