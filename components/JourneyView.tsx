@@ -167,6 +167,20 @@ export function JourneyView({
     : entry
       ? [entry, ...visibleEntries]
       : visibleEntries;
+  const filterSuggestions = [
+    ...[...new Set(app.nodes.map((node) => node.kind).filter(Boolean))]
+      .slice(0, 2)
+      .map((kind) => ({ label: kind, query: `kind:${kind}` })),
+    ...[...new Set(app.nodes.map((node) => node.scope?.service).filter(Boolean))]
+      .slice(0, 2)
+      .map((service) => ({ label: service!, query: `service:${service}` })),
+    app.entries.some((item) => item.hops.some((hop) => hasSource(nodeById.get(hop.node_id))))
+      ? { label: "Has source", query: "has:source" }
+      : null,
+    app.entries.some((item) => item.hops.some((hop) => !hasSource(nodeById.get(hop.node_id))))
+      ? { label: "Source gaps", query: "has:source-gap" }
+      : null,
+  ].filter((suggestion): suggestion is { label: string; query: string } => Boolean(suggestion));
   useEffect(() => {
     setEntrySearch("");
     setPreviousEntryIndex(null);
@@ -332,10 +346,23 @@ export function JourneyView({
         <div className="entry-search-status" aria-live="polite">
           {entrySearch ? `${visibleEntries.length} of ${app.entries.length} request flows match` : `${app.entries.length} request flow${app.entries.length === 1 ? "" : "s"}`}
         </div>
-        {(app.entries.some((item) => item.hops.some((hop) => hasSource(nodeById.get(hop.node_id)))) || app.entries.some((item) => item.hops.some((hop) => !hasSource(nodeById.get(hop.node_id))))) && (
+        {filterSuggestions.length > 0 && (
           <div className="filter-hints" role="group" aria-label="Quick request flow filters">
-            {app.entries.some((item) => item.hops.some((hop) => hasSource(nodeById.get(hop.node_id)))) && <button type="button" onClick={() => setEntrySearch("has:source")}>Has source</button>}
-            {app.entries.some((item) => item.hops.some((hop) => !hasSource(nodeById.get(hop.node_id)))) && <button type="button" onClick={() => setEntrySearch("has:source-gap")}>Source gaps</button>}
+            {filterSuggestions.map((suggestion) => (
+              <button
+                type="button"
+                key={suggestion.query}
+                onClick={() => {
+                  setEntrySearch(suggestion.query);
+                  trackEvent("semantic_filter_applied", {
+                    surface: "journey",
+                    filter: suggestion.query.split(":", 1)[0] || "text",
+                  });
+                }}
+              >
+                {suggestion.label}
+              </button>
+            ))}
             {entrySearch && <button type="button" className="query-clear" onClick={() => setEntrySearch("")}>Clear</button>}
           </div>
         )}
