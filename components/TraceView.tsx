@@ -293,6 +293,10 @@ export function TraceView({
   const indirectSteps = flow.steps.filter(
     (step) => step.edge?.alias || step.edge?.dynamic,
   ).length;
+  const sourcePreviewCount = flow.steps.filter((step) => {
+    const node = nodeById.get(step.node_id);
+    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+  }).length;
   const items: PathItem[] = steps.map((step) => ({
     id: step.node_id,
     occurrenceId: step.id,
@@ -517,6 +521,7 @@ export function TraceView({
             <p className="path-meta">
               <span>{pathKindLabel(flow, securityPath)}</span>
               {flow.confidence && <span>{flow.confidence} confidence</span>}
+              <span>{sourcePreviewCount} / {flow.steps.length} source previews</span>
               {flow.limitations?.length ? <span>{flow.limitations.length} known limitation{flow.limitations.length === 1 ? "" : "s"}</span> : null}
               {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
             </p>
