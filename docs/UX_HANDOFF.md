@@ -84,6 +84,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `4484c45` — keep Trace’s three-step reading guide visible for first-time path reading
 - `5d64b55` — collapse secondary Explore filters on mobile while preserving active filter visibility
 - `7598a5f` — keep ordinary text searches compact while auto-expanding structured filters
+- `6c9fda7` — raise Explore graph-area and boundary rows to the mobile touch-target minimum
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
