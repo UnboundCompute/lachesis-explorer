@@ -115,6 +115,12 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       (edge) => edge.source === node.id || edge.target === node.id,
     ) ?? [];
   const parentNode = app?.nodes.find((item) => item.id === node.parentId);
+  const childNodes = app
+    ? app.nodes
+        .filter((item) => item.parentId === node.id)
+        .sort((a, b) => a.line - b.line || a.label.localeCompare(b.label))
+        .slice(0, 6)
+    : [];
   const nearbyNodes = useMemo(() => {
     if (!app || !onNode || !node.file) return [];
     const fileNodes = app.nodes
@@ -305,6 +311,28 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
           <button type="button" className="file-context-link" onClick={() => onNode(parentNode.id)}>
             Inside {parentNode.label || parentNode.id} <Icon name="arrow" size={11} />
           </button>
+        )}
+        {childNodes.length > 0 && onNode && (
+          <div className="inspector-neighborhood inspector-contained">
+            <span className="panel-label">CONTAINS</span>
+            <p>Open a nested symbol without losing this file context.</p>
+            <div className="inspector-neighborhood-list">
+              {childNodes.map((child) => (
+                <button
+                  type="button"
+                  key={child.id}
+                  onClick={() => onNode(child.id)}
+                  aria-label={`Inspect ${child.label || child.id} at line ${child.line || "unknown"}`}
+                >
+                  <span>
+                    <b>{child.label || child.id}</b>
+                    <small>{child.kind} · line {child.line || "—"}</small>
+                  </span>
+                  <Icon name="arrow" size={11} />
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         <pre className="source-code source-context" aria-label={sourceSnippet || node.sourceWindow ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>
           <code>
