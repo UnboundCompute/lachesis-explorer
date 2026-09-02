@@ -406,7 +406,10 @@ export function CommandPalette({
               </button>
             ))
           ) : (
-            <p>No matching command.</p>
+            <p>
+              No results for “{query}”. Try a symbol, file path, graph path,
+              or view name.
+            </p>
           )}
           {commands.length > visibleCommands.length && (
             <p className="command-more">
