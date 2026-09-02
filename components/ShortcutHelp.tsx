@@ -10,7 +10,7 @@ type Props = {
 const shortcuts = [
   ["⌘ K / Ctrl K", "Open the jump menu for views, paths, and symbols"],
   ["Home / End", "Jump to the first or last item in the current list or path"],
-  ["/", "Focus the current lens search, or open Jump from other views"],
+  ["/", "Focus the search field for the current lens"],
   ["[ / ]", "Move to the previous or next path step"],
   ["← / →", "Move between nodes when a graph node is focused; otherwise change trace direction"],
   ["↑ / ↓", "Move between rows in the topology view"],
