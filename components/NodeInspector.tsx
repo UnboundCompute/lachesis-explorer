@@ -312,7 +312,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             </a>
           )}
           {hasSourceLocation && !sourceUrl && (
-            <span className="source-link-note" title="Add bundle metadata.source_url_template to enable repository links">
+            <span className="source-link-note" title="Add bundle meta.source_url_template to enable repository links">
               Repository link not configured
             </span>
           )}
