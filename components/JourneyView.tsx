@@ -462,6 +462,19 @@ export function JourneyView({
           contextNote={items[selectedIndex]?.caption}
           contextOccurrence={items[selectedIndex]?.occurrenceId}
           app={app}
+          onNode={(nextNodeId) => {
+            const nextIndex = items.findIndex((item) => item.id === nextNodeId);
+            if (nextIndex >= 0) {
+              setSelectedPosition(nextIndex);
+              onPositionChange?.(nextIndex);
+              setHopId(nextNodeId);
+              onInspectorOpen();
+              onRecord("Inspected nearby symbol", nodeById.get(nextNodeId)?.label || nextNodeId, nodeLocation(nodeById.get(nextNodeId)));
+              trackEvent("journey_nearby_node_selected");
+              return;
+            }
+            onView("map", nextNodeId);
+          }}
           onFile={onFile}
           onFlow={onFlow}
           onEntry={openConnectedEntry}

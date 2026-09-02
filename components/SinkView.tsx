@@ -453,6 +453,7 @@ export function SinkView({
           node={selected}
           contextRole={selectedRole}
           app={app}
+          onNode={chooseNode}
           onFile={onFile}
           onFlow={onOpenFlow}
           onEntry={onEntry}
