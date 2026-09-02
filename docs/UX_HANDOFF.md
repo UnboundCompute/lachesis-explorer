@@ -198,6 +198,8 @@ The same 800px sweep found Boundary retaining a 560px desktop main-column minimu
 
 The current typography pass found Explore’s visible codebase-area rows rendering repository/module scope and in/out counts at 7px. After the focused metadata adjustment, those rows use 9px text with 11.7px line height; the full row remains single-line and overflow-free at 320px, 390px, 800px, and 1440px.
 
+The reduced-motion audit found the global preference rule compressing every animation and transition to `.01ms`, which can erase state-change feedback. After the accessibility fix, reduced-motion explicitly disables animation and transitions while preserving the resulting open/visible states; mobile lens menus and the active-bundle dialog were checked with `prefers-reduced-motion: reduce`, with no overflow or browser errors.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
