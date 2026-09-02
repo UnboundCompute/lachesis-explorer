@@ -173,6 +173,7 @@ export function TraceView({
   const nodeById = useMemo(() => new Map(app.nodes.map((node) => [node.id, node])), [app.nodes]);
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
   const [searchText, setSearchText] = useState("");
+  const [previousFlowId, setPreviousFlowId] = useState("");
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedFlowRef = useRef<HTMLButtonElement>(null);
   const previousDirection = useRef(direction);
@@ -195,6 +196,7 @@ export function TraceView({
   }, [app, flowId, direction, position, selectedPosition, stepId]);
   useEffect(() => {
     setSearchText("");
+    setPreviousFlowId("");
   }, [app]);
   useEffect(() => {
     selectedFlowRef.current?.scrollIntoView({ block: "nearest" });
@@ -294,6 +296,26 @@ export function TraceView({
       ? selectedPosition
       : items.findIndex((item) => item.id === stepId),
   );
+  const previousFlow = app.flows.find((item) => item.id === previousFlowId);
+  function rememberFlow(nextFlowId: string) {
+    if (flow?.id && nextFlowId !== flow.id) setPreviousFlowId(flow.id);
+  }
+  function returnToPreviousFlow() {
+    if (!previousFlow) return;
+    const currentFlowId = flow?.id ?? "";
+    const orderedSteps = direction === "forward" ? [...previousFlow.steps].reverse() : previousFlow.steps;
+    const nextNode = orderedSteps[0]?.node_id ?? "";
+    setPreviousFlowId(currentFlowId);
+    onFlow(previousFlow.id, nextNode);
+    onPositionChange?.(0);
+    onInspectorOpen();
+    onRecord("Returned to graph path", previousFlow.name, `${previousFlow.steps.length} symbols`);
+    trackEvent("trace_path_reversed");
+  }
+  function openConnectedFlow(nextFlowId: string, nextNodeId: string) {
+    rememberFlow(nextFlowId);
+    onFlow(nextFlowId, nextNodeId);
+  }
   function moveStep(delta: number) {
     const next = items[selectedIndex + delta];
     if (!next) return;
@@ -384,6 +406,7 @@ export function TraceView({
                 }
                 onClick={() => {
                   const orderedSteps = direction === "forward" ? [...item.steps].reverse() : item.steps;
+                  rememberFlow(item.id);
                   setFlowId(item.id);
                   setStepId(orderedSteps[0]?.node_id ?? "");
                   onPositionChange?.(0);
@@ -454,6 +477,11 @@ export function TraceView({
             </p>
           </div>
           <div className="toolbar-actions">
+            {previousFlow && (
+              <button type="button" className="inspector-reopen selection-back" onClick={returnToPreviousFlow} title={`Return to ${previousFlow.name}`}>
+                ← Back to previous path
+              </button>
+            )}
             {!inspectorOpen && (
               <button className="inspector-reopen" type="button" onClick={onInspectorOpen} aria-expanded={inspectorOpen} aria-controls="source-inspector">
                 Show source
@@ -587,7 +615,7 @@ export function TraceView({
           contextNote={items[selectedIndex]?.caption}
           contextOccurrence={items[selectedIndex]?.occurrenceId}
           app={app}
-          onFlow={onFlow}
+          onFlow={openConnectedFlow}
           onEntry={onEntry}
           onClose={onInspectorClose}
         />
