@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { App, Node } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
+import { copyText } from "../lib/clipboard";
+import { explainNode } from "../lib/explanations";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
 
@@ -433,9 +435,20 @@ export function OverviewView({
   const labelIndex = (node: Node) =>
     String(Math.max(0, canvasIndexes.get(node.id) ?? 0) + 1).padStart(2, "0");
   async function shareNode() {
-    if (!selected || !onShare) return;
-    const copied = await onShare(selected.id);
-    setShareState(copied ? "copied" : "failed");
+    if (!selected) return;
+    try {
+      if (securityMode && onShare) {
+        const copied = await onShare(selected.id);
+        setShareState(copied ? "copied" : "failed");
+      } else {
+        await copyText(explainNode(app, selected, window.location.href));
+        setShareState("copied");
+        trackEvent("node_explanation_copied");
+      }
+    } catch {
+      setShareState("failed");
+      if (!securityMode) trackEvent("node_explanation_copy_failed");
+    }
     window.setTimeout(() => setShareState("idle"), 1800);
   }
 
@@ -453,15 +466,15 @@ export function OverviewView({
             </p>
           </div>
           <div className="overview-heading-actions">
-            {selected && onShare && (
+            {selected && (!securityMode || onShare) && (
               <button
                 type="button"
                 className="share-control"
                 onClick={shareNode}
-                aria-label="Copy link to selected graph node"
+                aria-label={securityMode ? "Copy link to selected graph node" : "Copy portable note for selected symbol"}
                 aria-live="polite"
               >
-                {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+                {shareState === "copied" ? (securityMode ? "Link copied" : "Note copied") : shareState === "failed" ? "Copy failed" : securityMode ? "Copy link" : "Copy note"}
               </button>
             )}
             {!inspectorOpen && visible.length > 0 && (

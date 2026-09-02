@@ -52,3 +52,22 @@ export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?
 
   return `# ${entry.label}\n\n${entry.description || `A request flow through ${entry.hops.length} symbols.`}\n\n${repositoryHeader(app)}\n\n## Request flow\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedHop?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(selectedNode?.snippet || "")}${explorerReference(url)}`;
 }
+
+export function explainNode(app: App, node: Node, url?: string) {
+  const flows = app.flows.filter((flow) => flow.steps.some((step) => step.node_id === node.id));
+  const entries = app.entries.filter((entry) => entry.hops.some((hop) => hop.node_id === node.id));
+  const relationships = app.edges
+    .filter((edge) => edge.source === node.id || edge.target === node.id)
+    .slice(0, 12)
+    .map((edge) => {
+      const outgoing = edge.source === node.id;
+      const peerId = outgoing ? edge.target : edge.source;
+      const peer = app.nodes.find((item) => item.id === peerId);
+      return `- ${outgoing ? "leads to" : "receives from"} **${peer?.label || peerId}** — ${edge.relation || "connected"} (\`${location(peer)}\`)`;
+    })
+    .join("\n");
+  const pathNames = flows.slice(0, 8).map((flow) => `- ${flow.name}`).join("\n");
+  const entryNames = entries.slice(0, 8).map((entry) => `- ${entry.label}`).join("\n");
+
+  return `# ${node.label || node.id}\n\n${node.documentation || `A ${node.kind} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${node.kind}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n## Source\n\n${codeBlock(node.snippet || "")}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${explorerReference(url)}`;
+}
