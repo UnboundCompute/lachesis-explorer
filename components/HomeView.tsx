@@ -421,7 +421,7 @@ export function HomeView({
             <div className="understand-path-list">
               {otherPaths.map((flow) => (
                 <button type="button" key={flow.id} onClick={() => onFlow(flow.id, flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
-                  <span><b>{flowDisplayName(flow, app.nodes, app.flows)}</b><small>{pathKindLabel(flow)} · {flow.steps.length} symbols · {pathLocation(flow, app)}</small></span>
+                  <span><b>{flowDisplayName(flow, app.nodes, app.flows)}</b><small>{pathKindLabel(flow)} · {flow.steps.length} symbols{flowDisplayName(flow, app.nodes, app.flows) === flow.name ? ` · ${pathLocation(flow, app)}` : ""}</small></span>
                   <Icon name="arrow" size={13} />
                 </button>
               ))}

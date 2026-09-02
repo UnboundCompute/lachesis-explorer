@@ -553,10 +553,7 @@ export function TraceView({
                       : app.mcp.some((evidence) => evidence.for === item.id)
                         ? `Bundle-backed ${pathKindLabel(item, false).toLowerCase()}`
                       : pathKindLabel(item, false)} {" · "}
-                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {sourceCoverage(item, nodeById).available}/{item.steps.length} source previews
-                  </small>
-                  <small className="node-row-context">
-                    {flowLocation(app, item, nodeById)}
+                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {sourceCoverage(item, nodeById).available}/{item.steps.length} source previews{flowDisplayName(item, app.nodes, app.flows) === item.name ? ` · ${flowLocation(app, item, nodeById)}` : ""}
                   </small>
                   {query && flowMatchLabel(app, item, query, nodeById) && <small className="node-row-context">{flowMatchLabel(app, item, query, nodeById)}</small>}
                   {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary && (
