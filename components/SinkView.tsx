@@ -24,6 +24,7 @@ type Props = {
   onEntry?: (entryIndex: number, nodeId: string) => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map", nodeId?: string) => void;
+  onFile?: (file: string) => void;
   onShare?: (sinkId: string) => Promise<boolean>;
 };
 
@@ -35,6 +36,7 @@ export function SinkView({
   onEntry,
   onRecord,
   onView,
+  onFile,
   onShare,
 }: Props) {
   const sinks = useMemo(
@@ -451,6 +453,7 @@ export function SinkView({
           node={selected}
           contextRole={selectedRole}
           app={app}
+          onFile={onFile}
           onFlow={onOpenFlow}
           onEntry={onEntry}
           onClose={() => setInspectorOpen(false)}

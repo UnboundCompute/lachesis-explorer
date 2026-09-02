@@ -43,6 +43,7 @@ type Props = {
   onView: (view: "trace" | "map", nodeId?: string) => void;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
+  onFile?: (file: string) => void;
   onShare?: (params: Record<string, string>) => Promise<boolean>;
 };
 export function JourneyView({
@@ -60,6 +61,7 @@ export function JourneyView({
   onView,
   onFlow,
   onEntry,
+  onFile,
   onShare,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
@@ -458,6 +460,7 @@ export function JourneyView({
           contextNote={items[selectedIndex]?.caption}
           contextOccurrence={items[selectedIndex]?.occurrenceId}
           app={app}
+          onFile={onFile}
           onFlow={onFlow}
           onEntry={openConnectedEntry}
           onClose={onInspectorClose}

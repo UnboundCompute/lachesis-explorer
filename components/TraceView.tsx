@@ -28,6 +28,7 @@ type Props = {
   onView: (view: "journey" | "map", nodeId?: string) => void;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
+  onFile?: (file: string) => void;
   onShare?: (params: Record<string, string>) => Promise<boolean>;
 };
 type NodeIndex = ReadonlyMap<string, App["nodes"][number]>;
@@ -169,6 +170,7 @@ export function TraceView({
   onView,
   onFlow,
   onEntry,
+  onFile,
   onShare,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
@@ -650,6 +652,7 @@ export function TraceView({
           contextNote={items[selectedIndex]?.caption}
           contextOccurrence={items[selectedIndex]?.occurrenceId}
           app={app}
+          onFile={onFile}
           onFlow={openConnectedFlow}
           onEntry={onEntry}
           onClose={onInspectorClose}

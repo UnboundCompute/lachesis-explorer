@@ -605,6 +605,14 @@ export default function Page() {
     }
   }
 
+  function openSourceFile(file: string) {
+    setMapMode("map");
+    setMapQuery(`file:${file}`);
+    setMapNeighborhoodOnly(false);
+    changeView("map");
+    trackEvent("source_file_explored");
+  }
+
   function activate(next: App, demo = false) {
     const pending = pendingLink.current;
     const firstSink = recommendedSink(next)?.id ?? "";
@@ -1090,6 +1098,7 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
           }}
+          onFile={openSourceFile}
           onShare={(params) => copyInvestigationLink(params)}
         />
       )}
@@ -1124,6 +1133,7 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
           }}
+          onFile={openSourceFile}
           onShare={(params) => copyInvestigationLink(params)}
         />
       )}
@@ -1182,12 +1192,7 @@ export default function Page() {
           focusNodeId={focusNodeId}
           onFocusNode={setFocusNodeId}
           onRecord={record}
-          onFile={(file) => {
-            changeMapMode("map");
-            setMapQuery(`file:${file}`);
-            setMapNeighborhoodOnly(false);
-            trackEvent("source_file_explored");
-          }}
+          onFile={openSourceFile}
           onShare={(nodeId) =>
             copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery, map_mode: mapMode, map_order: mapOrder, map_focus: mapNeighborhoodOnly ? "neighborhood" : "" })
           }
