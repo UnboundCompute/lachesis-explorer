@@ -93,6 +93,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `c962f4f` — raise populated Compare summaries, copy actions, expansion controls, and search clear to mobile touch targets
 - `d5a6f9c` — raise Trace and investigation empty-state recovery actions to the mobile touch-target minimum
 - `e3879cc` — raise Explore empty, reset, and neighborhood recovery controls to the mobile touch-target minimum
+- `65b1c32` — keep dimmed focused-topology nodes and edges legible as surrounding context
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
