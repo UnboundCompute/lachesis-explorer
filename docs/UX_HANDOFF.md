@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `fa2be43` — give mobile recovery notices a dedicated message row so error copy cannot collapse into a narrow column
 - `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
 - `8c7db31` — keep long secondary lens names readable in the compact phone header
 - `5ba7118` — preserve the full active-lens label at 320–360px without widening the shell
@@ -185,6 +186,8 @@ The narrow popup pass then reproduced the active “Explore” label truncating 
 The follow-up lens matrix found that “Request flow” and “What reaches here” still truncated at 320px. After `8c7db31`, the phone header uses “Requests” and “Boundary” only at ≤360px, retains the full wording in the lens menu and accessible label, and keeps exactly one visible label with no overflow at 320px and 390px.
 
 The 320px recovery-state pass then reproduced the shared Trace/Compare error notice extending 4px past the viewport because all three actions stayed on one row. After `261085b`, the notice wraps cleanly: recovery actions remain 44px high, the dismiss control moves to its own row, and both Trace and Compare are overflow-free at 320px and 390px.
+
+The settled 390px render then revealed a second recovery issue: before `fa2be43`, the message span collapsed to about 38px and wrapped nearly one character per line while competing with the three actions. After `fa2be43`, mobile notices use a full-width message row and a separate action row; Trace, Request Flow, Boundary, Explore, and Compare now keep readable error copy, 44px actions, and zero overflow at 320px, 390px, and 760px.
 
 ## Safe next session
 
