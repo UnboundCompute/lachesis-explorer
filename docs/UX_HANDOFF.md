@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `650145f` — improve graph handoff, neighborhood, and filter action hit areas
 - `a958678` — standardize Setup, status, Jump, and keyboard-help action icons
 - `ea35d3d` — enlarge source-context action hit areas for mobile inspection
 - `5992b82` — raise compact search-clear and keyboard-help targets to a usable minimum
