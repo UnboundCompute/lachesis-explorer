@@ -22,6 +22,7 @@ type Props = {
   points?: Array<LayoutPoint | undefined>
   layoutSource: 'precomputed' | 'derived'
   title?: string
+  direction?: 'backward' | 'forward'
 }
 
 const shorten = (value: string, limit = 18) =>
@@ -56,6 +57,7 @@ export function PathCanvas({
   points,
   layoutSource,
   title = 'Evidence path',
+  direction = 'backward',
 }: Props) {
   const securityPath = title === 'Witness path'
   const itemUnit =
@@ -143,7 +145,7 @@ export function PathCanvas({
       <div className="canvas-bar">
         <div>
           <span className="canvas-title">{title}</span>
-          <span className="canvas-direction">Read left → right</span>
+          <span className="canvas-direction">Read {direction === 'forward' ? 'right → left' : 'left → right'}</span>
           <span className="canvas-count">
             {selectedItem ? `step ${selectedIndex + 1} / ${items.length} · ` : ''}
             {focused ? `${start + 1}–${end} of ` : ''}
@@ -234,7 +236,7 @@ export function PathCanvas({
         </div>
       )}
 
-      <div className="canvas-viewport" role="region" aria-label={`${title} graph canvas`}>
+      <div className="canvas-viewport" role="region" aria-label={`${title}, read ${direction === 'forward' ? 'end to start' : 'start to end'}`}>
         <svg
           viewBox={viewBox}
           style={{ width: `${zoom * 100}%`, minWidth: `${Math.max(420, 620 * zoom)}px`, height: `${270 * zoom}px` }}

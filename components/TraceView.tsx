@@ -669,6 +669,7 @@ export function TraceView({
         <PathCanvas
           items={items}
           title={securityPath ? "Witness path" : "Code path"}
+          direction={direction}
           selectedId={stepId}
           selectedIndex={selectedIndex}
           onSelect={(id, index) => {
