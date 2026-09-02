@@ -97,12 +97,33 @@ function verify(file, bundle) {
   if (schemaVersion === "2.0") {
     graph.nodes.forEach((node, index) => {
       const label = `graph.nodes[${index}]`;
-      requireFields(file, node, ["id", "kind", "file", "line", "label", "snippet"], label);
-      requireNonEmptyStrings(file, node, ["id", "kind", "file", "label", "snippet"], label);
+      requireFields(file, node, ["id", "kind", "file", "line", "label"], label);
+      requireNonEmptyStrings(file, node, ["id", "kind", "file", "label"], label);
+      const hasSnippet = typeof node.snippet === "string" && node.snippet.trim() !== "";
+      const sourceWindow = node.source_window;
+      const hasSourceWindow = sourceWindow && typeof sourceWindow === "object" && !Array.isArray(sourceWindow) && Array.isArray(sourceWindow.lines) && sourceWindow.lines.length > 0;
+      if (!hasSnippet && !hasSourceWindow) fail(file, `${label} must include a non-empty snippet or source_window.lines`);
+      if (sourceWindow != null) {
+        if (!hasSourceWindow) fail(file, `${label}.source_window must contain a non-empty lines array`);
+        if (typeof sourceWindow.start_line !== "number" || !Number.isInteger(sourceWindow.start_line) || sourceWindow.start_line < 1)
+          fail(file, `${label}.source_window.start_line must be a positive integer`);
+        for (const field of ["highlight_start", "highlight_end"]) {
+          if (sourceWindow[field] != null && (typeof sourceWindow[field] !== "number" || !Number.isInteger(sourceWindow[field]) || sourceWindow[field] < 1))
+            fail(file, `${label}.source_window.${field} must be a positive integer when supplied`);
+        }
+      }
       requireNonNegativeIntegers(file, node, ["line"], label);
       requireOptionalNonNegativeIntegers(file, node, ["column", "end_line", "end_column"], label);
       validateScope(file, node.scope, `${label}.scope`);
     });
+    for (const [index, node] of graph.nodes.entries()) {
+      if (node.parent_id != null) {
+        const parentId = String(node.parent_id);
+        if (!parentId) fail(file, `graph.nodes[${index}].parent_id must not be empty`);
+        if (parentId === String(node.id)) fail(file, `graph.nodes[${index}] cannot be its own parent`);
+        if (!ids.has(parentId)) fail(file, `graph.nodes[${index}] references a missing parent node`);
+      }
+    }
     const coverage = graph.coverage;
     if (coverage?.included_nodes != null || coverage?.indexed_nodes != null)
       requireNonNegativeIntegers(file, coverage, ["included_nodes", "indexed_nodes"].filter((field) => coverage[field] != null), "graph.coverage");
