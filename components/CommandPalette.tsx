@@ -15,6 +15,13 @@ type Props = {
   onNode: (nodeId: string) => void;
   opener?: HTMLElement | null;
 };
+type Command = {
+  id: string;
+  label: string;
+  meta: string;
+  keywords?: string;
+  run: () => void;
+};
 
 function flowLocation(app: App, flow: App["flows"][number]) {
   const nodes = flow.steps
@@ -72,7 +79,7 @@ export function CommandPalette({
   useEffect(() => {
     return () => openerRef.current?.focus();
   }, []);
-  const commands = useMemo(
+  const commands = useMemo<Command[]>(
     () =>
       [
         {
@@ -121,18 +128,27 @@ export function CommandPalette({
           id: `flow-${flow.id}`,
           label: flow.name,
           meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
+          keywords: flow.steps.flatMap((step) => {
+            const node = app.nodes.find((item) => item.id === step.node_id);
+            return node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module] : [];
+          }).join(" "),
           run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
         })),
         ...app.entries.map((entry, index) => ({
           id: `entry-${entry.id}`,
           label: entry.label,
           meta: `Request flow · ${entry.hops.length} steps`,
+          keywords: entry.hops.flatMap((hop) => {
+            const node = app.nodes.find((item) => item.id === hop.node_id);
+            return [hop.edge_label, hop.caption, node?.label, node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.file, node?.module];
+          }).filter(Boolean).join(" "),
           run: () => onEntry(index, entry.hops[0]?.node_id ?? ""),
         })),
         ...app.nodes.map((node) => ({
           id: `node-${node.id}`,
           label: node.label || node.id,
           meta: `Symbol · ${node.kind} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
+          keywords: [node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module, node.scope?.module].filter(Boolean).join(" "),
           run: () => onNode(node.id),
         })),
         ...app.files.flatMap((file) => {
@@ -185,7 +201,7 @@ export function CommandPalette({
       ].filter(
         (command) =>
           !normalized ||
-          `${command.label} ${command.meta}`.toLowerCase().includes(normalized),
+          `${command.label} ${command.meta} ${(command as Command).keywords ?? ""}`.toLowerCase().includes(normalized),
       ),
     [app, normalized, onView, onFlow, onEntry, onSink, onNode],
   );
@@ -264,8 +280,8 @@ export function CommandPalette({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Find a path, symbol, file, or view…"
-            aria-label="Search views, paths, symbols, and files"
+            placeholder="Find a path, symbol, file, code, or view…"
+            aria-label="Search views, paths, symbols, files, documentation, and source code"
             aria-controls="command-results"
             role="combobox"
             aria-expanded="true"
