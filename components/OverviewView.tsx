@@ -22,6 +22,7 @@ type Props = {
   setQuery: (value: string) => void;
   focusNodeId?: string;
   onFocusNode?: (nodeId: string) => void;
+  onFile?: (file: string) => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onFlow?: (flowId: string, nodeId: string) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
@@ -157,6 +158,7 @@ export function OverviewView({
   setQuery,
   focusNodeId,
   onFocusNode,
+  onFile,
   onRecord,
   onFlow,
   onEntry,
@@ -1158,6 +1160,7 @@ export function OverviewView({
           contextRole={rolesForNode(selected.id).join(" / ") || undefined}
           app={app}
           onNode={selectNode}
+          onFile={onFile}
           onFlow={onFlow}
           onEntry={onEntry}
           onClose={() => setInspectorOpen(false)}

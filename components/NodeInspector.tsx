@@ -67,11 +67,12 @@ type Props = {
   onClose: () => void;
   app?: App;
   onNode?: (nodeId: string) => void;
+  onFile?: (file: string) => void;
   onFlow?: (flowId: string, nodeId: string) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
 };
 
-export function NodeInspector({ node, contextRole, contextNote, contextOccurrence, onClose, app, onNode, onFlow, onEntry }: Props) {
+export function NodeInspector({ node, contextRole, contextNote, contextOccurrence, onClose, app, onNode, onFile, onFlow, onEntry }: Props) {
   const inspectorRef = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
@@ -287,6 +288,11 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
           )}
           <span className="sr-only" aria-live="polite">{copied ? `${hasSourceLocation ? "Source location" : "Graph ID"} copied.` : copyError ? `${hasSourceLocation ? "Source location" : "Graph ID"} could not be copied.` : ""}</span>
         </div>
+        {hasSourceLocation && onFile && (
+          <button type="button" className="file-context-link" onClick={() => onFile(node.file)}>
+            View all symbols in this file <Icon name="arrow" size={11} />
+          </button>
+        )}
         <pre className="source-code source-context" aria-label={sourceSnippet ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>
           <code>
             {snippetLines.map((line, index) => (

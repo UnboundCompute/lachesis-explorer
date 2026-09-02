@@ -1180,6 +1180,12 @@ export default function Page() {
           focusNodeId={focusNodeId}
           onFocusNode={setFocusNodeId}
           onRecord={record}
+          onFile={(file) => {
+            changeMapMode("map");
+            setMapQuery(`file:${file}`);
+            setMapNeighborhoodOnly(false);
+            trackEvent("source_file_explored");
+          }}
           onShare={(nodeId) =>
             copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery, map_mode: mapMode, map_order: mapOrder, map_focus: mapNeighborhoodOnly ? "neighborhood" : "" })
           }
