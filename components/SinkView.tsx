@@ -15,6 +15,7 @@ function nodeLocation(node: App["nodes"][number]) {
 function nodeContext(node: App["nodes"][number]) {
   return node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped";
 }
+const hasSource = (node: App["nodes"][number] | undefined) => Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
 
 type Props = {
   app: App;
@@ -143,9 +144,15 @@ export function SinkView({
           flow.kind,
           flow.description,
           ...flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation]),
-          ...nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.file, node.module] : []),
+          ...nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module] : []),
         ].filter(Boolean).join(" ").toLowerCase();
-        return pathSearch.trim().toLowerCase().split(/\s+/).every((term) => searchable.includes(term));
+        return pathSearch.trim().toLowerCase().split(/\s+/).every((term) => {
+          const [key, ...rest] = term.split(":");
+          const value = rest.join(":");
+          if (key === "has" && (value === "source" || value === "source-preview")) return nodes.some(hasSource);
+          if (key === "has" && (value === "source-gap" || value === "missing-source")) return nodes.some((node) => !hasSource(node));
+          return searchable.includes(term);
+        });
       })
     : allFlows;
   const flowNodes = new Set(
@@ -385,6 +392,13 @@ export function SinkView({
           {pathSearch && <button type="button" onClick={() => setPathSearch("")} aria-label="Clear reaching path filter">×</button>}
         </label>
         {pathSearch && <p className="convergence-search-status" role="status">{flows.length} of {allFlows.length} reaching {pathNounPlural} match</p>}
+        {(allFlows.some((flow) => flow.steps.some((step) => hasSource(nodeById.get(step.node_id)))) || allFlows.some((flow) => flow.steps.some((step) => !hasSource(nodeById.get(step.node_id))))) && (
+          <div className="filter-hints convergence-filter-hints" role="group" aria-label="Quick reaching path filters">
+            {allFlows.some((flow) => flow.steps.some((step) => hasSource(nodeById.get(step.node_id)))) && <button type="button" onClick={() => setPathSearch("has:source")}>Has source</button>}
+            {allFlows.some((flow) => flow.steps.some((step) => !hasSource(nodeById.get(step.node_id)))) && <button type="button" onClick={() => setPathSearch("has:source-gap")}>Source gaps</button>}
+            {pathSearch && <button type="button" className="query-clear" onClick={() => setPathSearch("")}>Clear</button>}
+          </div>
+        )}
         {!flows.length ? (
           <div className="convergence-empty" role="status">
             <span className="empty-target"><Icon name="target" size={18} /></span>
