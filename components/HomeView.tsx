@@ -17,6 +17,7 @@ type Props = {
   onLoadSample: () => void;
   onLoadSecuritySample: () => void;
   onView: (view: "map" | "investigate" | "trace" | "journey") => void;
+  onSearch?: (query: string) => void;
   onDismiss: () => void;
   direction: "backward" | "forward";
   onFlow: (flowId: string, nodeId: string) => void;
@@ -141,6 +142,7 @@ export function HomeView({
   onLoadSample,
   onLoadSecuritySample,
   onView,
+  onSearch,
   onDismiss,
   direction,
   onFlow,
@@ -150,10 +152,12 @@ export function HomeView({
   const [selectedId, setSelectedId] = useState(app.findings[0]?.id ?? "");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
   const [queueSearch, setQueueSearch] = useState("");
+  const [sourceSearch, setSourceSearch] = useState("");
   useEffect(() => {
     setSelectedId(app.findings[0]?.id ?? "");
     setQueueFilter("all");
     setQueueSearch("");
+    setSourceSearch("");
   }, [app]);
   const findings = useMemo(
     () =>
@@ -301,6 +305,26 @@ export function HomeView({
                 {loadState.type === "loading" ? "Reading bundle…" : "Load another bundle"}
               </button>
             </div>
+            {onSearch && (
+              <form
+                className="understand-search"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const query = sourceSearch.trim();
+                  if (!query) return;
+                  onSearch(query);
+                }}
+              >
+                <Icon name="search" size={15} />
+                <input
+                  value={sourceSearch}
+                  onChange={(event) => setSourceSearch(event.target.value)}
+                  placeholder="Find a symbol, file, or source text…"
+                  aria-label="Find a symbol, file, or source text in this codebase"
+                />
+                <button type="submit" disabled={!sourceSearch.trim()}>Find</button>
+              </form>
+            )}
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
             <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} ready to follow</dd></div>

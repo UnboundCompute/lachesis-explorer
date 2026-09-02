@@ -1095,6 +1095,13 @@ export default function Page() {
           onLoadSample={loadCodeSample}
           onLoadSecuritySample={loadSecuritySample}
           onView={(next) => changeView(next)}
+          onSearch={(nextQuery) => {
+            setMapQuery(nextQuery);
+            setMapMode("map");
+            setMapNeighborhoodOnly(false);
+            changeView("map");
+            trackEvent("home_source_search_submitted");
+          }}
           onDismiss={() => {
             setLoadState({ type: "idle", message: "" });
             workspaceRef.current?.focus();
