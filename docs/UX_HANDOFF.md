@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `e072e07` — keep Trace navigation anchored to the heading instead of the deep inspector
 - `29ba52c` — remove duplicate load-status messaging that obscured mobile intros
 - `97d0d31` — preserve the requested view during initial deep-link restoration
 - `9ba705c` — clarify the request-flow question and expose graph filter syntax
