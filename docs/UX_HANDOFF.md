@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `85e4f88` — keep mobile History in document flow so it cannot cover evidence rows
 - `6f46872` — clarify that the contextual upload action replaces the active bundle
 - `b9429cc` — remove the redundant Understand landing-page eyebrow after a rendered mobile/desktop audit
 - `73c1690` — make Explore `calls:` and `reaches:` questions traverse the full bundled relationship chain
@@ -161,6 +162,8 @@ The populated Compare workspace was also visually checked at 390px with the real
 The latest Understand landing pass removed the redundant “CODE UNDERSTANDING WORKSPACE” eyebrow. At 390px and 1440px the heading now leads directly into the bundle-specific explanation, with no overflow and no detector findings. The invalid-upload pass also confirmed that the second `role="alert"` in the DOM is Next.js’s visually hidden route announcer, not a duplicate Explorer notice.
 
 The comparison follow-up found the shared contextual upload action still labeled “Load bundle.json” after a bundle was active, while Compare correctly used “Load another.” After `6f46872`, non-home lenses consistently say “Load another bundle”; empty and populated Compare states remain unambiguous and overflow-free at 390px.
+
+The next mobile pass reproduced the fixed History control covering Trace evidence rows at 390px. After `85e4f88`, History is a labeled, 44px control in normal document flow on narrow screens; a cross-lens sweep across Understand, Trace, Request Flow, Boundary, Explore, and Compare found no History/evidence overlap and no horizontal overflow.
 
 ## Safe next session
 
