@@ -396,3 +396,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:760px){.neighborhood-toggle,.topology-empty button,.map-summary p .query-clear{min-height:44px;padding-block:10px}.topology-empty button,.map-summary p .query-clear{display:inline-flex;align-items:center}}
 .topology-edge.dimmed{opacity:.24}.topology-node.dimmed{opacity:.34}
 @media(max-width:760px){.briefing-notice>button{min-width:44px;min-height:44px}.briefing-notice .notice-action{min-height:44px}.context-row{min-height:44px}}
+@media(max-width:760px){.trail-drawer header button{width:44px;height:44px;min-width:44px;min-height:44px}.casefile-notes button{min-height:44px}.trail-actions button{min-height:44px}}
