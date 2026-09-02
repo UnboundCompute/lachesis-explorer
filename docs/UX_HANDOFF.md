@@ -226,6 +226,8 @@ The semantic-question pass found `calls:` and `reaches:` filters removing the se
 
 The selection-history pass found Explore’s “Back to previous node” restoring the node and URL but leaving keyboard focus on the rerendered document. After the focus restoration hook, Back returns focus to the selected topology node while preserving the restored selection and viewport width at 390px.
 
+The follow-up question-state pass found Explore continuing to label an applied `calls:`/`reaches:` query as “Ask about …”, which made the filtered direction easy to miss. After the context-copy fix, the existing live region says “Showing paths into/from …” while retaining the subject and related results; the real bundle remains overflow-free at 390px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
