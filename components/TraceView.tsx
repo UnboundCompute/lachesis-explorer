@@ -472,6 +472,11 @@ export function TraceView({
               <code>{flow.name}</code>
             </h2>
             {flow.description && <p className="path-description">{flow.description}</p>}
+            <div className="path-route-summary" aria-label="Graph path endpoints">
+              <span><small>Starts at</small><b>{firstNode?.label || firstNode?.id || "Not reported"}</b></span>
+              <i aria-hidden="true">→</i>
+              <span><small>Ends at</small><b>{lastNode?.label || lastNode?.id || "Not reported"}</b></span>
+            </div>
             <p className="path-meta">
               <span>{pathKindLabel(flow, securityPath)}</span>
               {flow.confidence && <span>{flow.confidence} confidence</span>}
