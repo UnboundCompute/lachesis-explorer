@@ -196,7 +196,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
           <span className="line-number">{hasSourceLocation ? <>{range}{node.column ? ` · column ${node.column}` : ""}</> : <>Graph ID · {node.id}</>}</span>
           <button type="button" onClick={copyLocation} aria-label={hasSourceLocation ? "Copy source location" : "Copy graph ID"}>
             <Icon name="code" size={12} />
-            {copied ? "Copied" : copyError ? "Retry" : hasSourceLocation ? "Copy" : "Copy ID"}
+            {copied ? "Copied" : copyError ? "Retry" : hasSourceLocation ? "Copy location" : "Copy ID"}
           </button>
           <span className="sr-only" aria-live="polite">{copied ? "Source location copied." : copyError ? "Source location could not be copied." : ""}</span>
         </div>
