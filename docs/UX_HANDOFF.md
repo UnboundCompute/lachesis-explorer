@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `9ba705c` — clarify the request-flow question and expose graph filter syntax
 - `e9525c2` — add file/line context to connected-symbol concentration rows
 - `451a316` — preserve focused graph neighborhoods when opening Explore from Trace
 - `661a735` — make Explore open the module lens by default while preserving focused topology entry
@@ -81,7 +82,7 @@ node /Users/riyandhiman/.codex/skills/impeccable/scripts/detect.mjs --json app c
 
 `libxml2-bundle.json` is an available local legacy/flow projection for manual testing. It contains approximately 26 included graph nodes, 16 paths, 10 relationships, and reports about 193,057 indexed nodes. It is intentionally untracked and should not be staged unless explicitly requested.
 
-## Browser validation blocker
+## Browser validation
 
 The app starts successfully with:
 
@@ -89,7 +90,7 @@ The app starts successfully with:
 corepack pnpm dev
 ```
 
-However, the Codex in-app browser runtime currently reports no available browsers (`[]`). Local Playwright was installed in the workspace, but that does not automatically provision the Codex browser connector. Visual interaction testing is therefore still outstanding: upload the real bundle, test navigation/clicks, source inspection, sharing, responsive layout, and dense graph behavior.
+The Codex in-app browser runtime currently reports no available browsers (`[]`). Local Playwright is available and was used for bounded QA in this session: mobile lens navigation, focused graph opening from Trace, filter guidance, no horizontal overflow at 390px, and console/page-error checks. Use the local Playwright Chromium executable for future visual checks until the in-app connector becomes available.
 
 ## Safe next session
 
