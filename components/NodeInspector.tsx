@@ -29,6 +29,7 @@ const scopeDisplay = (node: Node) =>
 function sourceUrlFor(app: App | undefined, node: Node) {
   if (!app?.bundle.sourceUrlTemplate || !node.file) return undefined;
   const template = app.bundle.sourceUrlTemplate;
+  if (!template.includes("{file}")) return undefined;
   const url = template
     .replaceAll("{file}", node.file)
     .replaceAll("{line}", String(node.line || 1))
