@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `d1c5801` — defer routed workspace scroll correction so direct lens headings stay below the sticky header
 - `fa2be43` — give mobile recovery notices a dedicated message row so error copy cannot collapse into a narrow column
 - `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
 - `8c7db31` — keep long secondary lens names readable in the compact phone header
@@ -188,6 +189,8 @@ The follow-up lens matrix found that “Request flow” and “What reaches here
 The 320px recovery-state pass then reproduced the shared Trace/Compare error notice extending 4px past the viewport because all three actions stayed on one row. After `261085b`, the notice wraps cleanly: recovery actions remain 44px high, the dismiss control moves to its own row, and both Trace and Compare are overflow-free at 320px and 390px.
 
 The settled 390px render then revealed a second recovery issue: before `fa2be43`, the message span collapsed to about 38px and wrapped nearly one character per line while competing with the three actions. After `fa2be43`, mobile notices use a full-width message row and a separate action row; Trace, Request Flow, Boundary, Explore, and Compare now keep readable error copy, 44px actions, and zero overflow at 320px, 390px, and 760px.
+
+The request-flow desktop/phone pass found direct lens URLs restoring at `scrollY=73`, hiding the first heading line behind the sticky shell. After `d1c5801`, direct Trace, Request Flow, Boundary, Explore, Compare, and Setup URLs settle at `scrollY=0`; their headings begin at 122px below a 72px mobile header, with no clipping.
 
 ## Safe next session
 
