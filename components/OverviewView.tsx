@@ -418,6 +418,14 @@ export function OverviewView({
       }))
       .sort((a, b) => b.nodes.length - a.nodes.length);
   }, [app]);
+  const architectureContexts = query
+    ? contexts.filter((context) => context.nodes.some((node) => visibleIds.has(node.id)))
+    : contexts;
+  const architectureModules = query
+    ? modules
+        .map((module) => ({ ...module, nodes: module.nodes.filter((node) => visibleIds.has(node.id)) }))
+        .filter((module) => module.nodes.length > 0)
+    : modules;
   const health = [
     { label: "Graph nodes", value: app.nodes.length },
     { label: "Indexed nodes", value: app.coverage.indexedNodes ?? app.nodes.length },
@@ -544,7 +552,13 @@ export function OverviewView({
                 type="button"
                 className={mode === "health" ? "active" : ""}
                 aria-pressed={mode === "health"}
-                onClick={() => setMode("health")}
+                onClick={() => {
+                  setMode("health");
+                  if (query) {
+                    setSearchText("");
+                    setQuery("");
+                  }
+                }}
               >
                 <Icon name="history" size={13} />
                 Data quality
@@ -907,8 +921,9 @@ export function OverviewView({
           <div className="architecture-grid">
             <section>
               <span className="panel-label">CODEBASE AREAS</span>
-              <div className="context-inventory">
-                {contexts.map((context) => (
+              {query && <p className="architecture-filter-note">Showing areas and modules containing {visible.length} matching symbol{visible.length === 1 ? "" : "s"}.</p>}
+              {architectureContexts.length || architectureModules.length ? <div className="context-inventory">
+                {architectureContexts.map((context) => (
                   <button
                     type="button"
                     className="context-row"
@@ -933,10 +948,10 @@ export function OverviewView({
                     <em title={`${context.outbound} outbound · ${context.inbound} inbound boundary transitions`}>{context.nodes.length}</em>
                   </button>
                 ))}
-              </div>
+              </div> : <div className="architecture-filter-empty" role="status">No areas or modules contain this search.</div>}
               <div className="detail-rule" />
               <span className="panel-label">MODULES</span>
-              {modules.map((module) => (
+              {architectureModules.map((module) => (
                 <div className="module-group" key={module.id}>
                   <button
                     type="button"
