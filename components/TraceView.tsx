@@ -571,7 +571,10 @@ export function TraceView({
             ))
           ) : (
             <div className="list-empty">
-              <p>No graph paths match this semantic filter.</p>
+              <p>
+                No graph paths match “{query}”. Try a path name, symbol, file,
+                module, relationship, or source term.
+              </p>
               <button
                 type="button"
                 onClick={() => {
