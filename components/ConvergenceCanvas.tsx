@@ -72,6 +72,10 @@ export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, 
   const selectedGraphRef = useRef<SVGGElement>(null)
   const focusAfterSelection = useRef(false)
   useEffect(() => {
+    const activeElement = document.activeElement
+    if (!focusAfterSelection.current && !activeElement?.closest('.convergence-canvas')) {
+      return
+    }
     selectedRef.current?.scrollIntoView({ block: 'nearest' })
     selectedGraphRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     if (focusAfterSelection.current) {
