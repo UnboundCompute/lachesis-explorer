@@ -114,7 +114,7 @@ export function Intro({
           <span>
             {loadState.type === "loading"
               ? "Reading bundle…"
-              : "Load bundle.json"}
+              : "Load another bundle"}
           </span>
           <span className="button-icon">
             <Icon name="upload" size={14} />
