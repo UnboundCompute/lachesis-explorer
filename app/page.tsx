@@ -171,6 +171,7 @@ export default function Page() {
   const [recentBundles, setRecentBundles] = useState<RecentBundle[]>([]);
   const [activity, setActivity] = useState<InvestigationEvent[]>([]);
   const [urlInitialized, setUrlInitialized] = useState(false);
+  const [navigation, setNavigation] = useState({ canBack: false, canForward: false });
   const fileRef = useRef<HTMLInputElement>(null);
   const compareFileRef = useRef<HTMLInputElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -179,7 +180,26 @@ export default function Page() {
   const pendingLink = useRef<PendingLink | null>(null);
   const importBusy = useRef(false);
   const urlReady = useRef(false);
+  const navigationDepth = useRef(0);
+  const navigationMaxDepth = useRef(0);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
+
+  function initializeNavigation() {
+    const state = window.history.state;
+    const depth = state?.lachesis === true && Number.isFinite(state.depth) ? state.depth : 0;
+    navigationDepth.current = depth;
+    navigationMaxDepth.current = depth;
+    setNavigation({ canBack: depth > 0, canForward: false });
+    window.history.replaceState({ ...(state ?? {}), lachesis: true, depth }, "", window.location.href);
+  }
+
+  function pushNavigation(params: URLSearchParams) {
+    const depth = navigationDepth.current + 1;
+    navigationDepth.current = depth;
+    navigationMaxDepth.current = depth;
+    setNavigation({ canBack: true, canForward: false });
+    window.history.pushState({ lachesis: true, depth }, "", `${window.location.pathname}?${params.toString()}`);
+  }
 
   const record = useCallback(
     (action: string, target: string, detail: string) =>
@@ -349,6 +369,7 @@ export default function Page() {
       starter.nodes.some((node) => node.id === link.node)
     )
       setFocusNodeId(link.node);
+    initializeNavigation();
     urlReady.current = true;
     setUrlInitialized(true);
   }, []);
@@ -383,11 +404,19 @@ export default function Page() {
       if (mapOrder !== "path") params.set("map_order", mapOrder);
       if (mapNeighborhoodOnly) params.set("map_focus", "neighborhood");
     }
-    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
   }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
+      const state = window.history.state;
+      if (state?.lachesis === true && Number.isFinite(state.depth)) {
+        navigationDepth.current = state.depth;
+        setNavigation({ canBack: state.depth > 0, canForward: state.depth < navigationMaxDepth.current });
+      } else {
+        navigationDepth.current = 0;
+        setNavigation({ canBack: false, canForward: false });
+      }
       const params = new URLSearchParams(window.location.search);
       const nextView = params.get("view");
       if (nextView && ["home", "trace", "journey", "investigate", "map", "compare", "install"].includes(nextView))
@@ -567,7 +596,8 @@ export default function Page() {
         "map_focus",
       ].forEach((key) => params.delete(key));
       params.set("view", next);
-      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+      if (next === "map" && !focusNodeId) params.set("map_mode", "architecture");
+      pushNavigation(params);
     }
     if (next === "map" && view !== "map" && !focusNodeId) {
       setMapMode("architecture");
@@ -597,7 +627,7 @@ export default function Page() {
       params.set("view", "map");
       if (next === "map") params.delete("map_mode");
       else params.set("map_mode", next);
-      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+      pushNavigation(params);
     }
     setMapMode(next);
     record("Changed graph lens", next === "map" ? "Topology" : next === "architecture" ? "Architecture" : "Health", "");
@@ -610,7 +640,7 @@ export default function Page() {
       params.set("view", "map");
       if (next === "path") params.delete("map_order");
       else params.set("map_order", next);
-      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+      pushNavigation(params);
     }
     setMapOrder(next);
   }
@@ -621,7 +651,7 @@ export default function Page() {
       params.set("view", "map");
       if (next) params.set("map_focus", "neighborhood");
       else params.delete("map_focus");
-      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+      pushNavigation(params);
     }
     setMapNeighborhoodOnly(next);
     trackEvent("topology_neighborhood_toggled", { focused: next });
@@ -801,6 +831,7 @@ export default function Page() {
       if (pending.view === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
       pendingLink.current = null;
     }
+    initializeNavigation();
     urlReady.current = true;
     setUrlInitialized(true);
     setMenu(false);
@@ -995,6 +1026,10 @@ export default function Page() {
         dark={dark}
         setDark={setDark}
         recentBundles={recentBundles}
+        canGoBack={navigation.canBack}
+        canGoForward={navigation.canForward}
+        onGoBack={() => window.history.back()}
+        onGoForward={() => window.history.forward()}
       />
       <input
         id="bundle-upload"

@@ -7,7 +7,7 @@ import { trackEvent } from '../lib/analytics'
 
 type View = 'home' | 'trace' | 'journey' | 'investigate' | 'map' | 'compare' | 'install'
 export type RecentBundle = { name: string; language: string; commit: string; lines: number; flows: number; loadedAt: number }
-type Props = { view: View; setView: (view: View) => void; app: App; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[] }
+type Props = { view: View; setView: (view: View) => void; app: App; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[]; canGoBack: boolean; canGoForward: boolean; onGoBack: () => void; onGoForward: () => void }
 
 const primary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'home', label: 'Understand', detail: 'Start with a question' },
@@ -21,7 +21,7 @@ const secondary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'install', label: 'Setup', detail: 'Build graphs locally' },
 ]
 
-export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles }: Props) {
+export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles, canGoBack, canGoForward, onGoBack, onGoForward }: Props) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [mobileLensOpen, setMobileLensOpen] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)
@@ -165,6 +165,10 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           )}
         </div>
         <div className="header-actions">
+          <div className="navigation-controls" role="group" aria-label="Investigation navigation">
+            <button type="button" onClick={onGoBack} disabled={!canGoBack} aria-label="Go back in investigation" title={canGoBack ? "Go back in investigation" : "No earlier investigation state"}>‹</button>
+            <button type="button" onClick={onGoForward} disabled={!canGoForward} aria-label="Go forward in investigation" title={canGoForward ? "Go forward in investigation" : "No later investigation state"}>›</button>
+          </div>
           <button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14} /><span>Jump</span><kbd>⌘K /</kbd></button>
           <button type="button" className="theme-toggle" suppressHydrationWarning aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`} onClick={() => { setDark(!dark); trackEvent('theme_toggled', { theme: dark ? 'light' : 'dark' }) }}><Icon name={dark ? 'sun' : 'moon'} size={15} /><span>{dark ? 'Light' : 'Dark'}</span></button>
           <div className="app-picker" ref={appPickerRef}>
