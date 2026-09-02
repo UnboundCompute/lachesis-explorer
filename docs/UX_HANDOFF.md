@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `29ba52c` — remove duplicate load-status messaging that obscured mobile intros
 - `97d0d31` — preserve the requested view during initial deep-link restoration
 - `9ba705c` — clarify the request-flow question and expose graph filter syntax
 - `e9525c2` — add file/line context to connected-symbol concentration rows
