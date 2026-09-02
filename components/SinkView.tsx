@@ -66,6 +66,7 @@ export function SinkView({
   const [selectedId, setSelectedId] = useState(
     sink?.id ?? app.nodes[0]?.id ?? "",
   );
+  const [previousSinkId, setPreviousSinkId] = useState("");
   const [sinkSearch, setSinkSearch] = useState("");
   const [pathSearch, setPathSearch] = useState("");
   const [inspectorOpen, setInspectorOpen] = useState(true);
@@ -75,6 +76,7 @@ export function SinkView({
     if (sink?.id) setSelectedId(sink.id);
     setSinkSearch("");
     setPathSearch("");
+    setPreviousSinkId("");
     setShareState("idle");
     setPathsCopyState("idle");
   }, [app, sink?.id]);
@@ -162,8 +164,23 @@ export function SinkView({
     .filter((step) => step.edge?.dynamic).length;
   const pathNoun = securityMode ? "value flow" : "graph path";
   const pathNounPlural = securityMode ? "value flows" : "graph paths";
+  const previousSink = sinks.find((node) => node.id === previousSinkId);
+  function rememberSink(nextId: string) {
+    if (sink.id !== nextId) setPreviousSinkId(sink.id);
+  }
+  function returnToPreviousSink() {
+    if (!previousSink) return;
+    const currentSinkId = sink.id;
+    setPreviousSinkId(currentSinkId);
+    setSinkId(previousSink.id);
+    setSelectedId(previousSink.id);
+    setInspectorOpen(true);
+    onRecord("Returned to execution boundary", previousSink.label || previousSink.id, nodeLocation(previousSink));
+    trackEvent("sink_selection_reversed");
+  }
   function chooseSink(id: string) {
     const next = sinks.find((node) => node.id === id);
+    rememberSink(id);
     setSinkId(id);
     setSelectedId(id);
     setInspectorOpen(true);
@@ -291,6 +308,11 @@ export function SinkView({
             className="lens-switch"
             aria-label="Investigation representation"
           >
+            {previousSink && (
+              <button type="button" className="selection-back" onClick={returnToPreviousSink} title={`Return to ${previousSink.label || previousSink.id}`}>
+                ← Back to previous boundary
+              </button>
+            )}
             {onShare && (
               <button type="button" className="share-control" onClick={shareSink} aria-live="polite">
                 {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
