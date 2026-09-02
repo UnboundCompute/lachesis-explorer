@@ -280,7 +280,7 @@ export function HomeView({
             <h1>Understand {app.name || "this codebase"}, one path at a time.</h1>
             <p>
               {app.bundle.description ||
-                "Start with a real behavior, follow its calls and data handoffs, and inspect the source without losing your place."}
+                "Start with a real behavior, follow its calls and data handoffs, and inspect the source without losing your place—build a mental model without opening files one by one."}
             </p>
             <div className="understand-actions">
               {graphFocus && (
