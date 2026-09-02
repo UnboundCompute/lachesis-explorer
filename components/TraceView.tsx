@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { App, Flow } from "../lib/lachesis";
 import { indirectionCount } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
-import { copyText } from "../lib/clipboard";
+import { copyText, downloadText } from "../lib/clipboard";
 import { explainFlow } from "../lib/explanations";
 import { Icon } from "./Icon";
 import { PathCanvas, type PathItem } from "./PathCanvas";
@@ -179,6 +179,7 @@ export function TraceView({
   const [searchText, setSearchText] = useState("");
   const [previousFlowId, setPreviousFlowId] = useState("");
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
+  const [downloadState, setDownloadState] = useState<"idle" | "downloaded" | "failed">("idle");
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedFlowRef = useRef<HTMLButtonElement>(null);
   const previousDirection = useRef(direction);
@@ -368,6 +369,18 @@ export function TraceView({
     setShareState(copied ? "copied" : "failed");
     window.setTimeout(() => setShareState("idle"), 1800);
   }
+  function downloadExplanation() {
+    try {
+      const filename = `${(flow.name || "lachesis-path").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64) || "lachesis-path"}.md`;
+      downloadText(explainFlow(app, flow, direction, selectedIndex, window.location.href), filename);
+      setDownloadState("downloaded");
+      trackEvent("path_explanation_downloaded", { surface: "trace" });
+      window.setTimeout(() => setDownloadState("idle"), 1800);
+    } catch {
+      setDownloadState("failed");
+      trackEvent("path_explanation_download_failed", { surface: "trace" });
+    }
+  }
   return (
     <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="sidebar">
@@ -525,6 +538,9 @@ export function TraceView({
             <div className="toolbar-share-actions" role="group" aria-label="Share this path context">
               <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
                 {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
+              </button>
+              <button className="inspector-reopen share-explanation" type="button" onClick={downloadExplanation} aria-live="polite">
+                {downloadState === "downloaded" ? "Markdown saved" : downloadState === "failed" ? "Download failed" : "Download .md"}
               </button>
               {onShare && (
                 <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
