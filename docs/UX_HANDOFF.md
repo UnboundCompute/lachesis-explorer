@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `1abca96` — integrate mobile investigation navigation into the sticky shell
 - `32ca7ca` — default plain Explore links to Modules while preserving filtered and focused topology deep links
 - `d417266` — complete the mobile touch-target pass for search, toolbar, breadcrumb, and copy actions
 - `74aefbe` — add bundle-grounded Explore questions for incoming and outgoing relationships
