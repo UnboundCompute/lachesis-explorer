@@ -360,7 +360,13 @@ export default function Page() {
     if (link.direction === "forward") setDirection("forward");
     if (link.view === "trace") setQuery(link.filter ?? "");
     if (link.view === "map") setMapQuery(link.filter ?? "");
-    if (link.mapMode && ["map", "architecture", "health"].includes(link.mapMode)) setMapMode(link.mapMode as OverviewMode);
+    if (link.view === "map") {
+      setMapMode(link.mapMode && ["map", "architecture", "health"].includes(link.mapMode)
+        ? link.mapMode as OverviewMode
+        : link.filter || link.node || link.mapNeighborhood
+          ? "map"
+          : "architecture");
+    }
     if (link.mapOrder && ["path", "centrality"].includes(link.mapOrder)) setMapOrder(link.mapOrder as OverviewNodeOrder);
     setMapNeighborhoodOnly(Boolean(link.mapNeighborhood));
     if (
@@ -441,7 +447,13 @@ export default function Page() {
       if (nextView === "map") setMapQuery(params.get("filter") ?? "");
       else setMapQuery("");
       const nextMapMode = params.get("map_mode");
-      setMapMode(nextMapMode && ["map", "architecture", "health"].includes(nextMapMode) ? nextMapMode as OverviewMode : "map");
+      setMapMode(nextMapMode && ["map", "architecture", "health"].includes(nextMapMode)
+        ? nextMapMode as OverviewMode
+        : nextView === "map"
+          ? params.get("filter") || params.get("node") || params.get("map_focus")
+            ? "map"
+            : "architecture"
+          : "map");
       const nextMapOrder = params.get("map_order");
       setMapOrder(nextMapOrder === "centrality" ? "centrality" : "path");
       setMapNeighborhoodOnly(params.get("map_focus") === "neighborhood");

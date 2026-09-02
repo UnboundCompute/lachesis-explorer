@@ -198,6 +198,7 @@ export function OverviewView({
   const [showAllTopology, setShowAllTopology] = useState(false);
   const [selectionHistory, setSelectionHistory] = useState<string[]>([]);
   const [localNodeOrder, setLocalNodeOrder] = useState<OverviewNodeOrder>("path");
+  const hasMountedOverview = useRef(false);
   const nodeOrder = controlledNodeOrder ?? localNodeOrder;
   const setNodeOrder = setControlledNodeOrder ?? setLocalNodeOrder;
   const neighborhoodOnly = controlledNeighborhoodOnly ?? localNeighborhoodOnly;
@@ -205,7 +206,8 @@ export function OverviewView({
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
     setSelectedId(app.nodes[0]?.id ?? "");
-    setQuery("");
+    if (hasMountedOverview.current) setQuery("");
+    hasMountedOverview.current = true;
     setExpandedModule(null);
     setShareState("idle");
     setLinkState("idle");
