@@ -77,37 +77,37 @@ export function CommandPalette({
       [
         {
           id: "view-home",
-          label: "Open briefing",
+          label: "Open understanding home",
           meta: "View",
           run: () => onView("home"),
         },
         {
           id: "view-trace",
-          label: "Open graph-path lens",
+          label: "Trace a code path",
           meta: "View",
           run: () => onView("trace"),
         },
         {
           id: "view-journey",
-          label: "Open request-path lens",
+          label: "Walk a request flow",
           meta: "View",
           run: () => onView("journey"),
         },
         {
           id: "view-investigate",
-          label: "Open convergence view",
+          label: "See what reaches a destination",
           meta: "View",
           run: () => onView("investigate"),
         },
         {
           id: "view-map",
-          label: "Open graph view",
+          label: "Explore the codebase graph",
           meta: "View",
           run: () => onView("map"),
         },
         {
           id: "view-compare",
-          label: "Open revision diff",
+          label: "Compare code revisions",
           meta: "View",
           run: () => onView("compare"),
         },
@@ -264,8 +264,8 @@ export function CommandPalette({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Jump to a view, path, symbol, file, or boundary…"
-            aria-label="Search views, paths, symbols, files, and boundaries"
+            placeholder="Find a path, symbol, file, or view…"
+            aria-label="Search views, paths, symbols, and files"
             aria-controls="command-results"
             role="combobox"
             aria-expanded="true"

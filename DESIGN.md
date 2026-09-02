@@ -1,6 +1,6 @@
 ---
 name: Lachesis Explorer
-description: A forensic evidence workbench for deterministic code graphs.
+description: A guided code-understanding workspace for deterministic code graphs.
 colors:
   canvas: "#07100d"
   canvas-light: "#f1f4f1"
@@ -140,16 +140,16 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Forensic Mineral Workbench"**
+**Creative North Star: "The Guided Code Map"**
 
-Lachesis should feel like a precise instrument used to inspect evidence: dark mineral surfaces, sparse luminous signals, compact technical labels, and clearly bounded working areas. It is dense enough for sustained analysis but avoids the visual noise of a generic security dashboard.
+Lachesis should feel like a precise map for unfamiliar code: dark mineral surfaces, sparse luminous signals, readable explanations, and clearly bounded working areas. It is focused enough for first-time comprehension and dense enough for sustained technical work without becoming a generic graph dashboard.
 
-The interface privileges graph state, source context, and evidence provenance. Decoration stays atmospheric and quiet; semantic state carries the strongest color.
+The interface privileges the developer's question, a focused path, source context, and graph provenance—in that order. Decoration stays atmospheric and quiet; semantic state carries the strongest color.
 
 **Key Characteristics:**
 
 - Dark-first, locally operated, and task-first.
-- Compact navigation surrounding a wide evidence canvas.
+- Four top-level jobs—Understand, Trace, Explore, and Compare—surrounding a wide code canvas.
 - Semantic color reinforced by labels, shapes, and line styles.
 - Rounded panels with restrained depth and crisp internal boundaries.
 
@@ -182,7 +182,7 @@ Sans-serif copy keeps the shell calm and readable. Monospace type identifies sou
 
 The desktop workspace is a three-part evidence bench: a 244px selector rail, a fluid canvas, and a 260px source inspector. Closing the inspector expands the canvas. At 1040px the inspector becomes a full-width row; at 760px all regions stack, preserving the inspector below the canvas. Containers cap at 1440px with 30px desktop and 16px mobile gutters.
 
-The briefing surface uses an asymmetric triage board: one dominant witness and a narrower ordered evidence queue. Its first viewport answers “what needs review?” before presenting graph-wide metrics. Below 1040px the queue becomes a horizontal set, then a single readable stack below 760px.
+The understanding surface begins with “what do you want to understand?” and recommends one complete bundled path. Graph mechanics, alternate paths, provenance, and security-specific triage appear only after the primary question or when the loaded bundle explicitly uses the security projection.
 
 Spacing is intentionally compact. Use 8px gaps between adjacent panels, 12px for controls, 20–22px inside working panels, and 30px for outer section gutters.
 
@@ -210,7 +210,7 @@ Fields are compact, dark tonal wells with a one-pixel line and monospace text wh
 
 ### Navigation
 
-Navigation is a compact set of analysis lenses with a quiet default and green active state. The command palette is the fast path; URL state, keyboard movement, and direct controls must remain equivalent.
+Navigation exposes four plain-language jobs: Understand, Trace, Explore, and Compare. Request flow, convergence, setup, and security-specific views remain available through contextual actions or More. The command palette is the fast path; URL state, keyboard movement, and direct controls must remain equivalent.
 
 ### Evidence Path
 

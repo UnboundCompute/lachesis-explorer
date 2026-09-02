@@ -247,6 +247,137 @@ export function HomeView({
           : "Explore how this code is connected."
         : "No open evidence paths in this bundle.";
 
+  if (graphOnly) {
+    const startNode = graphFocus
+      ? sourceFor(graphFocus, app) ?? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
+      : undefined;
+    const endNode = graphFocus
+      ? sinkFor(graphFocus, app) ?? app.nodes.find((node) => node.id === graphFocus.steps.at(-1)?.node_id)
+      : undefined;
+    const otherPaths = app.flows.filter((flow) => flow.id !== graphFocus?.id).slice(0, 4);
+
+    return (
+      <main className="understand-home">
+        <header className="understand-hero">
+          <div className="understand-copy">
+            <h1>Understand {app.name || "this codebase"}, one path at a time.</h1>
+            <p>
+              {app.bundle.description ||
+                "Start with a real behavior, follow its calls and data handoffs, and inspect the source without losing your place."}
+            </p>
+            <div className="understand-actions">
+              {graphFocus && (
+                <button
+                  type="button"
+                  className="understand-primary"
+                  onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}
+                >
+                  Follow a recommended path <Icon name="arrow" size={14} />
+                </button>
+              )}
+              <button type="button" className="understand-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
+                <Icon name="upload" size={14} />
+                {loadState.type === "loading" ? "Reading bundle…" : "Load another bundle"}
+              </button>
+            </div>
+          </div>
+          <dl className="understand-facts" aria-label="Active codebase">
+            <div><dt>Language</dt><dd>{app.language || "Not reported"}</dd></div>
+            <div><dt>Revision</dt><dd>{app.commit || "Not reported"}</dd></div>
+            <div><dt>Graph</dt><dd>{app.nodes.length} nodes · {app.edges.length} relationships</dd></div>
+            <div><dt>Coverage</dt><dd>{(app.coverage.includedNodes ?? app.nodes.length).toLocaleString()} shown of {(app.coverage.indexedNodes ?? app.nodes.length).toLocaleString()} indexed</dd></div>
+          </dl>
+        </header>
+
+        {loadState.message && (
+          <p className={`briefing-notice ${loadState.type}`} role={loadState.type === "error" ? "alert" : "status"}>
+            <i />
+            <span>{loadState.message}</span>
+            <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
+          </p>
+        )}
+
+        <section className="understand-questions" aria-labelledby="understand-questions-title">
+          <div className="understand-section-heading">
+            <h2 id="understand-questions-title">What do you want to understand?</h2>
+            <p>Choose the question closest to the job in front of you.</p>
+          </div>
+          <div className="understand-question-list">
+            <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
+              <span><b>How does this behavior work?</b><small>Follow one complete call or data path.</small></span>
+              <Icon name="arrow" size={14} />
+            </button>
+            <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
+              <span><b>What happens after an entrypoint?</b><small>Walk the request from handler to effect.</small></span>
+              <Icon name="arrow" size={14} />
+            </button>
+            <button type="button" onClick={() => onView("map")}>
+              <span><b>How is the codebase organized?</b><small>Explore modules and their relationships.</small></span>
+              <Icon name="arrow" size={14} />
+            </button>
+            <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
+              <span><b>What reaches this code?</b><small>Compare paths that arrive at one destination.</small></span>
+              <Icon name="arrow" size={14} />
+            </button>
+          </div>
+        </section>
+
+        {graphFocus ? (
+          <section className="understand-start" aria-labelledby="understand-start-title">
+            <div className="understand-section-heading">
+              <h2 id="understand-start-title">A useful place to start</h2>
+              <p>The most complete path included in this bundle.</p>
+            </div>
+            <div className="understand-path">
+              <div className="understand-path-copy">
+                <span>{pathKindLabel(graphFocus)} · {graphFocus.steps.length} symbols</span>
+                <h3>{graphFocus.name}</h3>
+                <p>{graphFocus.description || `Follow the path from ${startNode?.label || "its first symbol"} to ${endNode?.label || "its final symbol"}.`}</p>
+              </div>
+              <div className="understand-route" aria-label="Recommended path endpoints">
+                <span><small>Starts at</small><b>{startNode?.label || "Not reported"}</b><em>{nodeLocation(startNode)}</em></span>
+                <i><span /></i>
+                <span><small>Ends at</small><b>{endNode?.label || "Not reported"}</b><em>{nodeLocation(endNode)}</em></span>
+              </div>
+              <button type="button" onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
+                Open this path <Icon name="arrow" size={14} />
+              </button>
+            </div>
+          </section>
+        ) : (
+          <section className="understand-empty">
+            <h2>No ready-made paths were included</h2>
+            <p>The graph is still available. Explore its symbols and relationships directly.</p>
+            <button type="button" onClick={() => onView("map")}>Explore the graph <Icon name="arrow" size={14} /></button>
+          </section>
+        )}
+
+        {otherPaths.length > 0 && (
+          <section className="understand-more" aria-labelledby="understand-more-title">
+            <div className="understand-section-heading">
+              <h2 id="understand-more-title">Other paths in this bundle</h2>
+              <p>Open only what helps answer your next question.</p>
+            </div>
+            <div className="understand-path-list">
+              {otherPaths.map((flow) => (
+                <button type="button" key={flow.id} onClick={() => onFlow(flow.id, flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
+                  <span><b>{flow.name}</b><small>{pathKindLabel(flow)} · {flow.steps.length} symbols · {pathLocation(flow, app)}</small></span>
+                  <Icon name="arrow" size={13} />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <footer className="understand-footer">
+          <span>Source stays beside every step. Path explanations can be copied as portable Markdown.</span>
+          <span>{isDemo ? "Synthetic sample" : "Processed locally"} · {app.language || "language not reported"}</span>
+          {isDemo && <button type="button" onClick={onLoadSecuritySample}>View security projection</button>}
+        </footer>
+      </main>
+    );
+  }
+
   return (
     <main className="investigation-briefing">
       <header className="briefing-intro">

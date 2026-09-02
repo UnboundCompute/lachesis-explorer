@@ -27,12 +27,12 @@ export function Intro({
     : "Code exploration graph";
   const copy = {
     trace: [
-      "Trace a graph path. See every handoff.",
-      "Follow symbols, calls, transformations, and boundaries with source evidence attached.",
+      "Follow one behavior through the code.",
+      "Move through each call or data handoff, with the exact source beside it.",
     ],
     journey: [
-      "Walk the request as the code sees it.",
-      "Inspect a focused request path from entrypoint to effect, one grounded hop at a time.",
+      "See what happens after an entrypoint.",
+      "Walk a focused request flow from its first handler to its final effect.",
     ],
     investigate: securityMode
       ? [
@@ -40,20 +40,20 @@ export function Intro({
           "Compare the bundled paths that reach one execution boundary without turning overlap into a claim.",
         ]
       : [
-          "Start at a boundary. See what converges there.",
-          "Compare the bundled value paths that meet at one execution boundary, then follow any path back into the code.",
+          "See everything that reaches this code.",
+          "Compare the bundled paths that meet at one destination, then open any path in context.",
         ],
     map: [
-      "See the shape before you follow the path.",
-      "Survey relationships, module concentration, shared choke points, and bundle health from deterministic graph facts.",
+      "Build a mental model of the codebase.",
+      "Explore modules, relationships, important symbols, and the graph data available to answer questions.",
     ],
     compare: [
-      "Compare revisions. See what changed.",
-      "Load a second bundle to inspect added, removed, and changed evidence without replacing the active investigation.",
+      "Understand what changed between revisions.",
+      "Load a second bundle to compare added, removed, and changed code paths without replacing the active graph.",
     ],
     install: [
-      "Bring deterministic code evidence into your workflow.",
-      "Build the graph locally, query it over MCP, and inspect the same bundle here.",
+      "Bring code understanding into your local workflow.",
+      "Build the graph locally, query it over MCP, and explore the same bundle here.",
     ],
   }[view];
   const kicker =

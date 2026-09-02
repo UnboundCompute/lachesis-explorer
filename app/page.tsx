@@ -49,13 +49,13 @@ type PendingLink = {
 };
 
 const viewLabels: Record<View, string> = {
-  home: "Briefing",
-  trace: "Graph path",
-  journey: "Request path",
-  investigate: "Convergence",
-  map: "Graph",
-  compare: "Revision diff",
-  install: "Local workflow",
+  home: "Understand",
+  trace: "Trace",
+  journey: "Request flow",
+  investigate: "What reaches here",
+  map: "Explore",
+  compare: "Compare",
+  install: "Setup",
 };
 
 function stepAtPosition(app: App, flowId: string, position: number, direction: "backward" | "forward") {
@@ -506,7 +506,7 @@ export default function Page() {
       window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
     }
     setView(next);
-    record("Changed lens", viewLabels[next], "");
+    record("Changed view", viewLabels[next], "");
   }
 
   function changeMapMode(next: OverviewMode) {
@@ -986,12 +986,12 @@ export default function Page() {
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
             setInspectorOpen(true);
-            record("Opened priority witness", nextFlow, "from briefing");
+            record("Opened path", nextFlow, "from understanding home");
           }}
           onSink={(nextSink) => {
             changeView("investigate");
             setSinkId(nextSink);
-            record("Focused execution boundary", nextSink, "from briefing");
+            record("Focused destination", nextSink, "from understanding home");
           }}
           onEntry={(nextIndex, nextHop) => {
             changeView("journey");
@@ -1041,17 +1041,6 @@ export default function Page() {
             if (next === "map" && nextNode) setFocusNodeId(nextNode);
             changeView(next);
           }}
-          onShare={(position) =>
-            copyInvestigationLink({
-              view: "trace",
-              flow: flowId,
-              node: stepId,
-              direction,
-              filter: query,
-              step_occurrence: stepAtPosition(app, flowId, position, direction)?.id ?? "",
-              step_index: String(position),
-            })
-          }
           onFlow={(nextFlow, nextNode) => {
             setFlowId(nextFlow);
             setStepId(nextNode);
@@ -1084,15 +1073,6 @@ export default function Page() {
             if (next === "map" && nextNode) setFocusNodeId(nextNode);
             changeView(next);
           }}
-          onShare={(position) =>
-            copyInvestigationLink({
-              view: "journey",
-              entry: app.entries[entryIndex]?.id ?? "",
-              hop: hopId,
-              hop_occurrence: app.entries[entryIndex]?.hops[position]?.id ?? "",
-              hop_index: String(position),
-            })
-          }
           onFlow={(nextFlow, nextNode) => {
             changeView("trace");
             setFlowId(nextFlow);

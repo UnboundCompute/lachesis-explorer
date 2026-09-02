@@ -4,6 +4,7 @@ import type { App, Flow } from "../lib/lachesis";
 import { indirectionCount } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
+import { explainFlow } from "../lib/explanations";
 import { Icon } from "./Icon";
 import { PathCanvas, type PathItem } from "./PathCanvas";
 import { NodeInspector } from "./NodeInspector";
@@ -25,7 +26,6 @@ type Props = {
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "journey" | "map", nodeId?: string) => void;
-  onShare: (position: number) => Promise<boolean>;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
 };
@@ -143,18 +143,17 @@ export function TraceView({
   onInspectorClose,
   onRecord,
   onView,
-  onShare,
   onFlow,
   onEntry,
 }: Props) {
   const flow = app.flows.find((item) => item.id === flowId) ?? app.flows[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
-  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
-  const [sequenceState, setSequenceState] = useState<"idle" | "copied" | "failed">("idle");
+  const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedFlowRef = useRef<HTMLButtonElement>(null);
   const previousDirection = useRef(direction);
   useEffect(() => {
     if (!flow) return;
+    setExplanationState("idle");
     const ordered = direction === "backward" ? flow.steps : [...flow.steps].reverse();
     if (previousDirection.current !== direction) {
       const next = Math.max(0, ordered.length - 1 - selectedPosition);
@@ -281,23 +280,15 @@ export function TraceView({
     );
     trackEvent("trace_step_navigated", { direction: delta > 0 ? "next" : "previous" });
   }
-  async function sharePath() {
-    const copied = await onShare(selectedIndex);
-    setShareState(copied ? "copied" : "failed");
-    window.setTimeout(() => setShareState("idle"), 1800);
-  }
-  async function copySequence() {
-    const sequence = items
-      .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${nodeContext(item.node) ? ` · ${nodeContext(item.node)}` : ""}${item.relation ? ` · via ${item.relation}` : ""}${item.caption ? ` · ${item.caption}` : ""}`)
-      .join("\n");
+  async function copyExplanation() {
     try {
-      await copyText(`${flow.name} · ${pathKindLabel(flow, securityPath)} · ${direction === "backward" ? "comes from" : "goes to"}\n${sequence}`);
-      setSequenceState("copied");
-      trackEvent("path_sequence_copied", { surface: "trace" });
-      window.setTimeout(() => setSequenceState("idle"), 1800);
+      await copyText(explainFlow(app, flow, direction, selectedIndex, window.location.href));
+      setExplanationState("copied");
+      trackEvent("path_explanation_copied", { surface: "trace" });
+      window.setTimeout(() => setExplanationState("idle"), 1800);
     } catch {
-      setSequenceState("failed");
-      trackEvent("path_sequence_copy_failed", { surface: "trace" });
+      setExplanationState("failed");
+      trackEvent("path_explanation_copy_failed", { surface: "trace" });
     }
   }
   return (
@@ -436,11 +427,8 @@ export function TraceView({
             <button className="inspector-reopen" type="button" onClick={() => onView("map", stepId)}>
               See in graph
             </button>
-            <button className="inspector-reopen" type="button" onClick={copySequence} aria-live="polite">
-              {sequenceState === "copied" ? "Sequence copied" : sequenceState === "failed" ? "Copy failed" : "Copy sequence"}
-            </button>
-            <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
-              {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+            <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
+              {explanationState === "copied" ? "Explanation copied" : explanationState === "failed" ? "Copy failed" : "Copy explanation"}
             </button>
             <div className="step-nav" aria-label="Path step navigation">
               <button

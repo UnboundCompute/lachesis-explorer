@@ -2,12 +2,12 @@ import type { App } from '../lib/lachesis'
 
 type Props={app:App;view:string;flowId:string;stepId:string;stepIndex?:number;entryIndex:number;hopId:string;hopIndex?:number;sinkId:string;focusNodeId?:string;onHome?:()=>void}
 const viewNames: Record<string, string> = {
-  trace: 'Graph path',
-  journey: 'Request path',
-  investigate: 'Convergence',
-  map: 'Graph',
-  compare: 'Revision diff',
-  install: 'Local workflow',
+  trace: 'Trace',
+  journey: 'Request flow',
+  investigate: 'What reaches here',
+  map: 'Explore',
+  compare: 'Compare',
+  install: 'Setup',
 }
 function pathContextLabel(kind?: string, security = false) {
   if (security) return 'SECURITY WITNESS'
@@ -24,6 +24,6 @@ export function InvestigationContext({app,view,flowId,stepId,stepIndex=0,entryIn
   if(view==='home')return null
   const flow=app.flows.find(item=>item.id===flowId),step=app.nodes.find(item=>item.id===stepId),entry=app.entries[entryIndex],hop=app.nodes.find(item=>item.id===hopId),sink=app.nodes.find(item=>item.id===sinkId),focused=app.nodes.find(item=>item.id===focusNodeId)
   const withContext = (value: string | undefined, node?: App['nodes'][number]) => `${value||'—'}${nodeContext(node) ? ` · ${nodeContext(node)}` : ''}`
-  const parts=view==='trace'?[[pathContextLabel(flow?.kind,app.findings.some(item=>item.id===flow?.id)),flow?.name],['STEP',withContext(`${stepIndex+1}/${flow?.steps.length??0} · ${step?.label||step?.id}`,step)]]:view==='journey'?[['REQUEST PATH',entry?.label],['HOP',withContext(`${hopIndex+1}/${entry?.hops.length??0} · ${hop?.label||hop?.id}`,hop)]]:view==='investigate'?[['CONVERGENCE',withContext(sink?.label||sink?.id,sink)]]:view==='map'?[['GRAPH',focused?withContext(focused.label||focused.id,focused):'Workspace']]:[[viewNames[view]||view,'Workspace']]
-  return <div className="investigation-context" aria-label="Current investigation context" aria-live="polite" aria-atomic="true">{onHome ? <button type="button" className="context-home" onClick={onHome} title="Return to briefing">{app.name||'Untitled bundle'}</button> : <span className="context-home">{app.name||'Untitled bundle'}</span>}{parts.map(([label,value])=><span key={label} className="context-crumb"><i>／</i><small>{label}</small><b>{value||'—'}</b></span>)}</div>
+  const parts=view==='trace'?[[pathContextLabel(flow?.kind,app.findings.some(item=>item.id===flow?.id)),flow?.name],['STEP',withContext(`${stepIndex+1}/${flow?.steps.length??0} · ${step?.label||step?.id}`,step)]]:view==='journey'?[['REQUEST FLOW',entry?.label],['STEP',withContext(`${hopIndex+1}/${entry?.hops.length??0} · ${hop?.label||hop?.id}`,hop)]]:view==='investigate'?[['DESTINATION',withContext(sink?.label||sink?.id,sink)]]:view==='map'?[['EXPLORE',focused?withContext(focused.label||focused.id,focused):'Workspace']]:[[viewNames[view]||view,'Workspace']]
+  return <div className="investigation-context" aria-label="Current code exploration context" aria-live="polite" aria-atomic="true">{onHome ? <button type="button" className="context-home" onClick={onHome} title="Return to understanding home">{app.name||'Untitled bundle'}</button> : <span className="context-home">{app.name||'Untitled bundle'}</span>}{parts.map(([label,value])=><span key={label} className="context-crumb"><i>／</i><small>{label}</small><b>{value||'—'}</b></span>)}</div>
 }

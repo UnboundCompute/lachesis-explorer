@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
+import { explainEntry } from "../lib/explanations";
 import { Icon } from "./Icon";
 import { PathCanvas, type PathItem } from "./PathCanvas";
 import { NodeInspector } from "./NodeInspector";
@@ -38,7 +39,6 @@ type Props = {
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map", nodeId?: string) => void;
-  onShare: (position: number) => Promise<boolean>;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
 };
@@ -55,14 +55,12 @@ export function JourneyView({
   onInspectorClose,
   onRecord,
   onView,
-  onShare,
   onFlow,
   onEntry,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
-  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
-  const [sequenceState, setSequenceState] = useState<"idle" | "copied" | "failed">("idle");
+  const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedHopRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!entry) return;
@@ -71,8 +69,7 @@ export function JourneyView({
       ? position
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
-    setShareState("idle");
-    setSequenceState("idle");
+    setExplanationState("idle");
   }, [app, entryIndex, hopId, position]);
   useEffect(() => {
     selectedHopRef.current?.scrollIntoView({ block: "nearest" });
@@ -150,23 +147,15 @@ export function JourneyView({
       direction: delta > 0 ? "next" : "previous",
     });
   }
-  async function sharePath() {
-    const copied = await onShare(selectedIndex);
-    setShareState(copied ? "copied" : "failed");
-    window.setTimeout(() => setShareState("idle"), 1800);
-  }
-  async function copySequence() {
-    const sequence = items
-      .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${nodeContext(item.node) ? ` · ${nodeContext(item.node)}` : ""}${item.relation ? ` · via ${item.relation}` : ""}${item.caption ? ` · ${item.caption}` : ""}`)
-      .join("\n");
+  async function copyExplanation() {
     try {
-      await copyText(`${entry.label} · Request path\n${sequence}`);
-      setSequenceState("copied");
-      trackEvent("path_sequence_copied", { surface: "journey" });
-      window.setTimeout(() => setSequenceState("idle"), 1800);
+      await copyText(explainEntry(app, entry, selectedIndex, window.location.href));
+      setExplanationState("copied");
+      trackEvent("path_explanation_copied", { surface: "journey" });
+      window.setTimeout(() => setExplanationState("idle"), 1800);
     } catch {
-      setSequenceState("failed");
-      trackEvent("path_sequence_copy_failed", { surface: "journey" });
+      setExplanationState("failed");
+      trackEvent("path_explanation_copy_failed", { surface: "journey" });
     }
   }
   return (
@@ -269,11 +258,8 @@ export function JourneyView({
             <button className="inspector-reopen" type="button" onClick={() => onView("map", hopId)}>
               See in graph
             </button>
-            <button className="inspector-reopen" type="button" onClick={copySequence} aria-live="polite">
-              {sequenceState === "copied" ? "Sequence copied" : sequenceState === "failed" ? "Copy failed" : "Copy sequence"}
-            </button>
-            <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
-              {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+            <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
+              {explanationState === "copied" ? "Explanation copied" : explanationState === "failed" ? "Copy failed" : "Copy explanation"}
             </button>
             <div className="step-nav" role="group" aria-label="Request path step navigation">
               <button

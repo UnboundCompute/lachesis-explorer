@@ -10,15 +10,15 @@ export type RecentBundle = { name: string; language: string; commit: string; lin
 type Props = { view: View; setView: (view: View) => void; app: App; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[] }
 
 const primary: Array<{ id: View; label: string; detail: string }> = [
-  { id: 'home', label: 'Briefing', detail: 'Start here' },
-  { id: 'trace', label: 'Graph path', detail: 'Follow symbols' },
-  { id: 'journey', label: 'Request path', detail: 'Follow callers' },
-  { id: 'map', label: 'Graph', detail: 'See relationships' },
+  { id: 'home', label: 'Understand', detail: 'Start with a question' },
+  { id: 'trace', label: 'Trace', detail: 'Follow one behavior' },
+  { id: 'map', label: 'Explore', detail: 'See the codebase' },
+  { id: 'compare', label: 'Compare', detail: 'Review revisions' },
 ]
 const secondary: Array<{ id: View; label: string; detail: string }> = [
-  { id: 'investigate', label: 'Convergence', detail: 'Compare shared paths' },
-  { id: 'compare', label: 'Revision diff', detail: 'Review changes' },
-  { id: 'install', label: 'Local workflow', detail: 'Run locally' },
+  { id: 'journey', label: 'Request flow', detail: 'Walk from entrypoint to effect' },
+  { id: 'investigate', label: 'What reaches here', detail: 'Compare incoming paths' },
+  { id: 'install', label: 'Setup', detail: 'Build graphs locally' },
 ]
 
 export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles }: Props) {
@@ -116,7 +116,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           ))}
           <div className="more-views" ref={moreRef}>
             <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
-              <span>More</span><small>Compare &amp; tools</small><Icon name="chevron" size={11} />
+              <span>More</span><small>Focused views</small><Icon name="chevron" size={11} />
             </button>
             {moreOpen && (
               <div id="more-analysis-menu" className="more-menu" role="menu" aria-label="More analysis views">
