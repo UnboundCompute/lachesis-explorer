@@ -282,6 +282,9 @@ export function HomeView({
               {app.bundle.description ||
                 "Start with a real behavior, follow its calls and data handoffs, and inspect the source without losing your place—build a mental model without opening files one by one."}
             </p>
+            <p className="understand-value">
+              Paths keep the relevant symbols, relationships, and source context together, so unfamiliar code becomes a guided reading instead of file-by-file tab hopping.
+            </p>
             <div className="understand-actions">
               {graphFocus && (
                 <button
