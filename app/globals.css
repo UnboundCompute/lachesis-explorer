@@ -387,7 +387,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:760px){
   /* Make the investigation back/forward row read as part of the sticky shell. */
   .topbar{border-bottom-left-radius:0;border-bottom-right-radius:0}
-  .mobile-navigation-controls{width:100%;margin:-1px 0 0;padding:0 8px 6px;justify-content:flex-start;border-top:0;border-radius:0 0 14px 14px;background:color-mix(in srgb,var(--canvas-raised) 90%,transparent);box-shadow:0 12px 30px rgba(0,0,0,.13)}
+  .mobile-navigation-controls{width:max-content;margin:6px 0 0 4px;padding:4px 6px;justify-content:flex-start;gap:6px;border:1px solid var(--line-strong);border-radius:999px;background:color-mix(in srgb,var(--canvas-raised) 90%,transparent);box-shadow:0 12px 30px rgba(0,0,0,.13)}
+  .mobile-navigation-label{color:var(--ink-3);font:700 8px var(--mono);letter-spacing:.08em;text-transform:uppercase}
 }
 .mobile-lens-picker{display:none}
 @media(max-width:920px){

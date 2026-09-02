@@ -69,11 +69,32 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
 
   useEffect(() => {
     if (!mobileLensOpen) return
+    const items = () => [...(mobileLensRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
+    items()[0]?.focus()
     function close(event: MouseEvent) {
       if (!mobileLensRef.current?.contains(event.target as Node)) setMobileLensOpen(false)
     }
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setMobileLensOpen(false)
+      const menuItems = items()
+      const current = menuItems.indexOf(document.activeElement as HTMLElement)
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setMobileLensOpen(false)
+        mobileLensRef.current?.querySelector<HTMLButtonElement>('.mobile-lens-trigger')?.focus()
+        return
+      }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        const delta = event.key === 'ArrowDown' ? 1 : -1
+        menuItems[(current + delta + menuItems.length) % menuItems.length]?.focus()
+        return
+      }
+      if (event.key === 'Home' || event.key === 'End') {
+        event.preventDefault()
+        menuItems[event.key === 'Home' ? 0 : menuItems.length - 1]?.focus()
+        return
+      }
+      if (event.key === 'Tab') setMobileLensOpen(false)
     }
     document.addEventListener('mousedown', close)
     document.addEventListener('keydown', onKey)
@@ -197,10 +218,11 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           </div>
         </div>
       </header>
-      <div className="navigation-controls mobile-navigation-controls" role="group" aria-label="Investigation navigation">
+      {(canGoBack || canGoForward) && <div className="navigation-controls mobile-navigation-controls" role="group" aria-label="Investigation navigation">
+        <span className="mobile-navigation-label">History</span>
         <button type="button" onClick={onGoBack} disabled={!canGoBack} aria-label="Go back in investigation" title={canGoBack ? "Go back in investigation" : "No earlier investigation state"}><Icon name="back" size={15} /></button>
         <button type="button" onClick={onGoForward} disabled={!canGoForward} aria-label="Go forward in investigation" title={canGoForward ? "Go forward in investigation" : "No later investigation state"}><Icon name="forward" size={15} /></button>
-      </div>
+      </div>}
     </div>
   )
 }
