@@ -83,6 +83,10 @@ function diffSearchText(item: { id: string }, app: App) {
   ].filter(Boolean).join(" ").toLowerCase()
 }
 
+function matchesQuery(text: string, query: string) {
+  return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => text.includes(term))
+}
+
 function DiffColumn({
   label,
   items,
@@ -113,7 +117,7 @@ function DiffColumn({
   const [copyState, setCopyState] = useState<{ id: string; status: 'copied' | 'failed' } | null>(null)
   const [expanded, setExpanded] = useState(false)
   const filteredItems = query.trim()
-    ? items.filter((item) => diffSearchText(item, app).includes(query.trim().toLowerCase()))
+    ? items.filter((item) => matchesQuery(diffSearchText(item, app), query))
     : items
   const itemIdentity = `${items.map(item => item.id).join('|')}|${query}`
   useEffect(() => { setCopyState(null); setExpanded(false) }, [app, itemIdentity])
@@ -224,7 +228,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
     ) as { base: Flow; compare: Flow }[]
   const visibleChangedPaths = comparisonQuery.trim()
     ? changedPaths.filter((item) =>
-        `${diffSearchText(item.base, base)} ${diffSearchText(item.compare, compare)}`.includes(comparisonQuery.trim().toLowerCase()),
+        matchesQuery(`${diffSearchText(item.base, base)} ${diffSearchText(item.compare, compare)}`, comparisonQuery),
       )
     : changedPaths
   const kinds = [...new Set([...base.flows, ...compare.flows].map(flowKind))]
