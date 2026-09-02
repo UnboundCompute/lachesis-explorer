@@ -222,6 +222,8 @@ The import-recovery pass reproduced an invalid bundle alert rendering below the 
 
 The Trace label pass found long analyzer expressions dominating the path selector, forcing users to parse repeated compiler-shaped names before reaching source metadata. After the compact label treatment, long paths use their truthful path kind and source location in the visible label while the exact analyzer name remains available in the title and full path header; same-location endpoints are also collapsed to avoid redundant coordinates. The real bundle was rechecked at 390px and 1440px.
 
+The semantic-question pass found `calls:` and `reaches:` filters removing the selected subject from Explore’s result set, which could silently change the inspector to another node with the same compiler label. After the query-target adjustment, question results retain the exact subject alongside its related nodes; the target remains selected and the mobile surface stays overflow-free at 390px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
