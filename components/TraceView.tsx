@@ -554,16 +554,18 @@ export function TraceView({
                       : app.mcp.some((evidence) => evidence.for === item.id)
                         ? `Bundle-backed ${pathKindLabel(item, false).toLowerCase()}`
                       : pathKindLabel(item, false)} {" · "}
-                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {indirectionCount(item)} {app.findings.some((finding) => finding.id === item.id) ? "indirect" : "inferred links"} · {flowLocation(app, item, nodeById)}
+                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {sourceCoverage(item, nodeById).available}/{item.steps.length} source
                   </small>
                   <small className="node-row-context">
-                    Source: {sourceCoverage(item, nodeById).available} / {item.steps.length} previews
+                    {flowLocation(app, item, nodeById)}
                   </small>
                   {query && flowMatchLabel(app, item, query, nodeById) && <small className="node-row-context">{flowMatchLabel(app, item, query, nodeById)}</small>}
-                  <small className="node-row-context">
-                    {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary ?? flowLocation(app, item, nodeById)}
-                  </small>
-                    {flowScopes(app, item, nodeById).length > 1 && (
+                  {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary && (
+                    <small className="node-row-context">
+                      {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary}
+                    </small>
+                  )}
+                  {flowScopes(app, item, nodeById).length > 1 && (
                     <small className="node-row-context">Context: {flowScopes(app, item, nodeById).join(" → ")}</small>
                   )}
                 </span>
