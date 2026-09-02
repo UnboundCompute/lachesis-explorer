@@ -427,19 +427,20 @@ export function SinkView({
           </div>
           {overlaps.length ? (
             <div className="overlap-list">
-              {overlaps.map((entry) => (
-                <span key={entry.id}>
-                  <i />
-                  {entry.label}
-                  <small>
-                    {
-                      entry.hops.filter((hop) => flowNodes.has(hop.node_id))
-                        .length
-                    }{" "}
-                    shared
-                  </small>
-                </span>
-              ))}
+              {overlaps.map((entry) => {
+                const sharedHop = entry.hops.find((hop) => flowNodes.has(hop.node_id));
+                const entryIndex = app.entries.findIndex((item) => item.id === entry.id);
+                const sharedCount = entry.hops.filter((hop) => flowNodes.has(hop.node_id)).length;
+                const content = <><i />{entry.label}<small>{sharedCount} shared</small></>;
+                return onEntry && entryIndex >= 0 ? (
+                  <button type="button" className="overlap-item" key={entry.id} onClick={() => {
+                    onRecord("Opened overlapping request flow", entry.label, `from ${sink.label || sink.id}`);
+                    onEntry(entryIndex, sharedHop?.node_id ?? entry.hops[0]?.node_id ?? "");
+                  }} aria-label={`Open ${entry.label}, ${sharedCount} shared steps`}>
+                    {content}<Icon name="arrow" size={11} />
+                  </button>
+                ) : <span key={entry.id}>{content}</span>;
+              })}
             </div>
           ) : (
             <span className="no-overlap">
