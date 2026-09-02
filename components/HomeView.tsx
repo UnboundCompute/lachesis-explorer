@@ -13,6 +13,7 @@ type Props = {
   isDemo: boolean;
   loadState: LoadState;
   onUpload: () => void;
+  onReviewCoverage: () => void;
   onLoadSample: () => void;
   onLoadSecuritySample: () => void;
   onView: (view: "map" | "investigate" | "trace" | "journey") => void;
@@ -136,6 +137,7 @@ export function HomeView({
   isDemo,
   loadState,
   onUpload,
+  onReviewCoverage,
   onLoadSample,
   onLoadSecuritySample,
   onView,
@@ -305,7 +307,10 @@ export function HomeView({
                 {app.coverage.includedNodes ?? app.nodes.length} of {app.coverage.indexedNodes ?? app.nodes.length} indexed nodes are available here. Paths and source context reflect this bundle’s included projection.
               </p>
             </div>
-            <small>{app.coverage.limitations[0]}{app.coverage.limitations.length > 1 ? ` · +${app.coverage.limitations.length - 1} more` : ""}</small>
+            <div className="understand-coverage-detail">
+              <small>{app.coverage.limitations[0]}{app.coverage.limitations.length > 1 ? ` · +${app.coverage.limitations.length - 1} more` : ""}</small>
+              <button type="button" onClick={onReviewCoverage}>Review data quality <Icon name="arrow" size={12} /></button>
+            </div>
           </aside>
         )}
 

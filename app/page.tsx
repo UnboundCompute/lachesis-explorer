@@ -972,6 +972,10 @@ export default function Page() {
           isDemo={isDemo}
           loadState={loadState}
           onUpload={() => fileRef.current?.click()}
+          onReviewCoverage={() => {
+            setMapMode("health");
+            changeView("map");
+          }}
           onLoadSample={loadCodeSample}
           onLoadSecuritySample={loadSecuritySample}
           onView={(next) => changeView(next)}
