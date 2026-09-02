@@ -204,6 +204,8 @@ The light-theme pass found Compare’s empty-state onboarding explanations rende
 
 The real-bundle upload pass reproduced the viewport settling at `scrollY=95` after activation, leaving Trace’s first heading behind the sticky header. After `activate()` gained a two-frame scroll restoration, uploaded `libxml2` content settles at `scrollY=0` with the heading below the header at 320px, 390px, 800px, and 1440px.
 
+The populated Compare tablet pass found the two-column diff grid expanding the document to 997px at an 800px viewport because its relationship content had a large intrinsic minimum. After the compact-tablet layout rule, Compare stacks its sections from 761–900px and stays within the viewport at 761px, 800px, 900px, and 1024px; the 800px populated state was visually rechecked.
+
 The keyboard-focus pass found all primary search inputs computing to `outline: none` without a focused parent surface. After the focus-state fix, Trace, Request Flow, Boundary, reaching-path search, and Explore query inputs expose a consistent cyan focus ring through `:focus-within`, with no viewport overflow at 390px.
 
 The theme contrast pass found selected Trace metadata at 3.22:1 against the dark green selection surface. After the selected-row contrast fix, supporting metadata measures 5.89:1 in dark theme and 4.76:1 in light theme. The pass also consolidated the reduced-motion policy into one explicit `animation:none` / `transition:none` rule, with reduced-motion menus still opening in their final visible state.
