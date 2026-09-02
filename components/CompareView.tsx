@@ -53,6 +53,13 @@ function sourceCoverage(flow: Flow, app: App) {
   return `${available}/${flow.steps.length} source previews`;
 }
 
+function changeReasons(base: Flow, compare: Flow) {
+  const reasons: string[] = [];
+  if (base.kind !== compare.kind) reasons.push("kind changed");
+  if (JSON.stringify(base.steps) !== JSON.stringify(compare.steps)) reasons.push("path changed");
+  return reasons;
+}
+
 function flowKind(flow: Flow) {
   const kind = flow.kind?.trim().toLowerCase()
   if (kind === 'call-path' || kind === 'callpath') return 'Call paths'
@@ -326,6 +333,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           (showAllChanged ? visibleChangedPaths : visibleChangedPaths.slice(0, 8)).map((item) => (
             <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, matchingFlowNodeId(item.base, base, comparisonQuery))} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
               <b>{item.base.name}</b>
+              <small className="changed-flow-reasons">{changeReasons(item.base, item.compare).join(" · ")}</small>
               <div>
                 <span><small>BASE</small>{flowPath(item.base, base)}</span>
                 <i>→</i>
