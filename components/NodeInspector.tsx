@@ -436,7 +436,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             <span className="panel-label">{securityContext ? "CONNECTED EVIDENCE" : "CONNECTED CONTEXT"}</span>
             {flows.length > 0 && (
               <div>
-                <small>GRAPH PATHS</small>
+                <small>GRAPH PATHS · OPEN IN TRACE</small>
                 {(showAllConnections ? flows : flows.slice(0, 4)).map((flow) =>
                   onFlow ? (
                     <button
@@ -458,7 +458,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             )}
             {entries.length > 0 && (
               <div>
-                <small>REQUEST FLOWS</small>
+                <small>REQUEST FLOWS · OPEN IN JOURNEY</small>
                 {(showAllConnections ? entries : entries.slice(0, 4)).map((entry) =>
                   onEntry ? (
                     <button
@@ -483,7 +483,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             )}
             {relationships.length > 0 && (
               <div>
-                <small>RELATIONSHIPS</small>
+                <small>RELATIONSHIPS · INSPECT NEIGHBOR</small>
                 {(showAllConnections ? relationships : relationships.slice(0, 4)).map((edge) => {
                   const peerId =
                     edge.source === node.id ? edge.target : edge.source;
