@@ -194,9 +194,17 @@ function flowLocation(app: App, flow: Flow, nodeById: NodeIndex) {
   if (!nodes.length) return "Source location unavailable";
   const first = nodes[0]!;
   const last = nodes[nodes.length - 1]!;
-  return first.id === last.id
-    ? location(first)
-    : `${location(first)} → ${location(last)}`;
+  const firstLocation = location(first);
+  const lastLocation = location(last);
+  return first.id === last.id || firstLocation === lastLocation
+    ? firstLocation
+    : `${firstLocation} → ${lastLocation}`;
+}
+
+function flowListLabel(app: App, flow: Flow, nodeById: NodeIndex) {
+  const exact = flowDisplayName(flow, app.nodes, app.flows);
+  if (exact.length <= 58) return exact;
+  return `${pathKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flowLocation(app, flow, nodeById)}`;
 }
 
 function sourceCoverage(flow: Flow, nodeById: NodeIndex) {
@@ -502,7 +510,7 @@ export function TraceView({
             <div className="path-pins-heading"><span className="panel-label">PINNED PATHS</span><button type="button" onClick={() => { setPinnedFlowIds([]); writeLocal(pinnedKey, "[]"); }}>Clear pins</button></div>
             {pinnedFlows.map((item) => (
               <button type="button" key={item.id} className={item.id === flow.id ? "path-pin selected" : "path-pin"} onClick={() => { onFlow(item.id, item.sourceNodeId ?? item.steps[0]?.node_id ?? ""); onInspectorOpen(); onRecord("Opened pinned graph path", item.id, `${item.steps.length} symbols`); }}>
-                <span><b>{flowDisplayName(item, app.nodes, app.flows)}</b><small>{pathKindLabel(item, app.findings.some((finding) => finding.id === item.id))} · {item.steps.length} symbols</small></span><Icon name="arrow" size={11} />
+                <span><b title={flowDisplayName(item, app.nodes, app.flows)}>{flowListLabel(app, item, nodeById)}</b><small>{pathKindLabel(item, app.findings.some((finding) => finding.id === item.id))} · {item.steps.length} symbols</small></span><Icon name="arrow" size={11} />
               </button>
             ))}
           </section>
@@ -577,7 +585,7 @@ export function TraceView({
               >
                 <span className="kind-dot" />
                 <span>
-                  <b title={flowDisplayName(item, app.nodes, app.flows)}>{flowDisplayName(item, app.nodes, app.flows)}</b>
+                  <b title={flowDisplayName(item, app.nodes, app.flows)}>{flowListLabel(app, item, nodeById)}</b>
                   <small>
                     {app.findings.some((finding) => finding.id === item.id)
                       ? "Security witness"
