@@ -193,6 +193,9 @@ export function OverviewView({
     setSelectionHistory([]);
     if (!setControlledNodeOrder) setLocalNodeOrder("path");
   }, [app]);
+  useEffect(() => {
+    setSearchText(query);
+  }, [query]);
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; module?: string; nodes: Node[]; inbound: number; outbound: number }>();
     const nodeContexts = new Map<string, string>();

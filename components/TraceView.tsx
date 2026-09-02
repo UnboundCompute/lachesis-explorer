@@ -199,6 +199,9 @@ export function TraceView({
     setPreviousFlowId("");
   }, [app]);
   useEffect(() => {
+    setSearchText(query);
+  }, [query]);
+  useEffect(() => {
     selectedFlowRef.current?.scrollIntoView({ block: "nearest" });
   }, [flowId, query]);
   useEffect(() => {
