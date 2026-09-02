@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `ce9ab61` — make empty Trace/Journey context states honest instead of showing stale step counts
 - `e072e07` — keep Trace navigation anchored to the heading instead of the deep inspector
 - `29ba52c` — remove duplicate load-status messaging that obscured mobile intros
 - `97d0d31` — preserve the requested view during initial deep-link restoration
