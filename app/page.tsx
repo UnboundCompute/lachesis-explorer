@@ -563,6 +563,10 @@ export default function Page() {
       params.set("view", next);
       window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
     }
+    if (next === "map" && view !== "map" && !focusNodeId) {
+      setMapMode("architecture");
+      setMapNeighborhoodOnly(false);
+    }
     setView(next);
     record("Changed view", viewLabels[next], "");
     if (next !== view) {
@@ -575,9 +579,9 @@ export default function Page() {
   function openNodeInMap(nodeId: string) {
     setFocusNodeId(nodeId);
     setMapQuery("");
+    changeView("map");
     setMapMode("map");
     setMapNeighborhoodOnly(false);
-    changeView("map");
   }
 
   function changeMapMode(next: OverviewMode) {

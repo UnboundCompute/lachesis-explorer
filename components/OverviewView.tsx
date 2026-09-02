@@ -553,10 +553,13 @@ export function OverviewView({
       <main className="overview-main">
         <header className="overview-heading">
           <div>
-            <h2>Explore how the codebase connects.</h2>
+            <h2>{mode === "architecture" ? "See the codebase by module." : mode === "health" ? "Check the evidence boundary." : "Explore one neighborhood at a time."}</h2>
             <p>
-              Search for a symbol, inspect its nearby relationships, or browse
-              the modules that make up this bundle.
+              {mode === "architecture"
+                ? "Start with the modules and boundaries in this bundle, then open a symbol when you need its relationships."
+                : mode === "health"
+                  ? "Review what is included, what is inferred, and where this bundle cannot answer with certainty."
+                  : "Search for a symbol, inspect its nearby relationships, or browse the modules that make up this bundle."}
             </p>
           </div>
           <div className="overview-heading-actions">
