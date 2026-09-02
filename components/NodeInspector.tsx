@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { App, Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
@@ -106,6 +106,17 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     app?.edges.filter(
       (edge) => edge.source === node.id || edge.target === node.id,
     ) ?? [];
+  const nearbyNodes = useMemo(() => {
+    if (!app || !onNode || !node.file) return [];
+    const fileNodes = app.nodes
+      .filter((item) => item.file === node.file)
+      .sort((a, b) => a.line - b.line || a.label.localeCompare(b.label));
+    const selectedIndex = fileNodes.findIndex((item) => item.id === node.id);
+    if (selectedIndex < 0) return [];
+    return fileNodes
+      .slice(Math.max(0, selectedIndex - 2), selectedIndex + 3)
+      .filter((item) => item.id !== node.id);
+  }, [app, node.file, node.id, onNode]);
   const securityContext = Boolean(
     app?.findings.some((flow) =>
       flow.steps.some((step) => step.node_id === node.id),
@@ -321,6 +332,28 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         <div className="node-documentation">
           <span className="panel-label">DOCUMENTATION</span>
           <p>{node.documentation}</p>
+        </div>
+      )}
+      {nearbyNodes.length > 0 && (
+        <div className="inspector-neighborhood">
+          <span className="panel-label">NEARBY IN THIS FILE</span>
+          <p>Move to an adjacent symbol without leaving the source context.</p>
+          <div className="inspector-neighborhood-list">
+            {nearbyNodes.map((nearby) => (
+              <button
+                type="button"
+                key={nearby.id}
+                onClick={() => onNode?.(nearby.id)}
+                aria-label={`Inspect ${nearby.label || nearby.id} at line ${nearby.line || "unknown"}`}
+              >
+                <span>
+                  <b>{nearby.label || nearby.id}</b>
+                  <small>{nearby.kind} · line {nearby.line || "—"}</small>
+                </span>
+                <Icon name="arrow" size={11} />
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {app && (
