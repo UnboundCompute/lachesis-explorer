@@ -196,6 +196,8 @@ The tablet breakpoint pass found the fixed History pill covering the lower path-
 
 The same 800px sweep found Boundary retaining a 560px desktop main-column minimum, expanding the document to 839px and pushing its lens switch off-screen. After the tablet grid adjustment, Boundary uses a flexible main column beside a 220px rail; its lens switch wraps/scrolls within the available width, and Trace, Request Flow, Boundary, Explore, and Compare all remain at the viewport width through 1024px. Boundary was visually rechecked at 800px.
 
+The current typography pass found Explore’s visible codebase-area rows rendering repository/module scope and in/out counts at 7px. After the focused metadata adjustment, those rows use 9px text with 11.7px line height; the full row remains single-line and overflow-free at 320px, 390px, 800px, and 1440px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
