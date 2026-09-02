@@ -745,6 +745,7 @@ export default function Page() {
   }
 
   function activate(next: App, demo = false) {
+    window.scrollTo({ top: 0, behavior: "auto" });
     const pending = pendingLink.current;
     const firstSink = recommendedSink(next)?.id ?? "";
     const firstFlow = recommendedFlow(next.flows);
