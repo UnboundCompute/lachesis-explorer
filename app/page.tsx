@@ -590,7 +590,12 @@ export default function Page() {
     });
     try {
       await copyText(url.toString());
-      setLoadState({ type: "success", message: "Investigation link copied." });
+      setLoadState({
+        type: "success",
+        message: isDemo
+          ? "Investigation link copied."
+          : "Local investigation link copied. The recipient will need the same bundle.json to open it.",
+      });
       trackEvent("investigation_link_copied", {
         view: params.view ?? "unknown",
       });
@@ -922,6 +927,13 @@ export default function Page() {
         hidden
         onChange={(event) => uploadComparison(event.target.files?.[0])}
       />
+      {view !== "home" && loadState.message && (
+        <p className={`status-toast ${loadState.type}`} role={loadState.type === "error" ? "alert" : "status"}>
+          <i />
+          <span>{loadState.message}</span>
+          <button type="button" onClick={() => setLoadState({ type: "idle", message: "" })} aria-label="Dismiss status message">×</button>
+        </p>
+      )}
       {commandOpen && (
         <CommandPalette
           app={app}
