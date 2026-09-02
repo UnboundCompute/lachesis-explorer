@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `5992b82` — raise compact search-clear and keyboard-help targets to a usable minimum
 - `0f5f952` — use the shared SVG icon system for history controls
 - `5721cb4` — improve mobile navigation placement and increase legibility of secondary labels
 - `a028be0` — expose bounded Back/Forward controls as a compact mobile pill
