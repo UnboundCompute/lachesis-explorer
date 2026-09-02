@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `d417266` — complete the mobile touch-target pass for search, toolbar, breadcrumb, and copy actions
 - `74aefbe` — add bundle-grounded Explore questions for incoming and outgoing relationships
 - `2831cc4` — raise mobile evidence controls to touch-safe sizes and improve persistent label readability
 - `f476e37` — improve light-theme contrast for secondary metadata and filter labels
