@@ -218,6 +218,8 @@ The ultra-narrow responsive pass found Trace’s mobile panel contributing 40px 
 
 The keyboard-navigation pass found opening Jump/⌘K leaving focus on the trigger instead of the command search, despite the palette’s existing Tab trap. After the mount focus handoff, the search receives focus immediately, accepts direct filter typing, and Escape closes the palette back to the opener at 390px.
 
+The import-recovery pass reproduced an invalid bundle alert rendering below the initial Understand viewport, leaving the user looking at the unchanged bundle with no visible failure state. After the error-state reveal, failed imports center the existing alert in view at 320px, 390px, and 800px; the current bundle remains intact and the document stays viewport-width.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
