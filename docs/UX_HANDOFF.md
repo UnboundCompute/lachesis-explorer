@@ -81,6 +81,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `661a735` — make Explore open the module lens by default while preserving focused topology entry
 - `44e3771` — lead duplicate path labels with endpoint symbols and raise path-list metadata size
 - `ed58008` — replace overlapping mobile lens tabs with an explicit current-lens picker
+- `4484c45` — keep Trace’s three-step reading guide visible for first-time path reading
 
 - `b08c3f6` — clarify paths across analysis lenses
 - `5f6a67c` — clarify connected path context
