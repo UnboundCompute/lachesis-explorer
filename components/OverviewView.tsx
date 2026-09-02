@@ -444,12 +444,17 @@ export function OverviewView({
         .map((module) => ({ ...module, nodes: module.nodes.filter((node) => visibleIds.has(node.id)) }))
         .filter((module) => module.nodes.length > 0)
     : modules;
+  const includedNodeCount = app.coverage.includedNodes ?? app.nodes.length;
+  const indexedNodeCount = Math.max(1, app.coverage.indexedNodes ?? app.nodes.length);
+  const nodeCoveragePercent = (includedNodeCount / indexedNodeCount) * 100;
   const health = [
     { label: "Graph nodes", value: app.nodes.length },
     { label: "Indexed nodes", value: app.coverage.indexedNodes ?? app.nodes.length },
     {
       label: "Node coverage",
-      value: `${Math.min(100, Math.round(((app.coverage.includedNodes ?? app.nodes.length) / Math.max(1, app.coverage.indexedNodes ?? app.nodes.length)) * 100))}%`,
+      value: nodeCoveragePercent > 0 && nodeCoveragePercent < 1
+        ? "<1%"
+        : `${Math.min(100, Math.round(nodeCoveragePercent))}%`,
     },
     { label: "Relationships", value: app.edges.length },
     { label: "Explicit relationships", value: app.edges.filter((edge) => edge.origins.includes("bundle")).length },
