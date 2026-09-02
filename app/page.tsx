@@ -293,7 +293,8 @@ export default function Page() {
       const occurrenceIndex = link.stepOccurrence
         ? linkedSteps.findIndex((step) => step.id === link.stepOccurrence)
         : -1;
-      const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.stepIndex ?? -1;
+      const nodeIndex = link.node ? linkedSteps.findIndex((step) => step.node_id === link.node) : -1;
+      const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.stepIndex ?? nodeIndex;
       if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length && (!link.node || linkedSteps[linkedStepIndex]?.node_id === link.node)) {
         setStepId(linkedSteps[linkedStepIndex].node_id);
         setStepIndex(linkedStepIndex);
@@ -310,7 +311,8 @@ export default function Page() {
       const occurrenceIndex = link.hopOccurrence
         ? starter.entries[index].hops.findIndex((hop) => hop.id === link.hopOccurrence)
         : -1;
-      const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.hopIndex ?? -1;
+      const hopIndex = link.hop ? starter.entries[index].hops.findIndex((hop) => hop.node_id === link.hop) : -1;
+      const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.hopIndex ?? hopIndex;
       if (linkedHopIndex >= 0 && linkedHopIndex < starter.entries[index].hops.length && (!link.hop || starter.entries[index].hops[linkedHopIndex]?.node_id === link.hop)) {
         setHopId(starter.entries[index].hops[linkedHopIndex].node_id);
         setHopIndex(linkedHopIndex);
@@ -382,7 +384,8 @@ export default function Page() {
           ? linkedSteps.findIndex((step) => step.id === params.get("step_occurrence"))
           : -1;
         const requestedIndex = params.get("step_index") == null ? -1 : Number(params.get("step_index"));
-        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex;
+        const nodeIndex = params.get("node") ? linkedSteps.findIndex((step) => step.node_id === params.get("node")) : -1;
+        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex >= 0 ? requestedIndex : nodeIndex;
         if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length) {
           setFlowId(linkedFlow.id);
           setStepId(linkedSteps[linkedStepIndex].node_id);
@@ -405,7 +408,8 @@ export default function Page() {
           ? hops.findIndex((hop) => hop.id === params.get("hop_occurrence"))
           : -1;
         const requestedIndex = params.get("hop_index") == null ? -1 : Number(params.get("hop_index"));
-        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex;
+        const hopIndex = params.get("hop") ? hops.findIndex((hop) => hop.node_id === params.get("hop")) : -1;
+        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex >= 0 ? requestedIndex : hopIndex;
         if (linkedHopIndex >= 0 && linkedHopIndex < hops.length) {
           setEntryIndex(linkedEntry);
           setHopId(hops[linkedHopIndex].node_id);
@@ -722,7 +726,8 @@ export default function Page() {
         const occurrenceIndex = pending.stepOccurrence
           ? linkedSteps.findIndex((step) => step.id === pending.stepOccurrence)
           : -1;
-        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.stepIndex ?? -1;
+        const nodeIndex = pending.node ? linkedSteps.findIndex((step) => step.node_id === pending.node) : -1;
+        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.stepIndex ?? nodeIndex;
         if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length && (!pending.node || linkedSteps[linkedStepIndex]?.node_id === pending.node)) {
           setStepId(linkedSteps[linkedStepIndex].node_id);
           setStepIndex(linkedStepIndex);
@@ -745,7 +750,8 @@ export default function Page() {
         const occurrenceIndex = pending.hopOccurrence
           ? next.entries[linkedEntry].hops.findIndex((hop) => hop.id === pending.hopOccurrence)
           : -1;
-        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.hopIndex ?? -1;
+        const hopIndex = pending.hop ? next.entries[linkedEntry].hops.findIndex((hop) => hop.node_id === pending.hop) : -1;
+        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.hopIndex ?? hopIndex;
         if (linkedHopIndex >= 0 && linkedHopIndex < next.entries[linkedEntry].hops.length && (!pending.hop || next.entries[linkedEntry].hops[linkedHopIndex]?.node_id === pending.hop)) {
           setHopId(next.entries[linkedEntry].hops[linkedHopIndex].node_id);
           setHopIndex(linkedHopIndex);
