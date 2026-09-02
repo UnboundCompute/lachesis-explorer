@@ -628,6 +628,38 @@ export default function Page() {
     trackEvent("source_file_explored");
   }
 
+  function replayActivity(target: string) {
+    const node = app.nodes.find((item) => item.id === target || item.label === target);
+    if (node) {
+      openNodeInMap(node.id);
+      record("Reopened graph node", node.label || node.id, "from exploration history");
+      return;
+    }
+    const flow = app.flows.find((item) => item.id === target || item.name === target);
+    if (flow) {
+      const orderedSteps = direction === "forward" ? [...flow.steps].reverse() : flow.steps;
+      const nextNode = orderedSteps[0]?.node_id ?? "";
+      changeView("trace");
+      setQuery("");
+      setFlowId(flow.id);
+      setStepId(nextNode);
+      setStepIndex(positionForFlow(app, flow.id, nextNode, direction));
+      setInspectorOpen(true);
+      record("Reopened graph path", flow.name, "from exploration history");
+      return;
+    }
+    const entryIndex = app.entries.findIndex((item) => item.id === target || item.label === target);
+    if (entryIndex >= 0) {
+      const entry = app.entries[entryIndex];
+      changeView("journey");
+      setEntryIndex(entryIndex);
+      setHopId(entry.hops[0]?.node_id ?? "");
+      setHopIndex(0);
+      setInspectorOpen(true);
+      record("Reopened request flow", entry.label, "from exploration history");
+    }
+  }
+
   function activate(next: App, demo = false) {
     const pending = pendingLink.current;
     const firstSink = recommendedSink(next)?.id ?? "";
@@ -1274,6 +1306,7 @@ export default function Page() {
         app={app}
         items={activity}
         onClear={() => setActivity([])}
+        onReplay={replayActivity}
       />
       <footer>
         <span>
