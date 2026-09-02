@@ -194,6 +194,8 @@ The request-flow desktop/phone pass found direct lens URLs restoring at `scrollY
 
 The tablet breakpoint pass found the fixed History pill covering the lower path-reading card at 761–900px, even though the document itself had no horizontal overflow. After the follow-up tablet rule, History returns to normal document flow from 761px through 1024px, remains a 44px control, and stays floating only on wider desktop layouts; the Trace workspace was visually rechecked at 800px.
 
+The same 800px sweep found Boundary retaining a 560px desktop main-column minimum, expanding the document to 839px and pushing its lens switch off-screen. After the tablet grid adjustment, Boundary uses a flexible main column beside a 220px rail; its lens switch wraps/scrolls within the available width, and Trace, Request Flow, Boundary, Explore, and Compare all remain at the viewport width through 1024px. Boundary was visually rechecked at 800px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
