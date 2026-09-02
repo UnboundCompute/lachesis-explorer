@@ -81,16 +81,21 @@ export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, 
 
   const pathLabel = securityMode ? 'value flows' : 'graph paths'
   const canvasStyle = { width: `${zoom * 100}%`, minWidth: `${Math.max(760, graph.width) * zoom}px`, height: `${graph.height * zoom}px` }
+  const focusDisabledReason = !selectedPoint
+    ? selectedId
+      ? 'The selected node is outside this boundary’s paths.'
+      : 'Select a node in the field or list to focus its paths.'
+    : allFlows.length < 2
+      ? 'Focus mode needs at least two reaching paths.'
+      : undefined
   const focusStatus = focusedOnly
     ? `Showing ${flows.length} paths containing ${selectedPoint?.node.label || selectedId}.`
-    : selectedId && !selectedPoint
-      ? 'The selected node is outside this boundary’s paths.'
-      : 'Showing every path that reaches this boundary.'
+    : focusDisabledReason || 'Showing every path that reaches this boundary.'
   return <section className="convergence-canvas" aria-label={`Converging ${pathLabel}`} aria-keyshortcuts="ArrowLeft ArrowRight Home End">
     <header className="convergence-bar"><div><span className="canvas-title">Convergence field</span><span className="canvas-count">{flows.length} paths · {graph.points.size} unique nodes</span>{selectedPoint && <span className="convergence-selected" aria-live="polite">Selected · {selectedPoint.node.label || selectedPoint.id}</span>}</div><div className="zoom-controls" role="group" aria-label="Graph zoom"><button type="button" onClick={() => setZoom(value => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom out">−</button><output aria-live="polite">{Math.round(zoom * 100)}%</output><button type="button" onClick={() => setZoom(value => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom in">+</button><button type="button" onClick={() => setZoom(1)}>Reset</button></div></header>
     <div className="convergence-filter" role="group" aria-label="Convergence display filter">
       <span aria-live="polite" aria-atomic="true">{focusStatus}</span>
-      <button type="button" className={focusedOnly ? 'active' : ''} aria-pressed={focusedOnly} onClick={() => { const next = !focusedOnly; setFocusedOnly(next); trackEvent('convergence_focus_toggled', { focused: next }) }} disabled={!selectedPoint || allFlows.length < 2}>
+      <button type="button" className={focusedOnly ? 'active' : ''} aria-pressed={focusedOnly} onClick={() => { const next = !focusedOnly; setFocusedOnly(next); trackEvent('convergence_focus_toggled', { focused: next }) }} disabled={Boolean(focusDisabledReason)} title={focusDisabledReason}>
         {focusedOnly ? 'Show all paths' : 'Focus selected node'}
       </button>
     </div>
