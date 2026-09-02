@@ -110,6 +110,22 @@ function matches(node: Node, query: string, app: App) {
               flow.kind?.toLowerCase().includes(value) &&
               flow.steps.some((step) => step.node_id === node.id),
           );
+        if (key === "calls" || key === "reaches") {
+          const targetIds = new Set(
+            app.nodes
+              .filter((candidate) =>
+                [candidate.id, candidate.label, candidate.qualifiedName]
+                  .filter(Boolean)
+                  .some((item) => item!.toLowerCase().includes(value)),
+              )
+              .map((candidate) => candidate.id),
+          );
+          return app.edges.some((edge) =>
+            key === "calls"
+              ? edge.source === node.id && targetIds.has(edge.target)
+              : edge.target === node.id && targetIds.has(edge.source),
+          );
+        }
       }
       return [
         node.id,
@@ -335,6 +351,19 @@ export function OverviewView({
   const selected = inspectorOpen && visible.length
     ? visible.find((node) => node.id === selectedId) ?? visible[0]
     : undefined;
+  const queryTarget = selected ?? visible.find((node) =>
+    app.edges.some((edge) => edge.source === node.id || edge.target === node.id),
+  );
+  const querySuggestions = queryTarget
+    ? [
+        app.edges.some((edge) => edge.target === queryTarget.id)
+          ? { label: `What reaches ${queryTarget.label || queryTarget.id}?`, query: `calls:${queryTarget.id}` }
+          : null,
+        app.edges.some((edge) => edge.source === queryTarget.id)
+          ? { label: `What does ${queryTarget.label || queryTarget.id} reach?`, query: `reaches:${queryTarget.id}` }
+          : null,
+      ].filter(Boolean) as { label: string; query: string }[]
+    : [];
   const topologySelectedRef = useRef<SVGGElement>(null);
   const focusAfterSelection = useRef(false);
   useEffect(() => {
@@ -727,8 +756,29 @@ export function OverviewView({
             )}
           </div>
         </div>
+        {querySuggestions.length > 0 && (
+          <div className="query-intents" role="group" aria-label={`Questions about ${queryTarget?.label || queryTarget?.id}`}>
+            <span>Ask about {queryTarget?.label || queryTarget?.id}</span>
+            {querySuggestions.map((suggestion) => (
+              <button
+                type="button"
+                key={suggestion.query}
+                onClick={() => {
+                  setSearchText(suggestion.label);
+                  setQuery(suggestion.query);
+                  trackEvent("semantic_question_applied", {
+                    surface: "topology",
+                    question: suggestion.query.split(":", 1)[0],
+                  });
+                }}
+              >
+                {suggestion.label}
+              </button>
+            ))}
+          </div>
+        )}
         <p id="graph-filter-help" className="query-syntax-help">
-          Filters: <code>kind:</code> <code>file:</code> <code>module:</code> <code>has:source</code> <code>edge:dynamic</code>
+          Filters: <code>kind:</code> <code>file:</code> <code>module:</code> <code>has:source</code> <code>edge:dynamic</code> · Questions: <code>calls:</code> into a symbol · <code>reaches:</code> out from a symbol
         </p>
         {mode === "map" && (
           <>
