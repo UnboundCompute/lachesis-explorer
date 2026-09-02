@@ -46,6 +46,7 @@ const crossesScope = (source: Node, target: Node) =>
   nodeScopeKey(source) !== nodeScopeKey(target) && Boolean(source.scope || target.scope);
 const nodeScopeKind = (node: Node) =>
   node.scope?.kind?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "";
+const hasSource = (node: Node) => Boolean(node.snippet.trim() || node.sourceWindow?.lines.length);
 
 function matches(node: Node, query: string, app: App) {
   return query
@@ -73,6 +74,8 @@ function matches(node: Node, query: string, app: App) {
           return app.mcp.some(
             (item) => item.for === node.id || item.node_ids?.includes(node.id),
           );
+        if (key === "has" && (value === "source" || value === "source-preview")) return hasSource(node);
+        if (key === "has" && (value === "source-gap" || value === "missing-source")) return !hasSource(node);
         if (key === "edge")
           return app.edges.some(
             (edge) =>
@@ -123,6 +126,7 @@ function matches(node: Node, query: string, app: App) {
         node.signature,
         node.documentation,
         node.snippet,
+        node.sourceWindow?.lines.join(" "),
       ]
         .join(" ")
         .toLowerCase()
@@ -134,7 +138,7 @@ function nodeMatchLabel(node: Node, query: string) {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (!terms.length) return "";
   const fields = [
-    { label: "source", values: [node.snippet] },
+    { label: "source", values: [node.snippet, node.sourceWindow?.lines.join(" ")] },
     { label: "documentation", values: [node.documentation] },
     { label: "signature", values: [node.signature] },
     { label: "symbol", values: [node.label, node.qualifiedName, node.id] },
@@ -303,6 +307,8 @@ export function OverviewView({
       ? { label: "Request flows", query: "origin:request-path" }
       : null,
     app.mcp.length ? { label: "Bundle-linked", query: "has:mcp" } : null,
+    app.nodes.some(hasSource) ? { label: "Has source", query: "has:source" } : null,
+    app.nodes.some((node) => !hasSource(node)) ? { label: "Source gaps", query: "has:source-gap" } : null,
     ...[...new Set(app.nodes.map((node) => node.module || node.scope?.module).filter(Boolean))]
       .slice(0, 2)
       .map((module) => ({ label: `Module · ${module}`, query: `module:${module}` })),
@@ -981,7 +987,7 @@ export function OverviewView({
                         {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
                       {query && nodeMatchLabel(node, query) && <small className="topology-match">{nodeMatchLabel(node, query)}</small>}
-                      <small className="topology-participation">{flowCount(node.id)} graph paths · {entryCount(node.id)} request flows</small>
+                      <small className="topology-participation">{flowCount(node.id)} graph paths · {entryCount(node.id)} request flows · {hasSource(node) ? "Source preview included" : "Source text unavailable"}</small>
                     </button>
                     );
                   })}
