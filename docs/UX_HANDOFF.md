@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `13ec67f` — improve Trace path-name, metadata, and route-value reading hierarchy
 - `650145f` — improve graph handoff, neighborhood, and filter action hit areas
 - `a958678` — standardize Setup, status, Jump, and keyboard-help action icons
 - `ea35d3d` — enlarge source-context action hit areas for mobile inspection
