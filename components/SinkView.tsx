@@ -232,7 +232,7 @@ export function SinkView({
               {pathsCopyState === "copied" ? "Paths copied" : pathsCopyState === "failed" ? "Copy failed" : "Copy paths"}
             </button>
             <button type="button" onClick={() => onView("map", selected.id)}>
-              See in graph
+              Open in Explore
             </button>
             <button
               type="button"
