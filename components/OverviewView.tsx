@@ -168,6 +168,7 @@ export function OverviewView({
   const mode = controlledMode ?? localMode;
   const setMode = setControlledMode ?? setLocalMode;
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const [linkState, setLinkState] = useState<"idle" | "copied" | "failed">("idle");
   const [searchText, setSearchText] = useState("");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -186,6 +187,7 @@ export function OverviewView({
     setQuery("");
     setExpandedModule(null);
     setShareState("idle");
+    setLinkState("idle");
     setSearchText("");
     setNeighborhoodOnly(false);
     setTopologyZoom(1);
@@ -516,6 +518,12 @@ export function OverviewView({
     }
     window.setTimeout(() => setShareState("idle"), 1800);
   }
+  async function shareNodeLink() {
+    if (!selected || !onShare) return;
+    const copied = await onShare(selected.id);
+    setLinkState(copied ? "copied" : "failed");
+    window.setTimeout(() => setLinkState("idle"), 1800);
+  }
 
   return (
     <section
@@ -551,6 +559,18 @@ export function OverviewView({
                 aria-live="polite"
               >
                 {shareState === "copied" ? (securityMode ? "Link copied" : "Markdown copied") : shareState === "failed" ? "Copy failed" : securityMode ? "Copy link" : "Copy Markdown"}
+              </button>
+            )}
+            {selected && !securityMode && onShare && (
+              <button
+                type="button"
+                className="share-control"
+                onClick={shareNodeLink}
+                aria-label="Copy link to selected graph node"
+                title="Copy a local link to this exact graph node"
+                aria-live="polite"
+              >
+                {linkState === "copied" ? "Link copied" : linkState === "failed" ? "Copy failed" : "Copy link"}
               </button>
             )}
             {!inspectorOpen && visible.length > 0 && (
