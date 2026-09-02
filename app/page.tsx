@@ -1010,13 +1010,6 @@ export default function Page() {
         hidden
         onChange={(event) => uploadComparison(event.target.files?.[0])}
       />
-      {view !== "home" && loadState.message && (
-        <p className={`status-toast ${loadState.type}`} role={loadState.type === "error" ? "alert" : "status"}>
-          <i />
-          <span>{loadState.message}</span>
-          <button type="button" onClick={() => setLoadState({ type: "idle", message: "" })} aria-label="Dismiss status message">×</button>
-        </p>
-      )}
       {commandOpen && (
         <CommandPalette
           app={app}
