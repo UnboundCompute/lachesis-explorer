@@ -216,6 +216,8 @@ The cross-lens contrast pass then found the shared dark-theme `--ink-3` token at
 
 The ultra-narrow responsive pass found Trace’s mobile panel contributing 40px of page-level horizontal overflow at 240px and 280px, even though its path canvas already had its own horizontal scroller. After the mobile panel overflow boundary was added, the document stays exactly viewport-width at 240px, 280px, and 300px while the path canvas remains independently scrollable; the Trace shell was visually rechecked at 240px.
 
+The keyboard-navigation pass found opening Jump/⌘K leaving focus on the trigger instead of the command search, despite the palette’s existing Tab trap. After the mount focus handoff, the search receives focus immediately, accepts direct filter typing, and Escape closes the palette back to the opener at 390px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
