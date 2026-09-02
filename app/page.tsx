@@ -486,6 +486,8 @@ export default function Page() {
       if (event.key === "/") {
         const searchSelector = view === "trace"
           ? ".sidebar .search input"
+          : view === "home"
+            ? ".understand-search input, .briefing-source-search input"
           : view === "map"
             ? ".query-composer input"
             : view === "journey"
