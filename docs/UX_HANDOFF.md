@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `084c954` — add an explicit labeled main landmark to empty and populated Compare states
 - `cffb253` — add a local, per-bundle pinned Trace-path working set
 - `ab358ea` — standardize zoom and clear controls with the shared SVG icon system
 - `f91b2e5` — align the Understand source-search hit area with the other lenses
