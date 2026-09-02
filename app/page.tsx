@@ -1215,6 +1215,7 @@ export default function Page() {
             onUpload={() => compareFileRef.current?.click()}
             onOpenFlow={(nextFlow, nextNode) => {
               changeView("trace");
+              setQuery("");
               setFlowId(nextFlow);
               setStepId(nextNode);
               setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
