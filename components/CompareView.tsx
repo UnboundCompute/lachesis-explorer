@@ -238,7 +238,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
 
   if (!compare) {
     return (
-      <section className="compare-empty">
+      <main className="compare-empty" aria-label="Revision comparison">
         <span className="context-kicker">REVISION DIFF</span>
         <h2>Compare two code graph bundles.</h2>
         <p>
@@ -254,7 +254,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           <div><b>02</b><span><strong>Removed</strong><small>Items absent from the comparison bundle.</small></span></div>
           <div><b>03</b><span><strong>Changed</strong><small>Same path IDs with a different kind or step sequence.</small></span></div>
         </div>
-      </section>
+      </main>
     )
   }
 
@@ -286,7 +286,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
   ] as const
 
   return (
-    <section className="compare-workspace">
+    <main className="compare-workspace" aria-label="Revision comparison">
       <header className="compare-heading">
         <div>
           <span className="context-kicker">REVISION DIFF</span>
@@ -352,6 +352,6 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           </button>
         )}
       </section>
-    </section>
+    </main>
   )
 }
