@@ -202,6 +202,8 @@ The reduced-motion audit found the global preference rule compressing every anim
 
 The light-theme pass found Compare’s empty-state onboarding explanations rendering at 7px in both themes. After the copy-readability fix, the three “Added / Removed / Changed” explanations use 9px text with 13.05px line height; empty Compare remains overflow-free at 320px, 390px, 800px, and 1440px in dark and light themes.
 
+The real-bundle upload pass reproduced the viewport settling at `scrollY=95` after activation, leaving Trace’s first heading behind the sticky header. After `activate()` gained a two-frame scroll restoration, uploaded `libxml2` content settles at `scrollY=0` with the heading below the header at 320px, 390px, 800px, and 1440px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
