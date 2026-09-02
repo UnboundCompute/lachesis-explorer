@@ -302,7 +302,7 @@ export function HomeView({
                   className="understand-primary"
                   onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}
                 >
-                  Follow “{graphFocus.name}” <Icon name="arrow" size={14} />
+                  Follow “{flowDisplayName(graphFocus, app.nodes, app.flows)}” <Icon name="arrow" size={14} />
                 </button>
               )}
               <button type="button" className="understand-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
