@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `a958678` — standardize Setup, status, Jump, and keyboard-help action icons
 - `ea35d3d` — enlarge source-context action hit areas for mobile inspection
 - `5992b82` — raise compact search-clear and keyboard-help targets to a usable minimum
 - `0f5f952` — use the shared SVG icon system for history controls
