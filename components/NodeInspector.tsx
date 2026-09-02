@@ -99,6 +99,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
   const sourceSnippet = node.snippet || "";
   const sourceText = node.sourceWindow?.lines.join("\n") || sourceSnippet;
   const sourceUrl = sourceUrlFor(app, node);
+  const sourceLinkConfigured = Boolean(app?.bundle.sourceUrlTemplate);
   const sourceLines = node.sourceWindow?.lines?.length
     ? node.sourceWindow.lines
     : sourceSnippet
@@ -312,8 +313,13 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             </a>
           )}
           {hasSourceLocation && !sourceUrl && (
-            <span className="source-link-note" title="Add bundle meta.source_url_template to enable repository links">
-              Repository link not configured
+            <span
+              className="source-link-note"
+              title={sourceLinkConfigured
+                ? "The configured meta.source_url_template did not produce a valid HTTP(S) URL for this node"
+                : "Add bundle meta.source_url_template to enable repository links"}
+            >
+              {sourceLinkConfigured ? "Repository link unavailable" : "Repository link not configured"}
             </span>
           )}
           <span className="sr-only" aria-live="polite">{copied ? `${hasSourceLocation ? "Source location" : "Graph ID"} copied.` : copyError ? `${hasSourceLocation ? "Source location" : "Graph ID"} could not be copied.` : ""}</span>
