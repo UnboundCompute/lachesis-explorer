@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `6f46872` — clarify that the contextual upload action replaces the active bundle
 - `b9429cc` — remove the redundant Understand landing-page eyebrow after a rendered mobile/desktop audit
 - `73c1690` — make Explore `calls:` and `reaches:` questions traverse the full bundled relationship chain
 - `1abca96` — integrate mobile investigation navigation into the sticky shell
@@ -158,6 +159,8 @@ Settled light-theme validation with the real `libxml2` bundle at 390px and 1440p
 The populated Compare workspace was also visually checked at 390px with the real `libxml2` bundle: active History appears only when navigation state exists, comparison actions meet the touch-target minimum, the success notice remains readable, and the dense diff sections stay within the viewport. A Boundary pass reproduced clipped “Copy link”, “Copy paths”, and “Open in Explore” labels at 390px; after `231d825`, the actions preserve their intrinsic widths (67px, 65px, and 85px), expose complete labels, and the page remains within the viewport at 390px and 1440px. Invalid bundle recovery was then tested from Trace and Compare at 390px: both shared notices expose “Try another bundle” and “Open bundle contract”, all three actions measure at least 44px high, the contract link points to the canonical docs, and the viewport remains 390px wide.
 
 The latest Understand landing pass removed the redundant “CODE UNDERSTANDING WORKSPACE” eyebrow. At 390px and 1440px the heading now leads directly into the bundle-specific explanation, with no overflow and no detector findings. The invalid-upload pass also confirmed that the second `role="alert"` in the DOM is Next.js’s visually hidden route announcer, not a duplicate Explorer notice.
+
+The comparison follow-up found the shared contextual upload action still labeled “Load bundle.json” after a bundle was active, while Compare correctly used “Load another.” After `6f46872`, non-home lenses consistently say “Load another bundle”; empty and populated Compare states remain unambiguous and overflow-free at 390px.
 
 ## Safe next session
 
