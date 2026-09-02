@@ -158,7 +158,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           ))}
         </nav>
         <div className="mobile-lens-picker" ref={mobileLensRef}>
-          <button type="button" className="mobile-lens-trigger" aria-expanded={mobileLensOpen} aria-controls="mobile-analysis-menu" aria-haspopup="menu" onClick={() => { setMenu(false); setMobileLensOpen(open => !open) }}>
+          <button type="button" className="mobile-lens-trigger" aria-expanded={mobileLensOpen} aria-controls={mobileLensOpen ? "mobile-analysis-menu" : undefined} aria-haspopup="menu" onClick={() => { setMenu(false); setMobileLensOpen(open => !open) }}>
             <span><small>Current lens</small><b>{currentLens.label}</b></span><Icon name="chevron" size={12} />
           </button>
           {mobileLensOpen && (
@@ -172,7 +172,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           )}
         </div>
         <div className="more-views" ref={moreRef}>
-          <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMobileLensOpen(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls="more-analysis-menu" aria-haspopup="menu">
+          <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMobileLensOpen(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls={moreOpen ? "more-analysis-menu" : undefined} aria-haspopup="menu">
             <span>More</span><small>Focused views</small><Icon name="chevron" size={11} />
           </button>
           {moreOpen && (
@@ -193,7 +193,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           <button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14} /><span>Jump</span><kbd>⌘K /</kbd></button>
           <button type="button" className="theme-toggle" suppressHydrationWarning aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`} onClick={() => { setDark(!dark); trackEvent('theme_toggled', { theme: dark ? 'light' : 'dark' }) }}><Icon name={dark ? 'sun' : 'moon'} size={15} /><span>{dark ? 'Light' : 'Dark'}</span></button>
           <div className="app-picker" ref={appPickerRef}>
-            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-controls="bundle-context-menu" aria-haspopup="dialog">
+            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-controls={menu ? "bundle-context-menu" : undefined} aria-haspopup="dialog">
               <span className="status-dot" /><span><small>Active bundle</small><b>{app.name || 'Untitled bundle'}</b></span><Icon name="chevron" size={14} />
             </button>
             {menu && (

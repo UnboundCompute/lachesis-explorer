@@ -650,7 +650,7 @@ export function TraceView({
               </button>
             )}
             {!inspectorOpen && (
-              <button className="inspector-reopen" type="button" onClick={onInspectorOpen} aria-expanded={inspectorOpen} aria-controls="source-inspector">
+              <button className="inspector-reopen" type="button" onClick={onInspectorOpen} aria-expanded={inspectorOpen}>
                 Show source
               </button>
             )}

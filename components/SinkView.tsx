@@ -406,7 +406,7 @@ export function SinkView({
               {securityMode ? "Evidence matrix" : "Path matrix"}
             </button>
             {!inspectorOpen && (
-              <button type="button" onClick={() => setInspectorOpen(true)} aria-expanded={inspectorOpen} aria-controls="source-inspector">
+              <button className="inspector-reopen" type="button" onClick={() => setInspectorOpen(true)} aria-expanded={inspectorOpen}>
                 <Icon name="code" size={13} />
                 Source
               </button>

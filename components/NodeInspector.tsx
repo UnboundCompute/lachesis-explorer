@@ -242,7 +242,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
   function closeInspector() {
     onClose();
     window.requestAnimationFrame(() => {
-      const sourceTrigger = document.querySelector<HTMLButtonElement>('[aria-controls="source-inspector"]');
+      const sourceTrigger = document.querySelector<HTMLButtonElement>('.inspector-reopen[aria-expanded="false"]');
       if (sourceTrigger) sourceTrigger.focus();
       else document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus();
     });

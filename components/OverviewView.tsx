@@ -670,7 +670,6 @@ export function OverviewView({
                 className="inspector-reopen"
                 onClick={() => setInspectorOpen(true)}
                 aria-expanded={inspectorOpen}
-                aria-controls="source-inspector"
               >
                 <Icon name="code" size={13} />
                 Show source
