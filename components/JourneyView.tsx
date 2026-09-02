@@ -23,7 +23,7 @@ function matchingHopIndex(entry: App["entries"][number], query: string, nodeById
     .trim()
     .toLowerCase()
     .split(/\s+/)
-    .filter((term) => term && !term.includes(":"));
+    .filter(Boolean);
   if (!terms.length) return -1;
   const entryHaystack = [
     entry.label,
@@ -33,8 +33,6 @@ function matchingHopIndex(entry: App["entries"][number], query: string, nodeById
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
-  const hopTerms = terms.filter((term) => !entryHaystack.includes(term));
-  if (!hopTerms.length) return -1;
 
   return entry.hops.findIndex((hop) => {
     const node = nodeById.get(hop.node_id);
@@ -51,7 +49,24 @@ function matchingHopIndex(entry: App["entries"][number], query: string, nodeById
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
-    return hopTerms.every((term) => haystack.includes(term));
+    return terms.every((term) => {
+      const [key, ...rest] = term.split(":");
+      const value = rest.join(":");
+      if (rest.length) {
+        if (key === "file") return node?.file.toLowerCase().includes(value);
+        if (key === "kind") return node?.kind.toLowerCase().includes(value);
+        if (key === "module") return [node?.module, node?.scope?.module].some((item) => item?.toLowerCase().includes(value));
+        if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+          return [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package, node?.scope?.module]
+            .some((item) => item?.toLowerCase().includes(value));
+        }
+        if (key === "has" && (value === "source" || value === "source-preview")) return hasSource(node);
+        if (key === "has" && (value === "source-gap" || value === "missing-source")) return !hasSource(node);
+        if (key === "role") return hop.edge_label.toLowerCase().includes(value) || hop.caption.toLowerCase().includes(value);
+        return false;
+      }
+      return entryHaystack.includes(term) || haystack.includes(term);
+    });
   });
 }
 
@@ -128,8 +143,21 @@ export function JourneyView({
       return term.split(/\s+/).every((part) => {
         const [key, ...rest] = part.split(":");
         const value = rest.join(":");
-        if (key === "has" && (value === "source" || value === "source-preview")) return nodes.some(hasSource);
-        if (key === "has" && (value === "source-gap" || value === "missing-source")) return nodes.some((node) => !hasSource(node));
+        if (rest.length) {
+          if (key === "kind") return nodes.some((node) => node?.kind.toLowerCase().includes(value));
+          if (key === "file") return nodes.some((node) => node?.file.toLowerCase().includes(value));
+          if (key === "module") return nodes.some((node) => [node?.module, node?.scope?.module].some((item) => item?.toLowerCase().includes(value)));
+          if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+            return nodes.some((node) => [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package, node?.scope?.module]
+              .some((item) => item?.toLowerCase().includes(value)));
+          }
+          if (key === "confidence") return item.confidence?.toLowerCase().includes(value) ?? false;
+          if (key === "has" && value === "mcp") return app.mcp.some((evidence) => evidence.for === item.id);
+          if (key === "has" && (value === "source" || value === "source-preview")) return nodes.some(hasSource);
+          if (key === "has" && (value === "source-gap" || value === "missing-source")) return nodes.some((node) => !hasSource(node));
+          if (key === "role") return item.hops.some((hop) => hop.edge_label.toLowerCase().includes(value) || hop.caption.toLowerCase().includes(value));
+          return false;
+        }
         return haystack.includes(part);
       });
     });
