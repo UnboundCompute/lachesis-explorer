@@ -96,6 +96,42 @@ function matchesFlow(app: App, flow: Flow, query: string, nodeById: NodeIndex) {
   });
 }
 
+function matchingStepIndex(flow: Flow, query: string, nodeById: NodeIndex) {
+  const terms = query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((term) => term && !term.includes(":"));
+  if (!terms.length) return -1;
+
+  return flow.steps.findIndex((step) => {
+    const node = nodeById.get(step.node_id);
+    const haystack = [
+      step.role,
+      step.note,
+      step.edge?.relation,
+      node?.label,
+      node?.file,
+      node?.kind,
+      node?.qualifiedName,
+      node?.signature,
+      node?.documentation,
+      node?.snippet,
+      node?.sourceWindow?.lines.join(" "),
+      node?.module,
+      node?.scope?.label,
+      node?.scope?.service,
+      node?.scope?.package,
+      node?.scope?.module,
+      node?.scope?.repository,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return terms.every((term) => haystack.includes(term));
+  });
+}
+
 function flowMatchLabel(app: App, flow: Flow, query: string, nodeById: NodeIndex) {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (!terms.length) return "";
@@ -465,10 +501,16 @@ export function TraceView({
                 }
                 onClick={() => {
                   const orderedSteps = direction === "forward" ? [...item.steps].reverse() : item.steps;
+                  const rawMatchIndex = matchingStepIndex(item, query, nodeById);
+                  const nextIndex = rawMatchIndex < 0
+                    ? 0
+                    : direction === "forward"
+                      ? item.steps.length - 1 - rawMatchIndex
+                      : rawMatchIndex;
                   rememberFlow(item.id);
                   setFlowId(item.id);
-                  setStepId(orderedSteps[0]?.node_id ?? "");
-                  onPositionChange?.(0);
+                  setStepId(orderedSteps[nextIndex]?.node_id ?? "");
+                  onPositionChange?.(nextIndex);
                   onInspectorOpen();
                   onRecord(
                     "Opened graph path",
