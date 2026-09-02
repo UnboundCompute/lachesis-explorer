@@ -529,6 +529,22 @@ export default function Page() {
   function changeView(next: View) {
     if (next !== view && urlReady.current) {
       const params = new URLSearchParams(window.location.search);
+      [
+        "flow",
+        "node",
+        "direction",
+        "step_index",
+        "step_occurrence",
+        "entry",
+        "hop",
+        "hop_index",
+        "hop_occurrence",
+        "sink",
+        "filter",
+        "map_mode",
+        "map_order",
+        "map_focus",
+      ].forEach((key) => params.delete(key));
       params.set("view", next);
       window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
     }
