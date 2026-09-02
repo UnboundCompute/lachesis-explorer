@@ -165,6 +165,7 @@ export function CommandPalette({
   const [active, setActive] = useState(0);
   const normalized = query.trim().toLowerCase();
   const dialogRef = useRef<HTMLElement>(null);
+  const commandInputRef = useRef<HTMLInputElement>(null);
   const activeOptionRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(opener ?? null);
   const filePaths = useMemo(
@@ -174,6 +175,9 @@ export function CommandPalette({
     ])],
     [app.files, app.nodes],
   );
+  useEffect(() => {
+    commandInputRef.current?.focus();
+  }, []);
   useEffect(() => {
     return () => openerRef.current?.focus();
   }, []);
@@ -371,6 +375,7 @@ export function CommandPalette({
         <div className="command-search">
           <Icon name="search" size={17} />
           <input
+            ref={commandInputRef}
             id="command-search-input"
             autoFocus
             value={query}
