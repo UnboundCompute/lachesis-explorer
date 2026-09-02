@@ -811,11 +811,11 @@ export function OverviewView({
                   })}
                 </svg>
                 <div className="topology-legend" aria-label="Topology relationship legend">
-                  <span><i className="legend-exact" />exact relationship</span>
-                  <span><i className="legend-alias" />alias relationship</span>
-                  <span><i className="legend-dynamic" />dynamic relationship</span>
-                  <span><i className="legend-boundary" />context boundary</span>
-                  {visible.some((node) => node.scope?.kind === "external" || node.scope?.kind === "generated") && <span><i className="legend-scope" />external / generated node</span>}
+                  <span title="The bundle recorded this connection directly"><i className="legend-exact" />recorded connection</span>
+                  <span title="The connection uses an alternate or aliased name"><i className="legend-alias" />alternate connection</span>
+                  <span title="The connection depends on runtime behavior"><i className="legend-dynamic" />runtime-dependent connection</span>
+                  <span title="The connection crosses a module, service, or repository boundary"><i className="legend-boundary" />module / service boundary</span>
+                  {visible.some((node) => node.scope?.kind === "external" || node.scope?.kind === "generated") && <span title="This symbol belongs to generated or external code"><i className="legend-scope" />external / generated code</span>}
                   <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
                 </div>
                 <div className="topology-node-list" aria-label={neighborhoodOnly ? "Graph nodes in selected neighborhood" : "Graph nodes"}>

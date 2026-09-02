@@ -360,11 +360,11 @@ export function PathCanvas({
       </div>
 
       <div className="graph-legend" aria-label="Graph color legend">
-        <span><i className="legend-exact" />exact path</span>
-        <span><i className="legend-alias" />alias</span>
-        <span><i className="legend-dynamic" />dynamic</span>
+        <span title="The bundle recorded this connection directly"><i className="legend-exact" />recorded path</span>
+        <span title="The connection uses an alternate or aliased name"><i className="legend-alias" />alternate path</span>
+        <span title="The connection depends on runtime behavior"><i className="legend-dynamic" />runtime-dependent</span>
         <span><i className="legend-sink" />sink</span>
-        {items.some((item) => item.node.scope?.kind === 'external' || item.node.scope?.kind === 'generated') && <span><i className="legend-scope" />external / generated context</span>}
+        {items.some((item) => item.node.scope?.kind === 'external' || item.node.scope?.kind === 'generated') && <span title="This symbol belongs to generated or external code"><i className="legend-scope" />external / generated code</span>}
         {repeatedIds.size > 0 && <span><i className="legend-revisited" />revisited symbol</span>}
       </div>
     </div>
