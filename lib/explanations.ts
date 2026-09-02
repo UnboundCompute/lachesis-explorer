@@ -36,6 +36,13 @@ function limitationsSection(limitations?: string[]) {
   return `\n\n## Bundle limitations\n\n${limitations.map((limitation) => `- ${limitation}`).join("\n")}`;
 }
 
+function flowLimitations(flow: Flow) {
+  return [...new Set([
+    ...(flow.limitations ?? []),
+    ...flow.steps.flatMap((step) => step.edge?.limitations ?? []),
+  ])];
+}
+
 export function explainFlow(app: App, flow: Flow, direction: "backward" | "forward", selectedIndex: number, url?: string) {
   const steps = direction === "backward" ? flow.steps : [...flow.steps].reverse();
   const selectedStep = steps[selectedIndex] ?? steps[0];
@@ -47,7 +54,7 @@ export function explainFlow(app: App, flow: Flow, direction: "backward" | "forwa
     return `${index + 1}. **${node?.label || step.node_id}** — ${relation}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${step.note ? `\n   ${step.note}` : ""}`;
   }).join("\n");
 
-  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${steps.length} symbols.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(flow.limitations)}${explorerReference(url)}`;
+  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${steps.length} symbols.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(flowLimitations(flow))}${explorerReference(url)}`;
 }
 
 export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?: string) {
