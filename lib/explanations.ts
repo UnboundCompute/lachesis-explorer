@@ -84,6 +84,11 @@ export function explainNode(app: App, node: Node, url?: string) {
       return `- ${outgoing ? "leads to" : "receives from"} **${peer?.label || peerId}** — ${edge.relation || "connected"} (\`${location(peer)}\`)`;
     })
     .join("\n");
+  const relationshipLimitations = [...new Set(
+    app.edges
+      .filter((edge) => edge.source === node.id || edge.target === node.id)
+      .flatMap((edge) => edge.limitations ?? []),
+  )];
   const pathNames = flows.slice(0, 8).map((flow) => `- ${flow.name}`).join("\n");
   const entryNames = entries.slice(0, 8).map((entry) => `- ${entry.label}`).join("\n");
 
@@ -91,5 +96,5 @@ export function explainNode(app: App, node: Node, url?: string) {
     parent ? `Enclosed by: **${parent.label || parent.id}**` : "",
     children.length ? `\n## Contained symbols\n\n${children.map((child) => `- ${child.label || child.id} (${child.kind}, line ${child.line || "—"})`).join("\n")}` : "",
   ].filter(Boolean).join("\n");
-  return `# ${node.label || node.id}\n\n${node.documentation || `A ${node.kind} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${node.kind}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n${hierarchy ? `${hierarchy}\n` : ""}## Source\n\n${codeBlock(sourceText(node))}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${explorerReference(url)}`;
+  return `# ${node.label || node.id}\n\n${node.documentation || `A ${node.kind} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${node.kind}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n${hierarchy ? `${hierarchy}\n` : ""}## Source\n\n${codeBlock(sourceText(node))}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${limitationsSection(relationshipLimitations)}${explorerReference(url)}`;
 }
