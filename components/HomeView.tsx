@@ -286,7 +286,6 @@ export function HomeView({
       <main className="understand-home">
         <header className="understand-hero">
           <div className="understand-copy">
-            <span className="understand-eyebrow">CODE UNDERSTANDING WORKSPACE</span>
             <h1>Understand {app.name || "this codebase"}, one path at a time.</h1>
             <p>
               {app.bundle.description ||
