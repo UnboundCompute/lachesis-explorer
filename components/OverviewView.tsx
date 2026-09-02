@@ -458,7 +458,7 @@ export function OverviewView({
     { label: "Graph paths", value: app.flows.length },
     { label: "Request flows", value: app.entries.length },
     { label: "Linked records", value: app.mcp.length },
-    { label: "Source text included", value: `${app.nodes.filter((node) => node.snippet.trim()).length} / ${app.nodes.length}` },
+    { label: "Source previews included", value: `${app.nodes.filter(hasSource).length} / ${app.nodes.length}` },
     { label: "Documented symbols", value: `${app.nodes.filter((node) => node.documentation?.trim()).length} / ${app.nodes.length}` },
     { label: "Unmapped nodes", value: app.nodes.filter((node) => !node.file).length },
     {
