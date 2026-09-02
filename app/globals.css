@@ -417,6 +417,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 }
 .evidence-metrics{flex-wrap:wrap;gap:8px 18px}.evidence-metrics>div{min-width:0}
 @media(max-width:760px){.import-notice>button{min-width:44px;min-height:44px}.import-notice .notice-action{min-height:44px}}
+@media(max-width:760px){.import-notice{flex-wrap:wrap}.import-notice>span{flex:1 1 calc(100% - 14px)}.import-notice .notice-action{margin-left:0}.import-notice>button:last-child{margin-left:auto}}
 @media(max-width:760px){.compare-heading .secondary-button,.compare-search button,.diff-flow-preview summary,.diff-copy-action,.diff-item-action,.diff-expand{min-height:44px}.compare-search button{min-width:44px}.diff-flow-preview summary{padding-block:10px}.diff-copy-action{padding-block:8px}.diff-item-action{padding-block:10px}.diff-expand{padding-block:10px}}
 @media(max-width:760px){.list-empty button,.queue-empty button{min-height:44px;padding-block:10px}}
 @media(max-width:760px){.neighborhood-toggle,.topology-empty button,.map-summary p .query-clear{min-height:44px;padding-block:10px}.topology-empty button,.map-summary p .query-clear{display:inline-flex;align-items:center}}
@@ -425,7 +426,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:760px){.briefing-notice>button{min-width:44px;min-height:44px}.briefing-notice .notice-action{min-height:44px}.context-row{min-height:44px}}
 .briefing-notice .notice-link,.import-notice .notice-link{display:inline-flex;align-items:center;justify-content:center;padding:5px 7px;border:1px solid currentColor;border-radius:6px;color:inherit;font:700 8px var(--mono);text-decoration:none;white-space:nowrap}
 @media(max-width:360px){.briefing-notice{flex-wrap:wrap}.briefing-notice>span{flex:1 1 calc(100% - 14px)}.briefing-notice .notice-action{margin-left:0}.briefing-notice>button:last-child{margin-left:auto}}
-@media(max-width:360px){.import-notice{flex-wrap:wrap}.import-notice>span{flex:1 1 calc(100% - 14px)}.import-notice .notice-action{margin-left:0}.import-notice>button:last-child{margin-left:auto}}
 @media(max-width:760px){.trail-drawer header button{width:44px;height:44px;min-width:44px;min-height:44px}.casefile-notes button{min-height:44px}.trail-actions button{min-height:44px}}
 @media(max-width:760px){.trail-trigger{position:relative;right:auto;bottom:auto;width:auto;min-width:44px;margin:8px 12px 12px auto;padding:5px 10px 5px 12px}.trail-trigger>span{display:inline}.trail-trigger>b{display:grid}}
 @media(max-width:760px){.command-search input{min-height:44px}.command-close{width:44px;height:44px;min-width:44px;min-height:44px}.help-dialog header button{width:44px;height:44px;min-width:44px;min-height:44px}.help-done{min-height:44px}}
