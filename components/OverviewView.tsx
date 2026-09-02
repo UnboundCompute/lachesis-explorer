@@ -421,7 +421,7 @@ export function OverviewView({
     trackEvent("topology_node_selected");
   }
   const summary = selected
-    ? `${selected.label || selected.id} participates in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request path${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} normalized relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
+    ? `${selected.label || selected.id} appears in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request path${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} recorded relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
     : visible.length
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
@@ -446,12 +446,10 @@ export function OverviewView({
       <main className="overview-main">
         <header className="overview-heading">
           <div>
-            <span className="context-kicker">SYSTEM MAP</span>
-            <h2>See the graph’s shape before following a path.</h2>
+            <h2>Explore how the codebase connects.</h2>
             <p>
-              Explore normalized relationships, shared choke points, module
-              concentration, and bundle health from the graph data already
-              present.
+              Search for a symbol, inspect its nearby relationships, or browse
+              the modules that make up this bundle.
             </p>
           </div>
           <div className="overview-heading-actions">
@@ -486,7 +484,7 @@ export function OverviewView({
                 onClick={() => setMode("map")}
               >
                 <Icon name="target" size={13} />
-                Topology
+                Map
               </button>
               <button
                 type="button"
@@ -495,7 +493,7 @@ export function OverviewView({
                 onClick={() => setMode("architecture")}
               >
                 <Icon name="matrix" size={13} />
-                Architecture
+                Modules
               </button>
               <button
                 type="button"
@@ -504,7 +502,7 @@ export function OverviewView({
                 onClick={() => setMode("health")}
               >
                 <Icon name="history" size={13} />
-                Health
+                Data quality
               </button>
             </div>
           </div>
@@ -514,8 +512,8 @@ export function OverviewView({
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter nodes: symbol:query module:search service:api file:src/…"
-            aria-label="Filter graph nodes"
+            placeholder="Search symbols, files, modules, or services…"
+            aria-label="Search graph nodes by symbol, file, module, or service"
           />
           <span className="sr-only" aria-live="polite">
             {query ? `${visible.length} graph nodes match the current filter.` : "Showing all graph nodes."}
@@ -610,7 +608,7 @@ export function OverviewView({
                     className="neighborhood-toggle"
                     onClick={() => setMode("architecture")}
                   >
-                    Large graph · group by module
+                    Too many nodes? Group by module
                   </button>
                 )}
                 {graphViewModified && (
@@ -634,8 +632,8 @@ export function OverviewView({
               <>
               <div className="topology-minimap">
                 <div>
-                  <span className="panel-label">TOPOLOGY OVERVIEW</span>
-                  <small>Choose a point to focus its source context.</small>
+                  <span className="panel-label">MAP OVERVIEW</span>
+                  <small>Choose a symbol to focus its source context.</small>
                 </div>
                 <div className="topology-zoom" role="group" aria-label="Topology zoom controls">
                   <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out">−</button>
@@ -837,7 +835,7 @@ export function OverviewView({
         {mode === "architecture" && (
           <div className="architecture-grid">
             <section>
-              <span className="panel-label">BOUNDARY CONTEXT</span>
+              <span className="panel-label">CODEBASE AREAS</span>
               <div className="context-inventory">
                 {contexts.map((context) => (
                   <button
@@ -865,7 +863,7 @@ export function OverviewView({
                 ))}
               </div>
               <div className="detail-rule" />
-              <span className="panel-label">MODULE CONCENTRATION</span>
+              <span className="panel-label">MODULES</span>
               {modules.map((module) => (
                 <div className="module-group" key={module.id}>
                   <button
@@ -953,7 +951,7 @@ export function OverviewView({
                 </button>
               )) : <p className="diff-empty">No explicit context transitions are available.</p>}
               <div className="detail-rule" />
-              <span className="panel-label">SHARED CHOKE POINTS</span>
+              <span className="panel-label">HIGHLY CONNECTED SYMBOLS</span>
               <p>
                 Nodes repeated across flows and requests. This is concentration
                 context, not a ranking.
