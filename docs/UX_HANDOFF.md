@@ -45,6 +45,7 @@ Important behavior:
 
 The latest commits are small, focused slices. The most recent changes:
 
+- `5ba7118` — preserve the full active-lens label at 320–360px without widening the shell
 - `c6b51df` — give the compact Active bundle control an explicit accessible name and tooltip
 - `e8f3c16` — remove the duplicated REVISION DIFF kicker from Compare panels
 - `4cc87a4` — raise the focused skip-link target to the shared 44px accessibility minimum
@@ -176,6 +177,8 @@ The 320px interaction scan then found the focused “Skip to workspace” link a
 The latest Compare render showed “REVISION DIFF” twice—once in the shared lens context and again inside both Compare states. After `e8f3c16`, the shared context is the only kicker; empty and populated Compare retain the same heading, actions, and zero overflow at 390px.
 
 The header audit found that the compact Active bundle control hid its visible text and chevron at phone widths without a reliable accessible name. After `c6b51df`, it announces “Open active bundle context for demo/atlas-commerce” and exposes a matching tooltip at 390px and 1440px; the context dialog still opens and closes normally with no overflow.
+
+The narrow popup pass then reproduced the active “Explore” label truncating to “Explo…” at 320px. After `5ba7118` (with the follow-up CSS consolidation in `11693c6`), the label’s rendered width is fully readable at 320px, 360px, and 390px, with zero document overflow.
 
 ## Safe next session
 
