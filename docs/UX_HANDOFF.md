@@ -224,6 +224,8 @@ The Trace label pass found long analyzer expressions dominating the path selecto
 
 The semantic-question pass found `calls:` and `reaches:` filters removing the selected subject from Explore’s result set, which could silently change the inspector to another node with the same compiler label. After the query-target adjustment, question results retain the exact subject alongside its related nodes; the target remains selected and the mobile surface stays overflow-free at 390px.
 
+The selection-history pass found Explore’s “Back to previous node” restoring the node and URL but leaving keyboard focus on the rerendered document. After the focus restoration hook, Back returns focus to the selected topology node while preserving the restored selection and viewport width at 390px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
