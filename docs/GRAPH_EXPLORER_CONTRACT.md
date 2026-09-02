@@ -52,6 +52,9 @@ rather than loaded as a successful snapshot.
 Every node has a stable `id`, semantic `kind`, display `label`, source
 location, and optional `qualified_name`, `module`, `signature`,
 `documentation`, and `snippet`. Locations may include an end line and column.
+Nodes may optionally provide `parent_id` to identify their enclosing symbol,
+such as a method’s class or a nested function’s parent. It must reference a
+node in the same graph and must not reference the node itself.
 For a more useful source-reading surface, exporters may also provide a
 `source_window` object with a one-based `start_line` and an ordered `lines`
 array. `highlight_start` and `highlight_end` optionally identify the lines in

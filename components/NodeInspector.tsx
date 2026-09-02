@@ -114,6 +114,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     app?.edges.filter(
       (edge) => edge.source === node.id || edge.target === node.id,
     ) ?? [];
+  const parentNode = app?.nodes.find((item) => item.id === node.parentId);
   const nearbyNodes = useMemo(() => {
     if (!app || !onNode || !node.file) return [];
     const fileNodes = app.nodes
@@ -298,6 +299,11 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         {hasSourceLocation && onFile && (
           <button type="button" className="file-context-link" onClick={() => onFile(node.file)}>
             View all symbols in this file <Icon name="arrow" size={11} />
+          </button>
+        )}
+        {parentNode && onNode && (
+          <button type="button" className="file-context-link" onClick={() => onNode(parentNode.id)}>
+            Inside {parentNode.label || parentNode.id} <Icon name="arrow" size={11} />
           </button>
         )}
         <pre className="source-code source-context" aria-label={sourceSnippet || node.sourceWindow ? `Source preview around line ${node.line || "unknown"}` : "Source unavailable"}>

@@ -2,7 +2,7 @@ import codeExplorationBundle from '../public/code-exploration-bundle.json'
 
 export type NodeScope = { repository?: string; service?: string; package?: string; module?: string; kind?: string; label?: string }
 export type SourceWindow = { startLine: number; lines: string[]; highlightStart?: number; highlightEnd?: number }
-export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; scope?: NodeScope; signature?: string; documentation?: string; snippet: string; sourceWindow?: SourceWindow }
+export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; parentId?: string; module?: string; scope?: NodeScope; signature?: string; documentation?: string; snippet: string; sourceWindow?: SourceWindow }
 export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { relation?: string; alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
 export type Flow = { id: string; name: string; steps: Step[]; kind?: string; description?: string; sourceNodeId?: string; sinkNodeId?: string; confidence?: string; limitations?: string[] }
 export type GuardEvidence = { verdict?: string; note?: string; items?: {node_id?:string;effect?:string}[] }
@@ -99,16 +99,22 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
   return point && Number.isFinite(Number(point.x)) ? {x:Number(point.x), y:Number(point.y ?? 110)} : undefined
 }
 
-function normalizeNodeLegacy(n:any,i:number):Node {
+function normalizeNodeRaw(n:any,i:number):Node {
   return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end_column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),scope:normalizeScope(n.scope??n.context??n.boundary),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??''),sourceWindow:normalizeSourceWindow(n.source_window??n.sourceWindow)}
+}
+
+function normalizeNodeLegacy(n:any,i:number):Node {
+  const node = normalizeNodeRaw(n, i)
+  if (!Number.isFinite(node.endColumn) && n.end_column == null && n.location?.end?.column != null) {
+    return { ...node, endColumn: Number(n.location.end.column) }
+  }
+  return node
 }
 
 function normalizeNode(n:any,i:number):Node {
   const node = normalizeNodeLegacy(n, i)
-  if (node.endColumn == null && n.end_column == null && n.location?.end?.column != null) {
-    return { ...node, endColumn: Number(n.location.end.column) }
-  }
-  return node
+  const parentId = n.parent_id == null ? n.parentId == null ? undefined : String(n.parentId) : String(n.parent_id)
+  return parentId ? { ...node, parentId } : node
 }
 
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }
@@ -149,6 +155,14 @@ function assertGraphV2Nodes(nodes:Node[]) {
       if (value != null && (!Number.isInteger(value) || value < 0)) throw new Error(`${label}.${field} must be a non-negative integer.`)
     }
   }
+}
+function assertNodeParentReferences(nodes:Node[]) {
+  const ids = new Set(nodes.map((node) => node.id))
+  nodes.forEach((node) => {
+    if (!node.parentId) return
+    if (node.parentId === node.id) throw new Error(`Graph node "${node.id}" cannot be its own parent.`)
+    if (!ids.has(node.parentId)) throw new Error(`Graph node "${node.id}" references missing parent node "${node.parentId}".`)
+  })
 }
 function assertModuleReferences(modules:GraphModule[], nodeIds:Set<string>) {
   const moduleIds = new Set(modules.map((module) => module.id))
@@ -351,6 +365,7 @@ function normalizeGraphV2(raw:any):App {
   const nodes:Node[]=Array.isArray(graph.nodes)?graph.nodes.map(normalizeNode):[]
   if(!nodes.length)throw new Error('The bundle contains no graph nodes.')
   assertGraphV2Nodes(nodes)
+  assertNodeParentReferences(nodes)
   const nodeIds=new Set(nodes.map(node=>node.id))
   if(nodeIds.size!==nodes.length)throw new Error('The bundle contains duplicate node IDs.')
   const files=normalizeFiles(graph.files)

@@ -66,6 +66,7 @@
         "end_column": { "type": "integer", "minimum": 0 },
         "label": { "type": "string", "minLength": 1 },
         "qualified_name": { "type": "string" },
+        "parent_id": { "type": "string", "minLength": 1, "description": "Optional enclosing symbol, such as a class or parent function." },
         "module": { "type": "string" },
         "scope": { "$ref": "#/$defs/scope", "description": "Optional repository, service, package, and module context used to render path boundaries." },
         "signature": { "type": "string" },
