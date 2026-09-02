@@ -57,6 +57,7 @@ export function PathCanvas({
   layoutSource,
   title = 'Evidence path',
 }: Props) {
+  const securityPath = title === 'Witness path'
   const itemUnit =
     title === 'Code path' ? 'symbols' : title === 'Request flow' ? 'steps' : 'nodes'
   const [viewport, setViewport] = useState<'fit' | 'reset'>('fit')
@@ -351,8 +352,8 @@ export function PathCanvas({
               <small>
                 {item.node.label || item.node.id} · {item.node.scope ? `${scopeLabel(item.node)} · ` : ''}{nodeLocation(item.node)}
                 {repeatedIds.has(item.id) ? ` · revisit ${occurrenceNumbers[start + index]}` : ''}
-                {item.edge?.alias ? ' · alias' : ''}
-                {item.edge?.dynamic ? ' · dynamic' : ''}
+                {item.edge?.alias ? ' · alternate connection' : ''}
+                {item.edge?.dynamic ? ' · runtime-dependent connection' : ''}
               </small>
             </button>
           )
@@ -363,7 +364,7 @@ export function PathCanvas({
         <span title="The bundle recorded this connection directly"><i className="legend-exact" />recorded path</span>
         <span title="The connection uses an alternate or aliased name"><i className="legend-alias" />alternate path</span>
         <span title="The connection depends on runtime behavior"><i className="legend-dynamic" />runtime-dependent</span>
-        <span><i className="legend-sink" />sink</span>
+        <span title={securityPath ? 'The path reaches its reported security destination' : 'The final symbol in this path'}><i className="legend-sink" />{securityPath ? 'security destination' : 'path destination'}</span>
         {items.some((item) => item.node.scope?.kind === 'external' || item.node.scope?.kind === 'generated') && <span title="This symbol belongs to generated or external code"><i className="legend-scope" />external / generated code</span>}
         {repeatedIds.size > 0 && <span><i className="legend-revisited" />revisited symbol</span>}
       </div>
