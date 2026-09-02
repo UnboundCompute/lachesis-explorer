@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
@@ -60,8 +60,33 @@ export function JourneyView({
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
+  const [entrySearch, setEntrySearch] = useState("");
   const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedHopRef = useRef<HTMLButtonElement>(null);
+  const visibleEntries = useMemo(() => {
+    const term = entrySearch.trim().toLowerCase();
+    if (!term) return app.entries;
+    return app.entries.filter((item) => {
+      const nodes = item.hops
+        .map((hop) => app.nodes.find((node) => node.id === hop.node_id))
+        .filter(Boolean);
+      return [
+        item.label,
+        item.description,
+        entryContext(item, app),
+        ...item.hops.flatMap((hop) => [hop.edge_label, hop.caption]),
+        ...nodes.flatMap((node) => node ? [node.label, node.file, node.module, node.scope?.module] : []),
+      ].join(" ").toLowerCase().includes(term);
+    });
+  }, [app, entrySearch]);
+  const entryOptions = entry && visibleEntries.includes(entry)
+    ? visibleEntries
+    : entry
+      ? [entry, ...visibleEntries]
+      : visibleEntries;
+  useEffect(() => {
+    setEntrySearch("");
+  }, [app]);
   useEffect(() => {
     if (!entry) return;
     const fallback = entry.hops.findIndex((hop) => hop.node_id === hopId);
@@ -164,6 +189,19 @@ export function JourneyView({
         <label className="panel-label" htmlFor="entrypoint-select">
           STARTING POINT
         </label>
+        <label className="search entry-search">
+          <Icon name="search" size={14} />
+          <input
+            value={entrySearch}
+            onChange={(event) => setEntrySearch(event.target.value)}
+            placeholder="Find a request flow…"
+            aria-label="Filter request flows by starting point, symbol, file, or description"
+          />
+          {entrySearch && <button type="button" onClick={() => setEntrySearch("")} aria-label="Clear request flow filter">×</button>}
+        </label>
+        <div className="entry-search-status" aria-live="polite">
+          {entrySearch ? `${visibleEntries.length} of ${app.entries.length} request flows match` : `${app.entries.length} request flow${app.entries.length === 1 ? "" : "s"}`}
+        </div>
         <select
           id="entrypoint-select"
           className="entry-select"
@@ -184,11 +222,14 @@ export function JourneyView({
             trackEvent("callpath_selected");
           }}
         >
-          {app.entries.map((item, index) => (
-            <option value={index} key={item.id}>
-              {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""} · {item.hops.length} steps
-            </option>
-          ))}
+          {entryOptions.map((item) => {
+            const index = app.entries.indexOf(item);
+            return (
+              <option value={index} key={item.id}>
+                {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""} · {item.hops.length} steps
+              </option>
+            );
+          })}
         </select>
         <div className="panel-label hops-label">
           PATH STEPS <span>{entry.hops.length}</span>
