@@ -15,6 +15,7 @@ function nodeLocation(node: App["nodes"][number] | undefined) {
 function nodeContext(node: App["nodes"][number] | undefined) {
   return node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository || "";
 }
+const hasSource = (node: App["nodes"][number] | undefined) => Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
 type NodeIndex = ReadonlyMap<string, App["nodes"][number]>;
 
 function entryContext(entry: App["entries"][number], nodeById: NodeIndex) {
@@ -80,13 +81,20 @@ export function JourneyView({
       const nodes = item.hops
         .map((hop) => nodeById.get(hop.node_id))
         .filter(Boolean);
-      return [
-        item.label,
-        item.description,
-        entryContext(item, nodeById),
-        ...item.hops.flatMap((hop) => [hop.edge_label, hop.caption]),
-        ...nodes.flatMap((node) => node ? [node.label, node.file, node.module, node.scope?.module] : []),
-      ].join(" ").toLowerCase().includes(term);
+      const haystack = [
+          item.label,
+          item.description,
+          entryContext(item, nodeById),
+          ...item.hops.flatMap((hop) => [hop.edge_label, hop.caption]),
+          ...nodes.flatMap((node) => node ? [node.label, node.file, node.module, node.scope?.module, node.snippet, node.sourceWindow?.lines.join(" ")] : []),
+        ].join(" ").toLowerCase();
+      return term.split(/\s+/).every((part) => {
+        const [key, ...rest] = part.split(":");
+        const value = rest.join(":");
+        if (key === "has" && (value === "source" || value === "source-preview")) return nodes.some(hasSource);
+        if (key === "has" && (value === "source-gap" || value === "missing-source")) return nodes.some((node) => !hasSource(node));
+        return haystack.includes(part);
+      });
     });
   }, [app, entrySearch, nodeById]);
   const entryOptions = entry && visibleEntries.includes(entry)
@@ -259,6 +267,13 @@ export function JourneyView({
         <div className="entry-search-status" aria-live="polite">
           {entrySearch ? `${visibleEntries.length} of ${app.entries.length} request flows match` : `${app.entries.length} request flow${app.entries.length === 1 ? "" : "s"}`}
         </div>
+        {(app.entries.some((item) => item.hops.some((hop) => hasSource(nodeById.get(hop.node_id)))) || app.entries.some((item) => item.hops.some((hop) => !hasSource(nodeById.get(hop.node_id))))) && (
+          <div className="filter-hints" role="group" aria-label="Quick request flow filters">
+            {app.entries.some((item) => item.hops.some((hop) => hasSource(nodeById.get(hop.node_id)))) && <button type="button" onClick={() => setEntrySearch("has:source")}>Has source</button>}
+            {app.entries.some((item) => item.hops.some((hop) => !hasSource(nodeById.get(hop.node_id)))) && <button type="button" onClick={() => setEntrySearch("has:source-gap")}>Source gaps</button>}
+            {entrySearch && <button type="button" className="query-clear" onClick={() => setEntrySearch("")}>Clear</button>}
+          </div>
+        )}
         {entrySearch && !visibleEntries.length && (
           <div className="selector-empty" role="status">
             <span>No request flows match “{entrySearch}”.</span>
@@ -330,6 +345,9 @@ export function JourneyView({
                 <small>{hop.caption || "Relationship not reported"}</small>
                 <small className="node-row-context">
                   {nodeContext(rowNode) ? `${nodeContext(rowNode)} · ` : ""}{rowNode?.file || "Source unavailable"}:{rowNode?.line || "—"}
+                </small>
+                <small className="node-row-context">
+                  {hasSource(rowNode) ? "Source preview included" : "Source text unavailable"}
                 </small>
               </span>
             </button>
