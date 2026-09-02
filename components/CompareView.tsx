@@ -69,6 +69,20 @@ function itemLabel(item: { id: string }, app: App) {
   return item.id
 }
 
+function diffSearchText(item: { id: string }, app: App) {
+  const node = app.nodes.find((value) => value.id === item.id)
+  const flow = app.flows.find((value) => value.id === item.id)
+  const edge = app.edges.find((value) => value.id === item.id)
+  return [
+    itemLabel(item, app),
+    node?.qualifiedName, node?.signature, node?.documentation, node?.snippet,
+    node?.file, node?.module, node?.scope?.label, node?.scope?.service,
+    flow?.description, flow ? flowPath(flow, app) : undefined,
+    flow?.steps.flatMap((step) => [step.role, step.note, step.edge?.relation]).join(" "),
+    edge?.relation,
+  ].filter(Boolean).join(" ").toLowerCase()
+}
+
 function DiffColumn({
   label,
   items,
@@ -81,6 +95,7 @@ function DiffColumn({
   openNodes = false,
   onOpenNode,
   comparisonOnly = false,
+  query = "",
 }: {
   label: string
   items: { id: string }[]
@@ -93,10 +108,14 @@ function DiffColumn({
   openNodes?: boolean
   onOpenNode?: (nodeId: string) => void
   comparisonOnly?: boolean
+  query?: string
 }) {
   const [copyState, setCopyState] = useState<{ id: string; status: 'copied' | 'failed' } | null>(null)
   const [expanded, setExpanded] = useState(false)
-  const itemIdentity = items.map(item => item.id).join('|')
+  const filteredItems = query.trim()
+    ? items.filter((item) => diffSearchText(item, app).includes(query.trim().toLowerCase()))
+    : items
+  const itemIdentity = `${items.map(item => item.id).join('|')}|${query}`
   useEffect(() => { setCopyState(null); setExpanded(false) }, [app, itemIdentity])
   async function copyPreview(flow: Flow) {
     try {
@@ -111,9 +130,9 @@ function DiffColumn({
   }
   return (
     <div>
-      <span className={className}>{label} · {items.length}</span>
-      {items.length ? (
-        (expanded ? items : items.slice(0, 8)).map((item) => {
+      <span className={className}>{label} · {query.trim() ? `${filteredItems.length} / ${items.length}` : items.length}</span>
+      {filteredItems.length ? (
+        (expanded ? filteredItems : filteredItems.slice(0, 8)).map((item) => {
           const flow = actionable ? app.flows.find((value) => value.id === item.id) : undefined
           const preview = previewFlows ? app.flows.find((value) => value.id === item.id) : undefined
           const previewScopes = preview ? flowScopes(preview, app) : []
@@ -149,11 +168,11 @@ function DiffColumn({
           ) : <p key={item.id} title={item.id}><span>{itemLabel(item, app)}</span>{comparisonOnly && <small>Comparison only</small>}</p>
         })
       ) : (
-        <p className="diff-empty">{empty}</p>
+        <p className="diff-empty">{items.length && query.trim() ? `No ${label.toLowerCase()} items match this search.` : empty}</p>
       )}
-      {items.length > 8 && (
+      {filteredItems.length > 8 && (
         <button type="button" className="diff-expand" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
-          {expanded ? 'Show fewer' : `Show all ${items.length}`}
+          {expanded ? 'Show fewer' : `Show all ${filteredItems.length}`}
         </button>
       )}
     </div>
@@ -162,7 +181,8 @@ function DiffColumn({
 
 export function CompareView({ base, compare, onUpload, loading = false, onOpenFlow, onOpenNode }: Props) {
   const [showAllChanged, setShowAllChanged] = useState(false)
-  useEffect(() => { setShowAllChanged(false) }, [base, compare])
+  const [comparisonQuery, setComparisonQuery] = useState("")
+  useEffect(() => { setShowAllChanged(false); setComparisonQuery("") }, [base, compare])
   const securityMode =
     base.findings.length > 0 ||
     base.bundle.projection === 'security projection' ||
@@ -202,6 +222,11 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
         (item.compare.kind !== item.base.kind ||
           JSON.stringify(item.compare.steps) !== JSON.stringify(item.base.steps)),
     ) as { base: Flow; compare: Flow }[]
+  const visibleChangedPaths = comparisonQuery.trim()
+    ? changedPaths.filter((item) =>
+        `${diffSearchText(item.base, base)} ${diffSearchText(item.compare, compare)}`.includes(comparisonQuery.trim().toLowerCase()),
+      )
+    : changedPaths
   const kinds = [...new Set([...base.flows, ...compare.flows].map(flowKind))]
   const pathGroup = kinds.length === 1 ? kinds[0] : 'Graph paths'
   const groups = [
@@ -226,13 +251,24 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
         <div><span>COMPARISON</span><b>{compare.name}</b><small>{compare.nodes.length} nodes · {compare.flows.length} paths</small></div>
         <div><span>CHANGED PATHS</span><b>{changedPaths.length}</b><small>same path ID, changed kind or sequence</small></div>
       </div>
+      <label className="compare-search">
+        <span aria-hidden="true">⌕</span>
+        <input
+          value={comparisonQuery}
+          onChange={(event) => setComparisonQuery(event.target.value)}
+          placeholder="Find changed symbols, files, paths, or code…"
+          aria-label="Filter comparison changes by symbol, file, path, or source code"
+        />
+        {comparisonQuery && <button type="button" onClick={() => setComparisonQuery("")} aria-label="Clear comparison filter">×</button>}
+      </label>
+      {comparisonQuery && <p className="compare-search-status" role="status">{visibleChangedPaths.length} changed paths match · added, removed, and changed lists are filtered too</p>}
       <div className="compare-grid">
         {groups.map(([label, result]) => (
           <section key={label}>
             <h3>{label}</h3>
             <div className="diff-columns">
-              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" previewFlows={label === pathGroup} comparisonOnly={label !== pathGroup} />
-              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} openNodes={label === "Nodes"} onOpenNode={onOpenNode} />
+              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" previewFlows={label === pathGroup} comparisonOnly={label !== pathGroup} query={comparisonQuery} />
+              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} openNodes={label === "Nodes"} onOpenNode={onOpenNode} query={comparisonQuery} />
             </div>
           </section>
         ))}
@@ -245,8 +281,8 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           </div>
           <span>{changedPaths.length}</span>
         </div>
-        {changedPaths.length ? (
-          (showAllChanged ? changedPaths : changedPaths.slice(0, 8)).map((item) => (
+        {visibleChangedPaths.length ? (
+          (showAllChanged ? visibleChangedPaths : visibleChangedPaths.slice(0, 8)).map((item) => (
             <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, item.base.steps[0]?.node_id ?? "")} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
               <b>{item.base.name}</b>
               <div>
@@ -258,11 +294,11 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
             </button>
           ))
         ) : (
-          <p className="diff-empty">No existing paths changed between these bundles.</p>
+          <p className="diff-empty">{comparisonQuery ? "No changed paths match this search." : "No existing paths changed between these bundles."}</p>
         )}
-        {changedPaths.length > 8 && (
+        {visibleChangedPaths.length > 8 && (
           <button type="button" className="diff-expand changed-expand" onClick={() => setShowAllChanged((value) => !value)} aria-expanded={showAllChanged}>
-            {showAllChanged ? "Show fewer" : `Show all ${changedPaths.length}`}
+            {showAllChanged ? "Show fewer" : `Show all ${visibleChangedPaths.length}`}
           </button>
         )}
       </section>
