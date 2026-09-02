@@ -208,6 +208,8 @@ The keyboard-focus pass found all primary search inputs computing to `outline: n
 
 The theme contrast pass found selected Trace metadata at 3.22:1 against the dark green selection surface. After the selected-row contrast fix, supporting metadata measures 5.89:1 in dark theme and 4.76:1 in light theme. The pass also consolidated the reduced-motion policy into one explicit `animation:none` / `transition:none` rule, with reduced-motion menus still opening in their final visible state.
 
+The cross-lens contrast pass then found the shared dark-theme `--ink-3` token at 4.27:1 on raised surfaces and 3.84:1 on selected rows. After the token adjustment, persistent muted text reaches at least 4.75:1 on raised surfaces and 4.50:1 on selected surfaces; decorative breadcrumb slashes remain intentionally excluded from the text threshold.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
