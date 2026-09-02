@@ -170,6 +170,7 @@ export default function Page() {
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [recentBundles, setRecentBundles] = useState<RecentBundle[]>([]);
   const [activity, setActivity] = useState<InvestigationEvent[]>([]);
+  const [urlInitialized, setUrlInitialized] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const compareFileRef = useRef<HTMLInputElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -267,6 +268,7 @@ export default function Page() {
         .catch((error) => {
           pendingLink.current = null;
           urlReady.current = true;
+          setUrlInitialized(true);
           setLoadState({
             type: "error",
             message: `${error instanceof Error ? error.message : "Could not load the security sample"} The current bundle was kept.`,
@@ -347,10 +349,11 @@ export default function Page() {
     )
       setFocusNodeId(link.node);
     urlReady.current = true;
+    setUrlInitialized(true);
   }, []);
 
   useEffect(() => {
-    if (!urlReady.current) return;
+    if (!urlInitialized) return;
     const params = new URLSearchParams();
     params.set("view", view);
     if (!isDemo) params.set("scope", "local");
@@ -378,7 +381,7 @@ export default function Page() {
       if (mapNeighborhoodOnly) params.set("map_focus", "neighborhood");
     }
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, view]);
+  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
@@ -795,6 +798,7 @@ export default function Page() {
       pendingLink.current = null;
     }
     urlReady.current = true;
+    setUrlInitialized(true);
     setMenu(false);
     setInspectorOpen(true);
     setIsDemo(demo);
