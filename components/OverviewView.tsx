@@ -195,7 +195,7 @@ export function OverviewView({
     setLinkState("idle");
     setDownloadState("idle");
     setSearchText("");
-    setNeighborhoodOnly(false);
+    if (!setControlledNeighborhoodOnly) setLocalNeighborhoodOnly(false);
     setTopologyZoom(1);
     setShowAllTopology(false);
     setSelectionHistory([]);

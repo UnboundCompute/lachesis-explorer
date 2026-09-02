@@ -581,7 +581,7 @@ export default function Page() {
     setMapQuery("");
     changeView("map");
     setMapMode("map");
-    setMapNeighborhoodOnly(false);
+    setMapNeighborhoodOnly(true);
   }
 
   function changeMapMode(next: OverviewMode) {
