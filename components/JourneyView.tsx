@@ -351,14 +351,16 @@ export function JourneyView({
             <button className="inspector-reopen" type="button" onClick={() => onView("map", hopId)}>
               Open in Explore
             </button>
-            <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
-              {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
-            </button>
-            {onShare && (
-              <button className="inspector-reopen" type="button" onClick={shareEntry} aria-live="polite">
-                {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+            <div className="toolbar-share-actions" role="group" aria-label="Share this request context">
+              <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
+                {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
               </button>
-            )}
+              {onShare && (
+                <button className="inspector-reopen" type="button" onClick={shareEntry} aria-live="polite">
+                  {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+                </button>
+              )}
+            </div>
             <div className="step-nav" role="group" aria-label="Request flow step navigation">
               <button
                 className="inspector-reopen"
