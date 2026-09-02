@@ -114,7 +114,10 @@ function normalizeNodeLegacy(n:any,i:number):Node {
 function normalizeNode(n:any,i:number):Node {
   const node = normalizeNodeLegacy(n, i)
   const parentId = n.parent_id == null ? n.parentId == null ? undefined : String(n.parentId) : String(n.parent_id)
-  return parentId ? { ...node, parentId } : node
+  const withParent = parentId ? { ...node, parentId } : node
+  return withParent.snippet.trim() || !withParent.sourceWindow
+    ? withParent
+    : { ...withParent, snippet: withParent.sourceWindow.lines.join("\n") }
 }
 
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }
