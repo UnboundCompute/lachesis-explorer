@@ -345,6 +345,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
             ))}
           </code>
         </pre>
+        <p className="source-scroll-hint">Long lines scroll horizontally</p>
         {!sourceSnippet && !node.sourceWindow && (
           <p className="source-unavailable-note">
             This bundle includes graph evidence for the node, but not its source text. Any available location, graph ID, and connected paths remain available below.
