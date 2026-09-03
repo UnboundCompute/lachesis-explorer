@@ -614,7 +614,7 @@ export default function Page() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [view, flowId, record, commandOpen, helpOpen, menu]);
 
-  function changeView(next: View) {
+  function changeView(next: View, mapModeOverride?: OverviewMode, focusNodeOverride?: string) {
     if (next !== view && urlReady.current) {
       const params = new URLSearchParams(window.location.search);
       [
@@ -634,10 +634,14 @@ export default function Page() {
         "map_focus",
       ].forEach((key) => params.delete(key));
       params.set("view", next);
-      if (next === "map" && !focusNodeId) params.set("map_mode", "architecture");
+      if (next === "map" && focusNodeOverride) params.set("node", focusNodeOverride);
+      if (next === "map" && mapModeOverride && mapModeOverride !== "map") params.set("map_mode", mapModeOverride);
+      else if (next === "map" && !focusNodeId && !mapModeOverride && !focusNodeOverride) params.set("map_mode", "architecture");
       pushNavigation(params);
     }
-    if (next === "map" && view !== "map" && !focusNodeId) {
+    if (next === "map" && mapModeOverride) {
+      setMapMode(mapModeOverride);
+    } else if (next === "map" && view !== "map" && !focusNodeId) {
       setMapMode("architecture");
       setMapNeighborhoodOnly(false);
     }
@@ -654,8 +658,7 @@ export default function Page() {
   function openNodeInMap(nodeId: string) {
     setFocusNodeId(nodeId);
     setMapQuery("");
-    changeView("map");
-    setMapMode("map");
+    changeView("map", "map", nodeId);
     setMapNeighborhoodOnly(true);
   }
 
@@ -730,11 +733,10 @@ export default function Page() {
   }
 
   function openSourceFile(file: string) {
-    setMapMode("map");
     setMapQuery(`file:${file}`);
     setMapNeighborhoodOnly(false);
     setFocusNodeId("");
-    changeView("map");
+    changeView("map", "map");
     trackEvent("source_file_explored");
   }
 
@@ -1187,17 +1189,15 @@ export default function Page() {
           onUpload={() => fileRef.current?.click()}
           onReviewCoverage={() => {
             setMapQuery("");
-            setMapMode("health");
-            changeView("map");
+            changeView("map", "health");
           }}
           onLoadSample={loadCodeSample}
           onLoadSecuritySample={loadSecuritySample}
           onView={(next) => changeView(next)}
           onSearch={(nextQuery) => {
             setMapQuery(nextQuery);
-            setMapMode("map");
             setMapNeighborhoodOnly(false);
-            changeView("map");
+            changeView("map", "map");
             trackEvent("home_source_search_submitted");
           }}
           onDismiss={() => {
