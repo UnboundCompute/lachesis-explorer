@@ -22,15 +22,27 @@ function pathLocation(flow: Flow, nodes: Node[]) {
   return `${first.file || 'source unavailable'}:${first.line || '—'}`
 }
 
+function pathBehaviorLabel(flow: Flow, nodes: Node[]) {
+  const pathNodes = flow.steps.map(step => nodes.find(node => node.id === step.node_id)).filter(Boolean) as Node[]
+  const first = pathNodes[0]
+  const last = pathNodes.at(-1)
+  const firstLabel = first?.label || first?.id || 'origin unavailable'
+  const lastLabel = last?.label || last?.id || 'destination unavailable'
+  const endpoints = firstLabel === lastLabel ? firstLabel : `${firstLabel} → ${lastLabel}`
+  const kind = flow.kind?.replace(/[_-]+/g, ' ').trim()
+  return `${kind ? `${kind} · ` : ''}${endpoints} · ${pathLocation(flow, nodes)}`
+}
+
 export function ConvergenceCanvas({ flows: allFlows, nodes, sinkId, selectedId, onSelect, securityMode = true }: Props) {
   const [zoom, setZoom] = useState(1)
   const [focusedOnly, setFocusedOnly] = useState(false)
   const flowIdentity = allFlows.map(flow => `${flow.id}:${flow.steps.map(step => step.node_id).join(',')}`).join('|')
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
   useEffect(() => { setZoom(1); setFocusedOnly(false) }, [flowIdentity, sinkId, selectedId])
-  const flows = focusedOnly && selectedId
+  const sourceFlows = focusedOnly && selectedId
     ? allFlows.filter(flow => flow.steps.some(step => step.node_id === selectedId))
     : allFlows
+  const flows = sourceFlows.map(flow => ({ ...flow, name: pathBehaviorLabel(flow, nodes) }))
   const graph = useMemo(() => {
     const occurrences = new Map<string, Array<{ distance: number; lane: number; role: string }>>()
     const edges = new Map<string, ConvergenceEdge>()
