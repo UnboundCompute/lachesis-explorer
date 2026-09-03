@@ -308,6 +308,8 @@ The ultra-narrow interaction pass found Explore overflowing a 240px viewport by 
 
 The light-theme contrast pass found primary green actions using dark text at 3.66:1, with derived-evidence and relationship-legend copy also below the 4.5:1 reading floor once the theme transition settled. After adding a light-theme action foreground and strengthening the affected explanatory labels, audited actions and labels clear 4.5:1 across Understand, Trace, Explore, Request Flow, and Investigate at 390px with zero overflow; the Impeccable detector and full quality gate remain clean.
 
+The persisted-theme hydration pass found a saved light preference making the server render dark theme markup while the client initialized light theme from local storage, producing a React hydration error and client tree replacement. After using a stable server/client initial theme and applying the saved preference after mount, a persisted-light Trace load reaches light mode with no page or console errors and zero overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
