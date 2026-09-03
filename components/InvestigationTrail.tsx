@@ -16,7 +16,18 @@ function targetLabel(app:App,target:string){
     return `${node.label||node.id} · ${scope||location}`
   }
   const flow=app.flows.find(item=>item.id===target||item.name===target)
-  if(flow)return flowDisplayName(flow,app.nodes,app.flows)
+  if(flow){
+    const exact=flowDisplayName(flow,app.nodes,app.flows)
+    if(exact.length<=56&&!/__builtin_|___chk\b/.test(exact))return exact
+    const pathNodes=flow.steps.map(step=>app.nodes.find(node=>node.id===step.node_id)).filter(Boolean) as App['nodes']
+    const first=pathNodes[0],last=pathNodes.at(-1)
+    const firstLabel=first?.label||first?.id||'origin unavailable'
+    const lastLabel=last?.label||last?.id||'destination unavailable'
+    const endpoints=firstLabel===lastLabel?firstLabel:`${firstLabel} → ${lastLabel}`
+    const kind=flow.kind?.replace(/[_-]+/g,' ').trim()
+    const location=first?.file?`${first.file}:${first.line||'—'}`:'source unavailable'
+    return `${kind?`${kind} · `:''}${endpoints} · ${location}`
+  }
   const entry=app.entries.find(item=>item.id===target||item.label===target)
   return entry ? entryDisplayName(entry,app.nodes,app.entries) : target
 }
