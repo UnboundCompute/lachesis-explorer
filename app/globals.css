@@ -371,6 +371,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
   .source-copy,.file-context-link,.location-row .source-open,.inspector-close{min-height:44px}
   .inspector-close{width:44px;height:44px}
   .inspector-context .connected-link{min-height:44px;padding-block:8px}
+  .inspector-context .connected-link>span{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}
   .overlap-list>.overlap-item{min-height:44px}
   .topology-zoom button{min-width:44px;height:44px}
   .topology-node-list button,.choke-panel button{min-height:44px}
