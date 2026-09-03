@@ -47,6 +47,7 @@ The latest commits are small, focused slices. The most recent changes:
 
 - `cd684cf` — normalize visible singular/plural counts across active-bundle, load/history, Request Flow, and Compare summaries
 - `HEAD` — extend count grammar through the shared path canvas, Explore module rows, filtered summaries, and Compare previews
+- `HEAD` — validate singular-count rendering with a synthetic one-item bundle across all six primary lenses
 - `d1c5801` — defer routed workspace scroll correction so direct lens headings stay below the sticky header
 - `fa2be43` — give mobile recovery notices a dedicated message row so error copy cannot collapse into a narrow column
 - `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
