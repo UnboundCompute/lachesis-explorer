@@ -440,6 +440,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(min-width:761px) and (max-width:1024px){.sink-workspace{grid-template-columns:220px minmax(0,1fr)}.sink-heading{flex-wrap:wrap}.sink-heading .lens-switch{max-width:100%;overflow:auto}}
 @media(max-width:760px){.command-search input{min-height:44px}.command-close{width:44px;height:44px;min-width:44px;min-height:44px}.help-dialog header button{width:44px;height:44px;min-width:44px;min-height:44px}.help-done{min-height:44px}}
 @media(max-width:280px){.command-results button{align-items:start}.command-results b{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}}
+@media(max-width:280px){.path-index-list button{height:auto;align-items:start}.path-index-list b,.path-index-list small{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}}
 @media(max-width:1040px) and (min-width:761px){
   /* Compact tablets are touch surfaces too, even while their workspace remains multi-column. */
   a,button,input,select,summary{min-height:44px}
