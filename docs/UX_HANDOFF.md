@@ -318,6 +318,8 @@ The real `libxml2` Trace render also found the source inspector’s “Repositor
 
 The demo request-flow and boundary pass found the source inspector’s location row flex-shrinking “Copy location” into clipped text at the 240px breakpoint, even though document overflow was zero. After giving the location metadata its own wrapped row at ≤280px, the action remains fully readable and 44px high while the 390px layout stays single-row; real Playwright checks found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
 
+The same 240px source-inspector pass found relationship rows inheriting a no-wrap rule, reducing the actionable peer symbol `parseSearchRequest` to an ellipsis in the Connected context section. After allowing relationship rows and peer actions to wrap, the destination remains readable and keyboard-actionable at 240px while the 390px row stays compact; visual Playwright checks found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
