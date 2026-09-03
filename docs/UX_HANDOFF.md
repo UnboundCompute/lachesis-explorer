@@ -342,6 +342,8 @@ The Explore context-selector pass found repository, service, symbol-count, and e
 
 The ultra-narrow Explore boundary-transition pass found two clickable relationship links truncating their direction, boundary name, or relationship count at 240px. After allowing transition labels to wrap below 280px, all destinations and relationship types remain readable in 44–49px rows; real Playwright checks at 240px, 390px, and 1440px found no child overflow, zero page overflow, and no page errors. The Impeccable detector and full quality gate remain clean.
 
+The Explore topology fallback audit found node evidence summaries truncating at 240px and the final participation summary auto-placing into the 24px node-number column at every width, creating implausibly tall 204px rows at 390px. After placing all summaries in the content column and allowing mobile node evidence to wrap, the fallback list is readable and proportionate: 94–124px rows at 240px, 64–74px at 390px, and 54–74px through desktop, with zero overflow and no page errors. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
