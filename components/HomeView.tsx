@@ -112,6 +112,12 @@ function pathKindLabel(flow: Flow) {
   return flow.kind?.trim() || "graph path";
 }
 
+function flowActionLabel(flow: Flow, app: App) {
+  const name = flowDisplayName(flow, app.nodes, app.flows);
+  if (name.length <= 56) return name;
+  return `${pathKindLabel(flow)} · ${flow.steps.length} symbols · ${nodeLocation(sourceFor(flow, app))}`;
+}
+
 function pathQuestion(flow?: Flow) {
   const kind = flow?.kind?.trim().toLowerCase();
   if (kind === "call-path" || kind === "callpath")
@@ -299,9 +305,11 @@ export function HomeView({
                 <button
                   type="button"
                   className="understand-primary"
+                  aria-label={`Follow ${flowDisplayName(graphFocus, app.nodes, app.flows)}`}
+                  title={`Follow ${flowDisplayName(graphFocus, app.nodes, app.flows)}`}
                   onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}
                 >
-                  Follow “{flowDisplayName(graphFocus, app.nodes, app.flows)}” <Icon name="arrow" size={14} />
+                  Follow “{flowActionLabel(graphFocus, app)}” <Icon name="arrow" size={14} />
                 </button>
               )}
               <button type="button" className="understand-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
