@@ -292,6 +292,8 @@ The Trace desktop render found the “Paths to explore” rail stretching to the
 
 The help-affordance pass found the persistent “Keyboard help” footer link rendering at 8px despite opening the product’s shortcut documentation. After `df0745a`, it uses 9px text while retaining its 44px mobile target. At 390px and 1440px, the link opens the help dialog and the document remains overflow-free; the Impeccable detector and full quality gate remain clean.
 
+The path-boundary control pass found Trace’s clickable context segments (“Web API”, “Search service”, and “Catalog service”) still using 8px primary labels. After `0ff81e5`, the labels use 9px while their horizontal ribbon and mobile 44px targets remain intact. Real demo-bundle checks at 390px and 1440px confirmed zero overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
