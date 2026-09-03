@@ -225,7 +225,7 @@ export function SinkView({
       onRecord(
         "Focused sink",
         next.label || next.id,
-        `${flowCountByNode.get(id) ?? 0} ${pathNounPlural}`,
+        countLabel(flowCountByNode.get(id) ?? 0, pathNoun),
       );
       trackEvent("sink_selected");
     }

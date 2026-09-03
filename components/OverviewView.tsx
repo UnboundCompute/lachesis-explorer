@@ -559,7 +559,7 @@ export function OverviewView({
     trackEvent("topology_selection_reversed");
   }
   const summary = selected
-      ? `${selected.label || selected.id} appears in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request flow${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} recorded relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
+      ? `${selected.label || selected.id} appears in ${countLabel(flowCount(selected.id), "graph path")} and ${countLabel(entryCount(selected.id), "request flow")}. It has ${countLabel(app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length, "recorded relationship")}.`
     : visible.length
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
