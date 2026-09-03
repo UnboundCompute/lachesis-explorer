@@ -278,6 +278,8 @@ The empty-state readability pass found Trace’s “Show all graph paths” reco
 
 The populated coverage pass found Home’s “Review data quality” CTA still rendering at 8px despite being a primary action. After `35a33e6`, the CTA uses 9px text while retaining its 44px mobile target. A real `libxml2` check at 390px confirmed 9px text, 44px height, and zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
 
+The desktop Explore render found the “Codebase areas” panel stretching to the height of the denser boundary/symbol panel, leaving a large empty region below a single module. After `4864fe4`, architecture-grid panels align to their own content heights. At 1440px the modules panel measured about 334px instead of 636px, the evidence panel remained intact, and document overflow stayed at zero; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
