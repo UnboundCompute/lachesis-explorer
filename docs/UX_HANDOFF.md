@@ -312,6 +312,8 @@ The persisted-theme hydration pass found a saved light preference making the ser
 
 The real `libxml2` Understand render found the primary “Follow” CTA expanding to the full compiler-generated symbol name, making the first action noisy and difficult to scan on both mobile and desktop. After adding a compact action label for unusually long flow names, the CTA reads `value path · 2 symbols · xmlstring.c:564` at 240–1440px while the exact name remains in its accessible label and tooltip; the Impeccable detector and full quality gate remain clean.
 
+The real `libxml2` Trace render found source previews with long code lines horizontally scrollable but without a visible cue that more content was available off-screen. After adding a compact source-scroll hint below the preview, the behavior is discoverable while preserving code formatting and horizontal inspection. A 390px Playwright check measured the hint inside the 326px inspector, retained the expected 393px source scroll width, found zero page overflow and no page errors; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
