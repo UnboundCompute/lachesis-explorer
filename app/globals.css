@@ -509,3 +509,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .understand-coverage-detail>small{color:var(--ink-2)}
 .evidence-panel.path-context .evidence-command code:first-child{color:var(--ink-2)}
 .topology-legend,.convergence-legend{color:var(--ink-2)}
+@media(max-width:280px){.path-route-summary{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center}.path-route-summary small,.path-route-summary b{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}.path-route-summary>i{justify-self:center}}
