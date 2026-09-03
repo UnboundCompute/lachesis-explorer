@@ -474,3 +474,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .footer-help{font-size:9px}
 .path-boundary-segment{font-size:9px}
 .context-home,.convergence-filter button,.overlap-list>.overlap-item{font-size:9px}
+@media(max-width:760px){
+  .architecture-grid>section,.health-grid>section,.choke-panel{min-width:0}
+  .choke-panel button b,.choke-panel button small{overflow-wrap:anywhere;word-break:break-word}
+  .inspector-close{flex:none}
+}
