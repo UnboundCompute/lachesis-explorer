@@ -228,6 +228,8 @@ The selection-history pass found Explore’s “Back to previous node” restori
 
 The follow-up question-state pass found Explore continuing to label an applied `calls:`/`reaches:` query as “Ask about …”, which made the filtered direction easy to miss. After the context-copy fix, the existing live region says “Showing paths into/from …” while retaining the subject and related results; the real bundle remains overflow-free at 390px.
 
+The disclosure-menu keyboard pass found Tab closing More, the mobile lens picker, and the active-bundle menu while their focused menu item unmounted, leaving focus lost. After the close-focus fix, Tab and Escape return focus to the owning trigger across desktop and mobile menus; the menus close cleanly without changing the active view.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
