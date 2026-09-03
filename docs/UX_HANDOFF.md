@@ -336,6 +336,8 @@ The ultra-narrow Trace pass found clickable “Paths to explore” rows truncati
 
 The mobile Boundary pass found the selected sink rail button truncating its source location to `src/catalog/...` at 390px, hiding the exact boundary context users need to verify. After allowing sink labels and locations to wrap on mobile, the complete `products.query · Catalog service · external repo · src/catalog/client.ts:64` context remains visible at 240px and 390px; Playwright found content-aware 73px/53px rows, zero overflow, and no page errors, while desktop remains unchanged. The Impeccable detector and full quality gate remain clean.
 
+The mobile Explore module pass found the expanded file heading truncating `src/search/search-service.ts` at 240px, weakening the source context for the symbols listed beneath it. After allowing module file headings to wrap only below 280px, the full file path remains visible while the module list stays compact at 390px and desktop; Playwright measured a 18px wrapped heading at 240px, zero overflow at all tested widths, and no page errors. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
