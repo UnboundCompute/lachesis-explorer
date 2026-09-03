@@ -154,14 +154,6 @@ export function HomeView({
   const [queueSearch, setQueueSearch] = useState("");
   const [sourceSearch, setSourceSearch] = useState("");
   useEffect(() => {
-    if (loadState.type !== "error") return;
-    document.querySelector<HTMLElement>('[role="alert"]')?.scrollIntoView({
-      block: "center",
-      inline: "nearest",
-      behavior: "auto",
-    });
-  }, [loadState.type]);
-  useEffect(() => {
     setSelectedId(app.findings[0]?.id ?? "");
     setQueueFilter("all");
     setQueueSearch("");

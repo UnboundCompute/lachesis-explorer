@@ -243,6 +243,26 @@ export default function Page() {
     writeLocal("lachesis-theme", dark ? "dark" : "light");
   }, [dark]);
   useEffect(() => {
+    if (loadState.type !== "error") return;
+    let settleFrame = 0;
+    const frame = window.requestAnimationFrame(() => {
+      settleFrame = window.requestAnimationFrame(() => {
+        const alert = document.querySelector<HTMLElement>('[role="alert"]');
+        if (!alert) return;
+        const top = alert.getBoundingClientRect().top + window.scrollY;
+        const root = document.documentElement;
+        const previousScrollBehavior = root.style.scrollBehavior;
+        root.style.scrollBehavior = "auto";
+        window.scrollTo(0, Math.max(0, top - 120));
+        root.style.scrollBehavior = previousScrollBehavior;
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(settleFrame);
+    };
+  }, [loadState.type]);
+  useEffect(() => {
     const bundle = app.name || "Untitled bundle";
     document.title = `${viewLabels[view]} · ${bundle} · Lachesis`;
   }, [app.name, view]);
