@@ -366,6 +366,8 @@ The real-bundle copy pass found generated Home and Trace labels saying `1 symbol
 
 The real libxml2 Investigate pass found the source inspector’s connected-path link still naming an analyzer artifact directly (`len · __builtin___vsnprintf_chk · …`), duplicating the raw vocabulary that Trace and Home had already removed. After applying the compact behavior/location label to connected graph paths and preserving the exact analyzer name in the link title, the inspector reads `value path · xmlstring.c:590 · 1 symbol`; Playwright checks at 240, 390, 760, and 1440px found 44px mobile links, zero overflow, and no page errors.
 
+The cross-lens copy audit found generated Evidence Matrix, Command Palette, History, and Markdown explanation strings still hard-coding plural forms for single items. After applying the shared count formatter to those surfaces, generated UI/export copy uses correct singular/plural wording; real libxml2 checks across Trace, Investigate, and Compare at 240, 390, and 1440px found no generated grammar errors, zero overflow, and no page errors. Literal `result_summary` text from the uploaded bundle remains unchanged evidence.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
