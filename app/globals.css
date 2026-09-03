@@ -544,3 +544,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .trace-orientation span{font-size:9px}
 .trace-orientation b{font-size:11px}
 .trace-orientation small{font-size:9px}
+.investigation-context .context-home,.investigation-context .context-crumb b{font-size:9px}
+.investigation-context .context-crumb small{font-size:8px}
