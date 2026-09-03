@@ -360,6 +360,8 @@ The real libxml2 Trace pass found compiler-generated path names still surfacing 
 
 The corresponding real libxml2 Understand pass found the recommendation heading and alternate-path list still exposing raw analyzer expressions, and one-symbol paths could incorrectly report `Source location unavailable`. After reusing the behavior label across the recommendation, priority, and alternate-path surfaces and falling back to the sole path node for location, Home now exposes `value path · 2 symbols · xmlstring.c:564` while preserving exact expressions in titles; checks at 240, 390, 760, and 1440px found zero overflow and no page errors.
 
+The follow-up Home screenshot confirmed the one-symbol fallback now renders complete locations such as `value path · 1 symbols · xmlstring.c:590` across the alternate-path list. The common `What reaches this code?` prompt was also replayed at 390px into Boundary with the expected sink URL and no page errors; the compact labels remain fully readable and actionable.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
