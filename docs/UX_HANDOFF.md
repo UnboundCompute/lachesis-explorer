@@ -332,6 +332,8 @@ The real Compare pass found mobile diff preview rows allocating all available wi
 
 The invalid-upload recovery pass found the home error alert collapsing its message to a 32px column at 390px because recovery buttons competed with the text in one flex row. After grouping recovery actions and switching error notices to a mobile grid, the full JSON error remains readable, actions wrap as a unit, and the dismiss control stays reachable; real Playwright checks at 240px and 390px found zero overflow, readable message widths, no page errors, and touch-safe action heights. The Impeccable detector and full quality gate remain clean.
 
+The ultra-narrow Trace pass found clickable “Paths to explore” rows truncating symbol names and source locations inside their child labels at 240px, hiding the destinations users select. After allowing path-index labels to wrap only below 280px, all four path destinations remain complete and actionable; real Playwright checks at 240px found 56–76px content-aware rows, no child overflow, zero page overflow, and no page errors, while 390px and desktop rows retain their compact layout. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
