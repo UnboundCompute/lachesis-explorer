@@ -284,6 +284,8 @@ The exploration-control pass found the primary “Map / Modules / Data quality�
 
 The inspector relationship pass found connected-path links and related-node navigation inheriting 8px text, making source-context follow-up harder to scan. After `f934100`, actionable relationship controls and their supporting rows use 9px text while compact metadata labels remain unchanged. A real `libxml2` inspector check at 390px confirmed the connected links and relationship peers at 9px with zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
 
+The Boundary desktop render found the single-item “Execution boundaries” rail stretching to the height of the convergence workspace, leaving a large empty column beside the evidence field. After `45fbb3d`, sink-workspace columns align to their own content heights. At 1440px the rail measured about 313px versus the 823px main workspace, with the inspector intact and zero overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
