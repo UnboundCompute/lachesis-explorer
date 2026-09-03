@@ -627,8 +627,7 @@ export function TraceView({
           )}
         </div>
         <div className="sidebar-foot" aria-live="polite">
-          <span className="tiny-dot" /> {visible.length} of {app.flows.length}{" "}
-          graph paths visible
+          <span className="tiny-dot" /> {countLabel(visible.length, "graph path")} of {countLabel(app.flows.length, "graph path")} visible
         </div>
       </aside>
       <main className="main-panel">
@@ -652,7 +651,7 @@ export function TraceView({
             <p className="path-meta">
               <span>{pathKindLabel(flow, securityPath)}</span>
               {flow.confidence && <span>{flow.confidence} confidence</span>}
-              <span>{sourcePreviewCount} / {flow.steps.length} source previews</span>
+              <span>{countLabel(sourcePreviewCount, "source preview")} / {countLabel(flow.steps.length, "step")}</span>
               {flow.limitations?.length ? <span>{flow.limitations.length} known limitation{flow.limitations.length === 1 ? "" : "s"}</span> : null}
               {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
             </p>

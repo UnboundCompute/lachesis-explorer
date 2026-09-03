@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { LayoutPoint, Node, Step } from '../lib/lachesis'
+import { countLabel, type LayoutPoint, type Node, type Step } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
 import { Icon } from './Icon'
 
@@ -63,6 +63,7 @@ export function PathCanvas({
   const securityPath = title === 'Witness path'
   const itemUnit =
     title === 'Code path' ? 'symbols' : title === 'Request flow' ? 'steps' : 'nodes'
+  const itemSingular = title === 'Code path' ? 'symbol' : title === 'Request flow' ? 'step' : 'node'
   const [viewport, setViewport] = useState<'fit' | 'reset'>('fit')
   const [focused, setFocused] = useState(false)
   const [zoom, setZoom] = useState(1)
@@ -154,7 +155,7 @@ export function PathCanvas({
           <span className="canvas-count">
             {selectedItem ? `step ${selectedIndex + 1} / ${items.length} · ` : ''}
             {focused ? `${start + 1}–${end} of ` : ''}
-            {items.length} {itemUnit}
+            {countLabel(items.length, itemSingular)}
           </span>
         </div>
         <div className="canvas-actions">
@@ -234,7 +235,7 @@ export function PathCanvas({
               >
                 {index > 0 && <i aria-hidden="true">→</i>}
                 <b>{boundary.label}</b>
-                <small>{boundary.end - boundary.start + 1} {itemUnit}</small>
+                <small>{countLabel(boundary.end - boundary.start + 1, itemSingular)}</small>
               </button>
             ))}
           </div>

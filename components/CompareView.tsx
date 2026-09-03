@@ -188,7 +188,7 @@ function DiffColumn({
           const node = openNodes ? app.nodes.find((value) => value.id === item.id) : undefined
           return preview ? (
             <details className="diff-flow-preview" key={item.id}>
-              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps · {sourceCoverage(preview, app)}</small></summary>
+              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {countLabel(preview.steps.length, 'step')} · {sourceCoverage(preview, app)}</small></summary>
               <p>{flowPath(preview, app) || "No step sequence available."}</p>
               {previewScopes.length > 1 && <small className="diff-flow-context">Context: {previewScopes.join(' → ')}</small>}
               <button type="button" className="diff-copy-action" onClick={() => copyPreview(preview)}>{copyState?.id === preview.id && copyState.status === 'copied' ? 'Copied' : copyState?.id === preview.id && copyState.status === 'failed' ? 'Copy failed' : 'Copy sequence'}</button>

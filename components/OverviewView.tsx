@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { App, Node } from "../lib/lachesis";
+import { countLabel, type App, type Node } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainNode } from "../lib/explanations";
@@ -732,7 +732,7 @@ export function OverviewView({
             aria-describedby="graph-filter-help"
           />
           <span className="sr-only" aria-live="polite">
-            {query ? `${visible.length} graph nodes match the current filter.` : "Showing all graph nodes."}
+            {query ? `${countLabel(visible.length, "graph node")} ${visible.length === 1 ? "matches" : "match"} the current filter.` : "Showing all graph nodes."}
           </span>
           <div className="query-chips">
             <button
@@ -844,7 +844,7 @@ export function OverviewView({
               </div>
               <p>
                   {visible.length
-                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${topologyNodes.length} connected context nodes.` : topologyLimited ? ` Showing the ${topologyNodes.length} most relevant nodes of ${visible.length}; open all to inspect the complete topology.` : ""}`
+                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${countLabel(topologyNodes.length, "connected context node")}.` : topologyLimited ? ` Showing the ${countLabel(topologyNodes.length, "most relevant node")} of ${countLabel(visible.length, "node")}; open all to inspect the complete topology.` : ""}`
                   : `No nodes match “${query}”. Clear the filter to restore the full topology.`}
                 {selected && visible.length > 1 && (
                   <button
@@ -871,7 +871,7 @@ export function OverviewView({
                     className="neighborhood-toggle"
                     onClick={() => setShowAllTopology(true)}
                   >
-                    Show all {visible.length} nodes
+                    Show all {countLabel(visible.length, "node")}
                   </button>
                 )}
                 {showAllTopology && visible.length > 48 && !neighborhoodOnly && (
@@ -880,7 +880,7 @@ export function OverviewView({
                     className="neighborhood-toggle"
                     onClick={() => setShowAllTopology(false)}
                   >
-                    Show focused {Math.min(48, visible.length)} nodes
+                    Show focused {countLabel(Math.min(48, visible.length), "node")}
                   </button>
                 )}
                 {graphViewModified && (
@@ -1116,7 +1116,7 @@ export function OverviewView({
                     type="button"
                     className="context-row"
                     key={context.key}
-                    aria-label={`${context.label}, ${context.nodes.length} symbols, ${context.outbound} outbound and ${context.inbound} inbound boundary transitions`}
+                    aria-label={`${context.label}, ${countLabel(context.nodes.length, "symbol")}, ${context.outbound} outbound and ${context.inbound} inbound boundary transitions`}
                     onClick={() => {
                       const filterValue = context.service || context.repository || context.module;
                       const filterKey = context.service ? "service" : context.repository ? "repo" : context.module ? "module" : "scope";
@@ -1131,7 +1131,7 @@ export function OverviewView({
                     <span className="context-row-mark" />
                     <span>
                       <b>{context.label}</b>
-                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : context.module ? ` · ${context.module}` : ""} · {context.nodes.length} symbols · {context.outbound} out / {context.inbound} in</small>
+                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : context.module ? ` · ${context.module}` : ""} · {countLabel(context.nodes.length, "symbol")} · {context.outbound} out / {context.inbound} in</small>
                     </span>
                     <em title={`${context.outbound} outbound · ${context.inbound} inbound boundary transitions`}>{context.nodes.length}</em>
                   </button>
@@ -1155,8 +1155,7 @@ export function OverviewView({
                     <div>
                       <b>{module.name}</b>
                       <small>
-                        {module.path || "Module"} · {module.nodes.length}{" "}
-                        symbols
+                        {module.path || "Module"} · {countLabel(module.nodes.length, "symbol")}
                       </small>
                     </div>
                     <span>
@@ -1240,7 +1239,7 @@ export function OverviewView({
                   <span className={`kind-dot kind-${item.node.kind}`} />
                   <b>{item.node.label || item.node.id}</b>
                   <small>
-                    {nodeLocation(item.node)} · {item.flows} flows · {item.entries} requests
+                    {nodeLocation(item.node)} · {countLabel(item.flows, "flow")} · {countLabel(item.entries, "request")}
                   </small>
                 </button>
               ))}

@@ -339,7 +339,7 @@ export function HomeView({
             <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} ready to follow</dd></div>
             <div><dt>Request flows</dt><dd>{app.entries.length.toLocaleString()} starting points</dd></div>
             <div><dt>Files</dt><dd>{(app.files.length || new Set(app.nodes.map((node) => node.file).filter(Boolean)).size).toLocaleString()} in this bundle</dd></div>
-            <div><dt>Source previews</dt><dd>{app.nodes.filter((node) => node.snippet.trim() || node.sourceWindow?.lines.length).length.toLocaleString()} of {app.nodes.length.toLocaleString()} symbols</dd></div>
+            <div><dt>Source previews</dt><dd>{countLabel(app.nodes.filter((node) => node.snippet.trim() || node.sourceWindow?.lines.length).length, "source preview")} of {countLabel(app.nodes.length, "symbol")}</dd></div>
           </dl>
         </header>
 
@@ -606,7 +606,7 @@ export function HomeView({
               </div>
               <p className="priority-summary">
                 {priority.evidence?.result_summary ?? priority.flow.description ??
-                  `${priority.flow.steps.length} bundled steps connect the selected source and boundary.`}
+                  `${countLabel(priority.flow.steps.length, "bundled step")} connect${priority.flow.steps.length === 1 ? "s" : ""} the selected source and boundary.`}
               </p>
               <div className="judgment-row">
                 <div>
@@ -619,7 +619,7 @@ export function HomeView({
                 </div>
                 <div>
                   <small>Witness</small>
-                  <b>{priority.flow.steps.length} steps</b>
+                  <b>{countLabel(priority.flow.steps.length, "step")}</b>
                 </div>
               </div>
               {priority.evidence?.limitations?.[0] && (
@@ -713,7 +713,7 @@ export function HomeView({
                 </div>
                 <div>
                   <small>Evidence</small>
-                  <b>{app.mcp.length ? `${app.mcp.length} linked records` : "not supplied"}</b>
+                  <b>{app.mcp.length ? countLabel(app.mcp.length, "linked record") : "not supplied"}</b>
                 </div>
               </div>
               <div className="priority-actions">
@@ -752,8 +752,8 @@ export function HomeView({
             <div className="briefing-empty">
               <h2>Graph structure is ready to explore</h2>
               <p>
-                This bundle includes {app.nodes.length} nodes and{" "}
-                {app.edges.length} relationships, but no graph paths were
+                This bundle includes {countLabel(app.nodes.length, "node")} and{" "}
+                {countLabel(app.edges.length, "relationship")}, but no graph paths were
                 included.
               </p>
               <div className="priority-actions">
@@ -864,7 +864,7 @@ export function HomeView({
                   <small>
                     {graphOnly
                       ? `${pathKindLabel(item.flow)} · ${countLabel(item.flow.steps.length, "symbol")} · ${pathLocation(item.flow, app)}`
-                      : `${item.evidence?.confidence ?? "bundle"} confidence · ${item.flow.steps.length} steps`}
+                      : `${item.evidence?.confidence ?? "bundle"} confidence · ${countLabel(item.flow.steps.length, "step")}`}
                   </small>
                   {graphOnly && <small className="queue-row-context">{flowContext(item.flow, app)}</small>}
                 </span>
@@ -999,7 +999,7 @@ export function HomeView({
             <span>
               <b>Graph topology</b>
               <small>
-                {app.edges.length} relationships · {dynamicCount} dynamic.
+                {countLabel(app.edges.length, "relationship")} · {countLabel(dynamicCount, "dynamic")}
               </small>
             </span>
             <Icon name="arrow" size={13} />

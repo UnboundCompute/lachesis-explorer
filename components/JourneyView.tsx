@@ -344,7 +344,7 @@ export function JourneyView({
           {entrySearch && <button type="button" onClick={() => setEntrySearch("")} aria-label="Clear request flow filter"><Icon name="close" size={14} /></button>}
         </label>
         <div className="entry-search-status" aria-live="polite">
-          {entrySearch ? `${visibleEntries.length} of ${app.entries.length} request flows match` : `${app.entries.length} request flow${app.entries.length === 1 ? "" : "s"}`}
+          {entrySearch ? `${countLabel(visibleEntries.length, "request flow")} of ${countLabel(app.entries.length, "request flow")} ${visibleEntries.length === 1 ? "matches" : "match"}` : countLabel(app.entries.length, "request flow")}
         </div>
         {filterSuggestions.length > 0 && (
           <div className="filter-hints" role="group" aria-label="Quick request flow filters">
@@ -459,7 +459,7 @@ export function JourneyView({
             {entry.description && <p className="path-description">{entry.description}</p>}
             <p className="path-meta">
               {entry.confidence && <span>{entry.confidence} confidence</span>}
-              <span>{sourcePreviewCount} / {entry.hops.length} source previews</span>
+              <span>{countLabel(sourcePreviewCount, "source preview")} / {countLabel(entry.hops.length, "step")}</span>
               {entry.limitations?.length ? <span>{entry.limitations.length} known limitation{entry.limitations.length === 1 ? "" : "s"}</span> : null}
               {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
             </p>
@@ -580,7 +580,7 @@ export function JourneyView({
           evidence={evidence}
           fallbackTool="journey"
           fallbackArgs={entryDisplayName(entry, app.nodes, app.entries)}
-          fallbackSummary={`${entry.hops.length} visible steps from the selected starting point.`}
+          fallbackSummary={`${countLabel(entry.hops.length, "step")} visible from the selected starting point.`}
           nodeCount={entry.hops.length}
           variant="path"
         />
