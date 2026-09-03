@@ -254,6 +254,8 @@ The filter-feedback pass found persistent result-count lines in Explore, Compare
 
 The source-guidance pass found the inspector’s “Repository link not configured/unavailable” note still using 7px micro-label text even though it explains a missing capability. After `7e4e155`, the note uses 9px / 1.4 line-height while retaining its narrow mobile wrap. The real `libxml2` bundle was checked at 390px: the note measured 9px / 11.7px inside its 120px width, the inspector remained 358px wide, and the document remained exactly viewport-width.
 
+The source-action pass found the inspector’s “Copy snippet/source window” and “Copy context” controls still using 7px labels despite being primary source-work actions. After `762fa12`, these labels use 9px while their existing touch sizing is preserved. With the real `libxml2` bundle, both controls measured 9px at 320px, 390px, and 1440px; phone controls remained 44px high and all tested widths stayed viewport-width.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
