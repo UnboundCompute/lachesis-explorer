@@ -282,6 +282,8 @@ The desktop Explore render found the “Codebase areas” panel stretching to th
 
 The exploration-control pass found the primary “Map / Modules / Data quality” switch still using 8px labels. After `3f39c18`, all three modes use 9px text while preserving the compact layout. Real demo-bundle checks at 390px and 1440px measured 44px/31px control heights respectively, with zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
 
+The inspector relationship pass found connected-path links and related-node navigation inheriting 8px text, making source-context follow-up harder to scan. After `f934100`, actionable relationship controls and their supporting rows use 9px text while compact metadata labels remain unchanged. A real `libxml2` inspector check at 390px confirmed the connected links and relationship peers at 9px with zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
