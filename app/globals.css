@@ -466,3 +466,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .architecture-grid{align-items:start}
 .overview-switch button{font-size:9px}
 .inspector-context button,.inspector-context p,.relationship-item>span{font-size:9px}
+.sink-workspace{align-items:start}
