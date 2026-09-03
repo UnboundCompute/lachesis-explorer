@@ -324,6 +324,8 @@ The ultra-narrow Trace pass found the three-action share group retaining a 243px
 
 The ultra-narrow Request Flow pass found connected request-flow links still inheriting ellipsis behavior, hiding route and service context at 240px. After allowing connected-flow labels to wrap on mobile, the full `POST /api/search` context remains readable while the 390px row stays compact; visual Playwright checks found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
 
+The Boundary responsive pass found its five-option lens/action switch horizontally clipping “Path matrix” at 240px and 390px, leaving a core analysis lens undiscoverable without an unmarked swipe. After allowing the switch to wrap on small screens, all actions remain visible at 240, 390, and 760px while the desktop layout is unchanged; visual Playwright checks found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
