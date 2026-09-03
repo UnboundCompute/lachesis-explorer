@@ -54,6 +54,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `HEAD` — apply behavior-oriented labels to Compare flow rows while retaining exact names in tooltips
 - `HEAD` — carry behavior-oriented flow labels into History replay rows so context survives revisits
 - `HEAD` — standardize remaining dynamic count summaries in Boundary, Command Palette, and Explore topology
+- `HEAD` — normalize recent-bundle and Boundary search result counts so singular feedback stays grammatical
 - `d1c5801` — defer routed workspace scroll correction so direct lens headings stay below the sticky header
 - `fa2be43` — give mobile recovery notices a dedicated message row so error copy cannot collapse into a narrow column
 - `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
