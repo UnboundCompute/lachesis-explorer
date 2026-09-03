@@ -248,6 +248,8 @@ The follow-up boundary probe found the first intermediate fix still allowed the 
 
 The cross-view import-error pass found that invalid uploads from a scrolled Trace, Request Flow, or Boundary view could leave the shared alert above the viewport; the initial recovery scroll was also animated by the global smooth-scroll setting. After centralizing recovery at the page level and forcing an immediate document position below the sticky header, the error is visible immediately in all five tested views while the active bundle remains intact.
 
+The loaded libxml2 Trace pass found the primary path heading expanding into a long compiler-generated expression even though the sidebar already used a compact path kind and source location. After aligning the heading with the compact label, the main workspace leads with “Value path · xmlstring.c:564” while the exact bundle label remains available via accessible name, title, and detailed step/source context.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
