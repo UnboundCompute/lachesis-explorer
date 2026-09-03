@@ -348,6 +348,8 @@ The Investigate convergence-index pass found its keyboard-friendly node rows tru
 
 The Trace reading-cue pass found the selected step’s source/provenance line truncating a 492px string into 152px at 240px and 372px at desktop, hiding the occurrence identifier. After allowing the cue’s source and step labels to wrap, the complete provenance remains visible with a 60px cue at 240px, 24px source wrapping at 390px and 1440px, and zero overflow at all tested widths; Playwright found no page errors. The Impeccable detector and full quality gate remain clean.
 
+The ultra-narrow Trace route-summary pass found the selected path’s endpoint labels truncating `parseSearchRequest` and `products.query` to ambiguous fragments at 240px, hiding the start/end context. After switching the endpoint summary to a content-aware three-column grid and allowing labels to wrap below 280px, both exact symbols remain readable without page overflow; Playwright checks at 240, 280, 390, and 1440px found zero overflow, and the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
