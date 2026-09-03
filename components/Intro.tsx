@@ -1,4 +1,4 @@
-import type { App } from "../lib/lachesis";
+import { countLabel, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -106,8 +106,8 @@ export function Intro({
         </dl>
         <span className="coverage-note">
           <i />
-          {included.toLocaleString()} graph nodes shown ·{" "}
-          {indexed.toLocaleString()} indexed
+          {countLabel(included, "graph node")} shown ·{" "}
+          {countLabel(indexed, "indexed node")}
           {app.coverage.limitations.length ? " · limited projection" : ""}
         </span>
         <button type="button" className="context-upload" onClick={onUpload} disabled={loadState.type === "loading"} aria-busy={loadState.type === "loading"}>

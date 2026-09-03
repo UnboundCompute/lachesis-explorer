@@ -360,7 +360,7 @@ export function HomeView({
             <div>
               <span className="panel-label">WHAT THIS BUNDLE INCLUDES</span>
               <p>
-                {app.coverage.includedNodes ?? app.nodes.length} of {app.coverage.indexedNodes ?? app.nodes.length} indexed nodes are available here. Paths and source context reflect this bundle’s included projection.
+                {countLabel(app.coverage.includedNodes ?? app.nodes.length, "node")} of {countLabel(app.coverage.indexedNodes ?? app.nodes.length, "indexed node")} are available here. Paths and source context reflect this bundle’s included projection.
               </p>
             </div>
             <div className="understand-coverage-detail">
@@ -1043,8 +1043,8 @@ export function HomeView({
           </span>
           <span className="coverage-note">
             <i />
-            {(app.coverage.includedNodes ?? app.nodes.length).toLocaleString()} graph nodes shown ·{" "}
-            {(app.coverage.indexedNodes ?? app.nodes.length).toLocaleString()} indexed
+            {countLabel(app.coverage.includedNodes ?? app.nodes.length, "graph node")} shown ·{" "}
+            {countLabel(app.coverage.indexedNodes ?? app.nodes.length, "indexed node")}
           </span>
         </div>
         <div>
