@@ -304,6 +304,8 @@ The Investigate transition follow-up found opening a connected request flow had 
 
 The cross-lens navigation audit found the same selected-context gap in command-palette launches, history replay, Explore→Trace, Explore→Request Flow, Journey→Trace, and Compare→Trace. After centralizing trace/request-flow URL override helpers, each transition writes its flow/node or entry/hop context in the same navigation event; command-palette and history replay checks confirm complete URLs, while the detector, full quality gate, and mobile overflow checks remain clean.
 
+The ultra-narrow interaction pass found Explore overflowing a 240px viewport by 57px because its architecture side panel retained an intrinsic minimum width; the same pass found the mobile source-inspector close button shrinking to about 20–28px wide under flex pressure. After allowing architecture/health panels to shrink and preventing the close control from flex-shrinking, Explore is viewport-safe at 240–390px, long labels wrap inside their panel, and the close control remains 44×44 on mobile. The 240px render was visually rechecked; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
