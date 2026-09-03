@@ -350,6 +350,8 @@ The Trace reading-cue pass found the selected step’s source/provenance line tr
 
 The ultra-narrow Trace route-summary pass found the selected path’s endpoint labels truncating `parseSearchRequest` and `products.query` to ambiguous fragments at 240px, hiding the start/end context. After switching the endpoint summary to a content-aware three-column grid and allowing labels to wrap below 280px, both exact symbols remain readable without page overflow; Playwright checks at 240, 280, 390, and 1440px found zero overflow, and the Impeccable detector and full quality gate remain clean.
 
+The ultra-narrow Explore lens-switch pass found the `Map / Modules / Data quality` control retaining 188px of intrinsic width inside a 176px viewport at 240px, leaving the final lens partially hidden without a cue. After switching only ≤280px controls to equal-width grid columns with wrapped labels and 44px touch targets, all three lenses are visible and actionable; Playwright checks at 240, 280, 390, 760, and 1440px found zero overflow, and the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
