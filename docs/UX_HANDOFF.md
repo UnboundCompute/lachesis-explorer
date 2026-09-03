@@ -340,6 +340,8 @@ The mobile Explore module pass found the expanded file heading truncating `src/s
 
 The Explore context-selector pass found repository, service, symbol-count, and edge-count summaries truncating inside actionable context rows at both 240px and 390px, reducing a 313px summary to a 99px column at the narrowest width. After allowing context-row labels to wrap across the mobile breakpoint, complete summaries remain readable with content-aware 82–92px rows at 240px and 46–58px rows at 390px; checks through 760px and 1440px found zero overflow and no page errors. The Impeccable detector and full quality gate remain clean.
 
+The ultra-narrow Explore boundary-transition pass found two clickable relationship links truncating their direction, boundary name, or relationship count at 240px. After allowing transition labels to wrap below 280px, all destinations and relationship types remain readable in 44–49px rows; real Playwright checks at 240px, 390px, and 1440px found no child overflow, zero page overflow, and no page errors. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
