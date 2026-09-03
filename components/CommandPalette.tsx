@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { entryDisplayName, flowDisplayName, type App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, flowDisplayName, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 
@@ -229,7 +229,7 @@ export function CommandPalette({
         ...app.flows.map((flow) => ({
           id: `flow-${flow.id}`,
           label: flowDisplayName(flow, app.nodes, app.flows),
-          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${sourceCoverage(app, flow.steps)} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
+          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${countLabel(flow.steps.length, app.findings.some((finding) => finding.id === flow.id) ? "node" : "symbol")} · ${sourceCoverage(app, flow.steps)} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
           keywords: flow.steps.flatMap((step) => {
             const node = app.nodes.find((item) => item.id === step.node_id);
             return node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [];

@@ -579,7 +579,7 @@ export function TraceView({
                   onRecord(
                     "Opened graph path",
                     item.id,
-                    `${item.steps.length} nodes`,
+                    countLabel(item.steps.length, "node"),
                   );
                   trackEvent("flow_selected");
                 }}

@@ -1,4 +1,4 @@
-import { flowDisplayName, type App, type Flow } from '../lib/lachesis'
+import { countLabel, flowDisplayName, type App, type Flow } from '../lib/lachesis'
 
 type Props = {
   app: App
@@ -74,7 +74,7 @@ export function EvidenceMatrix({ app, flows, sinkId, onOpenFlow, securityMode = 
                   <span>{scopes.length ? scopes.join(' → ') : 'No boundary metadata'}</span>
                 </td>
                 <td>
-                  <span>{steps.length} {securityMode ? 'nodes' : 'symbols'}</span>
+                  <span>{countLabel(steps.length, securityMode ? 'node' : 'symbol')}</span>
                   <small>{sourcePreviews}/{steps.length} source previews</small>
                 </td>
                 <td><span className={aliases ? 'matrix-signal alias' : 'matrix-signal quiet'}>{aliases || '—'}</span></td>

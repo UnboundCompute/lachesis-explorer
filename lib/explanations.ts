@@ -1,4 +1,4 @@
-import type { App, Entry, Flow, Node, Step } from "./lachesis";
+import { countLabel, type App, type Entry, type Flow, type Node, type Step } from "./lachesis";
 
 function location(node?: Node) {
   if (!node) return "Source location unavailable";
@@ -54,7 +54,7 @@ export function explainFlow(app: App, flow: Flow, direction: "backward" | "forwa
     return `${index + 1}. **${node?.label || step.node_id}** — ${relation}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${step.note ? `\n   ${step.note}` : ""}`;
   }).join("\n");
 
-  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${steps.length} symbols.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(flowLimitations(flow))}${explorerReference(url)}`;
+  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${countLabel(steps.length, "symbol")}.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(flowLimitations(flow))}${explorerReference(url)}`;
 }
 
 export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?: string) {
