@@ -23,13 +23,24 @@ function nodeContext(node?: App['nodes'][number]) {
 function nodeLocation(node?: App['nodes'][number]) {
   return node?.file ? `${node.file}:${node.line || '—'}` : ''
 }
+function flowContextLabel(flow: App['flows'][number], app: App) {
+  const exact = flow.name.trim()
+  if (exact.length <= 48 && !/__builtin_|___chk\b/.test(exact)) return exact
+  const pathNodes = flow.steps.map(step => app.nodes.find(node => node.id === step.node_id)).filter(Boolean) as App['nodes']
+  const first = pathNodes[0]
+  const last = pathNodes.at(-1)
+  const firstLabel = first?.label || first?.id || 'origin unavailable'
+  const lastLabel = last?.label || last?.id || 'destination unavailable'
+  const endpoints = firstLabel === lastLabel ? firstLabel : `${firstLabel} → ${lastLabel}`
+  return `${pathContextLabel(flow.kind, app.findings.some(item => item.id === flow.id)).toLowerCase()} · ${endpoints} · ${nodeLocation(first) || 'source unavailable'}`
+}
 export function InvestigationContext({app,view,flowId,stepId,stepIndex=0,entryIndex,hopId,hopIndex=0,sinkId,focusNodeId,onHome}:Props){
   if(view==='home')return null
   const flow=app.flows.find(item=>item.id===flowId),step=app.nodes.find(item=>item.id===stepId),entry=app.entries[entryIndex],hop=app.nodes.find(item=>item.id===hopId),sink=app.nodes.find(item=>item.id===sinkId),focused=app.nodes.find(item=>item.id===focusNodeId)
   const withContext = (value: string | undefined, node?: App['nodes'][number]) => `${value||'—'}${nodeContext(node) ? ` · ${nodeContext(node)}` : ''}${nodeLocation(node) ? ` · ${nodeLocation(node)}` : ''}`
   const parts: Array<[string, string | undefined]> = view === 'trace'
     ? flow
-      ? [[pathContextLabel(flow.kind, app.findings.some(item => item.id === flow.id)), flow.name], ['STEP', withContext(`${stepIndex + 1}/${flow.steps.length} · ${step?.label || step?.id}`, step)]]
+      ? [[pathContextLabel(flow.kind, app.findings.some(item => item.id === flow.id)), flowContextLabel(flow, app)], ['STEP', withContext(`${stepIndex + 1}/${flow.steps.length} · ${step?.label || step?.id}`, step)]]
       : [['TRACE', 'No graph path included']]
     : view === 'journey'
       ? entry?.hops?.length
