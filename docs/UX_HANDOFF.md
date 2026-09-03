@@ -316,6 +316,8 @@ The real `libxml2` Trace render found source previews with long code lines horiz
 
 The real `libxml2` Trace render also found the source inspector’s “Repository link not configured” status clipped into an incomplete phrase at the narrow desktop inspector width. After allowing the status to wrap with a bounded flex width, the full message remains readable at 390px and 1440px without changing source actions or causing overflow; the Impeccable detector and full quality gate remain clean.
 
+The demo request-flow and boundary pass found the source inspector’s location row flex-shrinking “Copy location” into clipped text at the 240px breakpoint, even though document overflow was zero. After giving the location metadata its own wrapped row at ≤280px, the action remains fully readable and 44px high while the 390px layout stays single-row; real Playwright checks found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
