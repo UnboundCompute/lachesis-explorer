@@ -384,7 +384,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
   .filter-suggestion-list{display:contents}
   .filter-suggestion-list:not(.expanded) button:nth-child(n+4){display:none}
   .mobile-navigation-controls button{width:44px;min-width:44px;height:44px;min-height:44px}
-  .overview-switch button,.filter-hints button,.query-chips button,.queue-filters button,.lens-switch button,.inspector-reopen,.share-control,.entry-select,.copy-button,.footer-help,.resource-list a,.understand-primary,.understand-secondary,.understand-search button,.understand-coverage-detail button,.understand-footer button,.understand-path>button,.briefing-source-search button,.path-pins-heading button,.path-pin,.filter-context button,.inspector-neighborhood-list button,.relationship-peer,.reading-guide summary,[aria-label="Copy source location"],[aria-label="Copy graph ID"]{min-width:44px;min-height:44px}
+  .overview-switch button,.filter-hints button,.query-chips button,.queue-filters button,.lens-switch button,.inspector-reopen,.share-control,.entry-select,.copy-button,.footer-help,.resource-list a,.understand-primary,.understand-secondary,.understand-search button,.understand-coverage-detail button,.understand-footer button,.understand-path>button,.briefing-source-search button,.path-pins-heading button,.path-pin,.filter-context button,.connections-toggle,.priority-actions button,.inspector-neighborhood-list button,.relationship-peer,.reading-guide summary,[aria-label="Copy source location"],[aria-label="Copy graph ID"]{min-width:44px;min-height:44px}
   .understand-search input,.briefing-source-search input,.query-composer input,.search input,.compare-search input{min-height:44px}
 }
 @media(max-width:760px){
