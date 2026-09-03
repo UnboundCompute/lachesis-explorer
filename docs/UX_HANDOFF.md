@@ -298,6 +298,8 @@ The rendered contrast pass found the Understand coverage label and Trace path-co
 
 The cross-lens action-type pass found the persistent bundle breadcrumb, convergence “Focus selected node” control, and overlapping-request links still rendering at 8px even though each is an actionable mobile control. After the shared control-text rule, these actions use 9px text while preserving their 44px touch targets. Trace, Explore, and Investigate checks at 390px found no remaining visible buttons at or below 8px, focus still lands on the breadcrumb, and document overflow remains zero; the Impeccable detector and full quality gate remain clean.
 
+The home transition pass found Understand’s “Open this path”, request-flow, and destination actions changing lenses before their selected state reached the URL; the UI showed the right result, but the address bar temporarily contained only `view=...`, so an immediate copy/share or reload could lose context. After adding explicit transition URL overrides, home→Trace preserves flow/node/direction/step, home→Request Flow preserves entry/hop, and home→Investigate preserves the sink immediately. Reload checks at 390px restore each intended lens with zero overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
