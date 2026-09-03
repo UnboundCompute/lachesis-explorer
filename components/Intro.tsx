@@ -128,10 +128,10 @@ export function Intro({
         >
           <i />
           <span>{loadState.message}</span>
-          {loadState.type === "error" && <div className="notice-actions">
+          {loadState.type === "error" && <span className="notice-actions">
             <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>
             <a className="notice-action notice-link" href="https://github.com/UnboundCompute/lachesis-explorer/blob/main/docs/GRAPH_EXPLORER_CONTRACT.md" target="_blank" rel="noreferrer">Open bundle contract</a>
-          </div>}
+          </span>}
           <button className="notice-dismiss" type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
         </p>
       )}
