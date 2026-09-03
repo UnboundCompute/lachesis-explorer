@@ -354,6 +354,8 @@ The ultra-narrow Explore lens-switch pass found the `Map / Modules / Data qualit
 
 The data-quality metrics pass found the two-column health grid retaining 213px of intrinsic width inside a 174px panel at 240px, cropping the entire right column while page overflow remained falsely zero. After sizing both tracks with `minmax(0, 1fr)`, all metric cells stay inside the panel and their labels wrap naturally; Playwright checks at 240, 280, 390, 760, and 1440px found panel and page widths aligned, zero overflow, and the full quality gate remains clean.
 
+The real libxml2 Compare pass found long added-node expressions ellipsized in desktop diff columns, obscuring the code symbols being compared even with available vertical room. After allowing non-actionable diff rows to wrap while keeping expandable path previews compact, all added/removed labels remain complete; imported-bundle Playwright checks at 240, 390, 760, and 1440px found zero overflow, the 1440px render was visually rechecked, and the full quality gate remains clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
