@@ -457,4 +457,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media(max-width:760px){.understand-copy h1{min-width:0;overflow-wrap:anywhere}}
 @media(max-width:760px){.understand-path-copy h3{min-width:0;overflow-wrap:anywhere}}
 @media(max-width:760px){.investigation-context{align-items:flex-start;flex-wrap:wrap;row-gap:6px;overflow:visible;white-space:normal}.investigation-context .context-crumb{min-width:0}.investigation-context .context-crumb b{max-width:calc(100vw - 110px);overflow-wrap:anywhere}}
+@media(max-width:760px){.app-menu{width:min(300px,calc(100vw - 24px));max-width:calc(100vw - 24px)}}
+@media(max-width:760px) and (max-height:520px){.app-menu{max-height:calc(100dvh - 80px);overflow-y:auto}}
+@media(max-width:280px) and (max-height:520px){.app-menu{max-height:calc(100dvh - 130px)}}
 .search:focus-within,.compare-search:focus-within,.query-composer:focus-within,.convergence-search:focus-within,.entry-search:focus-within,.sink-search:focus-within{border-color:var(--cyan);box-shadow:0 0 0 2px color-mix(in srgb,var(--cyan) 18%,transparent),inset 0 0 0 1px var(--cyan)}
