@@ -490,7 +490,7 @@ export function TraceView({
     }
   }
   return (
-    <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
+    <section className={`workspace trace-workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="sidebar">
         <span className="panel-label">PATHS TO EXPLORE</span>
         <label className="search">

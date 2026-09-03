@@ -468,3 +468,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .inspector-context button,.inspector-context p,.relationship-item>span{font-size:9px}
 .sink-workspace{align-items:start}
 .journey-workspace{align-items:start}
+.trace-workspace{align-items:start}
