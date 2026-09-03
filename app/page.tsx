@@ -614,7 +614,7 @@ export default function Page() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [view, flowId, record, commandOpen, helpOpen, menu]);
 
-  function changeView(next: View, mapModeOverride?: OverviewMode, focusNodeOverride?: string) {
+  function changeView(next: View, mapModeOverride?: OverviewMode, focusNodeOverride?: string, mapQueryOverride?: string) {
     if (next !== view && urlReady.current) {
       const params = new URLSearchParams(window.location.search);
       [
@@ -635,6 +635,7 @@ export default function Page() {
       ].forEach((key) => params.delete(key));
       params.set("view", next);
       if (next === "map" && focusNodeOverride) params.set("node", focusNodeOverride);
+      if (next === "map" && mapQueryOverride) params.set("filter", mapQueryOverride);
       if (next === "map" && mapModeOverride && mapModeOverride !== "map") params.set("map_mode", mapModeOverride);
       else if (next === "map" && !focusNodeId && !mapModeOverride && !focusNodeOverride) params.set("map_mode", "architecture");
       pushNavigation(params);
@@ -736,7 +737,7 @@ export default function Page() {
     setMapQuery(`file:${file}`);
     setMapNeighborhoodOnly(false);
     setFocusNodeId("");
-    changeView("map", "map");
+    changeView("map", "map", undefined, `file:${file}`);
     trackEvent("source_file_explored");
   }
 
@@ -1197,7 +1198,7 @@ export default function Page() {
           onSearch={(nextQuery) => {
             setMapQuery(nextQuery);
             setMapNeighborhoodOnly(false);
-            changeView("map", "map");
+            changeView("map", "map", undefined, nextQuery);
             trackEvent("home_source_search_submitted");
           }}
           onDismiss={() => {

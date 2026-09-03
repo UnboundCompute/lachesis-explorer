@@ -223,7 +223,7 @@ export function OverviewView({
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
     setSelectedId(app.nodes[0]?.id ?? "");
-    if (hasMountedOverview.current) setQuery("");
+    if (hasMountedOverview.current && !query) setQuery("");
     hasMountedOverview.current = true;
     setExpandedModule(null);
     setShareState("idle");
