@@ -262,6 +262,8 @@ The full 320px action scan then found two more misses: Understand’s “Trace t
 
 The ultra-narrow lens-menu probe found the responsive menu anchored to the collapsed picker’s right edge at 300–390px, placing much of the 280px menu off-screen (x −128px at 320px). After `b0cb8a5`, the 281–760px menu anchors left and uses a viewport-safe width; the ≤280px wrapped layout is unchanged. Playwright checks at 240px, 260px, 280px, 300px, 320px, 360px, 390px, and 760px found all seven menu items fully inside the viewport and document width equal to the viewport; the 320px render was visually rechecked.
 
+The short-viewport menu pass then found the seven-item lens menu extending below 240–320px-tall viewports, so keyboard focus could land on “Setup” outside the visible screen. After `d289e4b`, short mobile viewports use an internal menu scroller capped to the available height. At 240×240, 240×320, 300×300, 320×320, and 390×320, focusing the last menu item kept it inside the menu bounds, with no page-width overflow; 390×844 retains the normal non-scrolling menu.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
