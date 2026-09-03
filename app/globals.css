@@ -464,3 +464,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .list-empty button,.queue-empty button{font-size:9px}
 .understand-coverage-detail button{font-size:9px}
 .architecture-grid{align-items:start}
+.overview-switch button{font-size:9px}
