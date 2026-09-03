@@ -232,7 +232,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
                 </div>
                 {app.bundle.description && <p className="bundle-description">{app.bundle.description}</p>}
                 {app.coverage.limitations[0] && <p className="bundle-coverage-warning"><i />{app.coverage.limitations[0]}</p>}
-                <div className="menu-metrics"><span><b>{app.nodes.length}</b> {countLabel(app.nodes.length, 'node')}</span><span><b>{app.flows.length}</b> {countLabel(app.flows.length, 'graph path')}</span><span><b>{app.entries.length}</b> {countLabel(app.entries.length, 'request flow')}</span></div>
+                <div className="menu-metrics"><span><b>{countLabel(app.nodes.length, 'node')}</b></span><span><b>{countLabel(app.flows.length, 'graph path')}</b></span><span><b>{countLabel(app.entries.length, 'request flow')}</b></span></div>
                 {recentBundles.length > 0 && (
                   <div className="recent-bundles">
                     <span className="menu-title">RECENT METADATA · LOCAL ONLY</span>
