@@ -203,7 +203,8 @@ function flowLocation(app: App, flow: Flow, nodeById: NodeIndex) {
 
 function flowListLabel(app: App, flow: Flow, nodeById: NodeIndex) {
   const exact = flowDisplayName(flow, app.nodes, app.flows);
-  if (exact.length <= 58) return exact;
+  const analyzerArtifact = /__builtin_|___chk\b/.test(exact);
+  if (exact.length <= 58 && !analyzerArtifact) return exact;
   return `${pathKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flowLocation(app, flow, nodeById)}`;
 }
 
