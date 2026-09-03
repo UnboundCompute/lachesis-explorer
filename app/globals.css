@@ -357,6 +357,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .panel-label,.bundle-origin,.bundle-mode,.coverage-note,.context-kicker{font-size:9px}
 .bundle-facts dt{font-size:9px}
 .path-route-summary small,.path-meta,.trace-orientation span,.trace-orientation small,.canvas-direction,.convergence-canvas .canvas-title::after,.convergence-selected,.source-link-note{font-size:9px}
+.reading-guide-steps small,.query-syntax-help,.map-summary p,.choke-panel p,.list-empty,.queue-empty{font-size:9px}
 .convergence-index-list b,.convergence-index-list small,.convergence-edge-label,.topology-edge-label{font-size:9px}
 @media(max-width:760px){
   /* Keep compact evidence controls comfortably tappable without enlarging graph labels. */
