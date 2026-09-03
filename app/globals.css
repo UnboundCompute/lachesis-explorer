@@ -580,3 +580,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
   .context-strip .bundle-facts dd{margin-top:4px}
   .context-strip .context-actions{gap:6px}
 }
+
+/* Graph annotations are evidence too; keep them legible without enlarging node controls. */
+.path-canvas .node-file,
+.topology-canvas .topology-edge-label {
+  font-size: 8px;
+}
