@@ -280,6 +280,8 @@ The populated coverage pass found Home’s “Review data quality” CTA still r
 
 The desktop Explore render found the “Codebase areas” panel stretching to the height of the denser boundary/symbol panel, leaving a large empty region below a single module. After `4864fe4`, architecture-grid panels align to their own content heights. At 1440px the modules panel measured about 334px instead of 636px, the evidence panel remained intact, and document overflow stayed at zero; the Impeccable detector and full quality gate remain clean.
 
+The exploration-control pass found the primary “Map / Modules / Data quality” switch still using 8px labels. After `3f39c18`, all three modes use 9px text while preserving the compact layout. Real demo-bundle checks at 390px and 1440px measured 44px/31px control heights respectively, with zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
