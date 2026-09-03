@@ -511,3 +511,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .topology-legend,.convergence-legend{color:var(--ink-2)}
 @media(max-width:280px){.path-route-summary{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center}.path-route-summary small,.path-route-summary b{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}.path-route-summary>i{justify-self:center}}
 @media(max-width:280px){.overview-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.overview-switch button{min-width:0;justify-content:center;padding-inline:4px;text-align:center;white-space:normal}}
+.health-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
