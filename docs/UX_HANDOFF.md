@@ -57,6 +57,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `HEAD` — normalize recent-bundle and Boundary search result counts so singular feedback stays grammatical
 - `HEAD` — raise readable evidence typography across the Explore and Trace workspaces without enlarging compact graph controls
 - `HEAD` — normalize remaining filtered-result counts in Compare and Boundary search states
+- `HEAD` — normalize connected-context totals and disclosure controls in the source inspector
 - `d1c5801` — defer routed workspace scroll correction so direct lens headings stay below the sticky header
 - `fa2be43` — give mobile recovery notices a dedicated message row so error copy cannot collapse into a narrow column
 - `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
