@@ -320,6 +320,8 @@ The demo request-flow and boundary pass found the source inspector’s location 
 
 The same 240px source-inspector pass found relationship rows inheriting a no-wrap rule, reducing the actionable peer symbol `parseSearchRequest` to an ellipsis in the Connected context section. After allowing relationship rows and peer actions to wrap, the destination remains readable and keyboard-actionable at 240px while the 390px row stays compact; visual Playwright checks found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
 
+The ultra-narrow Trace pass found the three-action share group retaining a 243px intrinsic width inside a 164px toolbar at 240–260px, placing “Copy Markdown” partly off-screen while masking page overflow. After allowing the share group to wrap within the toolbar at ≤280px, all share actions remain visible and 44px high; real `libxml2` checks at 240, 260, 320, and 390px found zero overflow and no page errors, with visual confirmation at 240px. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
