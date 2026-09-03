@@ -57,7 +57,11 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
         menuItems[event.key === 'Home' ? 0 : menuItems.length - 1]?.focus()
         return
       }
-      if (event.key === 'Tab') setMoreOpen(false)
+      if (event.key === 'Tab') {
+        event.preventDefault()
+        setMoreOpen(false)
+        moreTriggerRef.current?.focus()
+      }
     }
     document.addEventListener('mousedown', close)
     document.addEventListener('keydown', onKey)
@@ -94,7 +98,11 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
         menuItems[event.key === 'Home' ? 0 : menuItems.length - 1]?.focus()
         return
       }
-      if (event.key === 'Tab') setMobileLensOpen(false)
+      if (event.key === 'Tab') {
+        event.preventDefault()
+        setMobileLensOpen(false)
+        mobileLensRef.current?.querySelector<HTMLButtonElement>('.mobile-lens-trigger')?.focus()
+      }
     }
     document.addEventListener('mousedown', close)
     document.addEventListener('keydown', onKey)
@@ -119,7 +127,11 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
         appTriggerRef.current?.focus()
         return
       }
-      if (event.key === 'Tab') setMenu(false)
+      if (event.key === 'Tab') {
+        event.preventDefault()
+        setMenu(false)
+        appTriggerRef.current?.focus()
+      }
     }
     document.addEventListener('mousedown', close)
     document.addEventListener('keydown', onKey)
