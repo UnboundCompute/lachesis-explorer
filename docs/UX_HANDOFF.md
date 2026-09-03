@@ -232,6 +232,8 @@ The disclosure-menu keyboard pass found Tab closing More, the mobile lens picker
 
 The typography measurement pass found persistent instructional copy in the path guide, Explore query help/summary, and empty-state messaging at 8px, below the sustainable reading floor used elsewhere in the workspace. After the targeted type adjustment, these explanatory surfaces render at 9px while graph annotations and compact metadata retain their intentional smaller scale; Trace, Explore, and Request Flow remain viewport-width at 390px and 1440px.
 
+The ultra-narrow header pass found the current-lens control collapsing to 7px at 240px and 27px at 260px because it competed with three fixed header actions. After the compact breakpoint adjustment, the lens trigger remains 158px at 240px and 198px at 280px on a wrapped two-row shell; at 300px the one-row header remains intact, and all widths stay overflow-free.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
