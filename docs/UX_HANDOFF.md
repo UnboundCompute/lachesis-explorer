@@ -338,6 +338,8 @@ The mobile Boundary pass found the selected sink rail button truncating its sour
 
 The mobile Explore module pass found the expanded file heading truncating `src/search/search-service.ts` at 240px, weakening the source context for the symbols listed beneath it. After allowing module file headings to wrap only below 280px, the full file path remains visible while the module list stays compact at 390px and desktop; Playwright measured a 18px wrapped heading at 240px, zero overflow at all tested widths, and no page errors. The Impeccable detector and full quality gate remain clean.
 
+The Explore context-selector pass found repository, service, symbol-count, and edge-count summaries truncating inside actionable context rows at both 240px and 390px, reducing a 313px summary to a 99px column at the narrowest width. After allowing context-row labels to wrap across the mobile breakpoint, complete summaries remain readable with content-aware 82–92px rows at 240px and 46–58px rows at 390px; checks through 760px and 1440px found zero overflow and no page errors. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
