@@ -47,6 +47,7 @@ type PendingLink = {
   mapOrder?: string;
   mapNeighborhood?: boolean;
 };
+type ViewUrlOverrides = Record<string, string | undefined>;
 
 const viewLabels: Record<View, string> = {
   home: "Understand",
@@ -614,7 +615,7 @@ export default function Page() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [view, flowId, record, commandOpen, helpOpen, menu]);
 
-  function changeView(next: View, mapModeOverride?: OverviewMode, focusNodeOverride?: string, mapQueryOverride?: string) {
+  function changeView(next: View, mapModeOverride?: OverviewMode, focusNodeOverride?: string, mapQueryOverride?: string, urlOverrides?: ViewUrlOverrides) {
     if (next !== view && urlReady.current) {
       const params = new URLSearchParams(window.location.search);
       [
@@ -638,6 +639,9 @@ export default function Page() {
       if (next === "map" && mapQueryOverride) params.set("filter", mapQueryOverride);
       if (next === "map" && mapModeOverride && mapModeOverride !== "map") params.set("map_mode", mapModeOverride);
       else if (next === "map" && !focusNodeId && !mapModeOverride && !focusNodeOverride) params.set("map_mode", "architecture");
+      Object.entries(urlOverrides ?? {}).forEach(([key, value]) => {
+        if (value) params.set(key, value);
+      });
       pushNavigation(params);
     }
     if (next === "map" && mapModeOverride) {
@@ -1207,24 +1211,35 @@ export default function Page() {
           }}
           direction={direction}
           onFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            const nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction);
+            changeView("trace", undefined, undefined, undefined, {
+              flow: nextFlow,
+              node: nextNode,
+              direction,
+              step_index: String(nextStepIndex),
+            });
             setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            setStepIndex(nextStepIndex);
             setInspectorOpen(true);
             record("Opened path", nextFlow, "from understanding home");
           }}
           onSink={(nextSink) => {
-            changeView("investigate");
+            changeView("investigate", undefined, undefined, undefined, { sink: nextSink });
             setSinkId(nextSink);
             record("Focused destination", nextSink, "from understanding home");
           }}
           onEntry={(nextIndex, nextHop) => {
-            changeView("journey");
+            const nextHopIndex = positionForEntry(app, nextIndex, nextHop);
+            changeView("journey", undefined, undefined, undefined, {
+              entry: app.entries[nextIndex]?.id,
+              hop: nextHop,
+              hop_index: String(nextHopIndex),
+            });
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(positionForEntry(app, nextIndex, nextHop));
+            setHopIndex(nextHopIndex);
             setInspectorOpen(true);
             record(
               "Opened request flow",
