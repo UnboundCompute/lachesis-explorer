@@ -268,6 +268,8 @@ The active-bundle overlay pass found the 300px fixed-width context menu starting
 
 The cross-lens context pass found Trace → “Open in Explore” visibly selecting the requested node while serializing only `view=map&scope=local`; the URL lost the node and retained the wrong architecture-mode transition state. After `19d60ec`, map transitions carry explicit mode and node overrides, covering Trace/Request Flow/Boundary source navigation plus Home search and data-quality actions. The real demo bundle was checked at 390px and 1440px: Trace → Explore now yields `view=map&node=transform.normalize`, opens the Map lens with that node selected, and stays viewport-width.
 
+The source-filter continuation pass found Trace → “View all symbols in this file” briefly writing `filter=file:xmlstring.c` and then losing it when Explore mounted; Home source search had the same transition risk. After `97e9c34`, explicit map query overrides survive the cross-lens mount and controlled Explore initialization no longer clears an incoming filter. Real `libxml2` checks at 390px now preserve `file:xmlstring.c` in both the URL and Explore input; Home source search preserves `xmlstring.c`, with no viewport overflow.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
