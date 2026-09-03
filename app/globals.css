@@ -448,6 +448,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .mobile-lens-label-compact{display:none!important}
 @media(max-width:360px){.topbar{gap:4px}.mobile-lens-trigger{padding-inline:5px}.mobile-lens-trigger b{font-size:9px}}
 @media(max-width:360px){.mobile-lens-label-full{display:none!important}.mobile-lens-label-compact{display:block!important}}
+@media(min-width:281px) and (max-width:760px){.mobile-lens-menu{left:0;right:auto;width:min(280px,calc(100vw - 80px))}}
 @media(max-width:280px){.topbar{flex-wrap:wrap;row-gap:6px}.mobile-lens-picker{flex:1 1 calc(100% - 52px)}.header-actions{flex:0 0 100%;justify-content:flex-end;margin-left:0}}
 @media(max-width:280px){#workspace-content{scroll-margin-top:132px}}
 @media(max-width:760px){.understand-hero>*,.understand-copy,.understand-facts{min-width:0}}
