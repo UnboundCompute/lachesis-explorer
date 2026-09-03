@@ -238,6 +238,8 @@ The secondary-metadata pass found Boundary source-location rows, execution-count
 
 The wrapped-header follow-up found Skip to workspace landing at 88px on 240px and 280px screens while the new two-row sticky header extended to about 122px, covering the start of the workspace. After the narrow scroll-margin adjustment, the skip target clears the header at 240px, 280px, and 300px without changing wider breakpoints.
 
+The ultra-narrow Understand pass found a long recommended path endpoint widening the 240px page to 266px even after the header fix. After the mobile min-width and wrapping boundary, CTA/search controls and the “useful place to start” route remain inside the viewport at 240px, 280px, 300px, and 390px while preserving the full evidence label.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
