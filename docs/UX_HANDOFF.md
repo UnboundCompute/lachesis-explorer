@@ -356,6 +356,8 @@ The data-quality metrics pass found the two-column health grid retaining 213px o
 
 The real libxml2 Compare pass found long added-node expressions ellipsized in desktop diff columns, obscuring the code symbols being compared even with available vertical room. After allowing non-actionable diff rows to wrap while keeping expandable path previews compact, all added/removed labels remain complete; imported-bundle Playwright checks at 240, 390, 760, and 1440px found zero overflow, the 1440px render was visually rechecked, and the full quality gate remains clean.
 
+The real libxml2 Trace pass found compiler-generated path names still surfacing as primary labels, including `len · __builtin___vsnprintf_chk`, while several distinct paths collapsed visually into the same analyzer vocabulary. After promoting the truthful path kind and source location for analyzer-artifact names and allowing desktop sidebar labels to wrap, the list reads as `Value path · xmlstring.c:590` while exact expressions remain in titles and path detail; Playwright checks at 240, 390, 760, and 1440px found zero overflow, and the 1440px list was visually rechecked.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
