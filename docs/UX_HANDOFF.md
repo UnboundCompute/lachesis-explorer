@@ -258,6 +258,8 @@ The source-action pass found the inspector’s “Copy snippet/source window” 
 
 The empty-filter recovery pass found Request Flow and Boundary’s “Clear filter” action measuring only 22px high at 320px, leaving the primary way out of a no-results state below the mobile touch target. After `37908fb`, selector-empty recovery actions are 44px high through 760px. Demo-bundle Playwright checks at 320px, 390px, and 760px measured 44px in both lenses with no viewport overflow; the Impeccable detector remains clean.
 
+The full 320px action scan then found two more misses: Understand’s “Trace this witness” / “Compare reaching paths” CTAs were 42px, and Trace’s “Show all connections” control was 29px. After `235b6f0`, all three join the mobile 44px target rule. A real browser check measured each at 44px with the demo bundle and kept the document exactly 320px wide; the Impeccable detector remains clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
