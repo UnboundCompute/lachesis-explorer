@@ -290,6 +290,8 @@ The Request-flow desktop render found the “Starting point” rail stretching t
 
 The Trace desktop render found the “Paths to explore” rail stretching to the full 1155px path-reading workspace despite one visible path, leaving a large empty column. After `7c72ea6`, Trace has an explicit content-height alignment rule; the sidebar measures about 395px versus the 1155px main path, with the inspector intact and zero overflow at 1440px. The Impeccable detector and full quality gate remain clean.
 
+The help-affordance pass found the persistent “Keyboard help” footer link rendering at 8px despite opening the product’s shortcut documentation. After `df0745a`, it uses 9px text while retaining its 44px mobile target. At 390px and 1440px, the link opens the help dialog and the document remains overflow-free; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
