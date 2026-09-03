@@ -300,6 +300,8 @@ The cross-lens action-type pass found the persistent bundle breadcrumb, converge
 
 The home transition pass found Understand’s “Open this path”, request-flow, and destination actions changing lenses before their selected state reached the URL; the UI showed the right result, but the address bar temporarily contained only `view=...`, so an immediate copy/share or reload could lose context. After adding explicit transition URL overrides, home→Trace preserves flow/node/direction/step, home→Request Flow preserves entry/hop, and home→Investigate preserves the sink immediately. Reload checks at 390px restore each intended lens with zero overflow; the Impeccable detector and full quality gate remain clean.
 
+The Investigate transition follow-up found opening a connected request flow had the same temporary bare-URL state, dropping the selected entry and hop from the address bar. After adding explicit context to the Investigate→Request Flow transition, the action immediately preserves `entry`, `hop`, and `hop_index`; a 390px Playwright check confirms the resulting URL and zero overflow, and the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
