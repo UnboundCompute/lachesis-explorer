@@ -256,6 +256,8 @@ The source-guidance pass found the inspector’s “Repository link not configur
 
 The source-action pass found the inspector’s “Copy snippet/source window” and “Copy context” controls still using 7px labels despite being primary source-work actions. After `762fa12`, these labels use 9px while their existing touch sizing is preserved. With the real `libxml2` bundle, both controls measured 9px at 320px, 390px, and 1440px; phone controls remained 44px high and all tested widths stayed viewport-width.
 
+The empty-filter recovery pass found Request Flow and Boundary’s “Clear filter” action measuring only 22px high at 320px, leaving the primary way out of a no-results state below the mobile touch target. After `37908fb`, selector-empty recovery actions are 44px high through 760px. Demo-bundle Playwright checks at 320px, 390px, and 760px measured 44px in both lenses with no viewport overflow; the Impeccable detector remains clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
