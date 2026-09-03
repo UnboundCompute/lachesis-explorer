@@ -586,3 +586,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .topology-canvas .topology-edge-label {
   font-size: 8px;
 }
+
+/* Keyboard affordances should be discoverable enough to support the reading shortcuts. */
+.command-trigger kbd,
+.search kbd,
+.command-palette kbd,
+.step-nav-hint {
+  font-size: 8px;
+}
