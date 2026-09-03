@@ -233,7 +233,7 @@ function DiffColumn({
       )}
       {filteredItems.length > 8 && (
         <button type="button" className="diff-expand" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
-          {expanded ? 'Show fewer' : `Show all ${filteredItems.length}`}
+          {expanded ? 'Show fewer' : `Show all ${countLabel(filteredItems.length, 'item')}`}
         </button>
       )}
     </div>

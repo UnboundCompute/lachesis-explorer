@@ -75,7 +75,7 @@ export function EvidenceMatrix({ app, flows, sinkId, onOpenFlow, securityMode = 
                 </td>
                 <td>
                   <span>{countLabel(steps.length, securityMode ? 'node' : 'symbol')}</span>
-                  <small>{sourcePreviews}/{steps.length} source previews</small>
+                  <small>{countLabel(sourcePreviews, 'source preview')} of {countLabel(steps.length, 'step')}</small>
                 </td>
                 <td><span className={aliases ? 'matrix-signal alias' : 'matrix-signal quiet'}>{aliases || '—'}</span></td>
                 <td><span className={dynamic ? 'matrix-signal dynamic' : 'matrix-signal quiet'}>{dynamic || '—'}</span></td>

@@ -395,7 +395,7 @@ export function CommandPalette({
         </div>
         {query.trim() && (
           <p className="command-results-status" role="status">
-            {commands.length} {commands.length === 1 ? "result" : "results"}
+            {countLabel(commands.length, "result")}
             {commands.length > visibleCommands.length ? " · refine to see more" : ""}
           </p>
         )}

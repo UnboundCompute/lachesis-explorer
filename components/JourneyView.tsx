@@ -460,7 +460,7 @@ export function JourneyView({
             <p className="path-meta">
               {entry.confidence && <span>{entry.confidence} confidence</span>}
               <span>{countLabel(sourcePreviewCount, "source preview")} / {countLabel(entry.hops.length, "step")}</span>
-              {entry.limitations?.length ? <span>{entry.limitations.length} known limitation{entry.limitations.length === 1 ? "" : "s"}</span> : null}
+              {entry.limitations?.length ? <span>{countLabel(entry.limitations.length, "known limitation")}</span> : null}
               {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
             </p>
           </div>
