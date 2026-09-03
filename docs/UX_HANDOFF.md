@@ -260,6 +260,8 @@ The empty-filter recovery pass found Request Flow and Boundary’s “Clear filt
 
 The full 320px action scan then found two more misses: Understand’s “Trace this witness” / “Compare reaching paths” CTAs were 42px, and Trace’s “Show all connections” control was 29px. After `235b6f0`, all three join the mobile 44px target rule. A real browser check measured each at 44px with the demo bundle and kept the document exactly 320px wide; the Impeccable detector remains clean.
 
+The ultra-narrow lens-menu probe found the responsive menu anchored to the collapsed picker’s right edge at 300–390px, placing much of the 280px menu off-screen (x −128px at 320px). After `b0cb8a5`, the 281–760px menu anchors left and uses a viewport-safe width; the ≤280px wrapped layout is unchanged. Playwright checks at 240px, 260px, 280px, 300px, 320px, 360px, 390px, and 760px found all seven menu items fully inside the viewport and document width equal to the viewport; the 320px render was visually rechecked.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
