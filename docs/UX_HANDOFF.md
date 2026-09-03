@@ -64,6 +64,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `HEAD` — raise active Trace breadcrumb labels so exact path/source context remains readable
 - `HEAD` — enlarge supporting Explore/Trace evidence metadata while keeping graph labels and controls compact
 - `HEAD` — raise source-inspector scope metadata and Explore map guidance out of 7px microcopy
+- `HEAD` — raise Trace connected-context and nearby-symbol metadata out of 7–8px microcopy
 - `d1c5801` — defer routed workspace scroll correction so direct lens headings stay below the sticky header
 - `fa2be43` — give mobile recovery notices a dedicated message row so error copy cannot collapse into a narrow column
 - `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
