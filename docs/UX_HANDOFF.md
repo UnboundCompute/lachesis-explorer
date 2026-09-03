@@ -352,6 +352,8 @@ The ultra-narrow Trace route-summary pass found the selected path’s endpoint l
 
 The ultra-narrow Explore lens-switch pass found the `Map / Modules / Data quality` control retaining 188px of intrinsic width inside a 176px viewport at 240px, leaving the final lens partially hidden without a cue. After switching only ≤280px controls to equal-width grid columns with wrapped labels and 44px touch targets, all three lenses are visible and actionable; Playwright checks at 240, 280, 390, 760, and 1440px found zero overflow, and the Impeccable detector and full quality gate remain clean.
 
+The data-quality metrics pass found the two-column health grid retaining 213px of intrinsic width inside a 174px panel at 240px, cropping the entire right column while page overflow remained falsely zero. After sizing both tracks with `minmax(0, 1fr)`, all metric cells stay inside the panel and their labels wrap naturally; Playwright checks at 240, 280, 390, 760, and 1440px found panel and page widths aligned, zero overflow, and the full quality gate remains clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
