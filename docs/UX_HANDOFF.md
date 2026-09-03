@@ -326,6 +326,8 @@ The ultra-narrow Request Flow pass found connected request-flow links still inhe
 
 The Boundary responsive pass found its five-option lens/action switch horizontally clipping “Path matrix” at 240px and 390px, leaving a core analysis lens undiscoverable without an unmarked swipe. After allowing the switch to wrap on small screens, all actions remain visible at 240, 390, and 760px while the desktop layout is unchanged; visual Playwright checks found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
 
+The command-palette pass found 240px result rows truncating meaningful destinations such as “See what reaches a destination” and “Explore the codebase graph” to ambiguous ellipses. After allowing result titles to wrap only at ≤280px, the full destinations are readable without changing the wider palette; real checks at 240, 260, 320, and 390px found contained dialogs, zero overflow, no page errors, and the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
