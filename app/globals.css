@@ -546,3 +546,22 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .trace-orientation small{font-size:9px}
 .investigation-context .context-home,.investigation-context .context-crumb b{font-size:9px}
 .investigation-context .context-crumb small{font-size:8px}
+
+/* Supporting evidence should be readable at a glance; keep graph glyph labels and IDs compact. */
+.trace-workspace .path-boundary-label,
+.trace-workspace .path-boundary-segment small,
+.trace-workspace .source-scroll-hint,
+.trace-workspace .inspector-neighborhood > p,
+.trace-workspace .relationship-signals em,
+.trace-workspace .relationship-caveat,
+.trace-workspace .evidence-status,
+.trace-workspace .evidence-metrics dt,
+.trace-workspace .evidence-metrics dd,
+.trace-workspace .node-scope-context,
+.trace-workspace .inspector-symbol > span:not(.node-scope-kind),
+.overview-workspace .topology-legend,
+.overview-workspace .topology-hint,
+.overview-workspace .topology-canvas + p {
+  font-size: 9px;
+  line-height: 1.4;
+}
