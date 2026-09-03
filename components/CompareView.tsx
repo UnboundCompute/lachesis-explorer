@@ -321,7 +321,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
         />
         {comparisonQuery && <button type="button" onClick={() => setComparisonQuery("")} aria-label="Clear comparison filter"><Icon name="close" size={14} /></button>}
       </label>
-      {comparisonQuery && <p className="compare-search-status" role="status">{visibleChangedPaths.length} changed paths match · added, removed, and changed lists are filtered too</p>}
+      {comparisonQuery && <p className="compare-search-status" role="status">{countLabel(visibleChangedPaths.length, "changed path")} {visibleChangedPaths.length === 1 ? "matches" : "match"} · added, removed, and changed lists are filtered too</p>}
       <div className="compare-grid">
         {groups.map(([label, result]) => (
           <section key={label}>
@@ -359,7 +359,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
         )}
         {visibleChangedPaths.length > 8 && (
           <button type="button" className="diff-expand changed-expand" onClick={() => setShowAllChanged((value) => !value)} aria-expanded={showAllChanged}>
-            {showAllChanged ? "Show fewer" : `Show all ${visibleChangedPaths.length}`}
+            {showAllChanged ? "Show fewer" : `Show all ${countLabel(visibleChangedPaths.length, "changed path")}`}
           </button>
         )}
       </section>

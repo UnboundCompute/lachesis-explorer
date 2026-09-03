@@ -445,7 +445,7 @@ export function SinkView({
           />
           {pathSearch && <button type="button" onClick={() => setPathSearch("")} aria-label="Clear reaching path filter"><Icon name="close" size={14} /></button>}
         </label>
-        {pathSearch && <p className="convergence-search-status" role="status">{flows.length} of {allFlows.length} reaching {pathNounPlural} match</p>}
+        {pathSearch && <p className="convergence-search-status" role="status">{countLabel(flows.length, pathNoun)} of {countLabel(allFlows.length, pathNoun)} match</p>}
         {(allFlows.some((flow) => flow.steps.some((step) => hasSource(nodeById.get(step.node_id)))) || allFlows.some((flow) => flow.steps.some((step) => !hasSource(nodeById.get(step.node_id))))) && (
           <div className="filter-hints convergence-filter-hints" role="group" aria-label="Quick reaching path filters">
             {allFlows.some((flow) => flow.steps.some((step) => hasSource(nodeById.get(step.node_id)))) && <button type="button" onClick={() => setPathSearch("has:source")}>Has source</button>}
