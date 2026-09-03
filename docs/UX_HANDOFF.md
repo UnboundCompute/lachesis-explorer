@@ -230,6 +230,8 @@ The follow-up question-state pass found Explore continuing to label an applied `
 
 The disclosure-menu keyboard pass found Tab closing More, the mobile lens picker, and the active-bundle menu while their focused menu item unmounted, leaving focus lost. After the close-focus fix, Tab and Escape return focus to the owning trigger across desktop and mobile menus; the menus close cleanly without changing the active view.
 
+The typography measurement pass found persistent instructional copy in the path guide, Explore query help/summary, and empty-state messaging at 8px, below the sustainable reading floor used elsewhere in the workspace. After the targeted type adjustment, these explanatory surfaces render at 9px while graph annotations and compact metadata retain their intentional smaller scale; Trace, Explore, and Request Flow remain viewport-width at 390px and 1440px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
