@@ -362,6 +362,8 @@ The corresponding real libxml2 Understand pass found the recommendation heading 
 
 The follow-up Home screenshot confirmed the one-symbol fallback now renders complete locations such as `value path · 1 symbols · xmlstring.c:590` across the alternate-path list. The common `What reaches this code?` prompt was also replayed at 390px into Boundary with the expected sink URL and no page errors; the compact labels remain fully readable and actionable.
 
+The real-bundle copy pass found generated Home and Trace labels saying `1 symbols` or `1 nodes` in path summaries and history details. After adding a shared count formatter and applying it to Home/Trace path labels, cards and summaries now use singular `1 symbol`/`1 node` while plural counts remain unchanged; imported libxml2 checks at 240, 390, and 1440px found no generated grammar errors, zero overflow, and no page errors. Raw `result_summary` strings supplied by the bundle remain untouched evidence.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
