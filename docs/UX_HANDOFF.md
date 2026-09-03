@@ -288,6 +288,8 @@ The Boundary desktop render found the single-item “Execution boundaries” rai
 
 The Request-flow desktop render found the “Starting point” rail stretching to the full five-step reading workspace. After `979dbc8`, the journey workspace has an explicit content-height alignment rule; the rail measures about 819px versus the 1019px main path, with the inspector intact and zero overflow at 1440px. The Impeccable detector and full quality gate remain clean.
 
+The Trace desktop render found the “Paths to explore” rail stretching to the full 1155px path-reading workspace despite one visible path, leaving a large empty column. After `7c72ea6`, Trace has an explicit content-height alignment rule; the sidebar measures about 395px versus the 1155px main path, with the inspector intact and zero overflow at 1440px. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
