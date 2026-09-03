@@ -234,6 +234,8 @@ The typography measurement pass found persistent instructional copy in the path 
 
 The ultra-narrow header pass found the current-lens control collapsing to 7px at 240px and 27px at 260px because it competed with three fixed header actions. After the compact breakpoint adjustment, the lens trigger remains 158px at 240px and 198px at 280px on a wrapped two-row shell; at 300px the one-row header remains intact, and all widths stay overflow-free.
 
+The secondary-metadata pass found Boundary source-location rows, execution-count status, and related empty-state labels still rendering at 8px after the instructional copy adjustment. After the targeted metadata rule, these persistent rows render at 9px across Boundary and Request Flow; 320px, 390px, 800px, and 1440px remain viewport-width.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
