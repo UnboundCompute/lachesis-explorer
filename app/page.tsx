@@ -1342,10 +1342,15 @@ export default function Page() {
           setSinkId={setSinkId}
           onRecord={record}
           onEntry={(nextIndex, nextNode) => {
-            changeView("journey");
+            const nextHopIndex = positionForEntry(app, nextIndex, nextNode);
+            changeView("journey", undefined, undefined, undefined, {
+              entry: app.entries[nextIndex]?.id,
+              hop: nextNode,
+              hop_index: String(nextHopIndex),
+            });
             setEntryIndex(nextIndex);
             setHopId(nextNode);
-            setHopIndex(positionForEntry(app, nextIndex, nextNode));
+            setHopIndex(nextHopIndex);
             setInspectorOpen(true);
             record(
               "Opened connected request flow",
@@ -1354,16 +1359,21 @@ export default function Page() {
             );
           }}
           onOpenFlow={(nextFlow, nextNode, originalPosition) => {
-            changeView("trace");
-            setQuery("");
-            setFlowId(nextFlow);
-            setStepId(nextNode);
             const selectedFlow = app.flows.find((flow) => flow.id === nextFlow);
             const selectedPosition = originalPosition == null || !selectedFlow
               ? positionForFlow(app, nextFlow, nextNode, direction)
               : direction === "forward"
                 ? selectedFlow.steps.length - 1 - originalPosition
                 : originalPosition;
+            changeView("trace", undefined, undefined, undefined, {
+              flow: nextFlow,
+              node: nextNode,
+              direction,
+              step_index: String(selectedPosition),
+            });
+            setQuery("");
+            setFlowId(nextFlow);
+            setStepId(nextNode);
             setStepIndex(selectedPosition);
             setInspectorOpen(true);
           }}
