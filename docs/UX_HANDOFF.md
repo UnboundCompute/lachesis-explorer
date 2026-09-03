@@ -272,6 +272,8 @@ The source-filter continuation pass found Trace → “View all symbols in this 
 
 The legacy source-link pass found older 0.x bundles dropping `meta.source_url_template` during normalization, so configured repository links silently disappeared from the source inspector. After `771589e`, legacy bundles preserve the template and generate the expected source URL. The same 390px pass found the resulting “Open repository” action at 7px and 23px high; it now uses 9px text and the shared 44px mobile target. A synthetic legacy `libxml2` upload verified the GitHub URL, 44px height, and zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
 
+The source-context follow-up found “View all symbols in this file” still rendering at 8px despite being a primary source-navigation action. After `7a33fbb`, the action uses the same 9px reading floor as the surrounding source controls while retaining its 44px mobile target. A populated Explore inspector check at 390px confirmed 9px text, 44px height, and zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
