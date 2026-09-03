@@ -512,6 +512,14 @@ export default function Page() {
     return () => window.removeEventListener("popstate", restoreFromUrl);
   }, [app]);
 
+  function traceUrlOverrides(nextFlow: string, nextNode: string, nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction)): ViewUrlOverrides {
+    return { flow: nextFlow, node: nextNode, direction, step_index: String(nextStepIndex) };
+  }
+
+  function journeyUrlOverrides(nextIndex: number, nextHop: string, nextHopIndex = positionForEntry(app, nextIndex, nextHop)): ViewUrlOverrides {
+    return { entry: app.entries[nextIndex]?.id, hop: nextHop, hop_index: String(nextHopIndex) };
+  }
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement;
@@ -756,11 +764,12 @@ export default function Page() {
     if (flow) {
       const orderedSteps = direction === "forward" ? [...flow.steps].reverse() : flow.steps;
       const nextNode = orderedSteps[0]?.node_id ?? "";
-      changeView("trace");
+      const nextStepIndex = positionForFlow(app, flow.id, nextNode, direction);
+      changeView("trace", undefined, undefined, undefined, traceUrlOverrides(flow.id, nextNode, nextStepIndex));
       setQuery("");
       setFlowId(flow.id);
       setStepId(nextNode);
-      setStepIndex(positionForFlow(app, flow.id, nextNode, direction));
+      setStepIndex(nextStepIndex);
       setInspectorOpen(true);
       record("Reopened graph path", flow.name, "from exploration history");
       return;
@@ -768,7 +777,7 @@ export default function Page() {
     const entryIndex = app.entries.findIndex((item) => item.id === target || item.label === target);
     if (entryIndex >= 0) {
       const entry = app.entries[entryIndex];
-      changeView("journey");
+      changeView("journey", undefined, undefined, undefined, journeyUrlOverrides(entryIndex, entry.hops[0]?.node_id ?? "", 0));
       setEntryIndex(entryIndex);
       setHopId(entry.hops[0]?.node_id ?? "");
       setHopIndex(0);
@@ -1110,7 +1119,7 @@ export default function Page() {
           onClose={() => setCommandOpen(false)}
           onView={changeView}
           onFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            changeView("trace", undefined, undefined, undefined, traceUrlOverrides(nextFlow, nextNode));
             setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
@@ -1119,7 +1128,7 @@ export default function Page() {
             record("Opened graph path", nextFlow, "via command palette");
           }}
           onEntry={(nextIndex, nextHop) => {
-            changeView("journey");
+            changeView("journey", undefined, undefined, undefined, journeyUrlOverrides(nextIndex, nextHop));
             setEntryIndex(nextIndex);
             setHopId(nextHop);
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
@@ -1131,7 +1140,7 @@ export default function Page() {
             );
           }}
           onSink={(nextSink) => {
-            changeView("investigate");
+            changeView("investigate", undefined, undefined, undefined, { sink: nextSink });
             setSinkId(nextSink);
             record(
               "Focused sink",
@@ -1290,10 +1299,11 @@ export default function Page() {
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
-            changeView("journey");
+            const nextHopIndex = positionForEntry(app, nextIndex, nextHop);
+            changeView("journey", undefined, undefined, undefined, journeyUrlOverrides(nextIndex, nextHop, nextHopIndex));
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(positionForEntry(app, nextIndex, nextHop));
+            setHopIndex(nextHopIndex);
             setInspectorOpen(true);
           }}
           onFile={openSourceFile}
@@ -1318,11 +1328,12 @@ export default function Page() {
             else changeView(next);
           }}
           onFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            const nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction);
+            changeView("trace", undefined, undefined, undefined, traceUrlOverrides(nextFlow, nextNode, nextStepIndex));
             setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            setStepIndex(nextStepIndex);
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
@@ -1405,19 +1416,21 @@ export default function Page() {
             copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery, map_mode: mapMode, map_order: mapOrder, map_focus: mapNeighborhoodOnly ? "neighborhood" : "" })
           }
           onFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            const nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction);
+            changeView("trace", undefined, undefined, undefined, traceUrlOverrides(nextFlow, nextNode, nextStepIndex));
             setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            setStepIndex(nextStepIndex);
             setInspectorOpen(true);
             record("Opened connected graph path", nextFlow, "from graph");
           }}
           onEntry={(nextIndex, nextHop) => {
-            changeView("journey");
+            const nextHopIndex = positionForEntry(app, nextIndex, nextHop);
+            changeView("journey", undefined, undefined, undefined, journeyUrlOverrides(nextIndex, nextHop, nextHopIndex));
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(positionForEntry(app, nextIndex, nextHop));
+            setHopIndex(nextHopIndex);
             setInspectorOpen(true);
             record(
               "Opened connected request flow",
@@ -1434,11 +1447,12 @@ export default function Page() {
           loading={loadState.type === "loading"}
           onUpload={() => compareFileRef.current?.click()}
           onOpenFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            const nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction);
+            changeView("trace", undefined, undefined, undefined, traceUrlOverrides(nextFlow, nextNode, nextStepIndex));
             setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            setStepIndex(nextStepIndex);
             setInspectorOpen(true);
             record("Opened changed graph path", nextFlow, "from revision diff");
           }}
