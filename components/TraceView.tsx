@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { flowDisplayName, indirectionCount, type App, type Flow } from "../lib/lachesis";
+import { countLabel, flowDisplayName, indirectionCount, type App, type Flow } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainFlow } from "../lib/explanations";
@@ -430,7 +430,7 @@ export function TraceView({
     onFlow(previousFlow.id, nextNode);
     onPositionChange?.(0);
     onInspectorOpen();
-    onRecord("Returned to graph path", previousFlow.id, `${previousFlow.steps.length} symbols`);
+    onRecord("Returned to graph path", previousFlow.id, countLabel(previousFlow.steps.length, "symbol"));
     trackEvent("trace_path_reversed");
   }
   function openConnectedFlow(nextFlowId: string, nextNodeId: string) {
@@ -510,8 +510,8 @@ export function TraceView({
           <section className="path-pins" aria-label="Pinned graph paths">
             <div className="path-pins-heading"><span className="panel-label">PINNED PATHS</span><button type="button" onClick={() => { setPinnedFlowIds([]); writeLocal(pinnedKey, "[]"); }}>Clear pins</button></div>
             {pinnedFlows.map((item) => (
-              <button type="button" key={item.id} className={item.id === flow.id ? "path-pin selected" : "path-pin"} onClick={() => { onFlow(item.id, item.sourceNodeId ?? item.steps[0]?.node_id ?? ""); onInspectorOpen(); onRecord("Opened pinned graph path", item.id, `${item.steps.length} symbols`); }}>
-                <span><b title={flowDisplayName(item, app.nodes, app.flows)}>{flowListLabel(app, item, nodeById)}</b><small>{pathKindLabel(item, app.findings.some((finding) => finding.id === item.id))} · {item.steps.length} symbols</small></span><Icon name="arrow" size={11} />
+              <button type="button" key={item.id} className={item.id === flow.id ? "path-pin selected" : "path-pin"} onClick={() => { onFlow(item.id, item.sourceNodeId ?? item.steps[0]?.node_id ?? ""); onInspectorOpen(); onRecord("Opened pinned graph path", item.id, countLabel(item.steps.length, "symbol")); }}>
+                <span><b title={flowDisplayName(item, app.nodes, app.flows)}>{flowListLabel(app, item, nodeById)}</b><small>{pathKindLabel(item, app.findings.some((finding) => finding.id === item.id))} · {countLabel(item.steps.length, "symbol")}</small></span><Icon name="arrow" size={11} />
               </button>
             ))}
           </section>
@@ -593,7 +593,7 @@ export function TraceView({
                       : app.mcp.some((evidence) => evidence.for === item.id)
                         ? `Bundle-backed ${pathKindLabel(item, false).toLowerCase()}`
                       : pathKindLabel(item, false)} {" · "}
-                    {item.steps.length} {app.findings.some((finding) => finding.id === item.id) ? "nodes" : "symbols"} · {sourceCoverage(item, nodeById).available}/{item.steps.length} source previews{flowDisplayName(item, app.nodes, app.flows) === item.name ? ` · ${flowLocation(app, item, nodeById)}` : ""}
+                    {countLabel(item.steps.length, app.findings.some((finding) => finding.id === item.id) ? "node" : "symbol")} · {sourceCoverage(item, nodeById).available}/{item.steps.length} source previews{flowDisplayName(item, app.nodes, app.flows) === item.name ? ` · ${flowLocation(app, item, nodeById)}` : ""}
                   </small>
                   {query && flowMatchLabel(app, item, query, nodeById) && <small className="node-row-context">{flowMatchLabel(app, item, query, nodeById)}</small>}
                   {app.mcp.find((evidence) => evidence.for === item.id)?.result_summary && (
@@ -808,7 +808,7 @@ export function TraceView({
           evidence={evidence}
           fallbackTool="reaches"
           fallbackArgs={flowDisplayName(flow, app.nodes, app.flows)}
-          fallbackSummary={`${steps.length} visible ${securityPath ? "nodes" : "symbols"} in this graph path.`}
+          fallbackSummary={`${countLabel(steps.length, securityPath ? "node" : "symbol")} visible in this graph path.`}
           nodeCount={steps.length}
           indirections={indirectionCount(flow, evidence)}
           variant={securityPath ? "evidence" : "path"}

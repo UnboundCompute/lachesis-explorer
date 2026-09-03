@@ -439,6 +439,10 @@ export function indirectionCount(flow: Flow, evidence?: Evidence) {
   return evidence?.indirections ?? flow.steps.filter(step => step.edge?.alias || step.edge?.dynamic).length
 }
 
+export function countLabel(count: number, singular: string, plural = `${singular}s`) {
+  return `${count.toLocaleString()} ${count === 1 ? singular : plural}`
+}
+
 export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
   const duplicate = allFlows.filter((item) => item.name === flow.name).length > 1
   if (!duplicate) return flow.name

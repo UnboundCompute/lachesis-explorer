@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { flowDisplayName, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
+import { countLabel, flowDisplayName, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -117,7 +117,7 @@ function flowActionLabel(flow: Flow, app: App) {
   const analyzerArtifact = /__builtin_|___chk\b/.test(name);
   if (name.length <= 56 && !analyzerArtifact) return name;
   const source = sourceFor(flow, app) ?? app.nodes.find((node) => node.id === flow.steps[0]?.node_id);
-  return `${pathKindLabel(flow)} · ${flow.steps.length} symbols · ${nodeLocation(source)}`;
+  return `${pathKindLabel(flow)} · ${countLabel(flow.steps.length, "symbol")} · ${nodeLocation(source)}`;
 }
 
 function pathQuestion(flow?: Flow) {
@@ -403,7 +403,7 @@ export function HomeView({
             </div>
             <div className="understand-path">
               <div className="understand-path-copy">
-                <span>{pathKindLabel(graphFocus)} · {graphFocus.steps.length} symbols</span>
+                <span>{pathKindLabel(graphFocus)} · {countLabel(graphFocus.steps.length, "symbol")}</span>
                 <h3 title={flowDisplayName(graphFocus, app.nodes, app.flows)}>{flowActionLabel(graphFocus, app)}</h3>
                 <p>{graphFocus.description || `Follow the path from ${startNode?.label || "its first symbol"} to ${endNode?.label || "its final symbol"}.`}</p>
               </div>
@@ -434,7 +434,7 @@ export function HomeView({
             <div className="understand-path-list">
               {otherPaths.map((flow) => (
                 <button type="button" key={flow.id} onClick={() => onFlow(flow.id, flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
-                  <span><b title={flowDisplayName(flow, app.nodes, app.flows)}>{flowActionLabel(flow, app)}</b><small>{pathKindLabel(flow)} · {flow.steps.length} symbols{flowDisplayName(flow, app.nodes, app.flows) === flow.name ? ` · ${pathLocation(flow, app)}` : ""}</small></span>
+                  <span><b title={flowDisplayName(flow, app.nodes, app.flows)}>{flowActionLabel(flow, app)}</b><small>{pathKindLabel(flow)} · {countLabel(flow.steps.length, "symbol")}{flowDisplayName(flow, app.nodes, app.flows) === flow.name ? ` · ${pathLocation(flow, app)}` : ""}</small></span>
                   <Icon name="arrow" size={13} />
                 </button>
               ))}
@@ -699,7 +699,7 @@ export function HomeView({
               )}
               <p className="priority-summary">
                 {graphFocus.steps.length > 1
-                  ? `This bundled ${pathKindLabel(graphFocus)} connects ${graphFocus.steps.length} symbols. Open it to inspect each relationship and its exact source location.`
+                  ? `This bundled ${pathKindLabel(graphFocus)} connects ${countLabel(graphFocus.steps.length, "symbol")}. Open it to inspect each relationship and its exact source location.`
                   : "This bundle contains one symbol for this path. Open it to inspect its source and relationships in the surrounding graph."}
               </p>
               <div className="judgment-row">
@@ -863,7 +863,7 @@ export function HomeView({
                   <b title={flowDisplayName(item.flow, app.nodes, app.flows)}>{flowActionLabel(item.flow, app)}</b>
                   <small>
                     {graphOnly
-                      ? `${pathKindLabel(item.flow)} · ${item.flow.steps.length} symbols · ${pathLocation(item.flow, app)}`
+                      ? `${pathKindLabel(item.flow)} · ${countLabel(item.flow.steps.length, "symbol")} · ${pathLocation(item.flow, app)}`
                       : `${item.evidence?.confidence ?? "bundle"} confidence · ${item.flow.steps.length} steps`}
                   </small>
                   {graphOnly && <small className="queue-row-context">{flowContext(item.flow, app)}</small>}
