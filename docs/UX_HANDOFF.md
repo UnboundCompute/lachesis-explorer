@@ -266,6 +266,8 @@ The short-viewport menu pass then found the seven-item lens menu extending below
 
 The active-bundle overlay pass found the 300px fixed-width context menu starting off-screen at 240–300px widths (x −77px at 240px), and extending below short wrapped headers. After `62a754e`, mobile bundle menus use viewport-safe width plus short-height internal scrolling, with a tighter cap for the ≤280px two-row header. Playwright checks at 240×240, 240×320, 280×240, 300×300, 320×320, 390×320, 390×844, and 768×500 kept the menu and focused final action within bounds; the 240×240 render was visually rechecked.
 
+The cross-lens context pass found Trace → “Open in Explore” visibly selecting the requested node while serializing only `view=map&scope=local`; the URL lost the node and retained the wrong architecture-mode transition state. After `19d60ec`, map transitions carry explicit mode and node overrides, covering Trace/Request Flow/Boundary source navigation plus Home search and data-quality actions. The real demo bundle was checked at 390px and 1440px: Trace → Explore now yields `view=map&node=transform.normalize`, opens the Map lens with that node selected, and stays viewport-width.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
