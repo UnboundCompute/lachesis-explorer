@@ -302,6 +302,8 @@ The home transition pass found Understand’s “Open this path”, request-flow
 
 The Investigate transition follow-up found opening a connected request flow had the same temporary bare-URL state, dropping the selected entry and hop from the address bar. After adding explicit context to the Investigate→Request Flow transition, the action immediately preserves `entry`, `hop`, and `hop_index`; a 390px Playwright check confirms the resulting URL and zero overflow, and the Impeccable detector and full quality gate remain clean.
 
+The cross-lens navigation audit found the same selected-context gap in command-palette launches, history replay, Explore→Trace, Explore→Request Flow, Journey→Trace, and Compare→Trace. After centralizing trace/request-flow URL override helpers, each transition writes its flow/node or entry/hop context in the same navigation event; command-palette and history replay checks confirm complete URLs, while the detector, full quality gate, and mobile overflow checks remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
