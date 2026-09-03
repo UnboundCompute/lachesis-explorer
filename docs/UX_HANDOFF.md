@@ -242,6 +242,8 @@ The ultra-narrow Understand pass found a long recommended path endpoint widening
 
 The mobile context pass found Trace and Request Flow breadcrumbs keeping the current step in a single no-wrap strip, clipping source context at 390px. After the small-screen wrapping rule, the active path/request step and its source location remain readable at 390px without horizontal page overflow; desktop context remains a single line.
 
+The tablet breakpoint pass found touch sizing ending at 920px while the workspace stayed in its tablet composition through 1040px, and the desktop header overflowing between 1041px and 1356px because its navigation tabs stayed fixed-width. After aligning the touch range and making the intermediate header fluid through 1400px, controls meet the 44px target through 1040px and the document stays viewport-width across the 1041–1440px breakpoint band.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
