@@ -515,3 +515,32 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .diff-columns p{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}
 @media(min-width:761px){.node-row b,.hop-row b{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}}
 @media(min-width:1041px){.question-list{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+/* Sustained reading surfaces: keep graph controls compact, but let evidence copy breathe. */
+.overview-heading p{font-size:12px}
+.query-composer input{font-size:12px}
+.map-summary span,.map-summary small{font-size:9px}
+.map-summary p{font-size:10px}
+.topology-node-list b{font-size:11px}
+.topology-node-list small{font-size:10px}
+.module-row b{font-size:11px}
+.module-row small{font-size:10px}
+.choke-panel p{font-size:10px}
+.choke-panel button{font-size:10px}
+.choke-panel button small{font-size:9px}
+.health-notes{font-size:10px}
+.health-notes p{font-size:9px}
+.node-row b,.hop-row b{font-size:12px}
+.node-row small,.hop-row small{font-size:11px}
+.flow-meta b,.flow-meta em{font-size:10px}
+.flow-meta label{font-size:9px}
+.flow-content strong{font-size:11px}
+.path-index-list b{font-size:11px}
+.path-index-list small{font-size:10px}
+.path-description{font-size:11px}
+.path-meta{font-size:9px}
+.path-route-summary small{font-size:9px}
+.path-route-summary b{font-size:11px}
+.trace-orientation span{font-size:9px}
+.trace-orientation b{font-size:11px}
+.trace-orientation small{font-size:9px}
