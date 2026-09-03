@@ -236,6 +236,8 @@ The ultra-narrow header pass found the current-lens control collapsing to 7px at
 
 The secondary-metadata pass found Boundary source-location rows, execution-count status, and related empty-state labels still rendering at 8px after the instructional copy adjustment. After the targeted metadata rule, these persistent rows render at 9px across Boundary and Request Flow; 320px, 390px, 800px, and 1440px remain viewport-width.
 
+The wrapped-header follow-up found Skip to workspace landing at 88px on 240px and 280px screens while the new two-row sticky header extended to about 122px, covering the start of the workspace. After the narrow scroll-margin adjustment, the skip target clears the header at 240px, 280px, and 300px without changing wider breakpoints.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
