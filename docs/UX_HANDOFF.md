@@ -306,6 +306,8 @@ The cross-lens navigation audit found the same selected-context gap in command-p
 
 The ultra-narrow interaction pass found Explore overflowing a 240px viewport by 57px because its architecture side panel retained an intrinsic minimum width; the same pass found the mobile source-inspector close button shrinking to about 20–28px wide under flex pressure. After allowing architecture/health panels to shrink and preventing the close control from flex-shrinking, Explore is viewport-safe at 240–390px, long labels wrap inside their panel, and the close control remains 44×44 on mobile. The 240px render was visually rechecked; the Impeccable detector and full quality gate remain clean.
 
+The light-theme contrast pass found primary green actions using dark text at 3.66:1, with derived-evidence and relationship-legend copy also below the 4.5:1 reading floor once the theme transition settled. After adding a light-theme action foreground and strengthening the affected explanatory labels, audited actions and labels clear 4.5:1 across Understand, Trace, Explore, Request Flow, and Investigate at 390px with zero overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
