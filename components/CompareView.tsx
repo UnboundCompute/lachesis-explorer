@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { entryDisplayName, flowDisplayName, type App, type Flow } from '../lib/lachesis'
+import { countLabel, entryDisplayName, flowDisplayName, type App, type Flow } from '../lib/lachesis'
 import { Icon } from './Icon'
 import { copyText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
@@ -294,8 +294,8 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
         <button type="button" className="secondary-button" onClick={onUpload} disabled={loading} aria-busy={loading}>{loading ? "Reading…" : "Load comparison bundle"}</button>
       </header>
       <div className="compare-summary">
-        <div><span>BASE</span><b>{base.name}</b><small>{base.nodes.length} nodes · {base.flows.length} paths</small></div>
-        <div><span>COMPARISON</span><b>{compare.name}</b><small>{compare.nodes.length} nodes · {compare.flows.length} paths</small></div>
+        <div><span>BASE</span><b>{base.name}</b><small>{countLabel(base.nodes.length, 'node')} · {countLabel(base.flows.length, 'path')}</small></div>
+        <div><span>COMPARISON</span><b>{compare.name}</b><small>{countLabel(compare.nodes.length, 'node')} · {countLabel(compare.flows.length, 'path')}</small></div>
         <div><span>CHANGED PATHS</span><b>{changedPaths.length}</b><small>same path ID, changed kind or sequence</small></div>
       </div>
       <label className="compare-search">

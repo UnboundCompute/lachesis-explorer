@@ -19,7 +19,7 @@ import {
   InvestigationTrail,
   type InvestigationEvent,
 } from "../components/InvestigationTrail";
-import { starter, normalize, type App, type Flow } from "../lib/lachesis";
+import { countLabel, starter, normalize, type App, type Flow } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
@@ -69,7 +69,7 @@ function bundleImportError(error: unknown, subject: string, kept: string) {
 }
 
 function bundleLoadSummary(next: App) {
-  const counts = `${next.nodes.length} nodes · ${next.flows.length} paths · ${next.edges.length} relationships`;
+  const counts = `${countLabel(next.nodes.length, "node")} · ${countLabel(next.flows.length, "path")} · ${countLabel(next.edges.length, "relationship")}`;
   const indexed = next.coverage.indexedNodes;
   const scope = indexed != null && indexed > next.nodes.length
     ? ` Showing a focused projection of ${indexed.toLocaleString()} indexed nodes.`
@@ -933,7 +933,7 @@ export default function Page() {
     record(
       "Loaded bundle",
       next.name || "Untitled bundle",
-      `${next.nodes.length} nodes · ${next.flows.length} flows`,
+      `${countLabel(next.nodes.length, "node")} · ${countLabel(next.flows.length, "flow")}`,
     );
     trackEvent("bundle_loaded", {
       has_callpaths: next.entries.length > 0,

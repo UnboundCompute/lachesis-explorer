@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { entryDisplayName, type App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainEntry } from "../lib/explanations";
@@ -267,7 +267,7 @@ export function JourneyView({
     setHopId(previousEntry.hops[0]?.node_id ?? "");
     onPositionChange?.(0);
     onInspectorOpen();
-    onRecord("Returned to request flow", previousEntry.id, `${previousEntry.hops.length} steps`);
+    onRecord("Returned to request flow", previousEntry.id, countLabel(previousEntry.hops.length, "step"));
     trackEvent("callpath_reversed");
   }
   function openConnectedEntry(nextIndex: number, nextHopId: string) {
@@ -392,7 +392,7 @@ export function JourneyView({
               onRecord(
                 "Opened request flow",
                 selectedEntry.id,
-                `${selectedEntry.hops.length} steps`,
+                countLabel(selectedEntry.hops.length, "step"),
               );
             trackEvent("callpath_selected");
           }}
@@ -401,7 +401,7 @@ export function JourneyView({
             const index = app.entries.indexOf(item);
             return (
               <option value={index} key={item.id}>
-                {item.label}{entryContext(item, nodeById) ? ` · ${entryContext(item, nodeById)}` : ""} · {item.hops.length} steps
+                {item.label}{entryContext(item, nodeById) ? ` · ${entryContext(item, nodeById)}` : ""} · {countLabel(item.hops.length, "step")}
               </option>
             );
           })}
