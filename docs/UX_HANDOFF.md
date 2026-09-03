@@ -314,6 +314,8 @@ The real `libxml2` Understand render found the primary “Follow” CTA expandin
 
 The real `libxml2` Trace render found source previews with long code lines horizontally scrollable but without a visible cue that more content was available off-screen. After adding a compact source-scroll hint below the preview, the behavior is discoverable while preserving code formatting and horizontal inspection. A 390px Playwright check measured the hint inside the 326px inspector, retained the expected 393px source scroll width, found zero page overflow and no page errors; the Impeccable detector and full quality gate remain clean.
 
+The real `libxml2` Trace render also found the source inspector’s “Repository link not configured” status clipped into an incomplete phrase at the narrow desktop inspector width. After allowing the status to wrap with a bounded flex width, the full message remains readable at 390px and 1440px without changing source actions or causing overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
