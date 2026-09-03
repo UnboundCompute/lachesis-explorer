@@ -334,6 +334,8 @@ The invalid-upload recovery pass found the home error alert collapsing its messa
 
 The ultra-narrow Trace pass found clickable “Paths to explore” rows truncating symbol names and source locations inside their child labels at 240px, hiding the destinations users select. After allowing path-index labels to wrap only below 280px, all four path destinations remain complete and actionable; real Playwright checks at 240px found 56–76px content-aware rows, no child overflow, zero page overflow, and no page errors, while 390px and desktop rows retain their compact layout. The Impeccable detector and full quality gate remain clean.
 
+The mobile Boundary pass found the selected sink rail button truncating its source location to `src/catalog/...` at 390px, hiding the exact boundary context users need to verify. After allowing sink labels and locations to wrap on mobile, the complete `products.query · Catalog service · external repo · src/catalog/client.ts:64` context remains visible at 240px and 390px; Playwright found content-aware 73px/53px rows, zero overflow, and no page errors, while desktop remains unchanged. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
