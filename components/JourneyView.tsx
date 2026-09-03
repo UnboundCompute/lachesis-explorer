@@ -328,7 +328,7 @@ export function JourneyView({
     }
   }
   return (
-    <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
+    <section className={`workspace journey-workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="journey-rail">
         <label className="panel-label" htmlFor="entrypoint-select">
           STARTING POINT
