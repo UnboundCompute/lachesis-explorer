@@ -346,6 +346,8 @@ The Explore topology fallback audit found node evidence summaries truncating at 
 
 The Investigate convergence-index pass found its keyboard-friendly node rows truncating relationship, scope, and source context at 240px and clipping the same metadata in the three-column desktop fallback. After allowing convergence-index labels to wrap and sizing rows to their content, complete node evidence remains visible in 46–54px rows at 240px, 390px, 760px, and 1440px; Playwright found no child overflow, zero page overflow, and no page errors. The Impeccable detector and full quality gate remain clean.
 
+The Trace reading-cue pass found the selected step’s source/provenance line truncating a 492px string into 152px at 240px and 372px at desktop, hiding the occurrence identifier. After allowing the cue’s source and step labels to wrap, the complete provenance remains visible with a 60px cue at 240px, 24px source wrapping at 390px and 1440px, and zero overflow at all tested widths; Playwright found no page errors. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
