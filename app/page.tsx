@@ -140,9 +140,7 @@ export default function Page() {
   const [app, setApp] = useState<App>(starter);
   const [compareApp, setCompareApp] = useState<App | null>(null);
   const [menu, setMenu] = useState(false);
-  const [dark, setDark] = useState(
-    () => typeof window === "undefined" || readLocal("lachesis-theme") !== "light",
-  );
+  const [dark, setDark] = useState(true);
   const [flowId, setFlowId] = useState(starter.flows[0].id);
   const [stepId, setStepId] = useState(starter.flows[0].steps[0].node_id);
   const [stepIndex, setStepIndex] = useState(0);
@@ -238,6 +236,9 @@ export default function Page() {
     } catch {
       removeLocal("lachesis-recent-bundles");
     }
+  }, []);
+  useEffect(() => {
+    if (readLocal("lachesis-theme") === "light") setDark(false);
   }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
