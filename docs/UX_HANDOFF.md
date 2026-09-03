@@ -51,6 +51,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `HEAD` — add a direct revision-comparison question to the Understand chooser and keep its five-card desktop grid balanced
 - `HEAD` — replace raw convergence lane names with endpoint, path-kind, and source-location labels while preserving graph identity
 - `HEAD` — clarify the persistent Trace breadcrumb so analyzer artifacts remain secondary after lens navigation
+- `HEAD` — apply behavior-oriented labels to Compare flow rows while retaining exact names in tooltips
 - `d1c5801` — defer routed workspace scroll correction so direct lens headings stay below the sticky header
 - `fa2be43` — give mobile recovery notices a dedicated message row so error copy cannot collapse into a narrow column
 - `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
