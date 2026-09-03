@@ -16,7 +16,7 @@ type Props = {
   onReviewCoverage: () => void;
   onLoadSample: () => void;
   onLoadSecuritySample: () => void;
-  onView: (view: "map" | "investigate" | "trace" | "journey") => void;
+  onView: (view: "map" | "investigate" | "trace" | "journey" | "compare") => void;
   onSearch?: (query: string) => void;
   onDismiss: () => void;
   direction: "backward" | "forward";
@@ -942,6 +942,11 @@ export function HomeView({
           <button type="button" onClick={() => onView("map")}>
             <b>How is it connected?</b>
             <small>Survey modules, relationships, and shape.</small>
+            <Icon name="arrow" size={12} />
+          </button>
+          <button type="button" onClick={() => onView("compare")}>
+            <b>What changed between revisions?</b>
+            <small>Load another bundle to compare paths and relationships.</small>
             <Icon name="arrow" size={12} />
           </button>
         </div>
