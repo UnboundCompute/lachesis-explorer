@@ -344,6 +344,8 @@ The ultra-narrow Explore boundary-transition pass found two clickable relationsh
 
 The Explore topology fallback audit found node evidence summaries truncating at 240px and the final participation summary auto-placing into the 24px node-number column at every width, creating implausibly tall 204px rows at 390px. After placing all summaries in the content column and allowing mobile node evidence to wrap, the fallback list is readable and proportionate: 94–124px rows at 240px, 64–74px at 390px, and 54–74px through desktop, with zero overflow and no page errors. The Impeccable detector and full quality gate remain clean.
 
+The Investigate convergence-index pass found its keyboard-friendly node rows truncating relationship, scope, and source context at 240px and clipping the same metadata in the three-column desktop fallback. After allowing convergence-index labels to wrap and sizing rows to their content, complete node evidence remains visible in 46–54px rows at 240px, 390px, 760px, and 1440px; Playwright found no child overflow, zero page overflow, and no page errors. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
