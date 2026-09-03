@@ -69,11 +69,24 @@ function flowKind(flow: Flow) {
   return flow.kind?.trim() || 'Graph paths'
 }
 
+function flowComparisonLabel(flow: Flow, app: App) {
+  const exact = flowDisplayName(flow, app.nodes, app.flows)
+  if (exact.length <= 56 && !/__builtin_|___chk\b/.test(exact)) return exact
+  const pathNodes = flow.steps.map(step => app.nodes.find(node => node.id === step.node_id)).filter(Boolean) as App['nodes']
+  const first = pathNodes[0]
+  const last = pathNodes.at(-1)
+  const firstLabel = first?.label || first?.id || 'origin unavailable'
+  const lastLabel = last?.label || last?.id || 'destination unavailable'
+  const endpoints = firstLabel === lastLabel ? firstLabel : `${firstLabel} → ${lastLabel}`
+  const location = first?.file ? `${first.file}:${first.line || '—'}` : 'source unavailable'
+  return `${flowKind(flow)} · ${endpoints} · ${location}`
+}
+
 function itemLabel(item: { id: string }, app: App) {
   const node = app.nodes.find((value) => value.id === item.id)
   if (node) return node.label || node.id
   const flow = app.flows.find((value) => value.id === item.id)
-  if (flow) return flowDisplayName(flow, app.nodes, app.flows)
+  if (flow) return flowComparisonLabel(flow, app)
   const entry = app.entries.find((value) => value.id === item.id)
   if (entry) return entryDisplayName(entry, app.nodes, app.entries)
   const edge = app.edges.find((value) => value.id === item.id)
@@ -331,7 +344,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
         {visibleChangedPaths.length ? (
           (showAllChanged ? visibleChangedPaths : visibleChangedPaths.slice(0, 8)).map((item) => (
             <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, matchingFlowNodeId(item.base, base, comparisonQuery))} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
-              <b>{item.base.name}</b>
+              <b title={item.base.name}>{flowComparisonLabel(item.base, base)}</b>
               <small className="changed-flow-reasons">{changeReasons(item.base, item.compare).join(" · ")}</small>
               <div>
                 <span><small>BASE</small>{flowPath(item.base, base)}</span>
