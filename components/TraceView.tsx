@@ -635,7 +635,12 @@ export function TraceView({
           <div>
             <span className="panel-label">FOLLOWING THIS PATH</span>
             <h2>
-              <code>{flowDisplayName(flow, app.nodes, app.flows)}</code>
+              <code
+                title={`Exact bundle path label: ${flow.name}`}
+                aria-label={`Exact bundle path label: ${flow.name}`}
+              >
+                {flowListLabel(app, flow, nodeById)}
+              </code>
             </h2>
             {flow.description && <p className="path-description">{flow.description}</p>}
             <div className="path-route-summary" aria-label="Graph path endpoints">
