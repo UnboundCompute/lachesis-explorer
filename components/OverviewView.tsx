@@ -1080,7 +1080,7 @@ export function OverviewView({
                       onClick={() => selectNode(node.id)}
                       aria-pressed={selected?.id === node.id}
                       aria-current={selected?.id === node.id ? "step" : undefined}
-                      aria-label={`${node.label || node.id}, ${node.kind}, ${flowCount(node.id)} graph paths, ${entryCount(node.id)} request flows, ${nodeLocation(node)}`}
+                      aria-label={`${node.label || node.id}, ${node.kind}, ${countLabel(flowCount(node.id), "graph path")}, ${countLabel(entryCount(node.id), "request flow")}, ${nodeLocation(node)}`}
                     >
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
@@ -1088,7 +1088,7 @@ export function OverviewView({
                         {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
                       {query && nodeMatchLabel(node, query) && <small className="topology-match">{nodeMatchLabel(node, query)}</small>}
-                      <small className="topology-participation">{flowCount(node.id)} graph paths · {entryCount(node.id)} request flows · {hasSource(node) ? "Source preview included" : "Source text unavailable"}</small>
+                      <small className="topology-participation">{countLabel(flowCount(node.id), "graph path")} · {countLabel(entryCount(node.id), "request flow")} · {hasSource(node) ? "Source preview included" : "Source text unavailable"}</small>
                     </button>
                     );
                   })}

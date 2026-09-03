@@ -239,7 +239,7 @@ export function CommandPalette({
         ...app.entries.map((entry, index) => ({
           id: `entry-${entry.id}`,
           label: entryDisplayName(entry, app.nodes, app.entries),
-          meta: `Request flow · ${entry.hops.length} steps · ${sourceCoverage(app, entry.hops)}`,
+          meta: `Request flow · ${countLabel(entry.hops.length, "step")} · ${sourceCoverage(app, entry.hops)}`,
           keywords: entry.hops.flatMap((hop) => {
             const node = app.nodes.find((item) => item.id === hop.node_id);
             return [hop.edge_label, hop.caption, node?.label, node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.sourceWindow?.lines.join(" "), node?.file, node?.module];
