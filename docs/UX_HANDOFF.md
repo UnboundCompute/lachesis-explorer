@@ -328,6 +328,8 @@ The Boundary responsive pass found its five-option lens/action switch horizontal
 
 The command-palette pass found 240px result rows truncating meaningful destinations such as “See what reaches a destination” and “Explore the codebase graph” to ambiguous ellipses. After allowing result titles to wrap only at ≤280px, the full destinations are readable without changing the wider palette; real checks at 240, 260, 320, and 390px found contained dialogs, zero overflow, no page errors, and the Impeccable detector and full quality gate remain clean.
 
+The real Compare pass found mobile diff preview rows allocating all available width to the preview metadata, leaving the changed flow name at zero width on 240px screens. After stacking preview titles above their metadata and allowing non-action diff labels to wrap on mobile, changed symbols and paths remain identifiable in the base-vs-`libxml2` comparison; visual checks at 240px and 390px found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
