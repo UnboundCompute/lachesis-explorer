@@ -236,7 +236,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
                 {recentBundles.length > 0 && (
                   <div className="recent-bundles">
                     <span className="menu-title">RECENT METADATA · LOCAL ONLY</span>
-                    {recentBundles.map(item => <div className="recent-bundle" key={`${item.name}:${item.commit}`}><span><b>{item.name}</b><small>{item.language} · {item.commit}</small></span><em>{item.flows} flows</em></div>)}
+                    {recentBundles.map(item => <div className="recent-bundle" key={`${item.name}:${item.commit}`}><span><b>{item.name}</b><small>{item.language} · {item.commit}</small></span><em>{countLabel(item.flows, 'flow')}</em></div>)}
                   </div>
                 )}
                 <button type="button" className="upload-action" onClick={() => { setMenu(false); onUpload(); trackEvent('bundle_upload_started') }}><span>Load another bundle</span><span className="button-icon"><Icon name="upload" size={14} /></span></button>

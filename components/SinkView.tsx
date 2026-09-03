@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { entryDisplayName, type App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
 import { ConvergenceCanvas } from "./ConvergenceCanvas";
@@ -290,7 +290,7 @@ export function SinkView({
           {sinkSearch && <button type="button" onClick={() => setSinkSearch("")} aria-label="Clear boundary filter"><Icon name="close" size={14} /></button>}
         </label>
         <div className="entry-search-status" aria-live="polite">
-          {sinkSearch ? `${visibleSinks.length} of ${sinks.length} boundaries match` : `${sinks.length} execution boundar${sinks.length === 1 ? "y" : "ies"}`}
+          {sinkSearch ? `${countLabel(visibleSinks.length, "boundary")} of ${countLabel(sinks.length, "boundary")} ${visibleSinks.length === 1 ? "matches" : "match"}` : `${countLabel(sinks.length, "execution boundary")}`}
         </div>
         {boundaryFilterSuggestions.length > 0 && (
           <div className="filter-hints" role="group" aria-label="Quick boundary filters">
