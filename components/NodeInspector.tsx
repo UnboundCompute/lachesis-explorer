@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { entryDisplayName, flowDisplayName, type App, type Node } from "../lib/lachesis";
+import { countLabel, entryDisplayName, flowDisplayName, type App, type Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
@@ -26,6 +26,15 @@ const scopeIdentity = (node: Node) =>
   node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.module, node.scope.kind].filter(Boolean).join(" · ") : "";
 const scopeDisplay = (node: Node) =>
   node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || "Unscoped";
+function connectedFlowLabel(flow: App["flows"][number], app: App) {
+  const exact = flowDisplayName(flow, app.nodes, app.flows);
+  if (exact.length <= 56 && !/__builtin_|___chk\b/.test(exact)) return exact;
+  const node = app.nodes.find((candidate) => candidate.id === flow.steps[0]?.node_id);
+  const kind = flow.kind?.trim().toLowerCase();
+  const label = kind === "value-flow" || kind === "valueflow" ? "value path" : kind === "call-path" || kind === "callpath" ? "call path" : kind === "data-flow" || kind === "dataflow" ? "data flow" : flow.kind?.trim() || "graph path";
+  const file = node?.file?.split(/[\\/]/).filter(Boolean).at(-1) || "source unavailable";
+  return `${label} · ${file}:${node?.line || "—"}`;
+}
 function sourceUrlFor(app: App | undefined, node: Node) {
   if (!app?.bundle.sourceUrlTemplate || !node.file) return undefined;
   const template = app.bundle.sourceUrlTemplate;
@@ -458,15 +467,16 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
                       type="button"
                       className="connected-link"
                       key={flow.id}
+                      title={flowDisplayName(flow, app.nodes, app.flows)}
                       onClick={() =>
                         onFlow(flow.id, node.id)
                       }
                     >
-                      <span>{flowDisplayName(flow, app.nodes, app.flows)} · {flow.kind || "graph path"} · {flow.steps.length} symbols{contextRoute(app, flow.steps.map((step) => step.node_id)) ? ` · ${contextRoute(app, flow.steps.map((step) => step.node_id))}` : ""}</span>
+                      <span>{connectedFlowLabel(flow, app)} · {countLabel(flow.steps.length, "symbol")}{contextRoute(app, flow.steps.map((step) => step.node_id)) ? ` · ${contextRoute(app, flow.steps.map((step) => step.node_id))}` : ""}</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
-                    <span key={flow.id}>{flowDisplayName(flow, app.nodes, app.flows)}</span>
+                    <span key={flow.id}>{connectedFlowLabel(flow, app)}</span>
                   ),
                 )}
               </div>
@@ -487,7 +497,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
                         )
                       }
                     >
-                      <span>{entryDisplayName(entry, app.nodes, app.entries)} · {entry.hops.length} steps{contextRoute(app, entry.hops.map((hop) => hop.node_id)) ? ` · ${contextRoute(app, entry.hops.map((hop) => hop.node_id))}` : ""}</span>
+                      <span>{entryDisplayName(entry, app.nodes, app.entries)} · {countLabel(entry.hops.length, "step")}{contextRoute(app, entry.hops.map((hop) => hop.node_id)) ? ` · ${contextRoute(app, entry.hops.map((hop) => hop.node_id))}` : ""}</span>
                       <Icon name="arrow" size={11} />
                     </button>
                   ) : (
