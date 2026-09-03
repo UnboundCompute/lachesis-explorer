@@ -114,8 +114,10 @@ function pathKindLabel(flow: Flow) {
 
 function flowActionLabel(flow: Flow, app: App) {
   const name = flowDisplayName(flow, app.nodes, app.flows);
-  if (name.length <= 56) return name;
-  return `${pathKindLabel(flow)} · ${flow.steps.length} symbols · ${nodeLocation(sourceFor(flow, app))}`;
+  const analyzerArtifact = /__builtin_|___chk\b/.test(name);
+  if (name.length <= 56 && !analyzerArtifact) return name;
+  const source = sourceFor(flow, app) ?? app.nodes.find((node) => node.id === flow.steps[0]?.node_id);
+  return `${pathKindLabel(flow)} · ${flow.steps.length} symbols · ${nodeLocation(source)}`;
 }
 
 function pathQuestion(flow?: Flow) {
@@ -402,7 +404,7 @@ export function HomeView({
             <div className="understand-path">
               <div className="understand-path-copy">
                 <span>{pathKindLabel(graphFocus)} · {graphFocus.steps.length} symbols</span>
-                <h3>{flowDisplayName(graphFocus, app.nodes, app.flows)}</h3>
+                <h3 title={flowDisplayName(graphFocus, app.nodes, app.flows)}>{flowActionLabel(graphFocus, app)}</h3>
                 <p>{graphFocus.description || `Follow the path from ${startNode?.label || "its first symbol"} to ${endNode?.label || "its final symbol"}.`}</p>
               </div>
               <div className="understand-route" aria-label="Recommended path endpoints">
@@ -432,7 +434,7 @@ export function HomeView({
             <div className="understand-path-list">
               {otherPaths.map((flow) => (
                 <button type="button" key={flow.id} onClick={() => onFlow(flow.id, flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
-                  <span><b>{flowDisplayName(flow, app.nodes, app.flows)}</b><small>{pathKindLabel(flow)} · {flow.steps.length} symbols{flowDisplayName(flow, app.nodes, app.flows) === flow.name ? ` · ${pathLocation(flow, app)}` : ""}</small></span>
+                  <span><b title={flowDisplayName(flow, app.nodes, app.flows)}>{flowActionLabel(flow, app)}</b><small>{pathKindLabel(flow)} · {flow.steps.length} symbols{flowDisplayName(flow, app.nodes, app.flows) === flow.name ? ` · ${pathLocation(flow, app)}` : ""}</small></span>
                   <Icon name="arrow" size={13} />
                 </button>
               ))}
@@ -581,7 +583,7 @@ export function HomeView({
                   <Icon name="target" size={18} />
                 </span>
                 <div>
-                  <h2>{flowDisplayName(priority.flow, app.nodes, app.flows)}</h2>
+                  <h2 title={flowDisplayName(priority.flow, app.nodes, app.flows)}>{flowActionLabel(priority.flow, app)}</h2>
                   <p>
                     {nodeLocation(priority.sink)}
                   </p>
@@ -655,7 +657,7 @@ export function HomeView({
                   <Icon name="code" size={18} />
                 </span>
                 <div>
-                  <h2>{flowDisplayName(graphFocus, app.nodes, app.flows)}</h2>
+                  <h2 title={flowDisplayName(graphFocus, app.nodes, app.flows)}>{flowActionLabel(graphFocus, app)}</h2>
                   <p>Suggested starting path · code understanding</p>
                 </div>
               </div>
@@ -858,7 +860,7 @@ export function HomeView({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <span className="queue-copy">
-                  <b>{flowDisplayName(item.flow, app.nodes, app.flows)}</b>
+                  <b title={flowDisplayName(item.flow, app.nodes, app.flows)}>{flowActionLabel(item.flow, app)}</b>
                   <small>
                     {graphOnly
                       ? `${pathKindLabel(item.flow)} · ${item.flow.steps.length} symbols · ${pathLocation(item.flow, app)}`
