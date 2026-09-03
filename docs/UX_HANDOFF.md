@@ -246,6 +246,8 @@ The tablet breakpoint pass found touch sizing ending at 920px while the workspac
 
 The follow-up boundary probe found the first intermediate fix still allowed the header to spill at 1041px because the compact sizing stopped at 1200px while the full desktop nav required more than the available width. After making the nav flexible and extending compact header sizing through 1400px, header and document overflow are both clear from 1041px through 1440px.
 
+The cross-view import-error pass found that invalid uploads from a scrolled Trace, Request Flow, or Boundary view could leave the shared alert above the viewport; the initial recovery scroll was also animated by the global smooth-scroll setting. After centralizing recovery at the page level and forcing an immediate document position below the sticky header, the error is visible immediately in all five tested views while the active bundle remains intact.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
