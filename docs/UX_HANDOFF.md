@@ -240,6 +240,8 @@ The wrapped-header follow-up found Skip to workspace landing at 88px on 240px an
 
 The ultra-narrow Understand pass found a long recommended path endpoint widening the 240px page to 266px even after the header fix. After the mobile min-width and wrapping boundary, CTA/search controls and the “useful place to start” route remain inside the viewport at 240px, 280px, 300px, and 390px while preserving the full evidence label.
 
+The mobile context pass found Trace and Request Flow breadcrumbs keeping the current step in a single no-wrap strip, clipping source context at 390px. After the small-screen wrapping rule, the active path/request step and its source location remain readable at 390px without horizontal page overflow; desktop context remains a single line.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
