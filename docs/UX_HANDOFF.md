@@ -244,6 +244,8 @@ The mobile context pass found Trace and Request Flow breadcrumbs keeping the cur
 
 The tablet breakpoint pass found touch sizing ending at 920px while the workspace stayed in its tablet composition through 1040px, and the desktop header overflowing between 1041px and 1356px because its navigation tabs stayed fixed-width. After aligning the touch range and making the intermediate header fluid through 1400px, controls meet the 44px target through 1040px and the document stays viewport-width across the 1041–1440px breakpoint band.
 
+The follow-up boundary probe found the first intermediate fix still allowed the header to spill at 1041px because the compact sizing stopped at 1200px while the full desktop nav required more than the available width. After making the nav flexible and extending compact header sizing through 1400px, header and document overflow are both clear from 1041px through 1440px.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
