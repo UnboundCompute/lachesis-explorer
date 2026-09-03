@@ -250,6 +250,8 @@ The cross-view import-error pass found that invalid uploads from a scrolled Trac
 
 The loaded libxml2 Trace pass found the primary path heading expanding into a long compiler-generated expression even though the sidebar already used a compact path kind and source location. After aligning the heading with the compact label, the main workspace leads with “Value path · xmlstring.c:564” while the exact bundle label remains available via accessible name, title, and detailed step/source context.
 
+The filter-feedback pass found persistent result-count lines in Explore, Compare, Request Flow, and Boundary rendering at 7px, making confirmation of a query unnecessarily hard to read. After `8fb7b02`, those functional status lines use the established 9px / 1.4 line-height reading floor. A 390px Playwright pass with the demo bundle confirmed the four surfaces render at 9px / 12.6px and the document remains exactly viewport-width; the Impeccable detector remains clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
