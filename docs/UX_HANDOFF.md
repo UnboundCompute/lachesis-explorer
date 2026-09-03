@@ -61,6 +61,7 @@ The latest commits are small, focused slices. The most recent changes:
 - `HEAD` — normalize selected-node and focused-boundary count details in Explore and Boundary
 - `HEAD` — normalize graph-projection coverage counts in the shared lens intro and Home coverage note
 - `HEAD` — normalize remaining preview, limitation, result, and Compare disclosure counts
+- `HEAD` — raise active Trace breadcrumb labels so exact path/source context remains readable
 - `d1c5801` — defer routed workspace scroll correction so direct lens headings stay below the sticky header
 - `fa2be43` — give mobile recovery notices a dedicated message row so error copy cannot collapse into a narrow column
 - `261085b` — wrap shared bundle-recovery actions at 320px so they stay inside the viewport
