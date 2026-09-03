@@ -444,17 +444,13 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         >
           <summary>
             <span>Connected context</span>
-            <small>{flows.length + entries.length + relationships.length} connection{flows.length + entries.length + relationships.length === 1 ? "" : "s"}</small>
+            <small>{countLabel(flows.length + entries.length + relationships.length, "connection")}</small>
           </summary>
           <div className="inspector-disclosure-body">
           <>
           <div className="detail-rule" />
           <p className="detail-copy">
-            This node is present in {flows.length} graph path
-            {flows.length === 1 ? "" : "s"}, {entries.length} request flow
-            {entries.length === 1 ? "" : "s"}, and {relationships.length}{" "}
-            normalized relationship{relationships.length === 1 ? "" : "s"} in
-            this bundle.
+            This node is present in {countLabel(flows.length, "graph path")}, {countLabel(entries.length, "request flow")}, and {countLabel(relationships.length, "normalized relationship")} in this bundle.
           </p>
           <div className="inspector-context">
             <span className="panel-label">{securityContext ? "CONNECTED EVIDENCE" : "CONNECTED CONTEXT"}</span>
@@ -555,7 +551,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
               >
                 {showAllConnections
                   ? "Show fewer connections"
-                  : `Show all connections · ${flows.length + entries.length + relationships.length}`}
+                  : `Show all connections · ${countLabel(flows.length + entries.length + relationships.length, "connection")}`}
               </button>
             )}
             {!flows.length && !entries.length && !relationships.length && (
