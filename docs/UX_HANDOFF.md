@@ -264,6 +264,8 @@ The ultra-narrow lens-menu probe found the responsive menu anchored to the colla
 
 The short-viewport menu pass then found the seven-item lens menu extending below 240–320px-tall viewports, so keyboard focus could land on “Setup” outside the visible screen. After `d289e4b`, short mobile viewports use an internal menu scroller capped to the available height. At 240×240, 240×320, 300×300, 320×320, and 390×320, focusing the last menu item kept it inside the menu bounds, with no page-width overflow; 390×844 retains the normal non-scrolling menu.
 
+The active-bundle overlay pass found the 300px fixed-width context menu starting off-screen at 240–300px widths (x −77px at 240px), and extending below short wrapped headers. After `62a754e`, mobile bundle menus use viewport-safe width plus short-height internal scrolling, with a tighter cap for the ≤280px two-row header. Playwright checks at 240×240, 240×320, 280×240, 300×300, 320×320, 390×320, 390×844, and 768×500 kept the menu and focused final action within bounds; the 240×240 render was visually rechecked.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
