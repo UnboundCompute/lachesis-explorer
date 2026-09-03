@@ -447,4 +447,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .mobile-lens-label-compact{display:none!important}
 @media(max-width:360px){.topbar{gap:4px}.mobile-lens-trigger{padding-inline:5px}.mobile-lens-trigger b{font-size:9px}}
 @media(max-width:360px){.mobile-lens-label-full{display:none!important}.mobile-lens-label-compact{display:block!important}}
+@media(max-width:280px){.topbar{flex-wrap:wrap;row-gap:6px}.mobile-lens-picker{flex:1 1 calc(100% - 52px)}.header-actions{flex:0 0 100%;justify-content:flex-end;margin-left:0}}
 .search:focus-within,.compare-search:focus-within,.query-composer:focus-within,.convergence-search:focus-within,.entry-search:focus-within,.sink-search:focus-within{border-color:var(--cyan);box-shadow:0 0 0 2px color-mix(in srgb,var(--cyan) 18%,transparent),inset 0 0 0 1px var(--cyan)}
