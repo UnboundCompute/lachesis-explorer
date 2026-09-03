@@ -330,6 +330,8 @@ The command-palette pass found 240px result rows truncating meaningful destinati
 
 The real Compare pass found mobile diff preview rows allocating all available width to the preview metadata, leaving the changed flow name at zero width on 240px screens. After stacking preview titles above their metadata and allowing non-action diff labels to wrap on mobile, changed symbols and paths remain identifiable in the base-vs-`libxml2` comparison; visual checks at 240px and 390px found zero overflow and no page errors, and the Impeccable detector and full quality gate remain clean.
 
+The invalid-upload recovery pass found the home error alert collapsing its message to a 32px column at 390px because recovery buttons competed with the text in one flex row. After grouping recovery actions and switching error notices to a mobile grid, the full JSON error remains readable, actions wrap as a unit, and the dismiss control stays reachable; real Playwright checks at 240px and 390px found zero overflow, readable message widths, no page errors, and touch-safe action heights. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
