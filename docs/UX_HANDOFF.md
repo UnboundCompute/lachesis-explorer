@@ -364,6 +364,8 @@ The follow-up Home screenshot confirmed the one-symbol fallback now renders comp
 
 The real-bundle copy pass found generated Home and Trace labels saying `1 symbols` or `1 nodes` in path summaries and history details. After adding a shared count formatter and applying it to Home/Trace path labels, cards and summaries now use singular `1 symbol`/`1 node` while plural counts remain unchanged; imported libxml2 checks at 240, 390, and 1440px found no generated grammar errors, zero overflow, and no page errors. Raw `result_summary` strings supplied by the bundle remain untouched evidence.
 
+The real libxml2 Investigate pass found the source inspector’s connected-path link still naming an analyzer artifact directly (`len · __builtin___vsnprintf_chk · …`), duplicating the raw vocabulary that Trace and Home had already removed. After applying the compact behavior/location label to connected graph paths and preserving the exact analyzer name in the link title, the inspector reads `value path · xmlstring.c:590 · 1 symbol`; Playwright checks at 240, 390, 760, and 1440px found 44px mobile links, zero overflow, and no page errors.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
