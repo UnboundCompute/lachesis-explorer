@@ -358,6 +358,8 @@ The real libxml2 Compare pass found long added-node expressions ellipsized in de
 
 The real libxml2 Trace pass found compiler-generated path names still surfacing as primary labels, including `len · __builtin___vsnprintf_chk`, while several distinct paths collapsed visually into the same analyzer vocabulary. After promoting the truthful path kind and source location for analyzer-artifact names and allowing desktop sidebar labels to wrap, the list reads as `Value path · xmlstring.c:590` while exact expressions remain in titles and path detail; Playwright checks at 240, 390, 760, and 1440px found zero overflow, and the 1440px list was visually rechecked.
 
+The corresponding real libxml2 Understand pass found the recommendation heading and alternate-path list still exposing raw analyzer expressions, and one-symbol paths could incorrectly report `Source location unavailable`. After reusing the behavior label across the recommendation, priority, and alternate-path surfaces and falling back to the sole path node for location, Home now exposes `value path · 2 symbols · xmlstring.c:564` while preserving exact expressions in titles; checks at 240, 390, 760, and 1440px found zero overflow and no page errors.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
