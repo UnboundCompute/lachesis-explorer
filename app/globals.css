@@ -479,3 +479,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
   .choke-panel button b,.choke-panel button small{overflow-wrap:anywhere;word-break:break-word}
   .inspector-close{flex:none}
 }
+:root[data-theme='light'] .upload-action,
+:root[data-theme='light'] .primary-button,
+:root[data-theme='light'] .load-bundle-action,
+:root[data-theme='light'] .priority-actions button:first-child,
+:root[data-theme='light'] .understand-primary,
+:root[data-theme='light'] .understand-empty button,
+:root[data-theme='light'] .understand-search button,
+:root[data-theme='light'] .briefing-source-search button,
+:root[data-theme='light'] .understand-path>button,
+:root[data-theme='light'] .help-done{color:var(--canvas)}
+:root[data-theme='light'] ::selection{color:var(--canvas)}
+.understand-coverage-detail>small{color:var(--ink-2)}
+.evidence-panel.path-context .evidence-command code:first-child{color:var(--ink-2)}
+.topology-legend,.convergence-legend{color:var(--ink-2)}
