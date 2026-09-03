@@ -296,6 +296,8 @@ The path-boundary control pass found Trace’s clickable context segments (“We
 
 The rendered contrast pass found the Understand coverage label and Trace path-context explanations/metric labels at 4.23:1 against the amber derived-evidence surface. After the contrast rule, these explanatory labels use the stronger ink token and measure 6.59:1 at 390px, with zero horizontal overflow at both 390px and 1440px; decorative graph separators and intentionally compact metadata remain unchanged. The Impeccable detector and full quality gate remain clean.
 
+The cross-lens action-type pass found the persistent bundle breadcrumb, convergence “Focus selected node” control, and overlapping-request links still rendering at 8px even though each is an actionable mobile control. After the shared control-text rule, these actions use 9px text while preserving their 44px touch targets. Trace, Explore, and Investigate checks at 390px found no remaining visible buttons at or below 8px, focus still lands on the breadcrumb, and document overflow remains zero; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
