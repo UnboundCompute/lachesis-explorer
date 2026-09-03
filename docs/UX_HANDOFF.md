@@ -294,6 +294,8 @@ The help-affordance pass found the persistent “Keyboard help” footer link re
 
 The path-boundary control pass found Trace’s clickable context segments (“Web API”, “Search service”, and “Catalog service”) still using 8px primary labels. After `0ff81e5`, the labels use 9px while their horizontal ribbon and mobile 44px targets remain intact. Real demo-bundle checks at 390px and 1440px confirmed zero overflow; the Impeccable detector and full quality gate remain clean.
 
+The rendered contrast pass found the Understand coverage label and Trace path-context explanations/metric labels at 4.23:1 against the amber derived-evidence surface. After the contrast rule, these explanatory labels use the stronger ink token and measure 6.59:1 at 390px, with zero horizontal overflow at both 390px and 1440px; decorative graph separators and intentionally compact metadata remain unchanged. The Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
