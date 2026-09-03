@@ -310,6 +310,8 @@ The light-theme contrast pass found primary green actions using dark text at 3.6
 
 The persisted-theme hydration pass found a saved light preference making the server render dark theme markup while the client initialized light theme from local storage, producing a React hydration error and client tree replacement. After using a stable server/client initial theme and applying the saved preference after mount, a persisted-light Trace load reaches light mode with no page or console errors and zero overflow; the Impeccable detector and full quality gate remain clean.
 
+The real `libxml2` Understand render found the primary “Follow” CTA expanding to the full compiler-generated symbol name, making the first action noisy and difficult to scan on both mobile and desktop. After adding a compact action label for unusually long flow names, the CTA reads `value path · 2 symbols · xmlstring.c:564` at 240–1440px while the exact name remains in its accessible label and tooltip; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
