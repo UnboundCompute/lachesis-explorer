@@ -276,6 +276,8 @@ The source-context follow-up found “View all symbols in this file” still ren
 
 The empty-state readability pass found Trace’s “Show all graph paths” recovery action rendering at 7px even though it was already 44px high and was the main way out of a no-results state. After `7f0275f`, Trace and evidence-queue recovery buttons use 9px text. A real `libxml2` no-results check at 390px confirmed 9px text, 44px height, and zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
 
+The populated coverage pass found Home’s “Review data quality” CTA still rendering at 8px despite being a primary action. After `35a33e6`, the CTA uses 9px text while retaining its 44px mobile target. A real `libxml2` check at 390px confirmed 9px text, 44px height, and zero horizontal overflow; the Impeccable detector and full quality gate remain clean.
+
 ## Safe next session
 
 Start a new Codex session in the same workspace and use this goal:
