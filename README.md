@@ -195,7 +195,7 @@ Pull requests are checked automatically by [GitHub Actions](.github/workflows/ci
 
 ## Analytics
 
-The deployed app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. Events cover navigation and product interactions such as changing views or Graph lenses, toggling theme, selecting a graph path, request-path hop, topology node, or convergence node, changing path zoom, focusing or restoring path or convergence views, applying or clearing a semantic filter, loading a bundle, copying or downloading an investigation explanation, copying an investigation link, path sequence, source location, source snippet, or portable node context, opening a source repository or source file, copying an install command, and opening a related resource.
+The deployed Vercel app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. On non-Vercel hosting, set `NEXT_PUBLIC_ANALYTICS_ENABLED=true` to opt in explicitly. Events cover navigation and product interactions such as changing views or Graph lenses, toggling theme, selecting a graph path, request-path hop, topology node, or convergence node, changing path zoom, focusing or restoring path or convergence views, applying or clearing a semantic filter, loading a bundle, copying or downloading an investigation explanation, copying an investigation link, path sequence, source location, source snippet, or portable node context, opening a source repository or source file, copying an install command, and opening a related resource.
 
 The frontend sends standard browser hardening headers, including no-referrer, MIME-sniffing
 protection, frame denial, a restricted permissions policy, and HTTPS transport enforcement.
