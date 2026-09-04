@@ -13,6 +13,21 @@ URLs, analytics properties, or user-facing errors.
 3. Set `NEXT_PUBLIC_BUNDLE_API_URL` in Explorer to the stack's `ApiUrl` output, or put the API
    behind a same-origin reverse proxy.
 
+Example commands:
+
+```bash
+docker build \
+  --build-arg LACHESIS_WHEEL_URL=https://artifacts.example.com/lachesis_cpg-0.4.2-py3-none-any.whl \
+  -f worker/Dockerfile -t <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.4.2 .
+docker push <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.4.2
+
+sam build --template-file template.yaml
+sam deploy --guided --template-file .aws-sam/build/template.yaml
+```
+
+The wheel URL must be immutable and match the exporter version used in the cache identity. Do not
+use a floating `latest` image or wheel in production.
+
 The worker intentionally caps direct bundle delivery at 5 MiB because API Gateway/Lambda response
 limits are lower than the Explorer's general 25 MiB import guard. Larger bundles need a future
 opaque CDN delivery endpoint with its own access policy.
