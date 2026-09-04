@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import Mock
+from unittest.mock import patch
 
 from src import worker
 from src.verify_bundle import validate_bundle
@@ -37,6 +38,29 @@ class WorkerTests(unittest.TestCase):
         }
         with self.assertRaises(ValueError):
             validate_bundle(bundle)
+
+    def test_process_exports_and_validates_before_uploading(self):
+        table = Mock()
+        table.get_item.return_value = {"Item": {
+            "job_id": "j_12345678", "status": "queued", "git_url": "https://github.com/owner/repo.git",
+            "ref": "main", "expires_at": 123,
+        }}
+        storage = Mock()
+        commands = []
+
+        def run(args, **_kwargs):
+            commands.append(args)
+            return ""
+
+        with patch.object(worker, "_sha", return_value="a" * 40), patch.object(worker, "_run", side_effect=run), \
+             patch.object(worker, "validate_file") as validate, patch.object(worker.os.path, "getsize", return_value=1), \
+             patch.dict(worker.os.environ, {"BUNDLE_BUCKET": "bucket"}):
+            worker._process({"job_id": "j_12345678"}, table, storage)
+
+        trace = next(command for command in commands if command[:2] == ["lachesis", "trace"])
+        self.assertIn("--schema-version", trace)
+        validate.assert_called_once()
+        storage.upload_file.assert_called_once()
 
 
 if __name__ == "__main__":

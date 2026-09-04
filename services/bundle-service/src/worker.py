@@ -20,8 +20,16 @@ except ImportError:
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
 
 
-def _run(args: list[str], cwd: str | None = None, timeout: int = 60) -> str:
-    result = subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False)
+def _run(args: list[str], cwd: str | None = None, timeout: int = 60, capture_stdout: bool = True) -> str:
+    result = subprocess.run(
+        args,
+        cwd=cwd,
+        stdout=subprocess.PIPE if capture_stdout else subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        timeout=timeout,
+        check=False,
+    )
     if result.returncode != 0:
         raise RuntimeError("build step failed")
     return result.stdout.strip()
@@ -78,12 +86,12 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     with tempfile.TemporaryDirectory(prefix="lachesis-job-") as work:
         sha = _sha(url, ref)
         steps[0]["state"] = "active"; _update(table, job_id, "cloning", steps, expires_at=expires_at, sha=sha)
-        _run(["git", "clone", "--depth", "1", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", url, work], timeout=180)
-        _run(["git", "fetch", "--depth", "1", "origin", sha], cwd=work, timeout=120)
-        _run(["git", "checkout", "--detach", sha], cwd=work, timeout=30)
+        _run(["git", "clone", "--depth", "1", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", url, work], timeout=180, capture_stdout=False)
+        _run(["git", "fetch", "--depth", "1", "origin", sha], cwd=work, timeout=120, capture_stdout=False)
+        _run(["git", "checkout", "--detach", sha], cwd=work, timeout=30, capture_stdout=False)
         steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, expires_at=expires_at, sha=sha)
         graph = os.path.join(work, "graph.kuzu")
-        _run(["lachesis", "build", work, graph, "--timeout", os.environ.get("BUILD_TIMEOUT_SECONDS", "600")], timeout=660)
+        _run(["lachesis", "build", work, graph, "--timeout", os.environ.get("BUILD_TIMEOUT_SECONDS", "600")], timeout=660, capture_stdout=False)
         steps[1]["state"] = "done"; steps[2]["state"] = "active"; _update(table, job_id, "exporting", steps, expires_at=expires_at, sha=sha)
         bundle = os.path.join(work, "bundle.json")
         trace_args = ["lachesis", "trace", graph, "--out", bundle, "--repo-name", _repo_name(url),
@@ -91,10 +99,10 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         template = _source_template(url)
         if template:
             trace_args.extend(["--source-url-template", template])
-        _run(trace_args, timeout=660)
-        validate_file(bundle)
+        _run(trace_args, timeout=660, capture_stdout=False)
         if os.path.getsize(bundle) > 5 * 1024 * 1024:
             raise RuntimeError("bundle exceeds direct API response limit")
+        validate_file(bundle)
         bundle_id = opaque_id("b")
         storage.upload_file(bundle, os.environ["BUNDLE_BUCKET"], f"bundles/{bundle_id}.json", ExtraArgs={"ContentType": "application/json", "ServerSideEncryption": "AES256"})
         steps[2]["state"] = "done"; _update(table, job_id, "ready", steps, expires_at=expires_at, sha=sha, bundle_id=bundle_id)
