@@ -2,5 +2,6 @@
 !src/
 !src/contract.py
 !src/worker.py
+!src/verify_bundle.py
 !worker/
 !worker/Dockerfile

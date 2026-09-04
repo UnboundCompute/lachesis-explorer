@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock
 
 from src import worker
+from src.verify_bundle import validate_bundle
 
 
 class WorkerTests(unittest.TestCase):
@@ -23,6 +24,19 @@ class WorkerTests(unittest.TestCase):
 
         table.put_item.assert_not_called()
         storage.upload_file.assert_not_called()
+
+    def test_validator_rejects_a_bundle_with_an_unknown_edge_target(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {
+                "nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}],
+                "edges": [{"source": "n1", "target": "missing"}],
+            },
+        }
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
 
 
 if __name__ == "__main__":

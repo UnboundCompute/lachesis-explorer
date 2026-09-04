@@ -14,8 +14,10 @@ import boto3
 
 try:  # Lambda loads this directory as the module root; tests may load it as a package.
     from contract import canonical_git_url, opaque_id, valid_ref
+    from verify_bundle import validate_file
 except ImportError:
     from .contract import canonical_git_url, opaque_id, valid_ref
+    from .verify_bundle import validate_file
 
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
 
@@ -92,6 +94,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         if template:
             trace_args.extend(["--source-url-template", template])
         _run(trace_args, timeout=660)
+        validate_file(bundle)
         if os.path.getsize(bundle) > 5 * 1024 * 1024:
             raise RuntimeError("bundle exceeds direct API response limit")
         bundle_id = opaque_id("b")
