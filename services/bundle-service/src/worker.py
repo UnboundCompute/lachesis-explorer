@@ -86,7 +86,7 @@ def _source_template(url: str) -> str | None:
 def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     job_id = str(job["job_id"])
     record = table.get_item(Key={"job_id": job_id}).get("Item") or {}
-    if record.get("status") == "ready":
+    if record.get("status") in {"ready", "cancelled", "expired"}:
         return
     url = canonical_git_url(record.get("git_url"))
     ref = valid_ref(record.get("ref"))
@@ -94,6 +94,8 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     steps = [{"key": key, "state": "pending"} for key in ("clone", "build", "export")]
     with tempfile.TemporaryDirectory(prefix="lachesis-job-") as work:
         sha = _sha(url, ref)
+        if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
+            return
         steps[0]["state"] = "active"; _update(table, job_id, "cloning", steps, expires_at=expires_at, sha=sha)
         _run(["git", "clone", "--depth", "1", "--no-tags", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", "-c", "filter.lfs.smudge=--skip", "-c", "filter.lfs.required=false", url, work], timeout=180, capture_stdout=False)
         _run(["git", "fetch", "--depth", "1", "origin", sha], cwd=work, timeout=120, capture_stdout=False)
@@ -101,6 +103,8 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, expires_at=expires_at, sha=sha)
         graph = os.path.join(work, "graph.kuzu")
         _run(["lachesis", "build", work, graph, "--timeout", os.environ.get("BUILD_TIMEOUT_SECONDS", "600")], timeout=660, capture_stdout=False)
+        if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
+            return
         steps[1]["state"] = "done"; steps[2]["state"] = "active"; _update(table, job_id, "exporting", steps, expires_at=expires_at, sha=sha)
         bundle = os.path.join(work, "bundle.json")
         trace_args = ["lachesis", "trace", graph, "--out", bundle, "--repo-name", _repo_name(url),
@@ -109,6 +113,8 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         if template:
             trace_args.extend(["--source-url-template", template])
         _run(trace_args, timeout=660, capture_stdout=False)
+        if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
+            return
         if os.path.getsize(bundle) > 5 * 1024 * 1024:
             raise RuntimeError("bundle exceeds direct API response limit")
         validate_file(bundle)

@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 ID_RE = re.compile(r"^[bj]_[A-Za-z0-9_-]{8,128}$")
 REF_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,255}$")
 ALLOWED_HOSTS = {"github.com", "gitlab.com", "bitbucket.org"}
+TERMINAL_JOB_STATUSES = {"ready", "error", "expired", "cancelled", "too_large", "unsupported_language"}
 
 
 def opaque_id(prefix: str) -> str:

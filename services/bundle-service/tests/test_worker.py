@@ -36,6 +36,14 @@ class WorkerTests(unittest.TestCase):
         table.put_item.assert_not_called()
         storage.upload_file.assert_not_called()
 
+    def test_cancelled_job_is_not_started(self):
+        table = Mock()
+        table.get_item.return_value = {"Item": {"job_id": "j_12345678", "status": "cancelled"}}
+
+        worker._process({"job_id": "j_12345678"}, table, Mock())
+
+        table.put_item.assert_not_called()
+
     def test_validator_rejects_a_bundle_with_an_unknown_edge_target(self):
         bundle = {
             "format": "lachesis-explorer-bundle",

@@ -73,6 +73,7 @@ Resources:
       Events:
         Build: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: /api/build, Method: POST } }
         BuildStatus: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/build/{job_id}', Method: GET } }
+        BuildCancel: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/build/{job_id}/cancel', Method: POST } }
         Bundle: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/bundles/{bundle_id}', Method: GET } }
       Environment:
         Variables: { JOBS_TABLE: !Ref JobsTable, BUILD_QUEUE_URL: !Ref BuildQueue, BUNDLE_BUCKET: !Ref BundleBucket, EXPLORER_ORIGIN: !Ref ExplorerOrigin, BUILD_RATE_LIMIT: '5' }

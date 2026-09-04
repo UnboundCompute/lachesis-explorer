@@ -129,6 +129,19 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(json.loads(response["body"])["status"], "expired")
 
+    def test_cancel_endpoint_marks_an_active_job_cancelled(self):
+        class Jobs:
+            def update_item(self, **_kwargs): pass
+            def get_item(self, **_kwargs): return {"Item": {"job_id": "j_12345678", "status": "cancelled", "steps": []}}
+
+        with patch.object(handler, "_aws", return_value=(Jobs(), object(), object())):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "POST"}},
+                "rawPath": "/api/build/j_12345678/cancel",
+            }, None)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"])["status"], "cancelled")
+
     def test_build_request_rejects_oversized_body_before_aws_access(self):
         with patch.object(handler, "_aws") as aws:
             response = handler.handler({

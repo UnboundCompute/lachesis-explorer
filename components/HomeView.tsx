@@ -24,6 +24,7 @@ type Props = {
   onSink: (sinkId: string) => void;
   onEntry: (entryIndex: number, hopId: string) => void;
   onBuild?: (gitUrl: string, ref: string) => void;
+  onCancelBuild?: () => void;
   buildState?: { status: string; steps: Array<{ key: string; state: string }>; message?: string };
 };
 
@@ -143,11 +144,11 @@ function EvidenceState({ evidence }: { evidence?: Evidence }) {
   );
 }
 
-function BuildIntake({ onBuild, buildState }: Pick<Props, "onBuild" | "buildState">) {
+function BuildIntake({ onBuild, onCancelBuild, buildState }: Pick<Props, "onBuild" | "onCancelBuild" | "buildState">) {
   const [gitUrl, setGitUrl] = useState("");
   const [ref, setRef] = useState("");
   if (!onBuild) return null;
-  const busy = buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired"].includes(buildState.status);
+  const busy = buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!gitUrl.trim() || busy) return;
@@ -158,7 +159,7 @@ function BuildIntake({ onBuild, buildState }: Pick<Props, "onBuild" | "buildStat
     <form onSubmit={submit} className="hosted-build-form">
       <label><span>Repository URL</span><input value={gitUrl} onChange={event => setGitUrl(event.target.value)} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" disabled={Boolean(busy)} /></label>
       <label><span>Ref <small>optional</small></span><input value={ref} onChange={event => setRef(event.target.value)} placeholder="main" disabled={Boolean(busy)} /></label>
-      <button type="submit" disabled={!gitUrl.trim() || Boolean(busy)}>{busy ? "Building…" : "Build graph"}<Icon name="arrow" size={13} /></button>
+      {busy ? <button type="button" className="hosted-build-cancel" onClick={onCancelBuild}>Cancel build</button> : <button type="submit" disabled={!gitUrl.trim()}>Build graph<Icon name="arrow" size={13} /></button>}
     </form>
     {buildState?.status && buildState.status !== "idle" && <div className={`hosted-build-status ${buildState.status}`} role="status" aria-live="polite"><b>{buildState.message || (buildState.status === "ready" ? "Bundle ready." : `Build ${buildState.status}.`)}</b>{buildState.steps.length > 0 && <span>{buildState.steps.map(step => `${step.key}: ${step.state}`).join(" · ")}</span>}{["too_large", "unsupported_language"].includes(buildState.status) && <small>Use “Load another bundle” to upload a locally generated bundle.</small>}</div>}
   </section>;
@@ -180,6 +181,7 @@ export function HomeView({
   onSink,
   onEntry,
   onBuild,
+  onCancelBuild,
   buildState,
 }: Props) {
   const [selectedId, setSelectedId] = useState(app.findings[0]?.id ?? "");
@@ -359,7 +361,7 @@ export function HomeView({
                 <button type="submit" disabled={!sourceSearch.trim()}>Find</button>
               </form>
             )}
-            <BuildIntake onBuild={onBuild} buildState={buildState} />
+            <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
             <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} ready to follow</dd></div>
@@ -537,7 +539,7 @@ export function HomeView({
               </button>
             </div>
           )}
-          <BuildIntake onBuild={onBuild} buildState={buildState} />
+          <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
         </div>
       </header>
 

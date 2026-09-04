@@ -61,6 +61,27 @@ def _job_view(item: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _cancel_job(jobs: Any, job_id: str) -> dict[str, Any] | None:
+    """Cancel only jobs that have not reached a terminal state."""
+    try:
+        jobs.update_item(
+            Key={"job_id": job_id},
+            UpdateExpression="SET #status = :cancelled, updated_at = :updated_at",
+            ConditionExpression="#status IN (:queued, :cloning, :building, :exporting)",
+            ExpressionAttributeNames={"#status": "status"},
+            ExpressionAttributeValues={
+                ":cancelled": "cancelled", ":updated_at": int(time.time()),
+                ":queued": "queued", ":cloning": "cloning", ":building": "building", ":exporting": "exporting",
+            },
+            ReturnValues="ALL_NEW",
+        )
+    except Exception as error:
+        code = str(getattr(error, "response", {}).get("Error", {}).get("Code", ""))
+        if code != "ConditionalCheckFailedException":
+            raise
+    return jobs.get_item(Key={"job_id": job_id}).get("Item")
+
+
 def _source_ip(event: dict[str, Any]) -> str:
     context = event.get("requestContext") or {}
     http = context.get("http") or {}
@@ -128,6 +149,15 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             jobs, _queue, _storage = _aws()
             item = jobs.get_item(Key={"job_id": job_id}).get("Item")
             return _response(404 if not item else 200, {"error": {"message": "job not found"}} if not item else _job_view(item))
+        if method == "POST" and path.endswith("/cancel") and "/api/build/" in path:
+            job_id = path.rsplit("/", 2)[-2]
+            if not valid_opaque_id(job_id, "j"):
+                return _response(400, {"error": {"message": "job_id is invalid"}})
+            jobs, _queue, _storage = _aws()
+            item = jobs.get_item(Key={"job_id": job_id}).get("Item")
+            if not item:
+                return _response(404, {"error": {"message": "job not found"}})
+            return _response(200, _job_view(_cancel_job(jobs, job_id) or item))
         if method == "GET" and "/api/build/" in path:
             job_id = path.rsplit("/", 1)[-1]
             if not valid_opaque_id(job_id, "j"):

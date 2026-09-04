@@ -23,7 +23,7 @@ import { countLabel, starter, normalize, type App, type Flow } from "../lib/lach
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
-import { getHostedBuildStatus, HostedRequestError, loadHostedBundle, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
+import { cancelHostedBuild, getHostedBuildStatus, HostedRequestError, loadHostedBundle, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -184,6 +184,7 @@ export default function Page() {
   const pendingLink = useRef<PendingLink | null>(null);
   const importBusy = useRef(false);
   const buildController = useRef<AbortController | null>(null);
+  const activeJobId = useRef<string | null>(null);
   const urlReady = useRef(false);
   const navigationDepth = useRef(0);
   const navigationMaxDepth = useRef(0);
@@ -1031,10 +1032,11 @@ export default function Page() {
     setLoadState({ type: "loading", message: "Preparing a hosted code graph…" });
     try {
       let status = await submitHostedBuild(gitUrl, ref, controller.signal);
+      activeJobId.current = status.job_id ?? null;
       setBuildState({ status: status.status, steps: status.steps ?? [], message: "Build queued…" });
       let attempts = 0;
       const buildDeadline = Date.now() + 15 * 60 * 1000;
-      while (!["ready", "too_large", "unsupported_language", "error", "expired"].includes(status.status)) {
+      while (!["ready", "too_large", "unsupported_language", "error", "expired", "cancelled"].includes(status.status)) {
         await new Promise((resolve, reject) => {
           const remaining = buildDeadline - Date.now();
           if (remaining <= 0) { reject(new Error("The hosted build took too long. You can build this repository locally instead.")); return; }
@@ -1072,6 +1074,23 @@ export default function Page() {
       trackEvent("hosted_build_failed");
     } finally {
       if (buildController.current === controller) buildController.current = null;
+      activeJobId.current = null;
+      importBusy.current = false;
+    }
+  }
+
+  async function cancelActiveBuild() {
+    const jobId = activeJobId.current;
+    if (!jobId) return;
+    try {
+      const response = await cancelHostedBuild(jobId);
+      buildController.current?.abort();
+      setBuildState({ status: response.status, steps: response.steps ?? [], message: "Build cancelled." });
+      setLoadState({ type: "success", message: "Hosted build cancelled. The current bundle was kept." });
+    } catch (error) {
+      setLoadState({ type: "error", message: `${error instanceof Error ? error.message : "The hosted build could not be cancelled."} The build may still be running.` });
+    } finally {
+      activeJobId.current = null;
       importBusy.current = false;
     }
   }

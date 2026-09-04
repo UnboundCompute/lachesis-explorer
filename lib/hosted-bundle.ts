@@ -60,7 +60,7 @@ export async function loadHostedBundle(bundleId: string, signal?: AbortSignal) {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-export type BuildStatus = "queued" | "cloning" | "building" | "exporting" | "ready" | "too_large" | "unsupported_language" | "error" | "expired";
+export type BuildStatus = "queued" | "cloning" | "building" | "exporting" | "ready" | "too_large" | "unsupported_language" | "error" | "expired" | "cancelled";
 export type BuildResponse = { job_id?: string; status: BuildStatus; bundle_id?: string; sha?: string; steps?: Array<{ key: string; state: string }>; error?: { message?: string; kind?: string } };
 
 export class HostedRequestError extends Error {
@@ -107,4 +107,13 @@ export async function getHostedBuildStatus(jobId: string, signal?: AbortSignal):
   if (!response.ok) throw await requestError(response, `The build status could not be read (HTTP ${response.status}).`);
   const body = await response.json().catch(() => ({}));
   return body as BuildResponse;
+}
+
+export async function cancelHostedBuild(jobId: string, signal?: AbortSignal): Promise<BuildResponse> {
+  if (!/^j_[A-Za-z0-9_-]{8,128}$/.test(jobId)) throw new Error("The build job ID is invalid.");
+  const response = await fetch(serviceUrl(`/api/build/${encodeURIComponent(jobId)}/cancel`), {
+    method: "POST", redirect: "error", signal, headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw await requestError(response, `The build could not be cancelled (HTTP ${response.status}).`);
+  return (await response.json().catch(() => ({}))) as BuildResponse;
 }
