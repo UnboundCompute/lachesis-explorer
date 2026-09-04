@@ -83,7 +83,10 @@ jobs:
             *) echo "wheel_url must use HTTPS" >&2; exit 1 ;;
           esac
           case "$WHEEL_URL" in
-            *latest*|*LATEST*) echo "wheel_url must identify an immutable artifact" >&2; exit 1 ;;
+            *latest*|*LATEST*)
+              echo "wheel_url must identify an immutable artifact" >&2
+              exit 1
+              ;;
           esac
 
       - name: Build and push immutable worker image
@@ -104,13 +107,16 @@ jobs:
             --query 'imageDetails[0].imageDigest' \
             --output text)"
           test "$digest" != "None"
-          echo "WORKER_IMAGE_URI=$REGISTRY/$ECR_REPOSITORY@$digest" >> "$GITHUB_ENV"
+          worker_image_uri="$REGISTRY/$ECR_REPOSITORY@$digest"
+          echo "WORKER_IMAGE_URI=$worker_image_uri" >> "$GITHUB_ENV"
 
       - name: Build SAM application
         run: sam build --template-file services/bundle-service/template.yaml
 
       - name: Validate transformed SAM template
-        run: sam validate --template-file .aws-sam/build/template.yaml --region "$AWS_REGION" --lint
+        run: >-
+          sam validate --template-file .aws-sam/build/template.yaml
+          --region "$AWS_REGION" --lint
 
       - name: Deploy SAM stack
         run: |
@@ -135,7 +141,8 @@ jobs:
             --output text)"
           test -n "$api_url"
           if [ -n "$SMOKE_REPOSITORY" ]; then
-            node services/bundle-service/smoke-hosted.mjs "$api_url" --build-url "$SMOKE_REPOSITORY"
+            node services/bundle-service/smoke-hosted.mjs "$api_url" \
+              --build-url "$SMOKE_REPOSITORY"
           else
             node services/bundle-service/smoke-hosted.mjs "$api_url"
           fi
