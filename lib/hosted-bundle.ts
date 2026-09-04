@@ -3,7 +3,16 @@ const BUNDLE_ID = /^b_[A-Za-z0-9_-]{8,128}$/;
 
 function serviceUrl(path: string) {
   const base = process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim().replace(/\/$/, "");
-  if (!base) throw new Error("Hosted bundles are not configured for this deployment.");
+  if (!base) return path;
+  try {
+    const parsed = new URL(base);
+    if (parsed.protocol !== "https:" && process.env.NODE_ENV === "production") {
+      throw new Error("Hosted bundle API must use HTTPS in production.");
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("must use HTTPS")) throw error;
+    throw new Error("Hosted bundle API configuration is invalid.");
+  }
   return `${base}${path}`;
 }
 
