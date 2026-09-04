@@ -63,7 +63,7 @@ path to the underlying graph and source.
 
 ## Run locally
 
-Requirements: Node.js 20+ and pnpm 10 via Corepack. The repository’s checked-in lockfile and CI use
+Requirements: Node.js 20+ and pnpm 11.25.0 via Corepack. The repository’s checked-in lockfile and CI use
 pnpm; npm remains a supported fallback when you do not need a frozen CI install.
 
 ```bash
