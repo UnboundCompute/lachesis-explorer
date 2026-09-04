@@ -81,6 +81,17 @@ After deployment, run the API smoke test with the stack URL and a known bundle I
 node services/bundle-service/smoke-hosted.mjs https://api.example.com b_12345678
 ```
 
+To exercise the complete hosted lifecycle against a small public repository, pass
+`--build-url` (and optionally `--ref`). The command polls to `ready` and validates the returned
+graph-first bundle; the repository URL is never printed:
+
+```bash
+node services/bundle-service/smoke-hosted.mjs https://api.example.com \
+  --build-url https://github.com/UnboundCompute/arachne
+```
+
+The deployment workflow exposes the same check through its optional `smoke_repository` input.
+
 The worker runs a dependency-free graph-first contract check immediately before uploading an
 artifact. The frontend still performs its full bundle verifier check when loading the artifact.
 

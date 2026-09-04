@@ -30,6 +30,11 @@ on:
         description: SNS topic ARN for production alarms
         required: true
         type: string
+      smoke_repository:
+        description: Optional public repository URL for a full build smoke test
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -51,6 +56,7 @@ jobs:
       ECR_REPOSITORY: ${{ inputs.ecr_repository }}
       WHEEL_URL: ${{ inputs.wheel_url }}
       ALERT_TOPIC_ARN: ${{ inputs.alert_topic_arn }}
+      SMOKE_REPOSITORY: ${{ inputs.smoke_repository }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -128,4 +134,8 @@ jobs:
             --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
             --output text)"
           test -n "$api_url"
-          node services/bundle-service/smoke-hosted.mjs "$api_url"
+          if [ -n "$SMOKE_REPOSITORY" ]; then
+            node services/bundle-service/smoke-hosted.mjs "$api_url" --build-url "$SMOKE_REPOSITORY"
+          else
+            node services/bundle-service/smoke-hosted.mjs "$api_url"
+          fi
