@@ -39,6 +39,13 @@ toolchain, or relevant options change; cache objects expire with the bucket life
 The wheel URL must be immutable and match the exporter version used in the cache identity. Do not
 use a floating `latest` image or wheel in production.
 
+For repeatable releases, the repository includes a manually triggered
+[`deploy-hosted.yml`](../../.github/workflows/deploy-hosted.yml) workflow. Configure the
+`AWS_DEPLOY_ROLE_ARN` secret on the repository, protect the `production` environment with required
+reviewers, and grant the role only the ECR, CloudFormation/SAM, Lambda, S3, DynamoDB, SQS, Logs,
+and SNS actions required by this stack. The workflow resolves the pushed image to a digest before
+passing it to SAM; it never deploys the temporary image tag.
+
 `ExplorerOrigin` must be the exact HTTPS origin with no path or wildcard. `WorkerImageUri` must use
 the full regional ECR digest form (`...amazonaws.com/repository@sha256:...`); do not deploy a mutable tag.
 
