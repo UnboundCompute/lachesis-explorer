@@ -79,6 +79,36 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         aws.assert_not_called()
 
+    def test_build_request_rejects_malformed_base64(self):
+        with patch.object(handler, "_aws") as aws:
+            response = handler.handler({
+                "requestContext": {"http": {"method": "POST"}},
+                "rawPath": "/api/build",
+                "isBase64Encoded": True,
+                "body": "not-base64",
+            }, None)
+        self.assertEqual(response["statusCode"], 400)
+        aws.assert_not_called()
+
+    def test_bundle_endpoint_enforces_body_limit_while_reading(self):
+        class Body:
+            def read(self, amount):
+                self.amount = amount
+                return b"x" * amount
+
+        class Storage:
+            def get_object(self, **_kwargs):
+                return {"Body": Body(), "ContentLength": 0}
+
+        with patch.object(handler, "_aws", return_value=(object(), object(), Storage())), patch.dict(
+            handler.os.environ, {"BUNDLE_BUCKET": "bucket"}
+        ):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "GET"}},
+                "rawPath": "/api/bundles/b_12345678",
+            }, None)
+        self.assertEqual(response["statusCode"], 413)
+
 
 if __name__ == "__main__":
     unittest.main()

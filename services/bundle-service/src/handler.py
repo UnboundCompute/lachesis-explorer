@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import json
 import os
 import time
@@ -100,14 +101,17 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 raise
             if int(obj.get("ContentLength", 0)) > MAX_RESPONSE_BYTES:
                 return _response(413, {"error": {"message": "bundle is too large for direct API delivery"}})
+            payload = obj["Body"].read(MAX_RESPONSE_BYTES + 1)
+            if len(payload) > MAX_RESPONSE_BYTES:
+                return _response(413, {"error": {"message": "bundle is too large for direct API delivery"}})
             allowed = os.environ.get("EXPLORER_ORIGIN", "")
             headers = {"content-type": "application/json", "cache-control": "private, max-age=60"}
             if allowed:
                 headers["access-control-allow-origin"] = allowed
             return {"statusCode": 200, "headers": headers,
-                    "body": obj["Body"].read().decode("utf-8")}
+                    "body": payload.decode("utf-8")}
         return _response(404, {"error": {"message": "route not found"}})
-    except (ValueError, json.JSONDecodeError) as error:
+    except (ValueError, json.JSONDecodeError, UnicodeError, binascii.Error) as error:
         return _response(400, {"error": {"message": str(error)}})
     except Exception:
         # Do not expose repository URLs, command lines, storage keys or worker details.
