@@ -44,6 +44,14 @@ The worker intentionally caps direct bundle delivery at 5 MiB because API Gatewa
 limits are lower than the Explorer's general 25 MiB import guard. Larger bundles need a future
 opaque CDN delivery endpoint with its own access policy.
 
+### Access and retention policy
+
+Bundle links are bearer links: anyone who possesses an opaque `b_…` ID can read that bundle through
+the API. IDs contain no repository information and are generated with high entropy; they are not
+an authentication mechanism. Job records expire after one hour, while private S3 bundle objects
+expire through the bucket's 30-day lifecycle rule. Use an authenticated gateway or a shorter
+lifecycle policy if bundles may contain non-public source code.
+
 The build queue and dead-letter queue use SQS-managed encryption at rest.
 The build queue visibility timeout is 5,400 seconds (six times the worker’s 900-second Lambda
 timeout), preventing long-running jobs from being delivered twice while still active.
