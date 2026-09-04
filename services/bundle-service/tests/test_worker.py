@@ -62,6 +62,16 @@ class WorkerTests(unittest.TestCase):
         validate.assert_called_once()
         storage.upload_file.assert_called_once()
 
+    def test_handler_creates_aws_clients_lazily(self):
+        clients = Mock()
+        clients.resource.return_value.Table.return_value = Mock()
+        clients.client.return_value = Mock()
+        with patch.dict(worker.os.environ, {"JOBS_TABLE": "jobs"}), patch.dict("sys.modules", {"boto3": clients}):
+            result = worker.handler({"Records": []}, None)
+        self.assertEqual(result, {"batchItemFailures": []})
+        clients.resource.assert_called_once_with("dynamodb")
+        clients.client.assert_called_once_with("s3")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -109,6 +109,8 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
 
 
 def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
+    import boto3
+
     table = boto3.resource("dynamodb").Table(os.environ["JOBS_TABLE"])
     storage = boto3.client("s3")
     failures = []
