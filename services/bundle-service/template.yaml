@@ -11,8 +11,8 @@ Parameters:
   WorkerImageUri:
     Type: String
     Description: ECR URI for the worker image containing git, Lachesis, and its language toolchains.
-    MinLength: 1
-    ConstraintDescription: WorkerImageUri must reference an immutable worker image.
+    AllowedPattern: '^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/[A-Za-z0-9._/-]+@sha256:[a-f0-9]{64}$'
+    ConstraintDescription: WorkerImageUri must be an immutable regional ECR image digest, not a tag.
   AlertTopicArn:
     Type: String
     Default: ''

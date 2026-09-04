@@ -37,8 +37,8 @@ toolchain, or relevant options change; cache objects expire with the bucket life
 The wheel URL must be immutable and match the exporter version used in the cache identity. Do not
 use a floating `latest` image or wheel in production.
 
-`ExplorerOrigin` must be the exact HTTPS origin with no path or wildcard. Supply an immutable
-image digest or otherwise deployment-pinned `WorkerImageUri`; do not deploy a mutable tag.
+`ExplorerOrigin` must be the exact HTTPS origin with no path or wildcard. `WorkerImageUri` must use
+the full regional ECR digest form (`...amazonaws.com/repository@sha256:...`); do not deploy a mutable tag.
 
 The worker intentionally caps direct bundle delivery at 5 MiB because API Gateway/Lambda response
 limits are lower than the Explorer's general 25 MiB import guard. Larger bundles need a future
