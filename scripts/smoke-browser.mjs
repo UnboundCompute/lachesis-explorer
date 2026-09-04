@@ -27,6 +27,10 @@ try {
   assert.ok(await nodes.count() > 0, "graph node list is empty");
   await nodes.first().click();
   assert.equal(await page.locator("#source-inspector").count(), 1, "node selection did not open inspector");
+  for (const [label, view] of [["Trace", "trace"], ["Compare", "compare"], ["Understand", "home"]]) {
+    await page.getByRole("button", { name: new RegExp(`^${label}`) }).first().click();
+    assert.equal(new URL(page.url()).searchParams.get("view"), view, `${label} navigation failed`);
+  }
   await page.close();
   console.log("browser smoke test passed");
 } finally {
