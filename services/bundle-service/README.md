@@ -10,6 +10,7 @@ URLs, analytics properties, or user-facing errors.
 1. Build and push `worker/Dockerfile` with a pinned `LACHESIS_WHEEL_URL`. The image installs `git`,
    Clang, Node, the supported Lachesis toolchains, and runs `worker.handler`.
 2. Build/deploy `template.yaml` with SAM, supplying the exact Explorer origin and worker ECR URI.
+   Pass `AlertTopicArn` to route API, worker, backlog, and DLQ alarms to an SNS topic.
 3. Set `NEXT_PUBLIC_BUNDLE_API_URL` in Explorer to the stack's `ApiUrl` output, or put the API
    behind a same-origin reverse proxy.
 
@@ -24,6 +25,9 @@ docker push <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.4.2
 sam build --template-file template.yaml
 sam deploy --guided --template-file .aws-sam/build/template.yaml
 ```
+
+The stack retains API and worker logs for 30 days and creates four CloudWatch alarms. Alarm
+notifications are disabled until `AlertTopicArn` is supplied; configure that topic before launch.
 
 The wheel URL must be immutable and match the exporter version used in the cache identity. Do not
 use a floating `latest` image or wheel in production.
