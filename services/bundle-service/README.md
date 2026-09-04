@@ -45,6 +45,8 @@ limits are lower than the Explorer's general 25 MiB import guard. Larger bundles
 opaque CDN delivery endpoint with its own access policy.
 
 The build queue and dead-letter queue use SQS-managed encryption at rest.
+The build queue visibility timeout is 5,400 seconds (six times the worker’s 900-second Lambda
+timeout), preventing long-running jobs from being delivered twice while still active.
 
 ## Local verification
 

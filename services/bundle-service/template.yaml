@@ -52,7 +52,9 @@ Resources:
   BuildQueue:
     Type: AWS::SQS::Queue
     Properties:
-      VisibilityTimeout: 960
+      # Keep messages invisible for at least six times the worker timeout so a
+      # long invocation is not delivered to a second worker while still running.
+      VisibilityTimeout: 5400
       SqsManagedSseEnabled: true
       RedrivePolicy: { deadLetterTargetArn: !GetAtt BuildDlq.Arn, maxReceiveCount: 2 }
 
