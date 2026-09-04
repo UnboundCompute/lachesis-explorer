@@ -19,6 +19,14 @@ function serviceUrl(path: string) {
   return `${base}${path}`;
 }
 
+function parseJson(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("The hosted bundle response was not valid JSON.");
+  }
+}
+
 export async function loadHostedBundle(bundleId: string, signal?: AbortSignal) {
   if (!BUNDLE_ID.test(bundleId)) throw new Error("This hosted bundle link is invalid.");
   const response = await fetch(serviceUrl(`/api/bundles/${encodeURIComponent(bundleId)}`), {
@@ -35,7 +43,7 @@ export async function loadHostedBundle(bundleId: string, signal?: AbortSignal) {
   if (!response.body) {
     const text = await response.text();
     if (new TextEncoder().encode(text).byteLength > MAX_BUNDLE_BYTES) throw new Error("This hosted bundle is too large to open in Explorer.");
-    return JSON.parse(text);
+    return parseJson(text);
   }
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -57,7 +65,7 @@ export async function loadHostedBundle(bundleId: string, signal?: AbortSignal) {
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-  return JSON.parse(new TextDecoder().decode(bytes));
+  return parseJson(new TextDecoder().decode(bytes));
 }
 
 export type BuildStatus = "queued" | "cloning" | "building" | "exporting" | "ready" | "too_large" | "unsupported_language" | "error" | "expired" | "cancelled";
