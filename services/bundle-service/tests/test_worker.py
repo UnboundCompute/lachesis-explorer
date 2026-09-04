@@ -16,6 +16,15 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(update["ExpressionAttributeValues"][":expires_at"], 123)
         self.assertEqual(update["ExpressionAttributeValues"][":sha"], "a" * 40)
 
+    def test_conditional_stage_conflict_stops_the_worker_cleanly(self):
+        class Cancelled(Exception):
+            response = {"Error": {"Code": "ConditionalCheckFailedException"}}
+
+        table = Mock()
+        table.update_item.side_effect = Cancelled()
+        with self.assertRaises(worker.JobStopped):
+            worker._update(table, "j_12345678", "building", [], expected_statuses={"cloning"})
+
     def test_git_commands_disable_prompts_and_global_configuration(self):
         completed = Mock(returncode=0, stdout="", stderr="")
         with patch.object(worker.subprocess, "run", return_value=completed) as run:
