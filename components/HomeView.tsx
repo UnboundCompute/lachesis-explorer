@@ -156,12 +156,12 @@ function BuildIntake({ onBuild, onCancelBuild, buildState }: Pick<Props, "onBuil
   }
   return <section className="hosted-build" aria-labelledby="hosted-build-title">
     <div><span className="panel-label">OPEN A CODEBASE</span><h2 id="hosted-build-title">Build a graph from a public repository</h2><p>Paste a GitHub, GitLab, or Bitbucket URL. Lachesis builds the graph remotely; your browser only receives the exported bundle.</p></div>
-    <form onSubmit={submit} className="hosted-build-form">
-      <label><span>Repository URL</span><input value={gitUrl} onChange={event => setGitUrl(event.target.value)} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" disabled={Boolean(busy)} /></label>
-      <label><span>Ref <small>optional</small></span><input value={ref} onChange={event => setRef(event.target.value)} placeholder="main" disabled={Boolean(busy)} /></label>
+    <form onSubmit={submit} className="hosted-build-form" aria-label="Build graph from repository">
+      <label htmlFor="hosted-repository-url"><span>Repository URL</span><input id="hosted-repository-url" value={gitUrl} onChange={event => setGitUrl(event.target.value)} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" disabled={Boolean(busy)} /></label>
+      <label htmlFor="hosted-repository-ref"><span>Ref <small>optional</small></span><input id="hosted-repository-ref" value={ref} onChange={event => setRef(event.target.value)} placeholder="main" disabled={Boolean(busy)} /></label>
       {busy ? <button type="button" className="hosted-build-cancel" onClick={onCancelBuild}>Cancel build</button> : <button type="submit" disabled={!gitUrl.trim()}>Build graph<Icon name="arrow" size={13} /></button>}
     </form>
-    {buildState?.status && buildState.status !== "idle" && <div className={`hosted-build-status ${buildState.status}`} role="status" aria-live="polite"><b>{buildState.message || (buildState.status === "ready" ? "Bundle ready." : `Build ${buildState.status}.`)}</b>{buildState.steps.length > 0 && <span>{buildState.steps.map(step => `${step.key}: ${step.state}`).join(" · ")}</span>}{["too_large", "unsupported_language"].includes(buildState.status) && <small>Use “Load another bundle” to upload a locally generated bundle.</small>}</div>}
+    {buildState?.status && buildState.status !== "idle" && <div className={`hosted-build-status ${buildState.status}`} role={["error", "too_large", "unsupported_language"].includes(buildState.status) ? "alert" : "status"} aria-live="polite" aria-busy={Boolean(busy)}><b>{buildState.message || (buildState.status === "ready" ? "Bundle ready." : `Build ${buildState.status}.`)}</b>{buildState.steps.length > 0 && <span>{buildState.steps.map(step => `${step.key}: ${step.state}`).join(" · ")}</span>}{["too_large", "unsupported_language"].includes(buildState.status) && <small>Use “Load another bundle” to upload a locally generated bundle.</small>}</div>}
   </section>;
 }
 
