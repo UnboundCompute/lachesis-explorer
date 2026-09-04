@@ -73,7 +73,10 @@ class ContractTests(unittest.TestCase):
         class Table:
             def __init__(self): self.items = []
             def put_item(self, **kwargs): self.items.append(kwargs["Item"])
-            def update_item(self, **_kwargs): pass
+            def update_item(self, **kwargs):
+                values = kwargs["ExpressionAttributeValues"]
+                if ":status" in values:
+                    self.items.append({"status": values[":status"], "expires_at": values.get(":expires_at")})
 
         class Queue:
             def send_message(self, **_kwargs): raise RuntimeError("queue unavailable")

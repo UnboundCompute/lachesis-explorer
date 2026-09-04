@@ -12,9 +12,9 @@ class WorkerTests(unittest.TestCase):
 
         worker._update(table, "j_12345678", "building", [], expires_at=123, sha="a" * 40)
 
-        item = table.put_item.call_args.kwargs["Item"]
-        self.assertEqual(item["expires_at"], 123)
-        self.assertEqual(item["sha"], "a" * 40)
+        update = table.update_item.call_args.kwargs
+        self.assertEqual(update["ExpressionAttributeValues"][":expires_at"], 123)
+        self.assertEqual(update["ExpressionAttributeValues"][":sha"], "a" * 40)
 
     def test_git_commands_disable_prompts_and_global_configuration(self):
         completed = Mock(returncode=0, stdout="", stderr="")

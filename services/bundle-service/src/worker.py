@@ -20,6 +20,10 @@ except ImportError:
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
 
 
+class JobStopped(Exception):
+    """The job was cancelled or changed state while the worker was running."""
+
+
 def _run(args: list[str], cwd: str | None = None, timeout: int = 60, capture_stdout: bool = True) -> str:
     env = None
     if args and args[0] == "git":
@@ -50,12 +54,37 @@ def _update(
     status: str,
     steps: list[dict[str, str]],
     expires_at: int | None = None,
-    **values: str,
+    expected_statuses: set[str] | None = None,
+    **values: Any,
 ) -> None:
-    item = {"job_id": job_id, "status": status, "steps": steps, "updated_at": int(time.time()), **values}
+    names = {"#status": "status"}
+    attributes: dict[str, Any] = {":status": status, ":steps": steps, ":updated_at": int(time.time())}
+    assignments = ["#status = :status", "steps = :steps", "updated_at = :updated_at"]
     if expires_at is not None:
-        item["expires_at"] = expires_at
-    table.put_item(Item=item)
+        assignments.append("expires_at = :expires_at")
+        attributes[":expires_at"] = expires_at
+    for key, value in values.items():
+        names[f"#{key}"] = key
+        attributes[f":{key}"] = value
+        assignments.append(f"#{key} = :{key}")
+    kwargs: dict[str, Any] = {
+        "Key": {"job_id": job_id},
+        "UpdateExpression": "SET " + ", ".join(assignments),
+        "ExpressionAttributeNames": names,
+        "ExpressionAttributeValues": attributes,
+    }
+    if expected_statuses:
+        ordered = sorted(expected_statuses)
+        placeholders = [f":expected_{index}" for index in range(len(ordered))]
+        kwargs["ConditionExpression"] = "#status IN (" + ", ".join(placeholders) + ")"
+        kwargs["ExpressionAttributeValues"].update(dict(zip(placeholders, ordered)))
+    try:
+        table.update_item(**kwargs)
+    except Exception as error:
+        code = str(getattr(error, "response", {}).get("Error", {}).get("Code", ""))
+        if code == "ConditionalCheckFailedException":
+            raise JobStopped from error
+        raise
 
 
 def _sha(url: str, ref: str) -> str:
@@ -96,16 +125,16 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         sha = _sha(url, ref)
         if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
             return
-        steps[0]["state"] = "active"; _update(table, job_id, "cloning", steps, expires_at=expires_at, sha=sha)
+        steps[0]["state"] = "active"; _update(table, job_id, "cloning", steps, expires_at=expires_at, expected_statuses={"queued"}, sha=sha)
         _run(["git", "clone", "--depth", "1", "--no-tags", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", "-c", "filter.lfs.smudge=--skip", "-c", "filter.lfs.required=false", url, work], timeout=180, capture_stdout=False)
         _run(["git", "fetch", "--depth", "1", "origin", sha], cwd=work, timeout=120, capture_stdout=False)
         _run(["git", "checkout", "--detach", sha], cwd=work, timeout=30, capture_stdout=False)
-        steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, expires_at=expires_at, sha=sha)
+        steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, expires_at=expires_at, expected_statuses={"cloning"}, sha=sha)
         graph = os.path.join(work, "graph.kuzu")
         _run(["lachesis", "build", work, graph, "--timeout", os.environ.get("BUILD_TIMEOUT_SECONDS", "600")], timeout=660, capture_stdout=False)
         if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
             return
-        steps[1]["state"] = "done"; steps[2]["state"] = "active"; _update(table, job_id, "exporting", steps, expires_at=expires_at, sha=sha)
+        steps[1]["state"] = "done"; steps[2]["state"] = "active"; _update(table, job_id, "exporting", steps, expires_at=expires_at, expected_statuses={"building"}, sha=sha)
         bundle = os.path.join(work, "bundle.json")
         trace_args = ["lachesis", "trace", graph, "--out", bundle, "--repo-name", _repo_name(url),
                       "--commit", sha, "--schema-version", "2.0", "--quiet"]
@@ -120,7 +149,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         validate_file(bundle)
         bundle_id = opaque_id("b")
         storage.upload_file(bundle, os.environ["BUNDLE_BUCKET"], f"bundles/{bundle_id}.json", ExtraArgs={"ContentType": "application/json", "ServerSideEncryption": "AES256"})
-        steps[2]["state"] = "done"; _update(table, job_id, "ready", steps, expires_at=expires_at, sha=sha, bundle_id=bundle_id)
+        steps[2]["state"] = "done"; _update(table, job_id, "ready", steps, expires_at=expires_at, expected_statuses={"exporting"}, sha=sha, bundle_id=bundle_id)
 
 
 def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
@@ -132,6 +161,8 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     for message in event.get("Records", []):
         try:
             _process(json.loads(message["body"]), table, storage)
+        except JobStopped:
+            continue
         except Exception:
             job_id = ""
             try: job_id = str(json.loads(message["body"])["job_id"])
