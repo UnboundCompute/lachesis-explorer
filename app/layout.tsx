@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'Lachesis — Deterministic code graph reader',
   description: 'Follow values and requests through a deterministic code graph.',
   generator: 'Next.js',
+  referrer: 'no-referrer',
 }
 
 export const viewport: Viewport = {
