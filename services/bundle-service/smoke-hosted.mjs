@@ -16,7 +16,10 @@ if (base.protocol !== "https:") throw new Error("smoke target must use HTTPS");
 base.pathname = base.pathname.replace(/\/$/, "");
 
 async function request(path, options) {
-  const response = await fetch(new URL(path, base), {
+  const target = new URL(base);
+  target.pathname = `${base.pathname}${path}`;
+  target.search = "";
+  const response = await fetch(target, {
     redirect: "error",
     headers: { Accept: "application/json", ...(options?.headers ?? {}) },
     ...options,
