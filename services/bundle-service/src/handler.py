@@ -7,7 +7,10 @@ import os
 import time
 from typing import Any
 
-from contract import canonical_git_url, opaque_id, valid_opaque_id, valid_ref
+try:  # Lambda loads this directory as the module root; tests load it as a package.
+    from contract import canonical_git_url, opaque_id, valid_opaque_id, valid_ref
+except ImportError:
+    from .contract import canonical_git_url, opaque_id, valid_opaque_id, valid_ref
 
 MAX_RESPONSE_BYTES = 5 * 1024 * 1024
 
@@ -54,12 +57,12 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     method = str(event.get("requestContext", {}).get("http", {}).get("method") or event.get("httpMethod") or "GET").upper()
     path = _path(event)
     try:
-        jobs, queue, storage = _aws()
         if method == "POST" and path.endswith("/api/build"):
             body = _json(event)
             git_url = canonical_git_url(body.get("git_url"))
             ref = valid_ref(body.get("ref"))
             job_id = opaque_id("j")
+            jobs, queue, _storage = _aws()
             jobs.put_item(Item={"job_id": job_id, "status": "queued", "git_url": git_url, "ref": ref,
                                 "expires_at": int(time.time()) + 3600,
                                 "steps": [{"key": "clone", "state": "pending"}, {"key": "build", "state": "pending"},
@@ -70,18 +73,21 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             job_id = (event.get("queryStringParameters") or {}).get("job_id", "")
             if not valid_opaque_id(job_id, "j"):
                 return _response(400, {"error": {"message": "job_id is invalid"}})
+            jobs, _queue, _storage = _aws()
             item = jobs.get_item(Key={"job_id": job_id}).get("Item")
             return _response(404 if not item else 200, {"error": {"message": "job not found"}} if not item else _job_view(item))
         if method == "GET" and "/api/build/" in path:
             job_id = path.rsplit("/", 1)[-1]
             if not valid_opaque_id(job_id, "j"):
                 return _response(400, {"error": {"message": "job_id is invalid"}})
+            jobs, _queue, _storage = _aws()
             item = jobs.get_item(Key={"job_id": job_id}).get("Item")
             return _response(404 if not item else 200, {"error": {"message": "job not found"}} if not item else _job_view(item))
         if method == "GET" and "/api/bundles/" in path:
             bundle_id = path.rsplit("/", 1)[-1]
             if not valid_opaque_id(bundle_id, "b"):
                 return _response(400, {"error": {"message": "bundle_id is invalid"}})
+            _jobs, _queue, storage = _aws()
             obj = storage.get_object(Bucket=os.environ["BUNDLE_BUCKET"], Key=f"bundles/{bundle_id}.json")
             if int(obj.get("ContentLength", 0)) > MAX_RESPONSE_BYTES:
                 return _response(413, {"error": {"message": "bundle is too large for direct API delivery"}})

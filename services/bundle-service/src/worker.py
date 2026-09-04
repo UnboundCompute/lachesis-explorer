@@ -13,7 +13,10 @@ from urllib.parse import urlsplit
 
 import boto3
 
-from contract import canonical_git_url, opaque_id, valid_ref
+try:  # Lambda loads this directory as the module root; tests may load it as a package.
+    from contract import canonical_git_url, opaque_id, valid_ref
+except ImportError:
+    from .contract import canonical_git_url, opaque_id, valid_ref
 
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
 

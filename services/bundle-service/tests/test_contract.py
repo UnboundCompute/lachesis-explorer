@@ -1,6 +1,9 @@
 import unittest
+from unittest.mock import patch
+import json
 
 from src.contract import canonical_git_url, valid_opaque_id, valid_ref
+from src import handler
 
 
 class ContractTests(unittest.TestCase):
@@ -21,6 +24,36 @@ class ContractTests(unittest.TestCase):
         self.assertTrue(valid_opaque_id("b_12345678", "b"))
         self.assertFalse(valid_opaque_id("github-owner-repo", "b"))
         self.assertFalse(valid_opaque_id("j_12345678", "b"))
+
+    def test_build_request_returns_no_repository_details_and_sets_expiry(self):
+        class Table:
+            def __init__(self): self.item = None
+            def put_item(self, **kwargs): self.item = kwargs["Item"]
+
+        class Queue:
+            def send_message(self, **_kwargs): pass
+
+        table = Table()
+        with patch.object(handler, "_aws", return_value=(table, Queue(), object())), patch.dict(handler.os.environ, {"BUILD_QUEUE_URL": "queue"}):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "POST"}},
+                "rawPath": "/api/build",
+                "body": json.dumps({"git_url": "https://github.com/GNOME/libxml2", "ref": "main"}),
+            }, None)
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 202)
+        self.assertNotIn("git_url", body)
+        self.assertIn("expires_at", table.item)
+        self.assertTrue(body["job_id"].startswith("j_"))
+
+    def test_bundle_endpoint_rejects_non_opaque_ids_before_storage_access(self):
+        with patch.object(handler, "_aws") as aws:
+            response = handler.handler({
+                "requestContext": {"http": {"method": "GET"}},
+                "rawPath": "/api/bundles/github-owner-repo",
+            }, None)
+        self.assertEqual(response["statusCode"], 400)
+        aws.assert_not_called()
 
 
 if __name__ == "__main__":
