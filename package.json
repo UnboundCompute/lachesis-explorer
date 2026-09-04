@@ -30,7 +30,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run verify:bundles && npm run build",
+    "check": "tsc --noEmit && node scripts/verify-bundles.mjs && next build",
     "verify:bundles": "node scripts/verify-bundles.mjs"
   },
   "dependencies": {
