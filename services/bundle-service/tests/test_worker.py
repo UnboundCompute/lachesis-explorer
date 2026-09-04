@@ -1,0 +1,29 @@
+import unittest
+from unittest.mock import Mock
+
+from src import worker
+
+
+class WorkerTests(unittest.TestCase):
+    def test_update_preserves_expiry_for_dynamodb_ttl(self):
+        table = Mock()
+
+        worker._update(table, "j_12345678", "building", [], expires_at=123, sha="a" * 40)
+
+        item = table.put_item.call_args.kwargs["Item"]
+        self.assertEqual(item["expires_at"], 123)
+        self.assertEqual(item["sha"], "a" * 40)
+
+    def test_ready_job_is_idempotent(self):
+        table = Mock()
+        table.get_item.return_value = {"Item": {"job_id": "j_12345678", "status": "ready"}}
+        storage = Mock()
+
+        worker._process({"job_id": "j_12345678"}, table, storage)
+
+        table.put_item.assert_not_called()
+        storage.upload_file.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

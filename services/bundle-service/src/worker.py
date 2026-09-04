@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
 import subprocess
 import tempfile
 import time
@@ -28,8 +27,17 @@ def _run(args: list[str], cwd: str | None = None, timeout: int = 60) -> str:
     return result.stdout.strip()
 
 
-def _update(table: Any, job_id: str, status: str, steps: list[dict[str, str]], **values: str) -> None:
+def _update(
+    table: Any,
+    job_id: str,
+    status: str,
+    steps: list[dict[str, str]],
+    expires_at: int | None = None,
+    **values: str,
+) -> None:
     item = {"job_id": job_id, "status": status, "steps": steps, "updated_at": int(time.time()), **values}
+    if expires_at is not None:
+        item["expires_at"] = expires_at
     table.put_item(Item=item)
 
 
@@ -61,19 +69,22 @@ def _source_template(url: str) -> str | None:
 def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     job_id = str(job["job_id"])
     record = table.get_item(Key={"job_id": job_id}).get("Item") or {}
+    if record.get("status") == "ready":
+        return
     url = canonical_git_url(record.get("git_url"))
     ref = valid_ref(record.get("ref"))
+    expires_at = record.get("expires_at")
     steps = [{"key": key, "state": "pending"} for key in ("clone", "build", "export")]
     with tempfile.TemporaryDirectory(prefix="lachesis-job-") as work:
         sha = _sha(url, ref)
-        steps[0]["state"] = "active"; _update(table, job_id, "cloning", steps, sha=sha)
+        steps[0]["state"] = "active"; _update(table, job_id, "cloning", steps, expires_at=expires_at, sha=sha)
         _run(["git", "clone", "--depth", "1", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", url, work], timeout=180)
         _run(["git", "fetch", "--depth", "1", "origin", sha], cwd=work, timeout=120)
         _run(["git", "checkout", "--detach", sha], cwd=work, timeout=30)
-        steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, sha=sha)
+        steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, expires_at=expires_at, sha=sha)
         graph = os.path.join(work, "graph.kuzu")
         _run(["lachesis", "build", work, graph, "--timeout", os.environ.get("BUILD_TIMEOUT_SECONDS", "600")], timeout=660)
-        steps[1]["state"] = "done"; steps[2]["state"] = "active"; _update(table, job_id, "exporting", steps, sha=sha)
+        steps[1]["state"] = "done"; steps[2]["state"] = "active"; _update(table, job_id, "exporting", steps, expires_at=expires_at, sha=sha)
         bundle = os.path.join(work, "bundle.json")
         trace_args = ["lachesis", "trace", graph, "--out", bundle, "--repo-name", _repo_name(url),
                       "--commit", sha, "--schema-version", "2.0", "--quiet"]
@@ -85,7 +96,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
             raise RuntimeError("bundle exceeds direct API response limit")
         bundle_id = opaque_id("b")
         storage.upload_file(bundle, os.environ["BUNDLE_BUCKET"], f"bundles/{bundle_id}.json", ExtraArgs={"ContentType": "application/json", "ServerSideEncryption": "AES256"})
-        steps[2]["state"] = "done"; _update(table, job_id, "ready", steps, sha=sha, bundle_id=bundle_id)
+        steps[2]["state"] = "done"; _update(table, job_id, "ready", steps, expires_at=expires_at, sha=sha, bundle_id=bundle_id)
 
 
 def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
@@ -100,6 +111,13 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             try: job_id = str(json.loads(message["body"])["job_id"])
             except Exception: pass
             if job_id:
-                _update(table, job_id, "error", [], error={"message": "build failed", "kind": "build_failed"})
-            failures.append({"itemIdentifier": message.get("messageId", "")})
+                try:
+                    existing = table.get_item(Key={"job_id": job_id}).get("Item") or {}
+                    _update(table, job_id, "error", [], expires_at=existing.get("expires_at"),
+                            error={"message": "build failed", "kind": "build_failed"})
+                except Exception:
+                    pass
+            message_id = message.get("messageId")
+            if message_id:
+                failures.append({"itemIdentifier": message_id})
     return {"batchItemFailures": failures}
