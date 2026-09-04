@@ -6,13 +6,19 @@ Parameters:
   ExplorerOrigin:
     Type: String
     Description: Exact Explorer origin allowed to call the API, for example https://lachesis.unboundcompute.com.
+    AllowedPattern: '^https://[A-Za-z0-9.-]+(:[0-9]+)?$'
+    ConstraintDescription: ExplorerOrigin must be a single HTTPS origin without a path, query, or wildcard.
   WorkerImageUri:
     Type: String
     Description: ECR URI for the worker image containing git, Lachesis, and its language toolchains.
+    MinLength: 1
+    ConstraintDescription: WorkerImageUri must reference an immutable worker image.
   AlertTopicArn:
     Type: String
     Default: ''
     Description: Optional SNS topic ARN for hosted service alarms.
+    AllowedPattern: '^$|^arn:[A-Za-z0-9-]+:sns:[A-Za-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]+$'
+    ConstraintDescription: AlertTopicArn must be empty or a valid regional SNS topic ARN.
 
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref AlertTopicArn, '']]
