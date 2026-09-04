@@ -19,10 +19,19 @@ except ImportError:
     from .verify_bundle import validate_file
 
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
+DEFAULT_MAX_REPOSITORY_FILES = 5_000
 
 
 class JobStopped(Exception):
     """The job was cancelled or changed state while the worker was running."""
+
+
+class RepositoryTooLarge(Exception):
+    """The checked-out repository exceeds the hosted service file limit."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__(f"repository exceeds the hosted limit of {limit} tracked files")
+        self.limit = limit
 
 
 def _run(args: list[str], cwd: str | None = None, timeout: int = 60, capture_stdout: bool = True) -> str:
@@ -94,6 +103,19 @@ def _sha(url: str, ref: str) -> str:
     if not SHA_RE.fullmatch(candidate):
         raise RuntimeError("ref could not be resolved")
     return candidate.lower()
+
+
+def _repository_file_limit() -> int:
+    return max(1, int(os.environ.get("MAX_REPOSITORY_FILES", str(DEFAULT_MAX_REPOSITORY_FILES))))
+
+
+def _enforce_repository_file_limit(path: str) -> None:
+    """Reject oversized trees before invoking any analyzer process."""
+    output = _run(["git", "ls-files", "-z"], cwd=path, timeout=30)
+    count = sum(1 for entry in output.split("\0") if entry)
+    limit = _repository_file_limit()
+    if count > limit:
+        raise RepositoryTooLarge(limit)
 
 
 def _repo_name(url: str) -> str:
@@ -170,6 +192,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         _run(["git", "clone", "--depth", "1", "--no-tags", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", "-c", "filter.lfs.smudge=--skip", "-c", "filter.lfs.required=false", url, work], timeout=180, capture_stdout=False)
         _run(["git", "fetch", "--depth", "1", "origin", sha], cwd=work, timeout=120, capture_stdout=False)
         _run(["git", "checkout", "--detach", sha], cwd=work, timeout=30, capture_stdout=False)
+        _enforce_repository_file_limit(work)
         steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, expires_at=expires_at, expected_statuses={"cloning"}, sha=sha)
         graph = os.path.join(work, "graph.kuzu")
         _run(["lachesis", "build", work, graph, "--timeout", os.environ.get("BUILD_TIMEOUT_SECONDS", "600")], timeout=660, capture_stdout=False)
@@ -204,6 +227,19 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         try:
             _process(json.loads(message["body"]), table, storage)
         except JobStopped:
+            continue
+        except RepositoryTooLarge as error:
+            job_id = ""
+            try: job_id = str(json.loads(message["body"])["job_id"])
+            except Exception: pass
+            if job_id:
+                try:
+                    existing = table.get_item(Key={"job_id": job_id}).get("Item") or {}
+                    _update(table, job_id, "too_large", [], expires_at=existing.get("expires_at"),
+                            error={"message": f"Repository exceeds the hosted limit of {error.limit} tracked files.",
+                                   "kind": "file_limit"})
+                except Exception:
+                    pass
             continue
         except Exception:
             job_id = ""

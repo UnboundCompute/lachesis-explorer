@@ -35,6 +35,18 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(env["GIT_CONFIG_NOSYSTEM"], "1")
         self.assertEqual(env["GIT_CONFIG_GLOBAL"], worker.os.devnull)
 
+    def test_repository_file_limit_accepts_the_launch_cap(self):
+        with patch.object(worker, "_run", return_value="\0".join(f"src/{index}.py" for index in range(5_000)) + "\0"), \
+             patch.dict(worker.os.environ, {"MAX_REPOSITORY_FILES": "5000"}):
+            worker._enforce_repository_file_limit("/tmp/repository")
+
+    def test_repository_file_limit_rejects_an_oversized_tree(self):
+        with patch.object(worker, "_run", return_value="\0".join(f"src/{index}.py" for index in range(5_001)) + "\0"), \
+             patch.dict(worker.os.environ, {"MAX_REPOSITORY_FILES": "5000"}):
+            with self.assertRaises(worker.RepositoryTooLarge) as raised:
+                worker._enforce_repository_file_limit("/tmp/repository")
+        self.assertEqual(raised.exception.limit, 5_000)
+
     def test_ready_job_is_idempotent(self):
         table = Mock()
         table.get_item.return_value = {"Item": {"job_id": "j_12345678", "status": "ready"}}
@@ -128,6 +140,23 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(result, {"batchItemFailures": []})
         clients.resource.assert_called_once_with("dynamodb")
         clients.client.assert_called_once_with("s3")
+
+    def test_handler_marks_file_limit_as_terminal_without_retry(self):
+        table = Mock()
+        table.get_item.return_value = {"Item": {"job_id": "j_12345678", "expires_at": 123}}
+        clients = Mock()
+        clients.resource.return_value.Table.return_value = table
+        clients.client.return_value = Mock()
+        event = {"Records": [{"messageId": "message-1", "body": '{"job_id":"j_12345678"}'}]}
+
+        with patch.object(worker, "_process", side_effect=worker.RepositoryTooLarge(5_000)), \
+             patch.dict(worker.os.environ, {"JOBS_TABLE": "jobs"}), patch.dict("sys.modules", {"boto3": clients}):
+            result = worker.handler(event, None)
+
+        self.assertEqual(result, {"batchItemFailures": []})
+        update = table.update_item.call_args.kwargs["ExpressionAttributeValues"]
+        self.assertEqual(update[":status"], "too_large")
+        self.assertEqual(update[":error"]["kind"], "file_limit")
 
 
 if __name__ == "__main__":

@@ -69,6 +69,7 @@ deployment. Prefer a same-origin reverse proxy when the hosting platform support
 
 - [ ] Submit one small public repository and observe queued → cloning → building → exporting →
   ready in the API and CloudWatch logs.
+- [ ] Confirm a repository above 5,000 tracked files terminates as `too_large` before analysis.
 - [ ] Confirm the returned bundle validates as graph-first schema version 2.
 - [ ] Confirm cancellation leaves no published bundle and that a cancelled job is not restarted.
 - [ ] Confirm a repeated build uses the private cache while publishing a fresh opaque bundle ID.
