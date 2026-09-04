@@ -996,6 +996,25 @@ export default function Page() {
     }
   }
 
+  async function openRecentHostedBundle(bundleId: string) {
+    if (importBusy.current) return;
+    importBusy.current = true;
+    setLoadState({ type: "loading", message: "Reopening the hosted bundle…" });
+    try {
+      const raw = await loadHostedBundle(bundleId);
+      activate(normalize(raw), false, "hosted", bundleId);
+      trackEvent("recent_hosted_bundle_reopened");
+    } catch (error) {
+      setLoadState({
+        type: "error",
+        message: `${error instanceof Error ? error.message : "Could not reopen the hosted bundle"} The current bundle was kept.`,
+      });
+      trackEvent("bundle_load_failed");
+    } finally {
+      importBusy.current = false;
+    }
+  }
+
   async function loadCodeSample() {
     if (importBusy.current) return;
     importBusy.current = true;
@@ -1117,6 +1136,7 @@ export default function Page() {
         dark={dark}
         setDark={setDark}
         recentBundles={recentBundles}
+        onOpenRecent={openRecentHostedBundle}
         canGoBack={navigation.canBack}
         canGoForward={navigation.canForward}
         onGoBack={() => window.history.back()}

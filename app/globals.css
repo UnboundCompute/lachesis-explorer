@@ -594,3 +594,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .step-nav-hint {
   font-size: 8px;
 }
+.recent-bundle-action{width:100%;color:inherit;background:transparent;text-align:left;font:inherit;cursor:pointer}.recent-bundle-action:hover,.recent-bundle-action:focus-visible{background:var(--wash);outline:none}

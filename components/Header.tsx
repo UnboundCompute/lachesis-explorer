@@ -7,7 +7,7 @@ import { trackEvent } from '../lib/analytics'
 
 type View = 'home' | 'trace' | 'journey' | 'investigate' | 'map' | 'compare' | 'install'
 export type RecentBundle = { name: string; language: string; commit: string; lines: number; flows: number; loadedAt: number; bundleId?: string }
-type Props = { view: View; setView: (view: View) => void; app: App; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[]; canGoBack: boolean; canGoForward: boolean; onGoBack: () => void; onGoForward: () => void }
+type Props = { view: View; setView: (view: View) => void; app: App; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[]; onOpenRecent: (bundleId: string) => void; canGoBack: boolean; canGoForward: boolean; onGoBack: () => void; onGoForward: () => void }
 
 const primary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'home', label: 'Understand', detail: 'Start with a question' },
@@ -21,7 +21,7 @@ const secondary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'install', label: 'Setup', detail: 'Build graphs locally' },
 ]
 
-export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles, canGoBack, canGoForward, onGoBack, onGoForward }: Props) {
+export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles, onOpenRecent, canGoBack, canGoForward, onGoBack, onGoForward }: Props) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [mobileLensOpen, setMobileLensOpen] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)
@@ -236,7 +236,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
                 {recentBundles.length > 0 && (
                   <div className="recent-bundles">
                     <span className="menu-title">RECENT METADATA · LOCAL ONLY</span>
-                    {recentBundles.map(item => <div className="recent-bundle" key={`${item.name}:${item.commit}`}><span><b>{item.name}</b><small>{item.language} · {item.commit}</small></span><em>{countLabel(item.flows, 'flow')}</em></div>)}
+                    {recentBundles.map(item => item.bundleId ? <button type="button" className="recent-bundle recent-bundle-action" key={`${item.name}:${item.commit}`} onClick={() => { setMenu(false); onOpenRecent(item.bundleId!) }}><span><b>{item.name}</b><small>{item.language} · {item.commit}</small></span><em>{countLabel(item.flows, 'flow')}</em></button> : <div className="recent-bundle" key={`${item.name}:${item.commit}`}><span><b>{item.name}</b><small>{item.language} · {item.commit}</small></span><em>{countLabel(item.flows, 'flow')}</em></div>)}
                   </div>
                 )}
                 <button type="button" className="upload-action" onClick={() => { setMenu(false); onUpload(); trackEvent('bundle_upload_started') }}><span>Load another bundle</span><span className="button-icon"><Icon name="upload" size={14} /></span></button>
