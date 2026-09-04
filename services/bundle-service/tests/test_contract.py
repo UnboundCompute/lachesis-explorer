@@ -55,6 +55,20 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         aws.assert_not_called()
 
+    def test_missing_bundle_is_an_expired_link_response(self):
+        class Missing(Exception):
+            response = {"Error": {"Code": "NoSuchKey"}}
+
+        class Storage:
+            def get_object(self, **_kwargs): raise Missing()
+
+        with patch.object(handler, "_aws", return_value=(object(), object(), Storage())), patch.dict(handler.os.environ, {"BUNDLE_BUCKET": "bucket"}):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "GET"}},
+                "rawPath": "/api/bundles/b_12345678",
+            }, None)
+        self.assertEqual(response["statusCode"], 404)
+
 
 if __name__ == "__main__":
     unittest.main()

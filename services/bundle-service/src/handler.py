@@ -88,7 +88,13 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             if not valid_opaque_id(bundle_id, "b"):
                 return _response(400, {"error": {"message": "bundle_id is invalid"}})
             _jobs, _queue, storage = _aws()
-            obj = storage.get_object(Bucket=os.environ["BUNDLE_BUCKET"], Key=f"bundles/{bundle_id}.json")
+            try:
+                obj = storage.get_object(Bucket=os.environ["BUNDLE_BUCKET"], Key=f"bundles/{bundle_id}.json")
+            except Exception as error:
+                error_code = str(getattr(error, "response", {}).get("Error", {}).get("Code", ""))
+                if error_code in {"404", "NoSuchKey", "NoSuchBucket"}:
+                    return _response(404, {"error": {"message": "hosted bundle not found or expired"}})
+                raise
             if int(obj.get("ContentLength", 0)) > MAX_RESPONSE_BYTES:
                 return _response(413, {"error": {"message": "bundle is too large for direct API delivery"}})
             allowed = os.environ.get("EXPLORER_ORIGIN", "")
