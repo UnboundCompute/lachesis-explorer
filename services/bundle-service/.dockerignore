@@ -1,0 +1,6 @@
+*
+!src/
+!src/contract.py
+!src/worker.py
+!worker/
+!worker/Dockerfile

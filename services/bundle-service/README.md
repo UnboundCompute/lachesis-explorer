@@ -7,8 +7,8 @@ URLs, analytics properties, or user-facing errors.
 
 ## Deployment outline
 
-1. Build and push a worker image containing `git`, the supported Lachesis toolchains, and the
-   `lachesis` executable. The image must run `src/worker.py` as its Lambda handler.
+1. Build and push `worker/Dockerfile` with a pinned `LACHESIS_WHEEL_URL`. The image installs `git`,
+   Clang, Node, the supported Lachesis toolchains, and runs `worker.handler`.
 2. Build/deploy `template.yaml` with SAM, supplying the exact Explorer origin and worker ECR URI.
 3. Set `NEXT_PUBLIC_BUNDLE_API_URL` in Explorer to the stack's `ApiUrl` output, or put the API
    behind a same-origin reverse proxy.
