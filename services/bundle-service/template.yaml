@@ -47,6 +47,7 @@ Resources:
         AllowOrigins: [!Ref ExplorerOrigin]
         AllowHeaders: [content-type]
         AllowMethods: [GET, POST, OPTIONS]
+      DefaultRouteSettings: { ThrottlingBurstLimit: 10, ThrottlingRateLimit: 2 }
 
   ApiFunction:
     Type: AWS::Serverless::Function

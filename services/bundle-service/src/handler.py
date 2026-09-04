@@ -13,6 +13,7 @@ except ImportError:
     from .contract import canonical_git_url, opaque_id, valid_opaque_id, valid_ref
 
 MAX_RESPONSE_BYTES = 5 * 1024 * 1024
+MAX_REQUEST_BYTES = 64 * 1024
 
 
 def _aws():
@@ -34,6 +35,8 @@ def _json(event: dict[str, Any]) -> dict[str, Any]:
     raw = event.get("body") or "{}"
     if event.get("isBase64Encoded"):
         raw = base64.b64decode(raw).decode("utf-8")
+    if len(raw.encode("utf-8")) > MAX_REQUEST_BYTES:
+        raise ValueError("request body is too large")
     value = json.loads(raw)
     if not isinstance(value, dict):
         raise ValueError("request body must be a JSON object")

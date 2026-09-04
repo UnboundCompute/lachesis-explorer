@@ -69,6 +69,16 @@ class ContractTests(unittest.TestCase):
             }, None)
         self.assertEqual(response["statusCode"], 404)
 
+    def test_build_request_rejects_oversized_body_before_aws_access(self):
+        with patch.object(handler, "_aws") as aws:
+            response = handler.handler({
+                "requestContext": {"http": {"method": "POST"}},
+                "rawPath": "/api/build",
+                "body": "x" * (handler.MAX_REQUEST_BYTES + 1),
+            }, None)
+        self.assertEqual(response["statusCode"], 400)
+        aws.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
