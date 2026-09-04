@@ -53,6 +53,12 @@ PYTHONPATH=services/bundle-service python3 -m unittest discover -s services/bund
 sam validate --template-file services/bundle-service/template.yaml --region us-east-1 --lint
 ```
 
+After deployment, run the API smoke test with the stack URL and a known bundle ID:
+
+```bash
+node services/bundle-service/smoke-hosted.mjs https://api.example.com b_12345678
+```
+
 The worker runs a dependency-free graph-first contract check immediately before uploading an
 artifact. The frontend still performs its full bundle verifier check when loading the artifact.
 
