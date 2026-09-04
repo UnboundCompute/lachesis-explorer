@@ -29,6 +29,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test:browser": "node scripts/smoke-browser.mjs",
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && node scripts/verify-bundles.mjs && next build",
     "verify:bundles": "node scripts/verify-bundles.mjs"
