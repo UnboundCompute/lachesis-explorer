@@ -32,5 +32,17 @@ The worker intentionally caps direct bundle delivery at 5 MiB because API Gatewa
 limits are lower than the Explorer's general 25 MiB import guard. Larger bundles need a future
 opaque CDN delivery endpoint with its own access policy.
 
+## Local verification
+
+Run the service contract and worker tests from the Explorer repository root:
+
+```bash
+PYTHONPATH=services/bundle-service python3 -m unittest discover -s services/bundle-service/tests -v
+sam validate --template-file services/bundle-service/template.yaml --region us-east-1 --lint
+```
+
+The worker runs a dependency-free graph-first contract check immediately before uploading an
+artifact. The frontend still performs its full bundle verifier check when loading the artifact.
+
 This is the deployment foundation; production launch still requires AWS quota review, container
 image hardening, monitoring/alerts, domain/TLS setup, and an end-to-end deployed smoke test.

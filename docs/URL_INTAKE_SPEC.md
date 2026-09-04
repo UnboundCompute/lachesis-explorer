@@ -153,7 +153,7 @@ The Lambda container worker:
    SHA.
 2. Runs the Lachesis graph build with a subprocess timeout below the platform timeout.
 3. Runs `lachesis trace <source> --out /tmp/bundle.json` or the final equivalent exporter command.
-4. Validates the output with `pnpm run verify:bundles -- /tmp/bundle.json`.
+4. Validates the output with the dependency-free publish-time v2 contract validator before upload.
 5. Uploads the exported bundle and optionally the `.kuzu` graph to private storage.
 6. Publishes a bundle ID and updates the job to `ready`.
 
