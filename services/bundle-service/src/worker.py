@@ -10,8 +10,6 @@ import time
 from typing import Any
 from urllib.parse import urlsplit
 
-import boto3
-
 try:  # Lambda loads this directory as the module root; tests may load it as a package.
     from contract import canonical_git_url, opaque_id, valid_ref
     from verify_bundle import validate_file
