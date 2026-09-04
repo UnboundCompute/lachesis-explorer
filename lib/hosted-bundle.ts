@@ -6,11 +6,14 @@ function serviceUrl(path: string) {
   if (!base) return path;
   try {
     const parsed = new URL(base);
+    if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+      throw new Error("Hosted bundle API configuration must be an origin and path only.");
+    }
     if (parsed.protocol !== "https:" && process.env.NODE_ENV === "production") {
       throw new Error("Hosted bundle API must use HTTPS in production.");
     }
   } catch (error) {
-    if (error instanceof Error && error.message.includes("must use HTTPS")) throw error;
+    if (error instanceof Error && (error.message.includes("must use HTTPS") || error.message.includes("origin and path"))) throw error;
     throw new Error("Hosted bundle API configuration is invalid.");
   }
   return `${base}${path}`;
