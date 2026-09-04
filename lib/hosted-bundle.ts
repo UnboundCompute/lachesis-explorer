@@ -27,11 +27,16 @@ function parseJson(text: string) {
   }
 }
 
+function requestSignal(signal?: AbortSignal) {
+  const timeout = AbortSignal.timeout(30_000);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
 export async function loadHostedBundle(bundleId: string, signal?: AbortSignal) {
   if (!BUNDLE_ID.test(bundleId)) throw new Error("This hosted bundle link is invalid.");
   const response = await fetch(serviceUrl(`/api/bundles/${encodeURIComponent(bundleId)}`), {
     redirect: "error",
-    signal,
+    signal: requestSignal(signal),
     headers: { Accept: "application/json" },
   });
   if (!response.ok) {
@@ -110,7 +115,7 @@ export async function submitHostedBuild(gitUrl: string, ref: string, signal?: Ab
   const response = await fetch(serviceUrl("/api/build"), {
     method: "POST",
     redirect: "error",
-    signal,
+    signal: requestSignal(signal),
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify({ git_url: gitUrl, ...(ref ? { ref } : {}) }),
   });
@@ -120,7 +125,7 @@ export async function submitHostedBuild(gitUrl: string, ref: string, signal?: Ab
 
 export async function getHostedBuildStatus(jobId: string, signal?: AbortSignal): Promise<BuildResponse> {
   if (!/^j_[A-Za-z0-9_-]{8,128}$/.test(jobId)) throw new Error("The build job ID is invalid.");
-  const response = await fetch(serviceUrl(`/api/build/${encodeURIComponent(jobId)}`), { redirect: "error", signal, headers: { Accept: "application/json" } });
+  const response = await fetch(serviceUrl(`/api/build/${encodeURIComponent(jobId)}`), { redirect: "error", signal: requestSignal(signal), headers: { Accept: "application/json" } });
   if (!response.ok) throw await requestError(response, `The build status could not be read (HTTP ${response.status}).`);
   return (await responseJson(response)) as BuildResponse;
 }
@@ -128,7 +133,7 @@ export async function getHostedBuildStatus(jobId: string, signal?: AbortSignal):
 export async function cancelHostedBuild(jobId: string, signal?: AbortSignal): Promise<BuildResponse> {
   if (!/^j_[A-Za-z0-9_-]{8,128}$/.test(jobId)) throw new Error("The build job ID is invalid.");
   const response = await fetch(serviceUrl(`/api/build/${encodeURIComponent(jobId)}/cancel`), {
-    method: "POST", redirect: "error", signal, headers: { Accept: "application/json" },
+    method: "POST", redirect: "error", signal: requestSignal(signal), headers: { Accept: "application/json" },
   });
   if (!response.ok) throw await requestError(response, `The build could not be cancelled (HTTP ${response.status}).`);
   return (await responseJson(response)) as BuildResponse;
