@@ -94,7 +94,7 @@ Resources:
       ReservedConcurrentExecutions: 2
       Events: { Build: { Type: SQS, Properties: { Queue: !GetAtt BuildQueue.Arn, BatchSize: 1, FunctionResponseTypes: [ReportBatchItemFailures] } } }
       Environment:
-        Variables: { JOBS_TABLE: !Ref JobsTable, BUNDLE_BUCKET: !Ref BundleBucket, BUILD_TIMEOUT_SECONDS: '600' }
+        Variables: { JOBS_TABLE: !Ref JobsTable, BUNDLE_BUCKET: !Ref BundleBucket, BUILD_TIMEOUT_SECONDS: '600', LACHESIS_CACHE_VERSION: 'lachesis-0.4.2|explorer-2.0' }
       Policies:
         - DynamoDBCrudPolicy: { TableName: !Ref JobsTable }
         - S3WritePolicy: { BucketName: !Ref BundleBucket }

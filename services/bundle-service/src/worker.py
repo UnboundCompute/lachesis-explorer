@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
 import subprocess
@@ -112,6 +113,37 @@ def _source_template(url: str) -> str | None:
     return None
 
 
+def _cache_key(url: str, sha: str) -> str:
+    identity = "|".join((
+        url,
+        sha,
+        os.environ.get("LACHESIS_CACHE_VERSION", "lachesis-0.4.2|explorer-2.0"),
+        os.environ.get("BUILD_TIMEOUT_SECONDS", "600"),
+    ))
+    return f"cache/{hashlib.sha256(identity.encode('utf-8')).hexdigest()}.json"
+
+
+def _cache_exists(storage: Any, bucket: str, key: str) -> bool:
+    try:
+        storage.head_object(Bucket=bucket, Key=key)
+        return True
+    except Exception as error:
+        code = str(getattr(error, "response", {}).get("Error", {}).get("Code", ""))
+        if code in {"404", "NoSuchKey", "NotFound"}:
+            return False
+        raise
+
+
+def _copy_bundle(storage: Any, bucket: str, source_key: str, bundle_id: str) -> None:
+    storage.copy_object(
+        CopySource={"Bucket": bucket, "Key": source_key},
+        Bucket=bucket,
+        Key=f"bundles/{bundle_id}.json",
+        MetadataDirective="COPY",
+        ServerSideEncryption="AES256",
+    )
+
+
 def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     job_id = str(job["job_id"])
     record = table.get_item(Key={"job_id": job_id}).get("Item") or {}
@@ -120,10 +152,19 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     url = canonical_git_url(record.get("git_url"))
     ref = valid_ref(record.get("ref"))
     expires_at = record.get("expires_at")
+    bucket = os.environ["BUNDLE_BUCKET"]
     steps = [{"key": key, "state": "pending"} for key in ("clone", "build", "export")]
     with tempfile.TemporaryDirectory(prefix="lachesis-job-") as work:
         sha = _sha(url, ref)
         if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
+            return
+        cache_key = _cache_key(url, sha)
+        if _cache_exists(storage, bucket, cache_key):
+            bundle_id = opaque_id("b")
+            _copy_bundle(storage, bucket, cache_key, bundle_id)
+            done_steps = [{"key": key, "state": "done"} for key in ("clone", "build", "export")]
+            _update(table, job_id, "ready", done_steps, expires_at=expires_at,
+                    expected_statuses={"queued"}, sha=sha, bundle_id=bundle_id, cache_hit=True)
             return
         steps[0]["state"] = "active"; _update(table, job_id, "cloning", steps, expires_at=expires_at, expected_statuses={"queued"}, sha=sha)
         _run(["git", "clone", "--depth", "1", "--no-tags", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", "-c", "filter.lfs.smudge=--skip", "-c", "filter.lfs.required=false", url, work], timeout=180, capture_stdout=False)
@@ -148,7 +189,8 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
             raise RuntimeError("bundle exceeds direct API response limit")
         validate_file(bundle)
         bundle_id = opaque_id("b")
-        storage.upload_file(bundle, os.environ["BUNDLE_BUCKET"], f"bundles/{bundle_id}.json", ExtraArgs={"ContentType": "application/json", "ServerSideEncryption": "AES256"})
+        storage.upload_file(bundle, bucket, cache_key, ExtraArgs={"ContentType": "application/json", "ServerSideEncryption": "AES256"})
+        _copy_bundle(storage, bucket, cache_key, bundle_id)
         steps[2]["state"] = "done"; _update(table, job_id, "ready", steps, expires_at=expires_at, expected_statuses={"exporting"}, sha=sha, bundle_id=bundle_id)
 
 

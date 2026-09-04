@@ -64,6 +64,9 @@ class WorkerTests(unittest.TestCase):
             "ref": "main", "expires_at": 123,
         }}
         storage = Mock()
+        class Missing(Exception):
+            response = {"Error": {"Code": "NotFound"}}
+        storage.head_object.side_effect = Missing()
         commands = []
 
         def run(args, **_kwargs):
@@ -79,6 +82,15 @@ class WorkerTests(unittest.TestCase):
         self.assertIn("--schema-version", trace)
         validate.assert_called_once()
         storage.upload_file.assert_called_once()
+        storage.copy_object.assert_called_once()
+
+    def test_cache_key_is_opaque_and_changes_with_cache_version(self):
+        with patch.dict(worker.os.environ, {"LACHESIS_CACHE_VERSION": "one"}):
+            first = worker._cache_key("https://github.com/owner/repo.git", "a" * 40)
+        with patch.dict(worker.os.environ, {"LACHESIS_CACHE_VERSION": "two"}):
+            second = worker._cache_key("https://github.com/owner/repo.git", "a" * 40)
+        self.assertNotEqual(first, second)
+        self.assertRegex(first, r"^cache/[0-9a-f]{64}\.json$")
 
     def test_handler_creates_aws_clients_lazily(self):
         clients = Mock()
