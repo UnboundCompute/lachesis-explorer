@@ -189,6 +189,10 @@ export default function Page() {
   const navigationMaxDepth = useRef(0);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
 
+  useEffect(() => () => {
+    buildController.current?.abort();
+  }, []);
+
   function initializeNavigation() {
     const state = window.history.state;
     const depth = state?.lachesis === true && Number.isFinite(state.depth) ? state.depth : 0;
