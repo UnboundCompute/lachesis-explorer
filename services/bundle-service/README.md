@@ -7,6 +7,8 @@ URLs, analytics properties, or user-facing errors.
 
 ## Deployment outline
 
+For the complete release gate, use [`docs/PRODUCTION_READINESS.md`](../../docs/PRODUCTION_READINESS.md).
+
 1. Build and push `worker/Dockerfile` with a pinned `LACHESIS_WHEEL_URL`. The image installs `git`,
    Clang, Node, the supported Lachesis toolchains, and runs `worker.handler`.
 2. Build/deploy `template.yaml` with SAM, supplying the exact Explorer origin and worker ECR URI.
