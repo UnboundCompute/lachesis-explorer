@@ -22,6 +22,7 @@ async function request(path, options) {
   const response = await fetch(target, {
     redirect: "error",
     headers: { Accept: "application/json", ...(options?.headers ?? {}) },
+    signal: options?.signal ?? AbortSignal.timeout(30_000),
     ...options,
   });
   const body = await response.json().catch(() => null);
