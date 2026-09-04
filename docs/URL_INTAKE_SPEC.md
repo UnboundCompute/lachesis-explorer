@@ -80,6 +80,11 @@ The resolution endpoint must validate the ID format, enforce access/link policy,
 artifact with a bounded size. If direct artifact fetches are used, the service may issue a
 short-lived URL, but that URL must never enter browser history or recent-bundle storage.
 
+The default contract is `GET /api/bundles/{bundle_id}` returning the bundle JSON directly with
+`Content-Type: application/json`. This keeps the browser unaware of storage URLs and avoids
+redirect-based loading. A separate signed artifact URL is an optional internal optimization, not
+part of the Explorer URL contract.
+
 ### Git build and polling
 
 Request:
