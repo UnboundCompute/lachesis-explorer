@@ -96,6 +96,16 @@ async function requestError(response: Response, fallback: string) {
   return new HostedRequestError(body?.error?.message || fallback, getRetryAfterMs(response));
 }
 
+async function responseJson(response: Response) {
+  try {
+    const body = await response.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error();
+    return body as Record<string, unknown>;
+  } catch {
+    throw new Error("The hosted bundle service returned an invalid response.");
+  }
+}
+
 export async function submitHostedBuild(gitUrl: string, ref: string, signal?: AbortSignal): Promise<BuildResponse> {
   const response = await fetch(serviceUrl("/api/build"), {
     method: "POST",
@@ -105,16 +115,14 @@ export async function submitHostedBuild(gitUrl: string, ref: string, signal?: Ab
     body: JSON.stringify({ git_url: gitUrl, ...(ref ? { ref } : {}) }),
   });
   if (!response.ok) throw await requestError(response, `The build request failed (HTTP ${response.status}).`);
-  const body = await response.json().catch(() => ({}));
-  return body as BuildResponse;
+  return (await responseJson(response)) as BuildResponse;
 }
 
 export async function getHostedBuildStatus(jobId: string, signal?: AbortSignal): Promise<BuildResponse> {
   if (!/^j_[A-Za-z0-9_-]{8,128}$/.test(jobId)) throw new Error("The build job ID is invalid.");
   const response = await fetch(serviceUrl(`/api/build/${encodeURIComponent(jobId)}`), { redirect: "error", signal, headers: { Accept: "application/json" } });
   if (!response.ok) throw await requestError(response, `The build status could not be read (HTTP ${response.status}).`);
-  const body = await response.json().catch(() => ({}));
-  return body as BuildResponse;
+  return (await responseJson(response)) as BuildResponse;
 }
 
 export async function cancelHostedBuild(jobId: string, signal?: AbortSignal): Promise<BuildResponse> {
@@ -123,5 +131,5 @@ export async function cancelHostedBuild(jobId: string, signal?: AbortSignal): Pr
     method: "POST", redirect: "error", signal, headers: { Accept: "application/json" },
   });
   if (!response.ok) throw await requestError(response, `The build could not be cancelled (HTTP ${response.status}).`);
-  return (await response.json().catch(() => ({}))) as BuildResponse;
+  return (await responseJson(response)) as BuildResponse;
 }
