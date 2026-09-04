@@ -28,6 +28,8 @@ sam deploy --guided --template-file .aws-sam/build/template.yaml
 
 The stack retains API and worker logs for 30 days and creates four CloudWatch alarms. Alarm
 notifications are disabled until `AlertTopicArn` is supplied; configure that topic before launch.
+Hosted build submissions are limited to five per source IP per hour using an expiring hashed
+DynamoDB bucket; the raw IP address is never stored by the application.
 
 The wheel URL must be immutable and match the exporter version used in the cache identity. Do not
 use a floating `latest` image or wheel in production.

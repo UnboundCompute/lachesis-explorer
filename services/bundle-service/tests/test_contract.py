@@ -29,6 +29,7 @@ class ContractTests(unittest.TestCase):
         class Table:
             def __init__(self): self.item = None
             def put_item(self, **kwargs): self.item = kwargs["Item"]
+            def update_item(self, **_kwargs): pass
 
         class Queue:
             def send_message(self, **_kwargs): pass
@@ -46,10 +47,33 @@ class ContractTests(unittest.TestCase):
         self.assertIn("expires_at", table.item)
         self.assertTrue(body["job_id"].startswith("j_"))
 
+    def test_build_request_enforces_the_hourly_quota(self):
+        class LimitReached(Exception):
+            response = {"Error": {"Code": "ConditionalCheckFailedException"}}
+
+        class Table:
+            def update_item(self, **_kwargs): raise LimitReached()
+
+        class Queue:
+            def send_message(self, **_kwargs): self.sent = True
+
+        table = Table()
+        with patch.object(handler, "_aws", return_value=(table, Queue(), object())), patch.dict(
+            handler.os.environ, {"BUILD_RATE_LIMIT": "5"}
+        ):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "POST", "sourceIp": "203.0.113.4"}},
+                "rawPath": "/api/build",
+                "body": json.dumps({"git_url": "https://github.com/GNOME/libxml2", "ref": "main"}),
+            }, None)
+        self.assertEqual(response["statusCode"], 429)
+        self.assertIn("retry-after", response["headers"])
+
     def test_build_request_marks_job_failed_when_queueing_fails(self):
         class Table:
             def __init__(self): self.items = []
             def put_item(self, **kwargs): self.items.append(kwargs["Item"])
+            def update_item(self, **_kwargs): pass
 
         class Queue:
             def send_message(self, **_kwargs): raise RuntimeError("queue unavailable")

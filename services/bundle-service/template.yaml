@@ -75,7 +75,7 @@ Resources:
         BuildStatus: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/build/{job_id}', Method: GET } }
         Bundle: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/bundles/{bundle_id}', Method: GET } }
       Environment:
-        Variables: { JOBS_TABLE: !Ref JobsTable, BUILD_QUEUE_URL: !Ref BuildQueue, BUNDLE_BUCKET: !Ref BundleBucket, EXPLORER_ORIGIN: !Ref ExplorerOrigin }
+        Variables: { JOBS_TABLE: !Ref JobsTable, BUILD_QUEUE_URL: !Ref BuildQueue, BUNDLE_BUCKET: !Ref BundleBucket, EXPLORER_ORIGIN: !Ref ExplorerOrigin, BUILD_RATE_LIMIT: '5' }
       Policies:
         - DynamoDBCrudPolicy: { TableName: !Ref JobsTable }
         - SQSSendMessagePolicy: { QueueName: !GetAtt BuildQueue.QueueName }

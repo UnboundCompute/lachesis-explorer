@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import hashlib
 import json
 import os
 import time
@@ -15,6 +16,7 @@ except ImportError:
 
 MAX_RESPONSE_BYTES = 5 * 1024 * 1024
 MAX_REQUEST_BYTES = 64 * 1024
+DEFAULT_BUILD_RATE_LIMIT = 5
 
 
 def _aws():
@@ -57,6 +59,35 @@ def _job_view(item: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _source_ip(event: dict[str, Any]) -> str:
+    context = event.get("requestContext") or {}
+    http = context.get("http") or {}
+    identity = context.get("identity") or {}
+    return str(http.get("sourceIp") or identity.get("sourceIp") or "unknown")
+
+
+def _within_build_quota(jobs: Any, event: dict[str, Any]) -> bool:
+    """Consume one hourly quota slot without storing the caller's raw IP."""
+    now = int(time.time())
+    window = now // 3600
+    digest = hashlib.sha256(_source_ip(event).encode("utf-8")).hexdigest()
+    bucket_id = f"rate_{digest}_{window}"
+    limit = max(1, int(os.environ.get("BUILD_RATE_LIMIT", str(DEFAULT_BUILD_RATE_LIMIT))))
+    try:
+        jobs.update_item(
+            Key={"job_id": bucket_id},
+            UpdateExpression="SET request_count = if_not_exists(request_count, :zero) + :one, expires_at = :expires_at",
+            ConditionExpression="attribute_not_exists(request_count) OR request_count < :limit",
+            ExpressionAttributeValues={":zero": 0, ":one": 1, ":limit": limit, ":expires_at": window + 7200},
+        )
+        return True
+    except Exception as error:
+        code = str(getattr(error, "response", {}).get("Error", {}).get("Code", ""))
+        if code == "ConditionalCheckFailedException":
+            return False
+        raise
+
+
 def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
     method = str(event.get("requestContext", {}).get("http", {}).get("method") or event.get("httpMethod") or "GET").upper()
     path = _path(event)
@@ -67,6 +98,10 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             ref = valid_ref(body.get("ref"))
             job_id = opaque_id("j")
             jobs, queue, _storage = _aws()
+            if not _within_build_quota(jobs, event):
+                retry_after = 3600 - (int(time.time()) % 3600)
+                return _response(429, {"error": {"message": "The hourly hosted build limit has been reached."}},
+                                 {"retry-after": str(retry_after)})
             expires_at = int(time.time()) + 3600
             steps = [{"key": "clone", "state": "pending"}, {"key": "build", "state": "pending"},
                      {"key": "export", "state": "pending"}]
