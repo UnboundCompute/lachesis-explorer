@@ -45,12 +45,15 @@ Resources:
 
   BuildDlq:
     Type: AWS::SQS::Queue
-    Properties: { MessageRetentionPeriod: 1209600 }
+    Properties:
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
 
   BuildQueue:
     Type: AWS::SQS::Queue
     Properties:
       VisibilityTimeout: 960
+      SqsManagedSseEnabled: true
       RedrivePolicy: { deadLetterTargetArn: !GetAtt BuildDlq.Arn, maxReceiveCount: 2 }
 
   BuildApi:

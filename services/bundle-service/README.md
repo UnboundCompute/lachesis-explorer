@@ -44,6 +44,8 @@ The worker intentionally caps direct bundle delivery at 5 MiB because API Gatewa
 limits are lower than the Explorer's general 25 MiB import guard. Larger bundles need a future
 opaque CDN delivery endpoint with its own access policy.
 
+The build queue and dead-letter queue use SQS-managed encryption at rest.
+
 ## Local verification
 
 Run the service contract and worker tests from the Explorer repository root:
