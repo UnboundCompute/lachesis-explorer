@@ -16,6 +16,16 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(item["expires_at"], 123)
         self.assertEqual(item["sha"], "a" * 40)
 
+    def test_git_commands_disable_prompts_and_global_configuration(self):
+        completed = Mock(returncode=0, stdout="", stderr="")
+        with patch.object(worker.subprocess, "run", return_value=completed) as run:
+            worker._run(["git", "ls-remote", "https://github.com/owner/repo.git", "main"])
+
+        env = run.call_args.kwargs["env"]
+        self.assertEqual(env["GIT_TERMINAL_PROMPT"], "0")
+        self.assertEqual(env["GIT_CONFIG_NOSYSTEM"], "1")
+        self.assertEqual(env["GIT_CONFIG_GLOBAL"], worker.os.devnull)
+
     def test_ready_job_is_idempotent(self):
         table = Mock()
         table.get_item.return_value = {"Item": {"job_id": "j_12345678", "status": "ready"}}

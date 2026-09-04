@@ -21,6 +21,14 @@ SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
 
 
 def _run(args: list[str], cwd: str | None = None, timeout: int = 60, capture_stdout: bool = True) -> str:
+    env = None
+    if args and args[0] == "git":
+        env = os.environ.copy()
+        env.update({
+            "GIT_TERMINAL_PROMPT": "0",
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+        })
     result = subprocess.run(
         args,
         cwd=cwd,
@@ -29,6 +37,7 @@ def _run(args: list[str], cwd: str | None = None, timeout: int = 60, capture_std
         text=True,
         timeout=timeout,
         check=False,
+        env=env,
     )
     if result.returncode != 0:
         raise RuntimeError("build step failed")
@@ -86,7 +95,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     with tempfile.TemporaryDirectory(prefix="lachesis-job-") as work:
         sha = _sha(url, ref)
         steps[0]["state"] = "active"; _update(table, job_id, "cloning", steps, expires_at=expires_at, sha=sha)
-        _run(["git", "clone", "--depth", "1", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", url, work], timeout=180, capture_stdout=False)
+        _run(["git", "clone", "--depth", "1", "--no-tags", "--no-recurse-submodules", "-c", "core.hooksPath=/dev/null", "-c", "filter.lfs.smudge=--skip", "-c", "filter.lfs.required=false", url, work], timeout=180, capture_stdout=False)
         _run(["git", "fetch", "--depth", "1", "origin", sha], cwd=work, timeout=120, capture_stdout=False)
         _run(["git", "checkout", "--detach", sha], cwd=work, timeout=30, capture_stdout=False)
         steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, expires_at=expires_at, sha=sha)
