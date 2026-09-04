@@ -46,6 +46,27 @@ class ContractTests(unittest.TestCase):
         self.assertIn("expires_at", table.item)
         self.assertTrue(body["job_id"].startswith("j_"))
 
+    def test_build_request_marks_job_failed_when_queueing_fails(self):
+        class Table:
+            def __init__(self): self.items = []
+            def put_item(self, **kwargs): self.items.append(kwargs["Item"])
+
+        class Queue:
+            def send_message(self, **_kwargs): raise RuntimeError("queue unavailable")
+
+        table = Table()
+        with patch.object(handler, "_aws", return_value=(table, Queue(), object())), patch.dict(
+            handler.os.environ, {"BUILD_QUEUE_URL": "queue"}
+        ):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "POST"}},
+                "rawPath": "/api/build",
+                "body": json.dumps({"git_url": "https://github.com/GNOME/libxml2", "ref": "main"}),
+            }, None)
+        self.assertEqual(response["statusCode"], 503)
+        self.assertEqual(table.items[-1]["status"], "error")
+        self.assertIn("expires_at", table.items[-1])
+
     def test_bundle_endpoint_rejects_non_opaque_ids_before_storage_access(self):
         with patch.object(handler, "_aws") as aws:
             response = handler.handler({

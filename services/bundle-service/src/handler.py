@@ -67,11 +67,22 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             ref = valid_ref(body.get("ref"))
             job_id = opaque_id("j")
             jobs, queue, _storage = _aws()
+            expires_at = int(time.time()) + 3600
+            steps = [{"key": "clone", "state": "pending"}, {"key": "build", "state": "pending"},
+                     {"key": "export", "state": "pending"}]
             jobs.put_item(Item={"job_id": job_id, "status": "queued", "git_url": git_url, "ref": ref,
-                                "expires_at": int(time.time()) + 3600,
-                                "steps": [{"key": "clone", "state": "pending"}, {"key": "build", "state": "pending"},
-                                           {"key": "export", "state": "pending"}]})
-            queue.send_message(QueueUrl=os.environ["BUILD_QUEUE_URL"], MessageBody=json.dumps({"job_id": job_id}))
+                                "expires_at": expires_at, "steps": steps})
+            try:
+                queue.send_message(QueueUrl=os.environ["BUILD_QUEUE_URL"], MessageBody=json.dumps({"job_id": job_id}))
+            except Exception:
+                try:
+                    jobs.put_item(Item={"job_id": job_id, "status": "error", "expires_at": expires_at,
+                                        "steps": steps, "error": {"message": "build could not be queued", "kind": "queue_unavailable"},
+                                        "updated_at": int(time.time())})
+                except Exception:
+                    pass
+                return _response(503, {"error": {"message": "The hosted builder is temporarily unavailable."}},
+                                 {"retry-after": "30"})
             return _response(202, {"job_id": job_id, "status": "queued"})
         if method == "GET" and path.endswith("/api/build"):
             job_id = (event.get("queryStringParameters") or {}).get("job_id", "")
