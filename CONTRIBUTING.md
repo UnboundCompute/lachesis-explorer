@@ -17,6 +17,17 @@ corepack pnpm run verify:bundles
 git diff --check
 ```
 
+For the browser regression pass, start a production server in one terminal and run the smoke test
+in another. Install Chromium once with `corepack pnpm exec playwright install chromium`.
+
+```bash
+corepack pnpm start
+corepack pnpm test:browser
+```
+
+The smoke test covers desktop and mobile overflow, console errors, framework metadata, accidental
+analytics loading, lens navigation, graph selection, and source-inspector opening.
+
 ## Pull requests
 
 Describe what changed, why it changed, and how it was verified. UI changes should include the affected viewport sizes and interaction states. Data/import changes should include the input fields exercised and confirm that evidence remains sourced from the bundle.
