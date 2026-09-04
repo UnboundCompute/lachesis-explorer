@@ -6,7 +6,7 @@ import { countLabel, type App } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
 
 type View = 'home' | 'trace' | 'journey' | 'investigate' | 'map' | 'compare' | 'install'
-export type RecentBundle = { name: string; language: string; commit: string; lines: number; flows: number; loadedAt: number }
+export type RecentBundle = { name: string; language: string; commit: string; lines: number; flows: number; loadedAt: number; bundleId?: string }
 type Props = { view: View; setView: (view: View) => void; app: App; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[]; canGoBack: boolean; canGoForward: boolean; onGoBack: () => void; onGoForward: () => void }
 
 const primary: Array<{ id: View; label: string; detail: string }> = [

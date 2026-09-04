@@ -174,9 +174,9 @@ The same source commit can produce different bundles after an analyzer or export
 
 ## Bundle contract
 
-For the code-understanding experience, the worker must produce graph-first schema 2.0. The current
-`arachne/lachesis/nav/bundle.py` exporter emits the security-oriented schema 1.0, so it cannot be
-the final hosted artifact without a graph-first export mode. The 2.0 bundle should include:
+For the code-understanding experience, the worker must produce graph-first schema 2.0. Arachne
+keeps the security-oriented 1.0 export for compatibility, while `lachesis trace` now defaults to
+the graph-first export. The 2.0 bundle should include:
 
 - repository, language, revision, line count and indexed-node count;
 - graph nodes and edges;

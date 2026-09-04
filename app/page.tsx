@@ -23,6 +23,7 @@ import { countLabel, starter, normalize, type App, type Flow } from "../lib/lach
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
+import { loadHostedBundle } from "../lib/hosted-bundle";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -160,6 +161,8 @@ export default function Page() {
     message: "",
   });
   const [isDemo, setIsDemo] = useState(true);
+  const [bundleOrigin, setBundleOrigin] = useState<"sample" | "local" | "hosted">("sample");
+  const [hostedBundleId, setHostedBundleId] = useState<string | undefined>();
   const [dragActive, setDragActive] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -325,6 +328,26 @@ export default function Page() {
         });
       return;
     }
+    const hostedBundleId = params.get("bundle");
+    if (hostedBundleId) {
+      pendingLink.current = link;
+      setLoadState({ type: "loading", message: "Loading the hosted bundle…" });
+      const controller = new AbortController();
+      loadHostedBundle(hostedBundleId, controller.signal)
+        .then((raw) => activate(normalize(raw), false, "hosted", hostedBundleId))
+        .catch((error) => {
+          if (controller.signal.aborted) return;
+          pendingLink.current = null;
+          urlReady.current = true;
+          setUrlInitialized(true);
+          setLoadState({
+            type: "error",
+            message: `${error instanceof Error ? error.message : "Could not load the hosted bundle"} The current bundle was kept.`,
+          });
+          trackEvent("bundle_load_failed");
+        });
+      return () => controller.abort();
+    }
     if (params.get("scope") === "local") {
       pendingLink.current = link;
       setLoadState({
@@ -413,7 +436,8 @@ export default function Page() {
     const params = new URLSearchParams();
     params.set("view", view);
     const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
-    if (!isDemo) params.set("scope", "local");
+    if (bundleOrigin === "hosted" && hostedBundleId) params.set("bundle", hostedBundleId);
+    else if (!isDemo) params.set("scope", "local");
     if (isDemo && securityMode) params.set("sample", "security");
     if (view === "trace") {
       params.set("flow", flowId);
@@ -439,7 +463,7 @@ export default function Page() {
       if (mapNeighborhoodOnly) params.set("map_focus", "neighborhood");
     }
     window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
+  }, [app, bundleOrigin, direction, entryIndex, focusNodeId, flowId, hostedBundleId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
@@ -715,7 +739,9 @@ export default function Page() {
   async function copyInvestigationLink(params: Record<string, string>) {
     const url = new URL(window.location.href);
     url.search = "";
-    if (isDemo) {
+    if (bundleOrigin === "hosted" && hostedBundleId) {
+      url.searchParams.set("bundle", hostedBundleId);
+    } else if (isDemo) {
       const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
       if (securityMode) url.searchParams.set("sample", "security");
     } else {
@@ -787,7 +813,7 @@ export default function Page() {
     }
   }
 
-  function activate(next: App, demo = false) {
+  function activate(next: App, demo = false, origin: "sample" | "local" | "hosted" = demo ? "sample" : "local", loadedBundleId?: string) {
     window.scrollTo({ top: 0, behavior: "auto" });
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -898,7 +924,9 @@ export default function Page() {
     setUrlInitialized(true);
     setMenu(false);
     setInspectorOpen(true);
-    setIsDemo(demo);
+    setIsDemo(origin === "sample");
+    setBundleOrigin(origin);
+    setHostedBundleId(origin === "hosted" ? loadedBundleId : undefined);
     setActivity([]);
     setLoadState({
       type: restored || !pending ? "success" : "error",
@@ -915,6 +943,7 @@ export default function Page() {
       lines: next.lines,
       flows: next.flows.length,
       loadedAt: Date.now(),
+      ...(origin === "hosted" && loadedBundleId ? { bundleId: loadedBundleId } : {}),
     };
     setRecentBundles((current) => {
       const updated = [
