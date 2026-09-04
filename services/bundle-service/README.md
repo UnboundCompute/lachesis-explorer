@@ -53,6 +53,7 @@ expire through the bucket's 30-day lifecycle rule. Use an authenticated gateway 
 lifecycle policy if bundles may contain non-public source code.
 
 The build queue and dead-letter queue use SQS-managed encryption at rest.
+The private artifact bucket also denies all non-TLS requests.
 The build queue visibility timeout is 5,400 seconds (six times the worker’s 900-second Lambda
 timeout), preventing long-running jobs from being delivered twice while still active.
 

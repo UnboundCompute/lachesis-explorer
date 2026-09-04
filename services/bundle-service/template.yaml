@@ -34,6 +34,20 @@ Resources:
       LifecycleConfiguration:
         Rules: [{ Id: ExpireBundles, Status: Enabled, ExpirationInDays: 30 }]
 
+  BundleBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BundleBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource: [!GetAtt BundleBucket.Arn, !Sub '${BundleBucket.Arn}/*']
+            Condition: { Bool: { aws:SecureTransport: false } }
+
   JobsTable:
     Type: AWS::DynamoDB::Table
     Properties:
