@@ -97,6 +97,7 @@ Resources:
         Variables: { JOBS_TABLE: !Ref JobsTable, BUNDLE_BUCKET: !Ref BundleBucket, BUILD_TIMEOUT_SECONDS: '600', LACHESIS_CACHE_VERSION: 'lachesis-0.4.2|explorer-2.0' }
       Policies:
         - DynamoDBCrudPolicy: { TableName: !Ref JobsTable }
+        - S3ReadPolicy: { BucketName: !Ref BundleBucket }
         - S3WritePolicy: { BucketName: !Ref BundleBucket }
 
   ApiLogGroup:
