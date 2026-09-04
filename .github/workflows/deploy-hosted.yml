@@ -48,6 +48,7 @@ jobs:
   deploy:
     name: Deploy hosted service
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     environment: production
     env:
       AWS_REGION: ${{ inputs.aws_region }}
