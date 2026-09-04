@@ -23,7 +23,7 @@ import { countLabel, starter, normalize, type App, type Flow } from "../lib/lach
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
-import { getHostedBuildStatus, loadHostedBundle, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
+import { getHostedBuildStatus, HostedRequestError, loadHostedBundle, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -1033,15 +1033,29 @@ export default function Page() {
       let status = await submitHostedBuild(gitUrl, ref, controller.signal);
       setBuildState({ status: status.status, steps: status.steps ?? [], message: "Build queued…" });
       let attempts = 0;
+      const buildDeadline = Date.now() + 15 * 60 * 1000;
       while (!["ready", "too_large", "unsupported_language", "error", "expired"].includes(status.status)) {
         await new Promise((resolve, reject) => {
-          const timer = window.setTimeout(resolve, Math.min(5000, 1000 + attempts * 500));
+          const remaining = buildDeadline - Date.now();
+          if (remaining <= 0) { reject(new Error("The hosted build took too long. You can build this repository locally instead.")); return; }
+          const timer = window.setTimeout(resolve, Math.min(5000, 1000 + attempts * 500, remaining));
           controller.signal.addEventListener("abort", () => { window.clearTimeout(timer); reject(new DOMException("Build cancelled", "AbortError")); }, { once: true });
         });
-        status = await getHostedBuildStatus(status.job_id ?? "", controller.signal);
-        setBuildState({ status: status.status, steps: status.steps ?? [], message: status.status === "queued" ? "Waiting for a worker…" : undefined });
         attempts += 1;
         if (attempts > 180) throw new Error("The hosted build took too long. You can build this repository locally instead.");
+        try {
+          status = await getHostedBuildStatus(status.job_id ?? "", controller.signal);
+        } catch (error) {
+          if (!(error instanceof HostedRequestError) || error.retryAfterMs == null) throw error;
+          await new Promise((resolve, reject) => {
+            const remaining = buildDeadline - Date.now();
+            if (remaining <= 0) { reject(new Error("The hosted build took too long. You can build this repository locally instead.")); return; }
+            const timer = window.setTimeout(resolve, Math.min(error.retryAfterMs!, remaining));
+            controller.signal.addEventListener("abort", () => { window.clearTimeout(timer); reject(new DOMException("Build cancelled", "AbortError")); }, { once: true });
+          });
+          continue;
+        }
+        setBuildState({ status: status.status, steps: status.steps ?? [], message: status.status === "queued" ? "Waiting for a worker…" : undefined });
       }
       if (status.status === "too_large" || status.status === "unsupported_language") {
         setBuildState({ status: status.status, steps: status.steps ?? [], message: "This repository needs the local build path." });

@@ -63,6 +63,31 @@ export async function loadHostedBundle(bundleId: string, signal?: AbortSignal) {
 export type BuildStatus = "queued" | "cloning" | "building" | "exporting" | "ready" | "too_large" | "unsupported_language" | "error" | "expired";
 export type BuildResponse = { job_id?: string; status: BuildStatus; bundle_id?: string; sha?: string; steps?: Array<{ key: string; state: string }>; error?: { message?: string; kind?: string } };
 
+export class HostedRequestError extends Error {
+  retryAfterMs?: number;
+
+  constructor(message: string, retryAfterMs?: number) {
+    super(message);
+    this.name = "HostedRequestError";
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+function getRetryAfterMs(response: Response) {
+  const value = response.headers.get("retry-after")?.trim();
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.min(30_000, seconds * 1000);
+  const date = Date.parse(value);
+  if (!Number.isFinite(date)) return undefined;
+  return Math.min(30_000, Math.max(0, date - Date.now()));
+}
+
+async function requestError(response: Response, fallback: string) {
+  const body = await response.json().catch(() => ({}));
+  return new HostedRequestError(body?.error?.message || fallback, getRetryAfterMs(response));
+}
+
 export async function submitHostedBuild(gitUrl: string, ref: string, signal?: AbortSignal): Promise<BuildResponse> {
   const response = await fetch(serviceUrl("/api/build"), {
     method: "POST",
@@ -71,15 +96,15 @@ export async function submitHostedBuild(gitUrl: string, ref: string, signal?: Ab
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify({ git_url: gitUrl, ...(ref ? { ref } : {}) }),
   });
+  if (!response.ok) throw await requestError(response, `The build request failed (HTTP ${response.status}).`);
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body?.error?.message || `The build request failed (HTTP ${response.status}).`);
   return body as BuildResponse;
 }
 
 export async function getHostedBuildStatus(jobId: string, signal?: AbortSignal): Promise<BuildResponse> {
   if (!/^j_[A-Za-z0-9_-]{8,128}$/.test(jobId)) throw new Error("The build job ID is invalid.");
   const response = await fetch(serviceUrl(`/api/build/${encodeURIComponent(jobId)}`), { redirect: "error", signal, headers: { Accept: "application/json" } });
+  if (!response.ok) throw await requestError(response, `The build status could not be read (HTTP ${response.status}).`);
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body?.error?.message || `The build status could not be read (HTTP ${response.status}).`);
   return body as BuildResponse;
 }
