@@ -1085,13 +1085,12 @@ export default function Page() {
     try {
       const response = await cancelHostedBuild(jobId);
       buildController.current?.abort();
-      setBuildState({ status: response.status, steps: response.steps ?? [], message: "Build cancelled." });
-      setLoadState({ type: "success", message: "Hosted build cancelled. The current bundle was kept." });
-    } catch (error) {
-      setLoadState({ type: "error", message: `${error instanceof Error ? error.message : "The hosted build could not be cancelled."} The build may still be running.` });
-    } finally {
+      setBuildState({ status: response.status, steps: response.steps ?? [], message: response.status === "cancelled" ? "Build cancelled." : `Build is already ${response.status}.` });
+      setLoadState({ type: "success", message: response.status === "cancelled" ? "Hosted build cancelled. The current bundle was kept." : `The hosted build is already ${response.status}.` });
       activeJobId.current = null;
       importBusy.current = false;
+    } catch (error) {
+      setLoadState({ type: "error", message: `${error instanceof Error ? error.message : "The hosted build could not be cancelled."} The build may still be running.` });
     }
   }
 
