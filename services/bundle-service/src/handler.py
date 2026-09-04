@@ -51,6 +51,8 @@ def _path(event: dict[str, Any]) -> str:
 
 
 def _job_view(item: dict[str, Any]) -> dict[str, Any]:
+    if item.get("expires_at") is not None and int(item["expires_at"]) <= int(time.time()):
+        return {"job_id": item["job_id"], "status": "expired", "steps": []}
     result = {"job_id": item["job_id"], "status": item.get("status", "queued"),
               "steps": item.get("steps", [])}
     for key in ("sha", "bundle_id", "error"):

@@ -114,6 +114,21 @@ class ContractTests(unittest.TestCase):
             }, None)
         self.assertEqual(response["statusCode"], 404)
 
+    def test_status_endpoint_expires_jobs_before_dynamodb_ttl_cleanup(self):
+        class Jobs:
+            def get_item(self, **_kwargs): return {"Item": {
+                "job_id": "j_12345678", "status": "ready", "expires_at": 1,
+                "bundle_id": "b_12345678",
+            }}
+
+        with patch.object(handler, "_aws", return_value=(Jobs(), object(), object())):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "GET"}},
+                "rawPath": "/api/build/j_12345678",
+            }, None)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"])["status"], "expired")
+
     def test_build_request_rejects_oversized_body_before_aws_access(self):
         with patch.object(handler, "_aws") as aws:
             response = handler.handler({
