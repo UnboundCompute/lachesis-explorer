@@ -85,7 +85,8 @@ corepack pnpm run start
 Hosted links use an opaque bundle ID and never put a repository URL or storage URL in the browser
 address. Configure the build/artifact service with `NEXT_PUBLIC_BUNDLE_API_URL`; leave it empty
 when a reverse proxy exposes the service at the same origin. The service must provide
-`GET /api/bundles/{bundle_id}` and return the validated bundle JSON directly.
+`GET /api/bundles/{bundle_id}` and return the validated bundle JSON directly. The complete
+deployment and rollback gate is in [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md).
 
 Copy `.env.example` to `.env.local` for the configuration template. External production API URLs
 must use HTTPS. The Lambda build service, private artifact storage, retention policy, and public
