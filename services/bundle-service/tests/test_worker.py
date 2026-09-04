@@ -92,6 +92,24 @@ class WorkerTests(unittest.TestCase):
         self.assertNotEqual(first, second)
         self.assertRegex(first, r"^cache/[0-9a-f]{64}\.json$")
 
+    def test_cache_hit_skips_analysis_and_publishes_a_new_opaque_bundle(self):
+        table = Mock()
+        table.get_item.return_value = {"Item": {
+            "job_id": "j_12345678", "status": "queued", "git_url": "https://github.com/owner/repo.git",
+            "ref": "main", "expires_at": 123,
+        }}
+        storage = Mock()
+
+        with patch.object(worker, "_sha", return_value="a" * 40), patch.object(worker, "_run") as run, \
+             patch.dict(worker.os.environ, {"BUNDLE_BUCKET": "bucket"}):
+            worker._process({"job_id": "j_12345678"}, table, storage)
+
+        run.assert_not_called()
+        storage.head_object.assert_called_once()
+        storage.copy_object.assert_called_once()
+        self.assertEqual(table.update_item.call_args.kwargs["ExpressionAttributeValues"][":status"], "ready")
+        self.assertTrue(table.update_item.call_args.kwargs["ExpressionAttributeValues"][":cache_hit"])
+
     def test_handler_creates_aws_clients_lazily(self):
         clients = Mock()
         clients.resource.return_value.Table.return_value = Mock()
