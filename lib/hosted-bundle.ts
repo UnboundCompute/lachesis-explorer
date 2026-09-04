@@ -59,3 +59,27 @@ export async function loadHostedBundle(bundleId: string, signal?: AbortSignal) {
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   return JSON.parse(new TextDecoder().decode(bytes));
 }
+
+export type BuildStatus = "queued" | "cloning" | "building" | "exporting" | "ready" | "too_large" | "unsupported_language" | "error" | "expired";
+export type BuildResponse = { job_id?: string; status: BuildStatus; bundle_id?: string; sha?: string; steps?: Array<{ key: string; state: string }>; error?: { message?: string; kind?: string } };
+
+export async function submitHostedBuild(gitUrl: string, ref: string, signal?: AbortSignal): Promise<BuildResponse> {
+  const response = await fetch(serviceUrl("/api/build"), {
+    method: "POST",
+    redirect: "error",
+    signal,
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ git_url: gitUrl, ...(ref ? { ref } : {}) }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body?.error?.message || `The build request failed (HTTP ${response.status}).`);
+  return body as BuildResponse;
+}
+
+export async function getHostedBuildStatus(jobId: string, signal?: AbortSignal): Promise<BuildResponse> {
+  if (!/^j_[A-Za-z0-9_-]{8,128}$/.test(jobId)) throw new Error("The build job ID is invalid.");
+  const response = await fetch(serviceUrl(`/api/build/${encodeURIComponent(jobId)}`), { redirect: "error", signal, headers: { Accept: "application/json" } });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body?.error?.message || `The build status could not be read (HTTP ${response.status}).`);
+  return body as BuildResponse;
+}

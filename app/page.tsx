@@ -23,7 +23,7 @@ import { countLabel, starter, normalize, type App, type Flow } from "../lib/lach
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
-import { loadHostedBundle } from "../lib/hosted-bundle";
+import { getHostedBuildStatus, loadHostedBundle, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -49,6 +49,7 @@ type PendingLink = {
   mapNeighborhood?: boolean;
 };
 type ViewUrlOverrides = Record<string, string | undefined>;
+type BuildState = { status: "idle" | BuildResponse["status"]; steps: Array<{ key: string; state: string }>; message?: string };
 
 const viewLabels: Record<View, string> = {
   home: "Understand",
@@ -163,6 +164,7 @@ export default function Page() {
   const [isDemo, setIsDemo] = useState(true);
   const [bundleOrigin, setBundleOrigin] = useState<"sample" | "local" | "hosted">("sample");
   const [hostedBundleId, setHostedBundleId] = useState<string | undefined>();
+  const [buildState, setBuildState] = useState<BuildState>({ status: "idle", steps: [] });
   const [dragActive, setDragActive] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -181,6 +183,7 @@ export default function Page() {
   const dragDepth = useRef(0);
   const pendingLink = useRef<PendingLink | null>(null);
   const importBusy = useRef(false);
+  const buildController = useRef<AbortController | null>(null);
   const urlReady = useRef(false);
   const navigationDepth = useRef(0);
   const navigationMaxDepth = useRef(0);
@@ -1015,6 +1018,46 @@ export default function Page() {
     }
   }
 
+  async function startHostedBuild(gitUrl: string, ref: string) {
+    if (importBusy.current) return;
+    importBusy.current = true;
+    const controller = new AbortController();
+    buildController.current = controller;
+    setBuildState({ status: "queued", steps: [], message: "Submitting build…" });
+    setLoadState({ type: "loading", message: "Preparing a hosted code graph…" });
+    try {
+      let status = await submitHostedBuild(gitUrl, ref, controller.signal);
+      setBuildState({ status: status.status, steps: status.steps ?? [], message: "Build queued…" });
+      let attempts = 0;
+      while (!["ready", "too_large", "unsupported_language", "error", "expired"].includes(status.status)) {
+        await new Promise((resolve, reject) => {
+          const timer = window.setTimeout(resolve, Math.min(5000, 1000 + attempts * 500));
+          controller.signal.addEventListener("abort", () => { window.clearTimeout(timer); reject(new DOMException("Build cancelled", "AbortError")); }, { once: true });
+        });
+        status = await getHostedBuildStatus(status.job_id ?? "", controller.signal);
+        setBuildState({ status: status.status, steps: status.steps ?? [], message: status.status === "queued" ? "Waiting for a worker…" : undefined });
+        attempts += 1;
+        if (attempts > 180) throw new Error("The hosted build took too long. You can build this repository locally instead.");
+      }
+      if (status.status === "too_large" || status.status === "unsupported_language") {
+        setBuildState({ status: status.status, steps: status.steps ?? [], message: "This repository needs the local build path." });
+        setLoadState({ type: "error", message: "The hosted builder cannot handle this repository yet. Run Lachesis locally and upload the resulting bundle.json." });
+        return;
+      }
+      if (status.status !== "ready" || !status.bundle_id) throw new Error(status.error?.message || "The hosted build did not produce a bundle.");
+      const raw = await loadHostedBundle(status.bundle_id, controller.signal);
+      activate(normalize(raw), false, "hosted", status.bundle_id);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setBuildState({ status: "error", steps: [], message: error instanceof Error ? error.message : "Hosted build failed." });
+      setLoadState({ type: "error", message: `${error instanceof Error ? error.message : "Hosted build failed."} The current bundle was kept.` });
+      trackEvent("hosted_build_failed");
+    } finally {
+      if (buildController.current === controller) buildController.current = null;
+      importBusy.current = false;
+    }
+  }
+
   async function loadCodeSample() {
     if (importBusy.current) return;
     importBusy.current = true;
@@ -1257,6 +1300,8 @@ export default function Page() {
           }}
           onLoadSample={loadCodeSample}
           onLoadSecuritySample={loadSecuritySample}
+          onBuild={startHostedBuild}
+          buildState={buildState}
           onView={(next) => changeView(next)}
           onSearch={(nextQuery) => {
             setMapQuery(nextQuery);
