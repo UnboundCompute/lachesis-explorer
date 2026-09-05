@@ -72,6 +72,7 @@ deployment. Prefer a same-origin reverse proxy when the hosting platform support
   ready in the API and CloudWatch logs.
 - [ ] Confirm a repository above 5,000 tracked files terminates as `too_large` before analysis.
 - [x] Confirm the returned bundle validates as graph-first schema version 2.
+- [x] Confirm the merged Explorer frontend passes the production browser smoke test.
 - [ ] Confirm cancellation leaves no published bundle and that a cancelled job is not restarted.
 - [ ] Confirm a repeated build uses the private cache while publishing a fresh opaque bundle ID.
 - [ ] Confirm malformed IDs, unsupported URLs, oversized requests, and expired jobs return safe
@@ -102,9 +103,9 @@ The hosted stack is deployed in `us-east-1` as `lachesis-bundle-service`.
 - Worker memory: 3,008 MiB Lambda quota, with a 2,400 MiB Lachesis process budget
 - Queue concurrency: maximum 2 event-source consumers
 
-The backend and real repository smoke path are verified. Before calling the public launch fully
-complete, merge and deploy the Explorer frontend commit containing the unmapped-node compatibility
-change, configure `NEXT_PUBLIC_BUNDLE_API_URL` with the API above, add an SNS alarm destination,
+The backend, real repository smoke path, and merged Explorer frontend are verified. The frontend
+production smoke passed after merge commit `075d873`. Before calling the public launch fully
+complete, configure `NEXT_PUBLIC_BUNDLE_API_URL` with the API above, add an SNS alarm destination,
 and run the remaining cancellation, oversized-repository, cache-hit, and alarm-delivery checks.
 
 The frontend release gate is the browser smoke test against the production origin:
@@ -113,6 +114,5 @@ The frontend release gate is the browser smoke test against the production origi
 corepack pnpm exec node scripts/smoke-browser.mjs https://lachesis.unboundcompute.com
 ```
 
-The Vercel preview for the current release branch is green. Do not mark the frontend gate complete
-until the same command passes against the production origin after the branch is merged; a successful
-preview alone does not prove that production is serving the release candidate.
+The production origin currently passes this gate; a successful preview alone is not sufficient for
+future releases.
