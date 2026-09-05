@@ -7,7 +7,7 @@ import { trackEvent } from '../lib/analytics'
 
 type View = 'home' | 'trace' | 'journey' | 'investigate' | 'map' | 'compare' | 'install'
 export type RecentBundle = { name: string; language: string; commit: string; lines: number; flows: number; loadedAt: number; bundleId?: string }
-type Props = { view: View; setView: (view: View) => void; app: App; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[]; onOpenRecent: (bundleId: string) => void; canGoBack: boolean; canGoForward: boolean; onGoBack: () => void; onGoForward: () => void }
+type Props = { view: View; setView: (view: View) => void; app: App; sourceSelected: boolean; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[]; onOpenRecent: (bundleId: string) => void; canGoBack: boolean; canGoForward: boolean; onGoBack: () => void; onGoForward: () => void }
 
 const primary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'home', label: 'Understand', detail: 'Start with a question' },
@@ -21,7 +21,7 @@ const secondary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'install', label: 'Setup', detail: 'Build graphs locally' },
 ]
 
-export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles, onOpenRecent, canGoBack, canGoForward, onGoBack, onGoForward }: Props) {
+export function Header({ view, setView, app, sourceSelected, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles, onOpenRecent, canGoBack, canGoForward, onGoBack, onGoForward }: Props) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [mobileLensOpen, setMobileLensOpen] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)
@@ -142,6 +142,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
   }, [menu, setMenu])
 
   function choose(next: View) {
+    if (!sourceSelected && next !== 'home') return
     const restoreMobileFocus = mobileLensOpen
     const restoreMoreFocus = moreOpen
     setView(next)
@@ -175,7 +176,7 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
         </a>
         <nav className="nav-tabs" aria-label="Primary analysis lenses">
           {primary.map(item => (
-            <button type="button" key={item.id} className={view === item.id ? 'nav-tab active' : 'nav-tab'} aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
+            <button type="button" key={item.id} className={view === item.id ? 'nav-tab active' : 'nav-tab'} aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)} disabled={!sourceSelected && item.id !== 'home'}>
               <span>{item.label}</span><small>{item.detail}</small>
             </button>
           ))}
@@ -216,19 +217,19 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
           <button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14} /><span>Jump</span><kbd>⌘K /</kbd></button>
           <button type="button" className="theme-toggle" suppressHydrationWarning aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`} onClick={() => { setDark(!dark); trackEvent('theme_toggled', { theme: dark ? 'light' : 'dark' }) }}><Icon name={dark ? 'sun' : 'moon'} size={15} /><span>{dark ? 'Light' : 'Dark'}</span></button>
           <div className="app-picker" ref={appPickerRef}>
-            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-label={`Open active bundle context for ${app.name || "current bundle"}`} title="Open active bundle context" aria-expanded={menu} aria-controls={menu ? "bundle-context-menu" : undefined} aria-haspopup="dialog">
-              <span className="status-dot" /><span><small>Active bundle</small><b>{app.name || 'Untitled bundle'}</b></span><Icon name="chevron" size={14} />
+            <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-label={sourceSelected ? `Open active bundle context for ${app.name || "current bundle"}` : "Choose a codebase"} title={sourceSelected ? "Open active bundle context" : "Choose a codebase"} aria-expanded={menu} aria-controls={menu ? "bundle-context-menu" : undefined} aria-haspopup="dialog">
+              <span className="status-dot" /><span><small>{sourceSelected ? "Active bundle" : "Workspace"}</small><b>{sourceSelected ? app.name || 'Untitled bundle' : 'Choose a codebase'}</b></span><Icon name="chevron" size={14} />
             </button>
             {menu && (
               <div id="bundle-context-menu" className="app-menu" role="dialog" aria-label="Bundle context">
                 <span className="menu-title">BUNDLE CONTEXT</span>
                 <div className="active-bundle">
                   <span className="status-dot" />
-                  <span><b>{app.name || 'Untitled bundle'}</b><small>{app.language || 'unknown'} · {app.commit || 'no commit'}</small></span>
+                  <span><b>{sourceSelected ? app.name || 'Untitled bundle' : 'No codebase selected'}</b><small>{sourceSelected ? `${app.language || 'unknown'} · ${app.commit || 'no commit'}` : 'Choose a URL, bundle, or cached repository'}</small></span>
                 </div>
-                {app.bundle.description && <p className="bundle-description">{app.bundle.description}</p>}
-                {app.coverage.limitations[0] && <p className="bundle-coverage-warning"><i />{app.coverage.limitations[0]}</p>}
-                <div className="menu-metrics"><span><b>{countLabel(app.nodes.length, 'node')}</b></span><span><b>{countLabel(app.flows.length, 'graph path')}</b></span><span><b>{countLabel(app.entries.length, 'request flow')}</b></span></div>
+                {sourceSelected && app.bundle.description && <p className="bundle-description">{app.bundle.description}</p>}
+                {sourceSelected && app.coverage.limitations[0] && <p className="bundle-coverage-warning"><i />{app.coverage.limitations[0]}</p>}
+                {sourceSelected && <div className="menu-metrics"><span><b>{countLabel(app.nodes.length, 'node')}</b></span><span><b>{countLabel(app.flows.length, 'graph path')}</b></span><span><b>{countLabel(app.entries.length, 'request flow')}</b></span></div>}
                 {recentBundles.length > 0 && (
                   <div className="recent-bundles">
                     <span className="menu-title">RECENT METADATA · LOCAL ONLY</span>

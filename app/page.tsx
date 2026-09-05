@@ -166,6 +166,7 @@ export default function Page() {
     message: "",
   });
   const [isDemo, setIsDemo] = useState(true);
+  const [sourceSelected, setSourceSelected] = useState(false);
   const [bundleOrigin, setBundleOrigin] = useState<"sample" | "local" | "hosted">("sample");
   const [hostedBundleId, setHostedBundleId] = useState<string | undefined>();
   const [repositoryIndex, setRepositoryIndex] = useState<RepositoryIndex | null>(null);
@@ -417,6 +418,9 @@ export default function Page() {
         });
       return () => controller.abort();
     }
+    // A view deep link without a bundle is not enough to enter the workspace.
+    // Keep the source picker as the only first-run surface.
+    setView("home");
     if (params.get("scope") === "local") {
       pendingLink.current = link;
       setLoadState({
@@ -998,6 +1002,7 @@ export default function Page() {
     setMenu(false);
     setInspectorOpen(true);
     setIsDemo(origin === "sample");
+    setSourceSelected(true);
     setBundleOrigin(origin);
     setHostedBundleId(origin === "hosted" ? loadedBundleId : undefined);
     if (origin !== "hosted") setRepositoryIndex(null);
@@ -1277,6 +1282,7 @@ export default function Page() {
         view={view}
         setView={changeView}
         app={app}
+        sourceSelected={sourceSelected}
         menu={menu}
         setMenu={setMenu}
         onUpload={() => fileRef.current?.click()}
@@ -1408,8 +1414,7 @@ export default function Page() {
             setMapQuery("");
             changeView("map", "health");
           }}
-          onLoadSample={loadCodeSample}
-          onLoadSecuritySample={loadSecuritySample}
+          sourceSelected={sourceSelected}
           onBuild={startHostedBuild}
           repositoryIndex={repositoryIndex}
           onRefreshRepository={() => {

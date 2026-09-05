@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { countLabel, flowDisplayName, isSecurityProjection, nodeDisplayName, recommendedFlow, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
 import { loadHostedRepositories } from "../lib/hosted-bundle";
+import { copyText } from "../lib/clipboard";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -15,6 +16,7 @@ type RepositoryIndex = {
   ref?: string;
   git_url?: string;
   built_at?: number;
+  bundle_url?: string;
 };
 type Props = {
   app: App;
@@ -22,8 +24,7 @@ type Props = {
   loadState: LoadState;
   onUpload: () => void;
   onReviewCoverage: () => void;
-  onLoadSample: () => void;
-  onLoadSecuritySample: () => void;
+  sourceSelected: boolean;
   onView: (view: "map" | "investigate" | "trace" | "journey" | "compare") => void;
   onSearch?: (query: string) => void;
   onDismiss: () => void;
@@ -209,13 +210,13 @@ function RepositoryFreshness({ index, onRefresh, busy }: { index: RepositoryInde
 
 function RepositoryGallery() {
   const [repositories, setRepositories] = useState<RepositoryIndex[]>([]);
+  const hostedConfigured = Boolean(process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim());
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim()) return;
+    if (!hostedConfigured) return;
     const controller = new AbortController();
     loadHostedRepositories(controller.signal).then(setRepositories).catch(() => undefined);
     return () => controller.abort();
-  }, []);
-  if (!repositories.length) return null;
+  }, [hostedConfigured]);
   function routeFor(repository?: string) {
     const parts = repository?.split("/").filter(Boolean) ?? [];
     if (parts.length !== 3) return "#";
@@ -223,6 +224,16 @@ function RepositoryGallery() {
       ? `/r/${encodeURIComponent(parts[1])}/${encodeURIComponent(parts[2])}`
       : `/r/${parts.map((part) => encodeURIComponent(part)).join("/")}`;
   }
+  if (!hostedConfigured) return (
+    <section className="repository-gallery" aria-labelledby="repository-gallery-title">
+      <div className="understand-section-heading"><div><span className="panel-label">CACHED CODEBASES</span><h2 id="repository-gallery-title">Connect the hosted catalog to browse cached repositories.</h2></div><p>Local development intentionally makes no hosted requests. Configure the hosted API to show warm repository cards here.</p></div>
+    </section>
+  );
+  if (!repositories.length) return (
+    <section className="repository-gallery repository-gallery-empty" aria-labelledby="repository-gallery-title">
+      <div className="understand-section-heading"><div><span className="panel-label">CACHED CODEBASES</span><h2 id="repository-gallery-title">No cached repositories yet.</h2></div><p>Build a public repository above and it will appear here once its graph is ready.</p></div>
+    </section>
+  );
   return (
     <section className="repository-gallery" aria-labelledby="repository-gallery-title">
       <div className="understand-section-heading"><div><span className="panel-label">CACHED CODEBASES</span><h2 id="repository-gallery-title">Open a repository that is already mapped.</h2></div><p>Warm graphs open immediately; each card keeps its source revision visible.</p></div>
@@ -237,14 +248,83 @@ function RepositoryGallery() {
   );
 }
 
+function RepositorySelection({ onUpload, onBuild, onCancelBuild, buildState, loadState, onDismiss }: Pick<Props, "onUpload" | "onBuild" | "onCancelBuild" | "buildState" | "loadState" | "onDismiss">) {
+  return (
+    <main className="repository-selection" aria-labelledby="repository-selection-title">
+      <section className="repository-selection-hero">
+        <span className="panel-label">START WITH A CODEBASE</span>
+        <h1 id="repository-selection-title">Choose what you want to understand.</h1>
+        <p>Lachesis turns a code graph into a guided reading surface. Select a repository first; the graph workspace opens only after its evidence is available.</p>
+        <div className="repository-selection-actions">
+          <button type="button" className="load-bundle-action" onClick={onUpload} disabled={loadState.type === "loading"}>
+            <span><Icon name="upload" size={16} /><b>{loadState.type === "loading" ? "Reading bundle…" : "Upload bundle.json"}</b><small>Processed only in this browser</small></span>
+            <span className="action-orb"><Icon name="arrow" size={14} /></span>
+          </button>
+        </div>
+        <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
+      </section>
+      {loadState.message && (
+        <p className={`briefing-notice ${loadState.type}`} role={loadState.type === "error" ? "alert" : "status"}>
+          <i />
+          <span>{loadState.message}</span>
+          <button className="notice-dismiss" type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
+        </p>
+      )}
+      <RepositoryGallery />
+      <p className="repository-selection-note">Already opening a design-map link? A valid bundle deep link skips this screen and restores its pointed-to repository context.</p>
+    </main>
+  );
+}
+
+function RepositoryArtifactShelf({ index }: { index?: RepositoryIndex | null }) {
+  const [copied, setCopied] = useState("");
+  const repository = index?.repository?.split("/").filter(Boolean) ?? [];
+  const canonicalPath = repository.length === 3
+    ? repository[0] === "github.com"
+      ? `/r/${encodeURIComponent(repository[1])}/${encodeURIComponent(repository[2])}`
+      : `/r/${repository.map((part) => encodeURIComponent(part)).join("/")}`
+    : "";
+  async function copyArtifact(kind: string, value: string) {
+    try {
+      await copyText(value);
+      setCopied(kind);
+      window.setTimeout(() => setCopied((current) => current === kind ? "" : current), 1800);
+    } catch {
+      setCopied("");
+    }
+  }
+  if (!index || !canonicalPath) return (
+    <section className="artifact-shelf artifact-shelf-empty" aria-labelledby="artifact-shelf-title">
+      <div><span className="panel-label">SHAREABLE ARTIFACTS</span><h2 id="artifact-shelf-title">Keep this investigation portable.</h2><p>Local bundles can share the current investigation link in this browser. A hosted repository page additionally unlocks a README badge and downloadable bundle artifact.</p></div>
+      <div className="artifact-shelf-actions"><button type="button" onClick={() => copyArtifact("local", typeof window === "undefined" ? "" : window.location.href)}>{copied === "local" ? "Local link copied" : "Copy local investigation link"}</button></div>
+    </section>
+  );
+  const canonicalUrl = typeof window === "undefined" ? canonicalPath : `${window.location.origin}${canonicalPath}`;
+  const badge = `[![Understand with Lachesis](https://img.shields.io/badge/understand_with-Lachesis-18c79a?logo=github)](${canonicalUrl})`;
+  const markdown = `## Understand this codebase\n\n[Open ${index.repository} in Lachesis](${canonicalUrl})\n\nRevision: ${index.revision || "unknown"}`;
+  const bundleUrl = index.bundle_url && process.env.NEXT_PUBLIC_BUNDLE_API_URL
+    ? new URL(index.bundle_url, process.env.NEXT_PUBLIC_BUNDLE_API_URL).toString()
+    : undefined;
+  return (
+    <section className="artifact-shelf" aria-labelledby="artifact-shelf-title">
+      <div className="artifact-shelf-heading"><div><span className="panel-label">SHAREABLE ARTIFACTS</span><h2 id="artifact-shelf-title">Package the path you just understood.</h2></div><small>{index.revision ? `revision ${index.revision.slice(0, 12)}` : "revision unavailable"}</small></div>
+      <div className="artifact-shelf-actions">
+        <button type="button" onClick={() => copyArtifact("link", canonicalUrl)}>{copied === "link" ? "Link copied" : "Copy canonical link"}</button>
+        <button type="button" onClick={() => copyArtifact("badge", badge)}>{copied === "badge" ? "Badge copied" : "Copy README badge"}</button>
+        <button type="button" onClick={() => copyArtifact("markdown", markdown)}>{copied === "markdown" ? "Markdown copied" : "Copy Markdown"}</button>
+        {bundleUrl && <a href={bundleUrl} download={`${index.repository?.replaceAll("/", "-") || "lachesis"}-bundle.json`}>Download bundle <Icon name="arrow" size={12} /></a>}
+      </div>
+      <code className="artifact-shelf-preview">{canonicalUrl}</code>
+    </section>
+  );
+}
+
 export function HomeView({
   app,
   isDemo,
   loadState,
   onUpload,
   onReviewCoverage,
-  onLoadSample,
-  onLoadSecuritySample,
   onView,
   onSearch,
   onDismiss,
@@ -257,6 +337,7 @@ export function HomeView({
   buildState,
   repositoryIndex,
   onRefreshRepository,
+  sourceSelected,
 }: Props) {
   const [selectedId, setSelectedId] = useState(app.findings[0]?.id ?? "");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
@@ -379,6 +460,8 @@ export function HomeView({
           : "Explore how this code is connected."
         : "No open evidence paths in this bundle.";
 
+  if (!sourceSelected) return <RepositorySelection onUpload={onUpload} onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} loadState={loadState} onDismiss={onDismiss} />;
+
   if (graphOnly) {
     const startNode = graphFocus
       ? sourceFor(graphFocus, app) ?? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
@@ -447,6 +530,7 @@ export function HomeView({
             <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
             {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
             <RepositoryGallery />
+            <RepositoryArtifactShelf index={repositoryIndex} />
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
             <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} {graphFocus ? "ready to follow" : app.flows.length ? "bundled" : "included"}</dd></div>
@@ -558,7 +642,7 @@ export function HomeView({
         <footer className="understand-footer">
           <span>Source stays beside every step. Path explanations can be copied as portable Markdown.</span>
           <span>{isDemo ? "Synthetic sample" : "Processed locally"} · {app.language || "language not reported"}</span>
-          {isDemo && <button type="button" onClick={onLoadSecuritySample}>View security projection</button>}
+          {isDemo && <span>Explicit fixture link</span>}
         </footer>
       </main>
     );
@@ -605,28 +689,10 @@ export function HomeView({
               <Icon name="arrow" size={14} />
             </span>
           </button>
-          {isDemo && (
-            <div className="fixture-links">
-              <a
-                className="download-fixture"
-                href={securityMode ? "/demo-bundle.json" : "/code-exploration-bundle.json"}
-                download
-              >
-                Download current sample <Icon name="arrow" size={12} />
-              </a>
-              <button
-                className="download-fixture sample-load"
-                type="button"
-                disabled={loadState.type === "loading"}
-                onClick={securityMode ? onLoadSample : onLoadSecuritySample}
-              >
-                {securityMode ? "Switch to code sample" : "View security sample"} <Icon name="arrow" size={12} />
-              </button>
-            </div>
-          )}
           <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
           {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
           <RepositoryGallery />
+          <RepositoryArtifactShelf index={repositoryIndex} />
         </div>
       </header>
 
