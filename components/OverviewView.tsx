@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, isSecurityProjection, nodeDisplayName, type App, type Node } from "../lib/lachesis";
+import { countLabel, isSecurityProjection, nodeDisplayName, nodeKindLabel, type App, type Node } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainNode } from "../lib/explanations";
@@ -1096,7 +1096,7 @@ export function OverviewView({
                       <span>{labelIndex(node)}</span>
                       <b>{nodeDisplayName(node)}</b>
                       <small>
-                        {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
+                        {nodeKindLabel(node.kind)}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${nodeKindLabel(node.scope.kind)}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Scope not reported"} · {nodeLocation(node)}
                       </small>
                       {query && nodeMatchLabel(node, query) && <small className="topology-match">{nodeMatchLabel(node, query)}</small>}
                       <small className="topology-participation">{countLabel(flowCount(node.id), "graph path")} · {countLabel(entryCount(node.id), "request flow")} · {hasSource(node) ? "Source preview included" : "Source text unavailable"}</small>
