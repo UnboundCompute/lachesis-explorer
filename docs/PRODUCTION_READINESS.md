@@ -19,6 +19,10 @@ usable without the hosted service: users can load a local `bundle.json` directly
 
 Run these commands from the Explorer repository root:
 
+The commands in this section are split between safe local checks and deployment-gated checks. Do
+not run the SAM deployment, hosted API smoke, or repository build smoke from routine local UI work;
+those require an explicit release environment and may incur AWS usage.
+
 ```bash
 corepack pnpm install --frozen-lockfile
 npm run check

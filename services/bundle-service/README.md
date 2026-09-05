@@ -84,6 +84,18 @@ PYTHONPATH=services/bundle-service python3 -m unittest discover -s services/bund
 sam validate --template-file services/bundle-service/template.yaml --region us-east-1 --lint
 ```
 
+The Python tests use mocks and do not contact AWS. For routine Explorer/UI work, use only the
+frontend checks and mocked service tests with hosted API variables unset:
+
+```bash
+env -u NEXT_PUBLIC_BUNDLE_API_URL -u BUNDLE_API_URL corepack pnpm run check
+PYTHONPATH=services/bundle-service python3 -m unittest discover -s services/bundle-service/tests -q
+```
+
+Do not run `sam deploy`, `docker push`, `smoke-hosted.mjs`, or a build request against a deployed
+API as part of local testing. The SAM validation and hosted smoke commands below are release-gate
+steps and require an explicit deployment decision.
+
 After deployment, run the API smoke test with the stack URL and a known bundle ID:
 
 ```bash
