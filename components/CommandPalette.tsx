@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, entryDisplayName, flowDisplayName, type App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, flowDisplayName, isSecurityProjection, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 
@@ -294,7 +294,7 @@ export function CommandPalette({
           .map((node) => ({
             id: `sink-${node.id}`,
             label: node.label || node.id,
-          meta: `${app.findings.length > 0 || app.bundle.projection === "security projection" ? "Sink" : "Destination"} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"}`,
+          meta: `${isSecurityProjection(app) ? "Sink" : "Destination"} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"}`,
             run: () => onSink(node.id),
           })),
       ].filter(

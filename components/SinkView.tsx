@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { countLabel, entryDisplayName, type App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, isSecurityProjection, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
 import { ConvergenceCanvas } from "./ConvergenceCanvas";
@@ -64,7 +64,7 @@ export function SinkView({
     return counts;
   }, [app.flows]);
   const sink = sinks.find((node) => node.id === sinkId) ?? sinks[0];
-  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const securityMode = isSecurityProjection(app);
   const [mode, setMode] = useState<"field" | "matrix">("field");
   const [selectedId, setSelectedId] = useState(
     sink?.id ?? app.nodes[0]?.id ?? "",

@@ -24,7 +24,8 @@ try {
   }
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto(`${base}/?view=map&map_mode=map`, { waitUntil: "networkidle" });
+  await page.goto(`${base}/?view=map`, { waitUntil: "networkidle" });
+  assert.equal(await page.getByRole("button", { name: "Map", exact: true }).getAttribute("aria-pressed"), "true", "Explore did not default to Map");
   const nodes = page.locator(".topology-node-list button");
   assert.ok(await nodes.count() > 0, "graph node list is empty");
   await nodes.first().click();
@@ -32,7 +33,16 @@ try {
   for (const [label, view] of [["Trace", "trace"], ["Compare", "compare"], ["Understand", "home"]]) {
     await page.getByRole("button", { name: new RegExp(`^${label}`) }).first().click();
     assert.equal(new URL(page.url()).searchParams.get("view"), view, `${label} navigation failed`);
+    if (view === "trace") {
+      assert.equal(await page.getByRole("button", { name: "Previous step", exact: true }).count(), 1, "trace step navigation is ambiguous");
+      assert.equal(await page.getByRole("button", { name: "Next step", exact: true }).count(), 1, "trace step navigation is ambiguous");
+    }
   }
+  await page.getByRole("button", { name: /^More/ }).click();
+  const requestFlowItem = page.getByRole("menuitem", { name: /^Request flow/ });
+  assert.equal(await requestFlowItem.count(), 1, "More menu did not expose focused views");
+  await requestFlowItem.click();
+  assert.equal(new URL(page.url()).searchParams.get("view"), "journey", "More menu navigation failed");
   await page.close();
 
   const hostedBundleId = process.env.LACHESIS_BUNDLE_ID;

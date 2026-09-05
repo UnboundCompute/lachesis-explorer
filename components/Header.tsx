@@ -141,10 +141,6 @@ export function Header({ view, setView, app, menu, setMenu, onUpload, onCommand,
     }
   }, [menu, setMenu])
 
-  useEffect(() => {
-    document.querySelector<HTMLElement>('.nav-tab[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  }, [view])
-
   function choose(next: View) {
     const restoreMobileFocus = mobileLensOpen
     const restoreMoreFocus = moreOpen

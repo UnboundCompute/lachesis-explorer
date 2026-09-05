@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, flowDisplayName, indirectionCount, type App, type Flow } from "../lib/lachesis";
+import { countLabel, flowDisplayName, indirectionCount, isSecurityProjection, type App, type Flow } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainFlow } from "../lib/explanations";
@@ -361,7 +361,7 @@ export function TraceView({
     flow.kind
       ? { label: pathKindLabel(flow, securityPath), query: `path:${flow.kind}` }
       : null,
-    app.findings.length > 0 || app.bundle.projection === "security projection"
+    isSecurityProjection(app)
       ? { label: "Destinations", query: "kind:sink" }
       : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
     app.edges.some((edge) => edge.dynamic)
@@ -694,7 +694,7 @@ export function TraceView({
                 aria-keyshortcuts="["
                 onClick={() => moveStep(-1)}
               >
-                Previous
+                Previous step
               </button>
               <button
                 className="inspector-reopen"
@@ -703,7 +703,7 @@ export function TraceView({
                 aria-keyshortcuts="]"
                 onClick={() => moveStep(1)}
               >
-                Next
+                Next step
               </button>
               <span className="step-nav-hint" aria-label="Use left bracket and right bracket to navigate steps">
                 <kbd>[</kbd><kbd>]</kbd>
@@ -776,7 +776,7 @@ export function TraceView({
             <small>3 quick steps</small>
           </summary>
           <div className="reading-guide-steps">
-            <div><b>01</b><span><strong>Choose a step</strong><small>Click a node or use Previous / Next to move through the path.</small></span></div>
+            <div><b>01</b><span><strong>Choose a step</strong><small>Click a node or use Previous step / Next step to move through the path.</small></span></div>
             <div><b>02</b><span><strong>Read the source</strong><small>The inspector keeps the symbol, location, and surrounding code beside the path.</small></span></div>
             <div><b>03</b><span><strong>Follow the context</strong><small>Open a connected path, request flow, or file when you need the next layer.</small></span></div>
           </div>

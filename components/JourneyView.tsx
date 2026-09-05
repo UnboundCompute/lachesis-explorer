@@ -499,7 +499,7 @@ export function JourneyView({
                 aria-keyshortcuts="["
                 onClick={() => moveHop(-1)}
               >
-                Previous
+                Previous step
               </button>
               <button
                 className="inspector-reopen"
@@ -508,7 +508,7 @@ export function JourneyView({
                 aria-keyshortcuts="]"
                 onClick={() => moveHop(1)}
               >
-                Next
+                Next step
               </button>
               <span className="step-nav-hint" aria-label="Use left bracket and right bracket to navigate steps">
                 <kbd>[</kbd><kbd>]</kbd>

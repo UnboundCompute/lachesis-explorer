@@ -19,7 +19,7 @@ import {
   InvestigationTrail,
   type InvestigationEvent,
 } from "../components/InvestigationTrail";
-import { countLabel, starter, normalize, type App, type Flow } from "../lib/lachesis";
+import { countLabel, isSecurityProjection, recommendedFlow, starter, normalize, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
@@ -107,18 +107,6 @@ function positionForEntry(app: App, entryIndex: number, nodeId: string) {
   if (!entry) return 0;
   const position = entry.hops.findIndex((hop) => hop.node_id === nodeId);
   return position >= 0 ? position : 0;
-}
-
-function recommendedFlow(flows: Flow[]) {
-  return [...flows].sort((a, b) => {
-    const score = (flow: Flow) => {
-      const roles = flow.steps.map((step) => step.role.trim().toLowerCase());
-      const hasSource = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin"].includes(role));
-      const hasSink = Boolean(flow.sinkNodeId) || roles.includes("sink");
-      return (flow.steps.length > 1 ? 100 : 0) + (hasSource ? 20 : 0) + (hasSink ? 20 : 0) + flow.steps.length;
-    };
-    return score(b) - score(a);
-  })[0];
 }
 
 function recommendedSink(app: App) {
@@ -456,9 +444,7 @@ export default function Page() {
     if (link.view === "map") {
       setMapMode(link.mapMode && ["map", "architecture", "health"].includes(link.mapMode)
         ? link.mapMode as OverviewMode
-        : link.filter || link.node || link.mapNeighborhood
-          ? "map"
-          : "architecture");
+        : "map");
     }
     if (link.mapOrder && ["path", "centrality"].includes(link.mapOrder)) setMapOrder(link.mapOrder as OverviewNodeOrder);
     setMapNeighborhoodOnly(Boolean(link.mapNeighborhood));
@@ -485,7 +471,7 @@ export default function Page() {
     if (handoffContext.step) params.set("step_context", handoffContext.step);
     if (handoffContext.domain) params.set("domain", handoffContext.domain);
     params.set("view", view);
-    const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+    const securityMode = isSecurityProjection(app);
     if (bundleOrigin === "hosted" && hostedBundleId) params.set("bundle", hostedBundleId);
     else if (!isDemo) params.set("scope", "local");
     if (isDemo && securityMode) params.set("sample", "security");
@@ -551,11 +537,7 @@ export default function Page() {
       const nextMapMode = params.get("map_mode");
       setMapMode(nextMapMode && ["map", "architecture", "health"].includes(nextMapMode)
         ? nextMapMode as OverviewMode
-        : nextView === "map"
-          ? params.get("filter") || params.get("node") || params.get("map_focus")
-            ? "map"
-            : "architecture"
-          : "map");
+        : "map");
       const nextMapOrder = params.get("map_order");
       setMapOrder(nextMapOrder === "centrality" ? "centrality" : "path");
       setMapNeighborhoodOnly(params.get("map_focus") === "neighborhood");
@@ -721,7 +703,6 @@ export default function Page() {
       if (next === "map" && focusNodeOverride) params.set("node", focusNodeOverride);
       if (next === "map" && mapQueryOverride) params.set("filter", mapQueryOverride);
       if (next === "map" && mapModeOverride && mapModeOverride !== "map") params.set("map_mode", mapModeOverride);
-      else if (next === "map" && !focusNodeId && !mapModeOverride && !focusNodeOverride) params.set("map_mode", "architecture");
       Object.entries(urlOverrides ?? {}).forEach(([key, value]) => {
         if (value) params.set(key, value);
       });
@@ -729,8 +710,8 @@ export default function Page() {
     }
     if (next === "map" && mapModeOverride) {
       setMapMode(mapModeOverride);
-    } else if (next === "map" && view !== "map" && !focusNodeId) {
-      setMapMode("architecture");
+    } else if (next === "map" && view !== "map") {
+      setMapMode("map");
       setMapNeighborhoodOnly(false);
     }
     setView(next);
@@ -792,7 +773,7 @@ export default function Page() {
     if (bundleOrigin === "hosted" && hostedBundleId) {
       url.searchParams.set("bundle", hostedBundleId);
     } else if (isDemo) {
-      const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+      const securityMode = isSecurityProjection(app);
       if (securityMode) url.searchParams.set("sample", "security");
     } else {
       url.searchParams.set("scope", "local");
@@ -873,7 +854,7 @@ export default function Page() {
     });
     const pending = pendingLink.current;
     const firstSink = recommendedSink(next)?.id ?? "";
-    const firstFlow = recommendedFlow(next.flows);
+    const firstFlow = recommendedFlow(next);
     setApp(next);
     setCompareApp(null);
     setFlowId(firstFlow?.id ?? "");
@@ -965,7 +946,7 @@ export default function Page() {
       if (pending.direction === "forward") setDirection("forward");
       if (pending.view === "trace") setQuery(pending.filter ?? "");
       if (requestedView === "map") setMapQuery(pending.filter ?? "");
-      if (requestedView === "map") setMapMode(pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode) ? pending.mapMode as OverviewMode : "architecture");
+      if (requestedView === "map") setMapMode(pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode) ? pending.mapMode as OverviewMode : "map");
       if (requestedView === "map") setMapOrder(pending.mapOrder === "centrality" ? "centrality" : "path");
       if (requestedView === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
       pendingLink.current = null;

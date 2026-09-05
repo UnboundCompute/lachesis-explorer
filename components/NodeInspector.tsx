@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, entryDisplayName, flowDisplayName, type App, type Node } from "../lib/lachesis";
+import { countLabel, entryDisplayName, flowDisplayName, nodeDisplayName, nodeKindLabel, type App, type Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
@@ -21,6 +21,13 @@ const descriptions: Record<string, string> = {
   parameter: "An input parameter carrying a value into a symbol or expression.",
   variable: "A local or scoped variable represented in the graph.",
   literal: "A literal value represented as a graph node.",
+  "parameter-object": "The object that owns or carries a parameter value into a callable symbol.",
+  "heap-identity": "A tracked object identity used to connect reads, writes, or aliases across the codebase.",
+  "call-site": "The exact source expression where one callable invokes another.",
+  return: "A return point that carries control or a value back to its caller.",
+  property: "A field or property access associated with an object or type.",
+  module: "A source module that groups related symbols and behavior.",
+  package: "A package boundary that organizes related source modules.",
 };
 const scopeIdentity = (node: Node) =>
   node.scope ? [node.scope.repository, node.scope.service, node.scope.package, node.scope.module, node.scope.kind].filter(Boolean).join(" · ") : "";
@@ -217,9 +224,10 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       return `- ${direction} ${peer?.label || peerId} (${edge.relation || "connected"})`;
     });
     const body = [
-      `# ${node.label || node.id}`,
+      `# ${nodeDisplayName(node)}`,
       "",
-      `- Type: ${node.kind}`,
+      `- Type: ${nodeKindLabel(node.kind)}`,
+      `- Graph ID: ${node.id}`,
       `- Location: ${location}`,
       contextRole ? `- Role in selected path: ${contextRole}` : "",
       contextOccurrence ? `- Occurrence: ${contextOccurrence}` : "",
@@ -257,14 +265,14 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
     });
   }
   return (
-    <aside id="source-inspector" ref={inspectorRef} className="detail-panel" aria-label={`Source inspector for ${node.label || node.id}`}>
+    <aside id="source-inspector" ref={inspectorRef} className="detail-panel" aria-label={`Source inspector for ${nodeDisplayName(node)}`}>
       <p className="sr-only" aria-live="polite">
-        Selected {node.kind} {node.label || node.id}, source {location}.
+        Selected {nodeKindLabel(node.kind)} {nodeDisplayName(node)}, source {location}.
       </p>
       <div className="inspector-heading">
         <span className={`kind-badge kind-${node.kind}`}>
           <i />
-          {node.kind}
+          {nodeKindLabel(node.kind)}
         </span>
         {contextRole && <span className={`path-role role-${contextRole.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}>{contextRole}</span>}
         <span className="node-identity" title={`Graph ID: ${node.id}`}>
@@ -285,7 +293,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
         </span>
         <h3>{node.file || "This bundle has no file mapping"}</h3>
         <div className="inspector-symbol">
-          <b>{node.label || node.id}</b>
+          <b>{nodeDisplayName(node)}</b>
           {node.qualifiedName && node.qualifiedName !== node.label && (
             <small>{node.qualifiedName}</small>
           )}
@@ -396,10 +404,7 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
       <div className="detail-rule" />
       <span className="panel-label">WHAT THIS NODE MEANS</span>
       <p className="detail-copy">
-        {descriptions[node.kind] ||
-          (contextRole
-            ? "A node participating in the selected graph path."
-            : "A node participating in the loaded code graph.")}
+        {descriptions[node.kind] || `${nodeDisplayName(node)} is a ${nodeKindLabel(node.kind).toLowerCase()} represented in the code graph${contextRole ? ` and acts as ${contextRole} in this path` : ""}.`}
       </p>
       {(contextNote || contextOccurrence) && (
         <div className="node-documentation">

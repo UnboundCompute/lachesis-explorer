@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { countLabel, flowDisplayName, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
+import { countLabel, flowDisplayName, isSecurityProjection, recommendedFlow, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -98,13 +98,6 @@ function pathScopes(flow: Flow, app: App) {
     if (label && labels.at(-1) !== label) labels.push(label);
   });
   return labels;
-}
-
-function recommendationScore(flow: Flow) {
-  const roles = flow.steps.map((step) => step.role.trim().toLowerCase());
-  const hasSource = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin"].includes(role));
-  const hasSink = Boolean(flow.sinkNodeId) || roles.includes("sink");
-  return (flow.steps.length > 1 ? 100 : 0) + (hasSource ? 20 : 0) + (hasSink ? 20 : 0) + flow.steps.length;
 }
 
 function pathKindLabel(flow: Flow) {
@@ -215,15 +208,12 @@ export function HomeView({
     [app],
   );
   const metadataOnly = findings.length === 0 && app.flows.length === 0 && app.mcp.length > 0;
-  const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
-  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const securityMode = isSecurityProjection(app);
+  const graphOnly = !securityMode && app.nodes.length > 0 && !metadataOnly;
   const bundleMode = securityMode
     ? "Security evidence projection"
     : "Code exploration graph";
-  const graphFocus = useMemo(
-    () => [...app.flows].sort((a, b) => recommendationScore(b) - recommendationScore(a))[0],
-    [app.flows],
-  );
+  const graphFocus = useMemo(() => recommendedFlow(app), [app]);
   const graphFocusNode = graphFocus?.steps[0]
     ? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
     : undefined;

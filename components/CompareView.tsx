@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { countLabel, entryDisplayName, flowDisplayName, type App, type Flow } from '../lib/lachesis'
+import { countLabel, entryDisplayName, flowDisplayName, isSecurityProjection, type App, type Flow } from '../lib/lachesis'
 import { Icon } from './Icon'
 import { copyText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
@@ -244,10 +244,7 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
   const [showAllChanged, setShowAllChanged] = useState(false)
   const [comparisonQuery, setComparisonQuery] = useState("")
   useEffect(() => { setShowAllChanged(false); setComparisonQuery("") }, [base, compare])
-  const securityMode =
-    base.findings.length > 0 ||
-    base.bundle.projection === 'security projection' ||
-    Boolean(compare?.findings.length || compare?.bundle.projection === 'security projection')
+  const securityMode = isSecurityProjection(base) || Boolean(compare && isSecurityProjection(compare))
 
   if (!compare) {
     return (

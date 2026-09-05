@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, type App, type Node } from "../lib/lachesis";
+import { countLabel, isSecurityProjection, nodeDisplayName, type App, type Node } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainNode } from "../lib/explanations";
@@ -47,6 +47,15 @@ const crossesScope = (source: Node, target: Node) =>
 const nodeScopeKind = (node: Node) =>
   node.scope?.kind?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "";
 const hasSource = (node: Node) => Boolean(node.snippet.trim() || node.sourceWindow?.lines.length);
+const sourceArea = (file: string) => {
+  const parts = file.replaceAll("\\", "/").split("/").filter(Boolean);
+  if (!parts.length) return { id: "source-unmapped", name: "Source mapping unavailable", path: "No file path" };
+  const root = parts[0];
+  const nestedRoots = new Set(["src", "lib", "apps", "packages", "services"]);
+  const depth = nestedRoots.has(root) && parts.length > 2 ? 2 : 1;
+  const path = parts.length === 1 ? "Repository root" : parts.slice(0, depth).join("/");
+  return { id: `source-area:${path}`, name: path, path };
+};
 
 function relatedNodeIds(app: App, value: string, direction: "incoming" | "outgoing") {
   const matchedIds = new Set(
@@ -311,7 +320,7 @@ export function OverviewView({
     },
     [app, query],
   );
-  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const securityMode = isSecurityProjection(app);
   const primaryCodeKind = app.nodes.some((node) => node.kind === "function")
     ? "function"
     : app.nodes[0]?.kind || "node";
@@ -480,20 +489,22 @@ export function OverviewView({
         })
         .filter((module) => module.nodes.length > 0);
     }
-    return [...new Set(app.nodes.map((node) => node.file || "Unknown file"))]
-      .map((file) => ({
-        id: file,
-        name: file,
-        path: file,
-        nodes: app.nodes.filter(
-          (node) => (node.file || "Unknown file") === file,
-        ),
-      }))
-      .sort((a, b) => b.nodes.length - a.nodes.length);
+    const grouped = new Map<string, { id: string; name: string; path: string; nodes: Node[] }>();
+    app.nodes.forEach((node) => {
+      const area = sourceArea(node.file);
+      const current = grouped.get(area.id);
+      if (current) current.nodes.push(node);
+      else grouped.set(area.id, { ...area, nodes: [node] });
+    });
+    return [...grouped.values()].sort((a, b) => {
+      const supportRank = (name: string) => /^(?:tests?|examples?|fixtures?|benchmarks?|docs?)\b/i.test(name) ? 1 : 0;
+      return supportRank(a.name) - supportRank(b.name) || b.nodes.length - a.nodes.length || a.name.localeCompare(b.name);
+    });
   }, [app]);
+  const modulesAreDerived = app.modules.length === 0;
   const architectureContexts = query
-    ? contexts.filter((context) => context.nodes.some((node) => visibleIds.has(node.id)))
-    : contexts;
+    ? contexts.filter((context) => context.key !== "unscoped" && context.nodes.some((node) => visibleIds.has(node.id)))
+    : contexts.filter((context) => context.key !== "unscoped");
   const architectureModules = query
     ? modules
         .map((module) => ({ ...module, nodes: module.nodes.filter((node) => visibleIds.has(node.id)) }))
@@ -1033,9 +1044,9 @@ export function OverviewView({
                         tabIndex={0}
                         aria-pressed={selected?.id === node.id}
                         aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End"
-                        aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}${node.scope?.kind ? `, ${node.scope.kind} boundary` : ""}, ${nodeLocation(node)}`}
+                        aria-label={`${nodeDisplayName(node)}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}${node.scope?.kind ? `, ${node.scope.kind} boundary` : ""}, ${nodeLocation(node)}`}
                       >
-                        <title>{node.label || node.id}</title>
+                        <title>{nodeDisplayName(node)} · graph ID ${node.id}</title>
                         <circle className="topology-hit-area" cx={p.x} cy={p.y} r="30" aria-hidden="true" />
                         <circle cx={p.x} cy={p.y} r="24" />
                         <text x={p.x} y={p.y + 4} textAnchor="middle">
@@ -1055,7 +1066,7 @@ export function OverviewView({
                           y={p.y + 52}
                           textAnchor="middle"
                         >
-                          {shorten(node.label || node.id, 18)}
+                          {shorten(nodeDisplayName(node), 18)}
                         </text>
                       </g>
                     );
@@ -1138,7 +1149,8 @@ export function OverviewView({
                 ))}
               </div> : <div className="architecture-filter-empty" role="status">No areas or modules contain this search.</div>}
               <div className="detail-rule" />
-              <span className="panel-label">MODULES</span>
+              <span className="panel-label">{modulesAreDerived ? "SOURCE AREAS" : "MODULES"}</span>
+              {modulesAreDerived && <p className="architecture-filter-note">Grouped from file paths because this bundle does not declare modules.</p>}
               {architectureModules.map((module) => (
                 <div className="module-group" key={module.id}>
                   <button

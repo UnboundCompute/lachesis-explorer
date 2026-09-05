@@ -443,6 +443,61 @@ export function countLabel(count: number, singular: string, plural = `${singular
   return `${count.toLocaleString()} ${count === 1 ? singular : plural}`
 }
 
+export function isSecurityProjection(app: App) {
+  const projection = app.bundle.projection?.trim().toLowerCase()
+  if (projection) return /(?:^|[-_\s])(security|audit)(?:$|[-_\s])/.test(projection)
+  return app.findings.length > 0
+}
+
+const supportingCodePath = /(?:^|\/)(?:tests?|examples?|fixtures?|benchmarks?|docs?)(?:\/|$)/i
+
+export function flowRecommendationScore(flow: Flow, nodes: Node[]) {
+  const pathNodes = flow.steps
+    .map((step) => nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean) as Node[]
+  const uniqueNodeIds = new Set(pathNodes.map((node) => node.id))
+  const sourceBacked = pathNodes.filter((node) => Boolean(node.file && node.line > 0 && (node.snippet.trim() || node.sourceWindow?.lines.length)))
+  const files = new Set(pathNodes.map((node) => node.file).filter(Boolean))
+  const supportingNodes = pathNodes.filter((node) => supportingCodePath.test(node.file)).length
+  const roles = flow.steps.map((step) => step.role.trim().toLowerCase())
+  const hasSourceRole = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin", "entry", "entrypoint"].includes(role))
+  const hasDestinationRole = Boolean(flow.sinkNodeId) || roles.some((role) => ["sink", "boundary", "effect", "return"].includes(role))
+  const isDegenerate = flow.steps.length < 2 || uniqueNodeIds.size < 2
+
+  return (isDegenerate ? -500 : 160)
+    + uniqueNodeIds.size * 8
+    + Math.min(files.size, 5) * 20
+    + sourceBacked.length * 15
+    + (sourceBacked.length === pathNodes.length && pathNodes.length > 1 ? 1000 : 0)
+    + (hasSourceRole ? 15 : 0)
+    + (hasDestinationRole ? 15 : 0)
+    - supportingNodes * 35
+    - (pathNodes.length === 0 ? 500 : 0)
+}
+
+export function recommendedFlow(app: App) {
+  return [...app.flows].sort((a, b) =>
+    flowRecommendationScore(b, app.nodes) - flowRecommendationScore(a, app.nodes)
+      || app.flows.indexOf(a) - app.flows.indexOf(b),
+  )[0]
+}
+
+export function nodeKindLabel(kind: string) {
+  const normalized = kind.replace(/^v2:core:/i, "").replace(/[:_-]+/g, " ").trim()
+  return normalized ? normalized.replace(/^\w/, (letter) => letter.toUpperCase()) : "Graph node"
+}
+
+export function nodeDisplayName(node: Node) {
+  const raw = (node.label || node.qualifiedName || node.id).trim()
+  const withoutNamespace = raw.replace(/^v2:core:/i, "")
+  const prefixed = withoutNamespace.match(/^([a-z][a-z0-9_-]*):(.*)$/i)
+  const readablePrefixes = new Set(["parameter-object", "heap-identity", "call-site", "source-span"])
+  if (!prefixed || !readablePrefixes.has(prefixed[1].toLowerCase())) return withoutNamespace || nodeKindLabel(node.kind)
+  const [, prefix, value] = prefixed
+  const readablePrefix = nodeKindLabel(prefix)
+  return value.trim() ? `${readablePrefix} · ${value.trim()}` : readablePrefix
+}
+
 export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
   const duplicate = allFlows.filter((item) => item.name === flow.name).length > 1
   if (!duplicate) return flow.name
