@@ -659,7 +659,7 @@ export function TraceView({
           <div className="toolbar-actions">
             {previousFlow && (
               <button type="button" className="inspector-reopen selection-back" onClick={returnToPreviousFlow} title={`Return to ${previousFlow.name}`}>
-                ← Back to previous path
+                ← Back to previous graph path
               </button>
             )}
             {!inspectorOpen && (

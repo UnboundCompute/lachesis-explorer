@@ -467,7 +467,7 @@ export function JourneyView({
           <div className="toolbar-actions">
             {previousEntry && (
               <button type="button" className="inspector-reopen selection-back" onClick={returnToPreviousEntry} title={`Return to ${entryDisplayName(previousEntry, app.nodes, app.entries)}`}>
-                ← Back to previous flow
+                ← Back to previous request flow
               </button>
             )}
             {!inspectorOpen && (
