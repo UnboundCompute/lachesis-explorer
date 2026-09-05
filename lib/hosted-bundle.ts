@@ -136,6 +136,9 @@ export async function submitHostedBuild(gitUrl: string, ref: string, signal?: Ab
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify({ git_url: gitUrl, ...(ref ? { ref } : {}) }),
   });
+  if (response.status === 404 && !process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim()) {
+    throw new Error("Hosted repository builds are not configured for this local server. Load a bundle.json or set NEXT_PUBLIC_BUNDLE_API_URL.");
+  }
   if (!response.ok) throw await requestError(response, `The build request failed (HTTP ${response.status}).`);
   return (await responseJson(response)) as BuildResponse;
 }
