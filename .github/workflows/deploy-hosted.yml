@@ -110,6 +110,7 @@ jobs:
           set -euo pipefail
           docker build \
             --platform linux/amd64 \
+            --provenance=false \
             --build-arg LACHESIS_WHEEL_URL="$WHEEL_URL" \
             --build-arg LACHESIS_WHEEL_SHA256="$WHEEL_SHA256" \
             -f services/bundle-service/worker/Dockerfile \
