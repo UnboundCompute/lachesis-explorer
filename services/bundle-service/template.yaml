@@ -113,7 +113,9 @@ Resources:
       MemorySize: 3008
       Timeout: 900
       EphemeralStorage: { Size: 10240 }
-      ReservedConcurrentExecutions: 2
+      # Leave concurrency unreserved by default: this account's Lambda floor
+      # rejects any reservation that would take unreserved capacity below 10.
+      # BatchSize=1 still prevents one invocation from processing multiple jobs.
       Events: { Build: { Type: SQS, Properties: { Queue: !GetAtt BuildQueue.Arn, BatchSize: 1, FunctionResponseTypes: [ReportBatchItemFailures] } } }
       Environment:
         Variables: { JOBS_TABLE: !Ref JobsTable, BUNDLE_BUCKET: !Ref BundleBucket, BUILD_TIMEOUT_SECONDS: '600', MAX_REPOSITORY_FILES: '5000', LACHESIS_CACHE_VERSION: 'lachesis-0.5.0|explorer-2.0' }
