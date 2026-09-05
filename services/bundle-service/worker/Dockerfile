@@ -14,6 +14,7 @@ RUN test -n "$LACHESIS_WHEEL_URL" \
     && lachesis --version
 
 COPY src/contract.py ${LAMBDA_TASK_ROOT}/contract.py
+COPY src/repository_index.py ${LAMBDA_TASK_ROOT}/repository_index.py
 COPY src/worker.py ${LAMBDA_TASK_ROOT}/worker.py
 COPY src/verify_bundle.py ${LAMBDA_TASK_ROOT}/verify_bundle.py
 
