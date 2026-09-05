@@ -14,6 +14,7 @@ try {
 
     await page.goto(`${base}/`, { waitUntil: "networkidle" });
     assert.equal(await page.title(), "Lachesis — Deterministic code graph reader");
+    assert.match(await page.locator("body").innerText(), /Code exploration graph/i, "graph-first fixture projection was not surfaced");
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     assert.equal(dimensions.scrollWidth, dimensions.width, `horizontal overflow at ${viewport.width}px`);
     assert.equal(await page.locator('meta[name="generator"]').count(), 0, "framework metadata is exposed");
