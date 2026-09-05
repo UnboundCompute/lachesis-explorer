@@ -16,7 +16,7 @@ try {
    await page.goto(`${base}/`, { waitUntil: "networkidle" });
    assert.equal(await page.title(), "Lachesis — Deterministic code graph reader");
     const landingText = await page.locator("body").innerText();
-    assert.match(landingText, /Choose what you want to understand/i, "source picker was not surfaced");
+    assert.match(landingText, /Understand a codebase without opening every file/i, "source picker was not surfaced");
     assert.doesNotMatch(landingText, /Synthetic working bundle|example\/webapp/i, "starter bundle leaked onto the first-run surface");
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     assert.equal(dimensions.scrollWidth, dimensions.width, `horizontal overflow at ${viewport.width}px`);
@@ -79,13 +79,13 @@ try {
 
   const localBuildPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   await localBuildPage.goto(`${base}/`, { waitUntil: "networkidle" });
-  await localBuildPage.getByLabel("Repository URL").fill("git@github.com:example/repository.git");
+  await localBuildPage.getByRole("textbox", { name: "Repository URL" }).fill("git@github.com:example/repository.git");
   await localBuildPage.getByRole("button", { name: "Build graph", exact: true }).click();
   const localFormError = localBuildPage.locator(".hosted-build-form-error");
   await localFormError.waitFor({ state: "visible", timeout: 10_000 });
   assert.match(await localFormError.innerText(), /full HTTPS|public HTTPS GitHub, GitLab, or Bitbucket/i, "invalid repository URL was not rejected locally");
   assert.equal(await localBuildPage.locator(".hosted-build-status").count(), 0, "invalid repository URL reached the build service");
-  await localBuildPage.getByLabel("Repository URL").fill("https://github.com/example/repository");
+  await localBuildPage.getByRole("textbox", { name: "Repository URL" }).fill("https://github.com/example/repository");
   await localBuildPage.getByRole("button", { name: "Build graph", exact: true }).click();
   const localBuildStatus = localBuildPage.locator(".hosted-build-status[role=alert]");
   await localBuildStatus.waitFor({ state: "visible", timeout: 10_000 });

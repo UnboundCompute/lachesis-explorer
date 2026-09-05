@@ -176,7 +176,7 @@ function BuildIntake({ onBuild, onCancelBuild, buildState }: Pick<Props, "onBuil
   }
   const statusLabels: Record<string, string> = { queued: "Queued", clone: "Clone repository", cloning: "Cloning repository", build: "Build graph", building: "Building graph", export: "Export bundle", exporting: "Exporting bundle", ready: "Bundle ready", cancelled: "Build cancelled", too_large: "Repository is too large", unsupported_language: "Language is not supported", expired: "Build expired", error: "Build failed" };
   return <section className="hosted-build" aria-labelledby="hosted-build-title">
-    <div><span className="panel-label">OPEN A CODEBASE</span><h2 id="hosted-build-title">Build a graph from a public repository</h2><p>Paste a GitHub, GitLab, or Bitbucket URL. Lachesis builds the graph remotely; your browser only receives the exported bundle.</p></div>
+    <div className="hosted-build-heading"><span className="selection-option-number">01</span><div><span className="panel-label">FRESH GRAPH</span><h2 id="hosted-build-title">Paste a repository URL</h2><p>Build a fresh graph from a public GitHub, GitLab, or Bitbucket repository.</p></div></div>
     <form onSubmit={submit} className="hosted-build-form" aria-label="Build graph from repository">
       <label htmlFor="hosted-repository-url"><span>Repository URL</span><input id="hosted-repository-url" value={gitUrl} onChange={event => { setGitUrl(event.target.value); if (formError) setFormError(""); }} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" aria-invalid={Boolean(formError)} aria-describedby={formError ? "hosted-repository-error" : "hosted-repository-help"} disabled={Boolean(busy)} /></label>
       <label htmlFor="hosted-repository-ref"><span>Ref <small>optional</small></span><input id="hosted-repository-ref" value={ref} onChange={event => setRef(event.target.value)} placeholder="main" disabled={Boolean(busy)} /></label>
@@ -210,13 +210,18 @@ function RepositoryFreshness({ index, onRefresh, busy }: { index: RepositoryInde
 
 function RepositoryGallery() {
   const [repositories, setRepositories] = useState<RepositoryIndex[]>([]);
+  const [page, setPage] = useState(0);
   const hostedConfigured = Boolean(process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim());
+  const pageSize = 6;
   useEffect(() => {
     if (!hostedConfigured) return;
     const controller = new AbortController();
-    loadHostedRepositories(controller.signal).then(setRepositories).catch(() => undefined);
+    loadHostedRepositories(controller.signal).then((items) => { setRepositories(items); setPage(0); }).catch(() => undefined);
     return () => controller.abort();
   }, [hostedConfigured]);
+  const pageCount = Math.max(1, Math.ceil(repositories.length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageItems = repositories.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   function routeFor(repository?: string) {
     const parts = repository?.split("/").filter(Boolean) ?? [];
     if (parts.length !== 3) return "#";
@@ -236,13 +241,21 @@ function RepositoryGallery() {
   );
   return (
     <section className="repository-gallery" aria-labelledby="repository-gallery-title">
-      <div className="understand-section-heading"><div><span className="panel-label">CACHED CODEBASES</span><h2 id="repository-gallery-title">Open a repository that is already mapped.</h2></div><p>Warm graphs open immediately; each card keeps its source revision visible.</p></div>
+      <div className="understand-section-heading"><div className="repository-gallery-heading"><span className="selection-option-number">02</span><div><span className="panel-label">READY TO EXPLORE</span><h2 id="repository-gallery-title">Choose a cached codebase</h2></div></div><p>Open a warm graph instantly. Every card shows the revision you are about to read.</p></div>
       <div className="repository-gallery-grid">
-        {repositories.map((item) => <a className="repository-card" href={routeFor(item.repository)} key={`${item.repository}:${item.revision}`}>
+        {pageItems.map((item) => <a className="repository-card" href={routeFor(item.repository)} key={item.repository + ":" + item.revision}>
           <b>{item.repository || "Unnamed repository"}</b>
           <small>{item.revision ? item.revision.slice(0, 12) : "revision unavailable"}{item.ref ? ` · ${item.ref}` : ""}</small>
           <span>Open graph <Icon name="arrow" size={13} /></span>
         </a>)}
+      </div>
+      <div className="repository-gallery-footer">
+        <small>Showing {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, repositories.length)} of {repositories.length} cached codebases</small>
+        <nav aria-label="Cached codebase pages">
+          <button type="button" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={currentPage === 0}>Previous</button>
+          <span>Page {currentPage + 1} of {pageCount}</span>
+          <button type="button" onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} disabled={currentPage === pageCount - 1}>Next</button>
+        </nav>
       </div>
     </section>
   );
@@ -252,9 +265,8 @@ function RepositorySelection({ onUpload, onBuild, onCancelBuild, buildState, loa
   return (
     <main className="repository-selection" aria-labelledby="repository-selection-title">
       <section className="repository-selection-hero">
-        <span className="panel-label">START WITH A CODEBASE</span>
-        <h1 id="repository-selection-title">Choose what you want to understand.</h1>
-        <p>Lachesis turns a code graph into a guided reading surface. Select a repository first; the graph workspace opens only after its evidence is available.</p>
+        <h1 id="repository-selection-title">Understand a codebase without opening every file.</h1>
+        <p>Lachesis turns a code graph into a guided reading surface. Start with a fresh repository graph or open one that is already cached; the workspace opens when its evidence is ready.</p>
         <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
       </section>
       {loadState.message && (
@@ -271,9 +283,10 @@ function RepositorySelection({ onUpload, onBuild, onCancelBuild, buildState, loa
           <h2 id="repository-selection-upload-title">Already have a bundle?</h2>
           <p>Use a <code>bundle.json</code> from a local Lachesis run. It stays in this browser and skips the hosted build queue.</p>
         </div>
-        <button type="button" className="load-bundle-action" onClick={onUpload} disabled={loadState.type === "loading"}>
-          <span><Icon name="upload" size={16} /><b>{loadState.type === "loading" ? "Reading bundle…" : "Upload bundle.json"}</b><small>Processed only in this browser</small></span>
-          <span className="action-orb"><Icon name="arrow" size={14} /></span>
+        <button type="button" className="load-bundle-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
+          <span className="load-bundle-secondary-icon"><Icon name="upload" size={15} /></span>
+          <span><b>{loadState.type === "loading" ? "Reading bundle…" : "Upload bundle.json"}</b><small>Local only · no hosted build</small></span>
+          <Icon name="arrow" size={14} />
         </button>
       </section>
       <p className="repository-selection-note">Already opening a design-map link? A valid bundle deep link skips this screen and restores its pointed-to repository context.</p>

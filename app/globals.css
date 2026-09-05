@@ -608,3 +608,251 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 @media (max-width:720px){.hosted-build-status ol{grid-template-columns:1fr 1fr}}@media (max-width:420px){.hosted-build-status ol{grid-template-columns:1fr}}
 @media (max-width:760px){.repository-gallery-grid{grid-template-columns:1fr}.repository-gallery .understand-section-heading{align-items:start}.repository-freshness{align-items:flex-start;flex-direction:column}.repository-freshness button{width:100%}.artifact-shelf-heading{align-items:flex-start;flex-direction:column}.artifact-shelf-actions{display:grid;grid-template-columns:1fr}.artifact-shelf-actions button,.artifact-shelf-actions a{justify-content:center}.repository-selection-upload{align-items:stretch;flex-direction:column}.repository-selection-upload .load-bundle-action{width:100%;min-width:0}}
 @media(max-width:760px){.understand-tour{padding:30px 0}.understand-tour-list{grid-template-columns:1fr}.understand-tour-list button{min-height:72px}}
+
+
+/* Source selection: two equal primary routes, one quiet local fallback. */
+.repository-selection {
+  max-width: 1180px;
+  gap: 18px;
+  padding-top: clamp(64px, 9vw, 112px);
+}
+.repository-selection-hero {
+  max-width: none;
+  gap: 24px;
+}
+.repository-selection-hero h1 {
+  max-width: 760px;
+  font-size: clamp(32px, 5vw, 46px);
+  text-wrap: balance;
+}
+.repository-selection-hero > p {
+  max-width: 650px;
+  font-size: 14px;
+}
+.repository-selection .hosted-build {
+  max-width: none;
+  margin-top: 8px;
+  padding: 22px;
+  border-color: var(--line-strong);
+  background: var(--surface-1);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, .12);
+}
+.hosted-build-heading,
+.repository-gallery-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+.selection-option-number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 27px;
+  height: 27px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  color: var(--accent);
+  font: 700 10px var(--mono);
+}
+.repository-selection .hosted-build h2 {
+  margin: 3px 0 5px;
+  font-size: 20px;
+  letter-spacing: -.02em;
+}
+.repository-selection .hosted-build p {
+  font-size: 12px;
+}
+.repository-selection .hosted-build-form {
+  grid-template-columns: minmax(0, 1fr) 150px auto;
+  gap: 12px;
+}
+.repository-selection .hosted-build-form input {
+  min-height: 46px;
+  background: var(--canvas-raised);
+}
+.repository-selection .hosted-build-form button {
+  min-height: 46px;
+  padding-inline: 18px;
+}
+.repository-selection .hosted-build-help {
+  margin-left: 40px;
+}
+.repository-selection .repository-gallery {
+  gap: 18px;
+  padding: 26px 22px 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--surface-1);
+}
+.repository-selection .repository-gallery .understand-section-heading {
+  align-items: start;
+}
+.repository-selection .repository-gallery h2 {
+  margin: 3px 0 0;
+  font-size: 20px;
+  letter-spacing: -.02em;
+}
+.repository-selection .repository-gallery-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.repository-selection .repository-card {
+  min-height: 122px;
+  padding: 16px;
+  border-color: var(--line);
+  background: var(--canvas-raised);
+}
+.repository-selection .repository-card:hover,
+.repository-selection .repository-card:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+.repository-gallery-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.repository-gallery-footer > small {
+  color: var(--ink-3);
+  font: 9px var(--mono);
+}
+.repository-gallery-footer nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.repository-gallery-footer nav button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font: 9px var(--mono);
+  cursor: pointer;
+}
+.repository-gallery-footer nav button:hover:not(:disabled),
+.repository-gallery-footer nav button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.repository-gallery-footer nav button:disabled {
+  cursor: not-allowed;
+  opacity: .38;
+}
+.repository-gallery-footer nav span {
+  min-width: 72px;
+  color: var(--ink-3);
+  font: 9px var(--mono);
+  text-align: center;
+}
+.repository-selection-upload {
+  align-items: center;
+  gap: 20px;
+  margin-top: 4px;
+  padding: 18px 0 4px;
+}
+.repository-selection-upload h2 {
+  font-size: 15px;
+}
+.repository-selection-upload p {
+  max-width: 680px;
+  color: var(--ink-3);
+  font-size: 11px;
+}
+.load-bundle-secondary {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-2);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, color .16s ease;
+}
+.load-bundle-secondary:hover,
+.load-bundle-secondary:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.load-bundle-secondary:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+.load-bundle-secondary > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+.load-bundle-secondary b {
+  font: 700 10px var(--mono);
+}
+.load-bundle-secondary small {
+  color: var(--ink-3);
+  font: 8px var(--mono);
+}
+.load-bundle-secondary-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink-3);
+}
+.load-bundle-secondary > svg {
+  color: var(--ink-3);
+}
+@media (max-width: 760px) {
+  .repository-selection {
+    padding-top: 42px;
+  }
+  .repository-selection-hero h1 {
+    font-size: 32px;
+  }
+  .repository-selection .hosted-build {
+    padding: 17px;
+  }
+  .repository-selection .hosted-build-form {
+    grid-template-columns: 1fr;
+  }
+  .repository-selection .hosted-build-form button {
+    width: 100%;
+  }
+  .repository-selection .hosted-build-help {
+    margin-left: 0;
+  }
+  .repository-selection .repository-gallery {
+    padding: 20px 16px 16px;
+  }
+  .repository-selection .repository-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+  .repository-gallery-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .repository-gallery-footer nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .repository-gallery-footer nav button {
+    min-height: 42px;
+  }
+  .repository-selection-upload {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .load-bundle-secondary {
+    width: 100%;
+  }
+}
