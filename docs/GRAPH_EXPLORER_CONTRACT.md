@@ -127,6 +127,17 @@ and navigation ambiguous.
 Entrypoints identify places a developer can start, including HTTP routes,
 CLI commands, jobs, event handlers, public APIs, and exported functions.
 
+Optional `graph.concepts` records provide a small architecture map for Guided
+mode. A concept is an exporter-authored explanation of a code area or idea,
+not a security claim. Each concept has a stable `id`, a reader-facing `label`,
+an optional `description`, and optional `node_ids` pointing to the symbols that
+make the concept concrete. `related_ids` may connect concepts, but must point
+to other concept IDs and must not repeat. Unknown node or concept references,
+duplicate IDs, and self-references are invalid. Exporters should prefer a few
+meaningful concepts such as a request lifecycle, a query pipeline, or a service
+boundary over one concept per module; the Explorer falls back to modules when
+the optional map is absent.
+
 When a bundle can link back to a browsable source repository, `meta.source_url_template`
 may provide an HTTP(S) template with a required `{file}` placeholder and optional
 `{line}`, `{end_line}`, and `{revision}` placeholders. The Explorer only renders an external source link

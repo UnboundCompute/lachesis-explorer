@@ -239,12 +239,13 @@ class WorkerTests(unittest.TestCase):
             "format": "lachesis-explorer-bundle",
             "schema_version": "2.0",
             "analysis_projection": "code-understanding",
-            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 2, "indexed_nodes": 2},
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 3, "indexed_nodes": 3},
             "graph": {"nodes": [
                 {"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"},
                 {"id": "n2", "kind": "call", "file": "main.py", "line": 2, "label": "run", "snippet": "run()"},
+                {"id": "n3", "kind": "effect", "file": "main.py", "line": 3, "label": "write", "snippet": "write()"},
             ], "entrypoints": [{"id": "entry.main", "label": "main", "node_id": "n1"}]},
-            "paths": {"values": [{"id": "flow.main", "kind": "call-path", "steps": [{"node_id": "n1"}, {"node_id": "n2"}]}]},
+            "paths": {"values": [{"id": "flow.main", "kind": "call-path", "steps": [{"node_id": "n1"}, {"node_id": "n2"}, {"node_id": "n3"}]}]},
         }
         self.assertIs(validate_bundle(bundle), bundle)
 
