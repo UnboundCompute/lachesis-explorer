@@ -605,7 +605,7 @@ export function HomeView({
           </p>
         )}
 
-        {explorerMode === "full" && app.coverage.limitations.length > 0 && (
+        {explorerMode === "dense" && app.coverage.limitations.length > 0 && (
           <aside className="understand-coverage" aria-label="Bundle coverage note">
             <div>
               <span className="panel-label">WHAT THIS BUNDLE INCLUDES</span>
@@ -620,7 +620,7 @@ export function HomeView({
           </aside>
         )}
 
-        {explorerMode === "guided" && orientationItems.length > 0 && (
+        {explorerMode === "simple" && orientationItems.length > 0 && (
           <section className="understand-overview" aria-labelledby="understand-overview-title">
             <div className="understand-section-heading">
               <div>
@@ -1018,7 +1018,7 @@ export function HomeView({
                     <Icon name="arrow" size={13} />
                   </span>
                 </button>
-                <button type="button" onClick={() => onView("map")}>Open full graph</button>
+                <button type="button" onClick={() => onView("map")}>Open dense graph</button>
               </div>
             </>
           ) : metadataOnly ? (
@@ -1047,7 +1047,7 @@ export function HomeView({
               <div className="priority-actions">
                 {app.flows.length > 0 && <button type="button" onClick={() => onView("trace")}>Review paths</button>}
                 <button type="button" onClick={() => onView("map")}>
-                  Open full graph{" "}
+                  Open dense graph{" "}
                   <span className="action-orb">
                     <Icon name="arrow" size={13} />
                   </span>
@@ -1169,7 +1169,7 @@ export function HomeView({
                 : graphOnly
                   ? graphFocus
                     ? "This bundle has no security overlay; explore its graph paths instead."
-                    : "No paths were included; open the full graph to browse its structure."
+                    : "No paths were included; open the dense graph to browse its structure."
                 : queueSearch
                   ? `No findings match “${queueSearch}”${queueFilter !== "all" ? " with this status filter" : ""}.`
                   : "No findings match this filter."}

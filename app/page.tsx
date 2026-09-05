@@ -141,7 +141,7 @@ function isSinkNode(app: App, nodeId: string) {
 
 export default function Page() {
   const [view, setView] = useState<View>("home");
-  const [explorerMode, setExplorerMode] = useState<ExplorerMode>("guided");
+  const [explorerMode, setExplorerMode] = useState<ExplorerMode>("simple");
   const [direction, setDirection] = useState<"backward" | "forward">(
     "backward",
   );
@@ -264,8 +264,10 @@ export default function Page() {
     const params = new URLSearchParams(window.location.search);
     const urlMode = params.get("mode");
     const storedMode = readLocal("lachesis-explorer-mode");
-    if (urlMode === "guided" || urlMode === "full") setExplorerMode(urlMode);
-    else if (!window.location.pathname.startsWith("/r/") && (storedMode === "guided" || storedMode === "full")) setExplorerMode(storedMode);
+    const normalizedUrlMode = urlMode === "dense" || urlMode === "full" ? "dense" : urlMode === "simple" || urlMode === "guided" ? "simple" : undefined;
+    const normalizedStoredMode = storedMode === "dense" || storedMode === "full" ? "dense" : storedMode === "simple" || storedMode === "guided" ? "simple" : undefined;
+    if (normalizedUrlMode) setExplorerMode(normalizedUrlMode);
+    else if (!window.location.pathname.startsWith("/r/") && normalizedStoredMode) setExplorerMode(normalizedStoredMode);
   }, []);
   useEffect(() => {
     writeLocal("lachesis-explorer-mode", explorerMode);
@@ -348,7 +350,7 @@ export default function Page() {
       mapMode: params.get("map_mode") ?? undefined,
       mapOrder: params.get("map_order") ?? undefined,
       mapNeighborhood: params.get("map_focus") === "neighborhood",
-      mode: params.get("mode") === "full" ? "full" : params.get("mode") === "guided" ? "guided" : undefined,
+      mode: params.get("mode") === "dense" || params.get("mode") === "full" ? "dense" : params.get("mode") === "simple" || params.get("mode") === "guided" ? "simple" : undefined,
     };
     setHandoffContext({
       repository: link.repository,

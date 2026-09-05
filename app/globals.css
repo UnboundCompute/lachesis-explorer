@@ -883,7 +883,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
     width: 100%;
   }
 }
-/* Guided / Full graph mode control */
+/* Simple / Dense mode control */
 .mode-toggle{height:44px;padding:0 8px;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:9px var(--mono);transition:transform 480ms var(--ease),background 480ms var(--ease)}
 .mode-toggle:hover{transform:translateY(-2px);background:var(--surface-2)}
 .mode-toggle-dot{width:7px;height:7px;border-radius:50%;background:var(--brand)}
