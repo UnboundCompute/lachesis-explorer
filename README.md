@@ -85,6 +85,17 @@ To verify a hosted opaque-bundle deep link against a running Explorer server, se
 Design Map consumes the same contract with `?bundle=<opaque-id>` and keeps the bundle ID in its
 Architecture, Flows, Trust, and Lachesis handoff links.
 
+Local handoff check:
+
+```bash
+npm run build && npm run start -- -p 3210
+LACHESIS_BUNDLE_ID=b_demo1234 node scripts/smoke-browser.mjs http://127.0.0.1:3210
+```
+
+The hosted deep-link check confirms that Explorer requests the opaque bundle, restores the map
+lens, and keeps the bundle ID in the URL. `b_demo1234` is a demo-only fixture; production IDs come
+from the deployed SAM bundle service.
+
 ### Hosted bundle service
 
 Hosted links use an opaque bundle ID and never put a repository URL or storage URL in the browser
