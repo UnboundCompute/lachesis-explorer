@@ -200,7 +200,8 @@ the graph-first export. The 2.0 bundle should include:
 - files, modules and entrypoints where available;
 - optional value/request paths and security findings;
 - exporter limitations and provenance;
-- `meta.source_url_template` using only `{file}`, `{line}`, `{end_line}`, `{revision}`.
+- `meta.source_url_template` as an absolute HTTP(S) template containing `{file}` and using only
+  `{file}`, `{line}`, `{end_line}`, and `{revision}` placeholders.
 
 Example:
 

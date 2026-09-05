@@ -25,7 +25,7 @@
         "language": { "type": "string", "minLength": 1 },
         "revision": { "type": "string", "minLength": 1 },
         "description": { "type": "string", "description": "Exporter-authored summary of what this graph projection represents." },
-        "source_url_template": { "type": "string", "format": "uri-template", "description": "Optional HTTPS or HTTP URL template for opening a node in its source repository. Supports {file}, {line}, {end_line}, and {revision}." },
+        "source_url_template": { "type": "string", "format": "uri-template", "description": "Optional absolute HTTPS or HTTP URL template for opening a node in its source repository. Must include {file}; supports {line}, {end_line}, and {revision}." },
         "lines": { "type": "integer", "minimum": 0 },
         "indexed_nodes": { "type": "integer", "minimum": 0 },
         "generated_at": { "type": "string" },

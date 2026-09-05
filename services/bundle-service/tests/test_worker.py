@@ -143,6 +143,7 @@ class WorkerTests(unittest.TestCase):
             "javascript:alert(1)",
             "https://user:pass@example.com/{file}",
             "https://example.com/{owner}/{file}",
+            "https://example.com/{revision}",
         ):
             bundle = {
                 "format": "lachesis-explorer-bundle",

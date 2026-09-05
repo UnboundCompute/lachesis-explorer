@@ -164,7 +164,7 @@ For source reading, nodes may also provide `parent_id` for their enclosing symbo
 optional for graph-only nodes; when a bundle advertises a code-understanding projection, its
 featured guided paths must use source-backed nodes so the reading surface remains grounded.
 
-At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional `meta.source_url_template` can link a selected symbol to a browsable source host using `{file}`, `{line}`, `{end_line}`, and `{revision}` placeholders. The Explorer validates the result as HTTP(S) and never infers a hosting provider. Optional fields include:
+At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional `meta.source_url_template` can link a selected symbol to a browsable source host; it must be an absolute HTTP(S) template containing `{file}` and may use `{line}`, `{end_line}`, and `{revision}`. The Explorer validates the result and never infers a hosting provider. Optional fields include:
 
 ```json
 {

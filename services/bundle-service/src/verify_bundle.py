@@ -37,6 +37,8 @@ def _validate_source_url_template(value: Any) -> None:
     fields = set(re.findall(r"\{([^{}]+)\}", template))
     if fields - _SOURCE_TEMPLATE_FIELDS:
         _fail("meta.source_url_template contains an unsupported placeholder")
+    if "file" not in fields:
+        _fail("meta.source_url_template must include the {file} placeholder")
     rendered = template
     replacements = {
         "file": "src/main.py",
