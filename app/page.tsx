@@ -910,6 +910,23 @@ export default function Page() {
     setFocusNodeId("");
     let restored = false;
     if (pending) {
+      const hasNavigationContext = Boolean(
+        pending.view ||
+          pending.flow ||
+          pending.step ||
+          pending.entry ||
+          pending.hop ||
+          pending.sink ||
+          pending.node ||
+          pending.anchor ||
+          pending.region ||
+          pending.label ||
+          pending.domain ||
+          pending.filter ||
+          pending.mapMode ||
+          pending.mapOrder ||
+          pending.mapNeighborhood,
+      );
       const requestedView = pending.view ?? (pending.region || pending.label || pending.anchor || pending.domain ? "map" : pending.flow || pending.step ? "trace" : undefined);
       if (
         requestedView === "home" ||
@@ -986,6 +1003,7 @@ export default function Page() {
       if (requestedView === "map") setMapOrder(pending.mapOrder === "centrality" ? "centrality" : "path");
       if (requestedView === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
       pendingLink.current = null;
+      if (!hasNavigationContext) restored = true;
     }
     initializeNavigation();
     urlReady.current = true;
