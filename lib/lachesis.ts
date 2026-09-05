@@ -308,6 +308,7 @@ function normalizeBundleV1(raw: any): App {
   const graph = raw.graph ?? {}
   const manifest = raw.evidence_manifest ?? {}
   const meta = raw.meta ?? {}
+  const projection = String(raw.analysis_projection ?? manifest.analysis_projection ?? 'security projection')
   if (!Array.isArray(graph.nodes)) throw new Error('Expected graph.nodes to be an array.')
   if (!Array.isArray(raw.findings)) throw new Error('Expected findings to be an array.')
   const nodes:Node[] = graph.nodes.map(normalizeNode)
@@ -352,7 +353,7 @@ function normalizeBundleV1(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:'security projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection:String(manifest.analysis_projection??'security projection'),description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:projection,includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeGraphV2(raw:any):App {

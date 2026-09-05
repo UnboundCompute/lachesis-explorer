@@ -44,6 +44,20 @@ try {
   await requestFlowItem.click();
   assert.equal(new URL(page.url()).searchParams.get("view"), "journey", "More menu navigation failed");
   await page.close();
+  const projectionPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await projectionPage.route("**/demo-bundle.json", async (route) => {
+    const response = await route.fetch();
+    const payload = await response.json();
+    payload.evidence_manifest.analysis_projection = "code-understanding";
+    payload.security = { findings: [{ finding_id: "optional-security-context", witness: { steps: [{ node_id: "route.search" }] } }] };
+    await route.fulfill({ response, body: JSON.stringify(payload) });
+  });
+  await projectionPage.goto(`${base}/?sample=security`, { waitUntil: "networkidle" });
+  await projectionPage.waitForFunction(() => document.body.innerText.includes("Understand demo/atlas-commerce"), undefined, { timeout: 10_000 });
+  const projectionText = await projectionPage.locator("body").innerText();
+  assert.match(projectionText, /Understand demo\/atlas-commerce/, "explicit code-understanding projection entered the wrong mode");
+  assert.doesNotMatch(projectionText, /Security evidence projection/, "optional findings overrode code-understanding mode");
+  await projectionPage.close();
 
   const hostedBundleId = process.env.LACHESIS_BUNDLE_ID;
   if (hostedBundleId) {
