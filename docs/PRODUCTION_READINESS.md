@@ -25,7 +25,7 @@ those require an explicit release environment and may incur AWS usage.
 
 ```bash
 corepack pnpm install --frozen-lockfile
-npm run check
+corepack pnpm run check
 corepack pnpm audit --audit-level low
 PYTHONPATH=services/bundle-service python3 -m unittest discover \
   -s services/bundle-service/tests -v
