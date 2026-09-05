@@ -1201,6 +1201,25 @@ export default function Page() {
     }
   }
 
+  function changeSource() {
+    buildController.current?.abort();
+    buildController.current = null;
+    activeJobId.current = null;
+    importBusy.current = false;
+    pendingLink.current = null;
+    setSourceSelected(false);
+    setRepositoryIndex(null);
+    setHostedBundleId(undefined);
+    setBuildState({ status: "idle", steps: [] });
+    setHandoffContext({});
+    setLoadState({ type: "idle", message: "Choose a repository or upload a bundle." });
+    setView("home");
+    navigationDepth.current = 0;
+    navigationMaxDepth.current = 0;
+    setNavigation({ canBack: false, canForward: false });
+    window.history.pushState({ lachesis: true, depth: 0 }, "", "/");
+  }
+
 
   async function uploadComparison(file?: File) {
     if (!file) return;
@@ -1397,6 +1416,7 @@ export default function Page() {
           isDemo={isDemo}
           loadState={loadState}
           onUpload={() => fileRef.current?.click()}
+          onChangeSource={changeSource}
           onReviewCoverage={() => {
             setMapQuery("");
             changeView("map", "health");

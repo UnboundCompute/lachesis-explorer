@@ -23,6 +23,7 @@ type Props = {
   isDemo: boolean;
   loadState: LoadState;
   onUpload: () => void;
+  onChangeSource?: () => void;
   onReviewCoverage: () => void;
   sourceSelected: boolean;
   onView: (view: "map" | "investigate" | "trace" | "journey" | "compare") => void;
@@ -342,6 +343,7 @@ export function HomeView({
   isDemo,
   loadState,
   onUpload,
+  onChangeSource,
   onReviewCoverage,
   onView,
   onSearch,
@@ -517,6 +519,7 @@ export function HomeView({
               Paths keep the relevant symbols, relationships, and source context together, so unfamiliar code becomes a guided reading instead of file-by-file tab hopping.
             </p>
             <div className="understand-actions">
+              {onChangeSource && <button type="button" className="understand-secondary" onClick={onChangeSource}><Icon name="back" size={14} /> Change codebase</button>}
               {graphFocus && (
                 <button
                   type="button"
@@ -553,9 +556,6 @@ export function HomeView({
                 <button type="submit" disabled={!sourceSearch.trim()}>Find</button>
               </form>
             )}
-            <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
-            {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
-            <RepositoryGallery />
             <RepositoryArtifactShelf index={repositoryIndex} />
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
@@ -746,9 +746,7 @@ export function HomeView({
               <Icon name="arrow" size={14} />
             </span>
           </button>
-          <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
-          {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
-          <RepositoryGallery />
+          {onChangeSource && <button type="button" className="change-source-action" onClick={onChangeSource}><Icon name="back" size={14} /> Change codebase</button>}
           <RepositoryArtifactShelf index={repositoryIndex} />
         </div>
       </header>
