@@ -5,12 +5,13 @@ usable without the hosted service: users can load a local `bundle.json` directly
 
 ## Before deployment
 
-- [ ] Confirm the Explorer production origin is an exact HTTPS origin with no path or wildcard.
-- [ ] Publish the Lachesis wheel to an immutable artifact location. Record its registry-published
+- [x] Confirm the Explorer production origin is an exact HTTPS origin with no path or wildcard:
+  `https://lachesis.unboundcompute.com`.
+- [x] Publish the Lachesis wheel to an immutable artifact location. Record its registry-published
   SHA-256; do not use `latest` or a mutable object key.
-- [ ] Build the worker image with that wheel URL and SHA-256, then push it to regional ECR.
-- [ ] Resolve the pushed image to a full ECR digest (`repository@sha256:...`).
-- [ ] Review the Lachesis version, exporter options, and `LACHESIS_CACHE_VERSION` together. Bump
+- [x] Build the worker image with that wheel URL and SHA-256, then push it to regional ECR.
+- [x] Resolve the pushed image to a full ECR digest (`repository@sha256:...`).
+- [x] Review the Lachesis version, exporter options, and `LACHESIS_CACHE_VERSION` together. Bump
   the cache version whenever any of them changes.
 - [ ] Create or select an SNS topic and subscribe the on-call channel before enabling traffic.
 
@@ -37,8 +38,8 @@ sam validate --template-file .aws-sam/build/template.yaml \
 ```
 
 The transformed template must retain the private encrypted bucket, TLS-only bucket policy,
-encrypted queues, immutable worker image, worker timeout/queue visibility relationship, reserved
-worker concurrency, log retention, and all four alarms.
+encrypted queues, immutable worker image, worker timeout/queue visibility relationship, event-source
+maximum concurrency, log retention, and all four alarms.
 
 ## Deploy
 
@@ -61,16 +62,16 @@ deployment. Prefer a same-origin reverse proxy when the hosting platform support
 
 ## After deployment
 
-- [ ] Run the hosted smoke test against the deployed HTTPS API:
+- [x] Run the hosted smoke test against the deployed HTTPS API:
 
   ```bash
   node services/bundle-service/smoke-hosted.mjs https://<api-host> b_<known-id>
   ```
 
-- [ ] Submit one small public repository and observe queued → cloning → building → exporting →
+- [x] Submit one small public repository and observe queued → cloning → building → exporting →
   ready in the API and CloudWatch logs.
 - [ ] Confirm a repository above 5,000 tracked files terminates as `too_large` before analysis.
-- [ ] Confirm the returned bundle validates as graph-first schema version 2.
+- [x] Confirm the returned bundle validates as graph-first schema version 2.
 - [ ] Confirm cancellation leaves no published bundle and that a cancelled job is not restarted.
 - [ ] Confirm a repeated build uses the private cache while publishing a fresh opaque bundle ID.
 - [ ] Confirm malformed IDs, unsupported URLs, oversized requests, and expired jobs return safe
@@ -88,8 +89,20 @@ delete the retained artifact bucket or jobs table during rollback. If an analyze
 is involved, bump the cache version before the next forward deployment so stale bundles cannot be
 mistaken for current output.
 
-## Current boundary
+## Current deployment
 
-The repository can prove static correctness and local contract behavior. A production launch is
-not complete until the post-deployment checklist has been executed with AWS credentials and a
-published worker image.
+The hosted stack is deployed in `us-east-1` as `lachesis-bundle-service`.
+
+- API: `https://56h5zgua56.execute-api.us-east-1.amazonaws.com`
+- Explorer origin: `https://lachesis.unboundcompute.com`
+- Worker: Lachesis `0.5.0`, x86_64 Lambda image
+- Worker image digest: `sha256:980d2961ffcfb63956107b236197a8331046ed155f943f076b12f96ed5a7cd4f`
+- Wheel SHA-256: `1ebeb5d1b9f19f018141ea6a86a1faf17b2065756363ec83b8a88a43b17ca007`
+- Hosted limit: 5,000 tracked files per repository
+- Worker memory: 3,008 MiB Lambda quota, with a 2,400 MiB Lachesis process budget
+- Queue concurrency: maximum 2 event-source consumers
+
+The backend and real repository smoke path are verified. Before calling the public launch fully
+complete, deploy the Explorer frontend commit containing the unmapped-node compatibility change,
+configure `NEXT_PUBLIC_BUNDLE_API_URL` with the API above, add an SNS alarm destination, and run
+the remaining cancellation, oversized-repository, cache-hit, and alarm-delivery checks.
