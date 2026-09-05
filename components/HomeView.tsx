@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { countLabel, flowDisplayName, isSecurityProjection, recommendedFlow, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
+import { countLabel, flowDisplayName, isSecurityProjection, nodeDisplayName, recommendedFlow, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -213,7 +213,7 @@ export function HomeView({
   const bundleMode = securityMode
     ? "Security evidence projection"
     : "Code exploration graph";
-  const graphFocus = useMemo(() => recommendedFlow(app), [app]);
+  const graphFocus = useMemo(() => recommendedFlow(app, { requireRenderableSource: true }), [app]);
   const graphFocusNode = graphFocus?.steps[0]
     ? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
     : undefined;
@@ -423,7 +423,7 @@ export function HomeView({
               <div className="understand-path-copy">
                 <span>{pathKindLabel(graphFocus)} · {countLabel(graphFocus.steps.length, "symbol")}</span>
                 <h3 title={flowDisplayName(graphFocus, app.nodes, app.flows)}>{flowActionLabel(graphFocus, app)}</h3>
-                <p>{graphFocus.description || `Follow the path from ${startNode?.label || "its first symbol"} to ${endNode?.label || "its final symbol"}.`}</p>
+                <p>{graphFocus.description || `Follow the path from ${startNode ? nodeDisplayName(startNode) : "its first symbol"} to ${endNode ? nodeDisplayName(endNode) : "its final symbol"}.`}</p>
               </div>
               <div className="understand-route" aria-label="Recommended path endpoints">
                 <span><small>Starts at</small><b>{startNode?.label || "Not reported"}</b><em>{nodeLocation(startNode)}</em></span>
@@ -685,7 +685,7 @@ export function HomeView({
                   <span>
                     <small>Starts at</small>
                     <b>
-                      {sourceFor(graphFocus, app)?.label ?? "Source not reported"}
+                      {sourceFor(graphFocus, app) ? nodeDisplayName(sourceFor(graphFocus, app)!) : "Source not reported"}
                     </b>
                   </span>
                   <i>
@@ -694,7 +694,7 @@ export function HomeView({
                   <span>
                     <small>Reaches</small>
                     <b>
-                      {sinkFor(graphFocus, app)?.label ?? "Boundary not reported"}
+                      {sinkFor(graphFocus, app) ? nodeDisplayName(sinkFor(graphFocus, app)!) : "Boundary not reported"}
                     </b>
                   </span>
                 </div>
@@ -702,7 +702,7 @@ export function HomeView({
                 <div className="witness-route single-symbol-route" aria-label="Selected symbol">
                   <span>
                     <small>Starting symbol</small>
-                    <b>{graphFocusNode?.label ?? graphFocus.steps[0]?.node_id ?? "Symbol not reported"}</b>
+                    <b>{graphFocusNode ? nodeDisplayName(graphFocusNode) : graphFocus.steps[0]?.node_id ?? "Symbol not reported"}</b>
                   </span>
                   <span>
                     <small>Location</small>

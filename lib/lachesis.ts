@@ -475,10 +475,23 @@ export function flowRecommendationScore(flow: Flow, nodes: Node[]) {
     - (pathNodes.length === 0 ? 500 : 0)
 }
 
-export function recommendedFlow(app: App) {
-  return [...app.flows].sort((a, b) =>
+function hasRenderablePath(flow: Flow, nodes: Node[]) {
+  const pathNodes = flow.steps
+    .map((step) => nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean) as Node[]
+  return flow.steps.length > 1
+    && new Set(pathNodes.map((node) => node.id)).size > 1
+    && pathNodes.length === flow.steps.length
+    && pathNodes.every((node) => Boolean(node.file && node.line > 0 && (node.snippet.trim() || node.sourceWindow?.lines.length)))
+}
+
+export function recommendedFlow(app: App, options: { requireRenderableSource?: boolean } = {}) {
+  const candidates = options.requireRenderableSource
+    ? app.flows.filter((flow) => hasRenderablePath(flow, app.nodes))
+    : app.flows
+  return [...candidates].sort((a, b) =>
     flowRecommendationScore(b, app.nodes) - flowRecommendationScore(a, app.nodes)
-      || app.flows.indexOf(a) - app.flows.indexOf(b),
+      || candidates.indexOf(a) - candidates.indexOf(b),
   )[0]
 }
 
