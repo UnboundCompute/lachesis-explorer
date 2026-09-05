@@ -44,7 +44,7 @@ try {
   assert.ok(await nodes.count() > 0, "graph node list is empty");
   await nodes.first().click();
   assert.equal(await page.locator("#source-inspector").count(), 1, "node selection did not open inspector");
-  for (const [label, view] of [["Trace", "trace"], ["Compare", "compare"], ["Understand", "home"]]) {
+  for (const [label, view] of [["Trace", "trace"]]) {
     await page.getByRole("button", { name: new RegExp(`^${label}`) }).first().click();
     assert.equal(new URL(page.url()).searchParams.get("view"), view, `${label} navigation failed`);
     if (view === "trace") {
@@ -52,13 +52,21 @@ try {
       assert.equal(await page.getByRole("button", { name: "Next step", exact: true }).count(), 1, "trace step navigation is ambiguous");
     }
   }
-  await page.getByRole("button", { name: /^Trace/ }).first().click();
   const simpleTraceText = await page.locator("body").innerText();
   assert.match(simpleTraceText, /FOLLOW A PATH/, "Simple Trace did not use reader-facing vocabulary");
   assert.doesNotMatch(simpleTraceText, /GRAPH-PATH LENS|limited projection/i, "Simple Trace exposed Dense diagnostics");
+  assert.equal(await page.getByRole("button", { name: /^Compare/ }).count(), 0, "Simple mode exposed the Compare lens");
+  await page.getByRole("button", { name: /^More/ }).click();
+  assert.equal(await page.getByRole("menuitem", { name: /^What reaches here/ }).count(), 0, "Simple mode exposed the Boundary lens");
+  assert.equal(await page.getByRole("menuitem", { name: /^Request flow/ }).count(), 1, "Simple mode hid the Request flow lens");
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: /Switch to dense mode/i }).click();
   const denseTraceText = await page.locator("body").innerText();
   assert.match(denseTraceText, /GRAPH-PATH LENS/, "Dense Trace did not retain analyst vocabulary");
+  for (const [label, view] of [["Compare", "compare"], ["Understand", "home"]]) {
+    await page.getByRole("button", { name: new RegExp(`^${label}`) }).first().click();
+    assert.equal(new URL(page.url()).searchParams.get("view"), view, `${label} navigation failed in Dense mode`);
+  }
   await page.getByRole("button", { name: /^More/ }).click();
   const requestFlowItem = page.getByRole("menuitem", { name: /^Request flow/ });
   assert.equal(await requestFlowItem.count(), 1, "More menu did not expose focused views");

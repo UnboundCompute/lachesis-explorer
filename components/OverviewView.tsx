@@ -234,6 +234,9 @@ export function OverviewView({
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const discoverableNodes = useMemo(() => nodesForExplorerMode(app, explorerMode), [app, explorerMode]);
   useEffect(() => {
+    if (explorerMode === "simple" && mode === "health") setMode("map");
+  }, [explorerMode, mode, setMode]);
+  useEffect(() => {
     setSelectedId(discoverableNodes[0]?.id ?? "");
     if (hasMountedOverview.current && !query) setQuery("");
     hasMountedOverview.current = true;
@@ -714,7 +717,7 @@ export function OverviewView({
                 <Icon name="matrix" size={13} />
                 Modules
               </button>
-              <button
+              {explorerMode === "dense" && <button
                 type="button"
                 className={mode === "health" ? "active" : ""}
                 aria-pressed={mode === "health"}
@@ -728,7 +731,7 @@ export function OverviewView({
               >
                 <Icon name="history" size={13} />
                 Data quality
-              </button>
+              </button>}
             </div>
           </div>
         </header>
