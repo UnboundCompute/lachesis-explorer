@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, entryDisplayName, flowDisplayName, isSecurityProjection, nodeDisplayName, nodeKindLabel, type App } from "../lib/lachesis";
+import { countLabel, entriesForExplorerMode, entryDisplayName, flowDisplayName, flowsForExplorerMode, isSecurityProjection, nodeDisplayName, nodeKindLabel, nodesForExplorerMode, type App, type ExplorerMode } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 
 type View = "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
 type Props = {
   app: App;
+  explorerMode: ExplorerMode;
   onClose: () => void;
   onView: (view: View) => void;
   onFlow: (flowId: string, nodeId: string) => void;
@@ -152,6 +153,7 @@ function matchingNodeId(
 
 export function CommandPalette({
   app,
+  explorerMode,
   onClose,
   onView,
   onFlow,
@@ -168,12 +170,15 @@ export function CommandPalette({
   const commandInputRef = useRef<HTMLInputElement>(null);
   const activeOptionRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(opener ?? null);
+  const discoverableNodes = useMemo(() => nodesForExplorerMode(app, explorerMode), [app, explorerMode]);
+  const discoverableFlows = useMemo(() => flowsForExplorerMode(app, explorerMode), [app, explorerMode]);
+  const discoverableEntries = useMemo(() => entriesForExplorerMode(app, explorerMode), [app, explorerMode]);
   const filePaths = useMemo(
     () => [...new Set([
       ...app.files.map((file) => file.path).filter(Boolean),
-      ...app.nodes.map((node) => node.file).filter(Boolean),
+      ...discoverableNodes.map((node) => node.file).filter(Boolean),
     ])],
-    [app.files, app.nodes],
+    [app.files, discoverableNodes],
   );
   useEffect(() => {
     commandInputRef.current?.focus();
@@ -226,27 +231,27 @@ export function CommandPalette({
           meta: "View",
           run: () => onView("install"),
         },
-        ...app.flows.map((flow) => ({
+        ...discoverableFlows.map((flow) => ({
           id: `flow-${flow.id}`,
-          label: flowDisplayName(flow, app.nodes, app.flows),
+          label: flowDisplayName(flow, discoverableNodes, discoverableFlows),
           meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${countLabel(flow.steps.length, app.findings.some((finding) => finding.id === flow.id) ? "node" : "symbol")} · ${sourceCoverage(app, flow.steps)} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
           keywords: flow.steps.flatMap((step) => {
-            const node = app.nodes.find((item) => item.id === step.node_id);
+            const node = discoverableNodes.find((item) => item.id === step.node_id);
             return node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [];
           }).concat([flow.description, ...flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation])]).filter(Boolean).join(" "),
           run: () => onFlow(flow.id, matchingNodeId(app, flow.steps, normalized)),
         })),
-        ...app.entries.map((entry, index) => ({
+        ...discoverableEntries.map(({ entry, index }) => ({
           id: `entry-${entry.id}`,
-          label: entryDisplayName(entry, app.nodes, app.entries),
+          label: entryDisplayName(entry, discoverableNodes, discoverableEntries.map(({ entry: item }) => item)),
           meta: `Request flow · ${countLabel(entry.hops.length, "step")} · ${sourceCoverage(app, entry.hops)}`,
           keywords: entry.hops.flatMap((hop) => {
-            const node = app.nodes.find((item) => item.id === hop.node_id);
+            const node = discoverableNodes.find((item) => item.id === hop.node_id);
             return [hop.edge_label, hop.caption, node?.label, node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.sourceWindow?.lines.join(" "), node?.file, node?.module];
           }).filter(Boolean).join(" "),
           run: () => onEntry(index, matchingNodeId(app, entry.hops, normalized)),
         })),
-        ...app.nodes.map((node) => ({
+        ...discoverableNodes.map((node) => ({
           id: `node-${node.id}`,
           label: nodeDisplayName(node),
           meta: `Symbol · ${nodeKindLabel(node.kind)} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
@@ -264,11 +269,11 @@ export function CommandPalette({
           };
         }),
         ...app.modules.flatMap((module) => {
-          const node = app.nodes.find(
+          const node = discoverableNodes.find(
             (item) =>
               module.nodeIds?.includes(item.id) ||
               item.module === module.id ||
-              item.module === module.name,
+            item.module === module.name,
           );
           return node
             ? [
@@ -281,11 +286,11 @@ export function CommandPalette({
               ]
             : [];
         }),
-        ...app.nodes
+        ...discoverableNodes
           .filter(
             (node) =>
               node.kind === "sink" ||
-              app.flows.some((flow) =>
+              discoverableFlows.some((flow) =>
                 flow.steps.some(
                   (step) => step.node_id === node.id && step.role.trim().toLowerCase() === "sink",
                 ),
@@ -302,7 +307,7 @@ export function CommandPalette({
           !normalized ||
           matchesCommand(command, normalized),
       ),
-    [app, filePaths, normalized, onView, onFlow, onEntry, onSink, onNode, onFile],
+    [app, discoverableEntries, discoverableFlows, discoverableNodes, filePaths, normalized, onView, onFlow, onEntry, onSink, onNode, onFile],
   );
   const visibleCommands = commands.slice(0, 80);
   useEffect(() => setActive(0), [query]);

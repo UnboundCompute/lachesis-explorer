@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, isSecurityProjection, nodeDisplayName, nodeKindLabel, type App, type Node } from "../lib/lachesis";
+import { countLabel, isSecurityProjection, nodeDisplayName, nodeKindLabel, nodesForExplorerMode, type App, type ExplorerMode, type Node } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainNode } from "../lib/explanations";
@@ -12,6 +12,7 @@ export type OverviewMode = "map" | "architecture" | "health";
 export type OverviewNodeOrder = "path" | "centrality";
 type Props = {
   app: App;
+  explorerMode: ExplorerMode;
   mode?: OverviewMode;
   setMode?: (mode: OverviewMode) => void;
   nodeOrder?: OverviewNodeOrder;
@@ -193,6 +194,7 @@ function nodeMatchLabel(node: Node, query: string) {
 
 export function OverviewView({
   app,
+  explorerMode,
   mode: controlledMode,
   setMode: setControlledMode,
   nodeOrder: controlledNodeOrder,
@@ -230,8 +232,9 @@ export function OverviewView({
   const neighborhoodOnly = controlledNeighborhoodOnly ?? localNeighborhoodOnly;
   const setNeighborhoodOnly = setControlledNeighborhoodOnly ?? setLocalNeighborhoodOnly;
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
+  const discoverableNodes = useMemo(() => nodesForExplorerMode(app, explorerMode), [app, explorerMode]);
   useEffect(() => {
-    setSelectedId(app.nodes[0]?.id ?? "");
+    setSelectedId(discoverableNodes[0]?.id ?? "");
     if (hasMountedOverview.current && !query) setQuery("");
     hasMountedOverview.current = true;
     setExpandedModule(null);
@@ -245,7 +248,7 @@ export function OverviewView({
     setShowAllTopology(false);
     setSelectionHistory([]);
     if (!setControlledNodeOrder) setLocalNodeOrder("path");
-  }, [app]);
+  }, [app, discoverableNodes]);
   useEffect(() => {
     setSearchText(query);
     if (/^\S+:/.test(query.trim())) setShowAllFilters(true);
@@ -253,7 +256,7 @@ export function OverviewView({
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; module?: string; nodes: Node[]; inbound: number; outbound: number }>();
     const nodeContexts = new Map<string, string>();
-    app.nodes.forEach((node) => {
+    discoverableNodes.forEach((node) => {
       const key = nodeScopeKey(node);
       nodeContexts.set(node.id, key);
       const current = grouped.get(key);
@@ -270,7 +273,7 @@ export function OverviewView({
       if (targetContext) targetContext.inbound += 1;
     });
     return [...grouped.values()].sort((a, b) => b.nodes.length - a.nodes.length);
-  }, [app]);
+  }, [app, discoverableNodes]);
   const boundaryTransitions = useMemo(() => {
     const nodes = new Map(app.nodes.map((node) => [node.id, node]));
     const grouped = new Map<string, { source: string; target: string; relation: string; count: number; query: string }>();
@@ -309,7 +312,7 @@ export function OverviewView({
       };
       app.entries.forEach((entry) => entry.hops.forEach((hop) => remember(hop.node_id)));
       app.flows.forEach((flow) => flow.steps.forEach((step) => remember(step.node_id)));
-      return app.nodes
+      return discoverableNodes
         .filter((node) => matches(node, query, app))
         .sort(
           (a, b) =>
@@ -318,7 +321,7 @@ export function OverviewView({
             app.nodes.indexOf(a) - app.nodes.indexOf(b),
         );
     },
-    [app, query],
+    [app, discoverableNodes, query],
   );
   const securityMode = isSecurityProjection(app);
   const primaryCodeKind = app.nodes.some((node) => node.kind === "function")
@@ -479,7 +482,7 @@ export function OverviewView({
     if (app.modules.length) {
       return app.modules
         .map((module) => {
-          const nodes = app.nodes.filter(
+          const nodes = discoverableNodes.filter(
             (node) =>
               module.nodeIds?.includes(node.id) ||
               node.module === module.id ||
@@ -490,7 +493,7 @@ export function OverviewView({
         .filter((module) => module.nodes.length > 0);
     }
     const grouped = new Map<string, { id: string; name: string; path: string; nodes: Node[] }>();
-    app.nodes.forEach((node) => {
+    discoverableNodes.forEach((node) => {
       const area = sourceArea(node.file);
       const current = grouped.get(area.id);
       if (current) current.nodes.push(node);
@@ -500,7 +503,7 @@ export function OverviewView({
       const supportRank = (name: string) => /^(?:tests?|examples?|fixtures?|benchmarks?|docs?)\b/i.test(name) ? 1 : 0;
       return supportRank(a.name) - supportRank(b.name) || b.nodes.length - a.nodes.length || a.name.localeCompare(b.name);
     });
-  }, [app]);
+  }, [app, discoverableNodes]);
   const modulesAreDerived = app.modules.length === 0;
   const architectureContexts = query
     ? contexts.filter((context) => context.key !== "unscoped" && context.nodes.some((node) => visibleIds.has(node.id)))

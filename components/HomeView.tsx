@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { countLabel, flowDisplayName, isSecurityProjection, nodeDisplayName, recommendedFlow, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
+import { countLabel, entriesForExplorerMode, flowDisplayName, flowsForExplorerMode, isSecurityProjection, nodeDisplayName, recommendedFlow, type App, type Evidence, type ExplorerMode, type Flow, type Node } from "../lib/lachesis";
 import { loadHostedRepositories } from "../lib/hosted-bundle";
 import { copyText } from "../lib/clipboard";
 import { Icon } from "./Icon";
@@ -20,6 +20,7 @@ type RepositoryIndex = {
 };
 type Props = {
   app: App;
+  explorerMode: ExplorerMode;
   isDemo: boolean;
   loadState: LoadState;
   onUpload: () => void;
@@ -340,6 +341,7 @@ function RepositoryArtifactShelf({ index }: { index?: RepositoryIndex | null }) 
 
 export function HomeView({
   app,
+  explorerMode,
   isDemo,
   loadState,
   onUpload,
@@ -395,7 +397,10 @@ export function HomeView({
   const bundleMode = securityMode
     ? "Security evidence projection"
     : "Code exploration graph";
-  const graphFocus = useMemo(() => recommendedFlow(app, { requireRenderableSource: true }), [app]);
+  const discoverableFlows = useMemo(() => flowsForExplorerMode(app, explorerMode), [app, explorerMode]);
+  const discoverableEntries = useMemo(() => entriesForExplorerMode(app, explorerMode), [app, explorerMode]);
+  const discoveryApp = useMemo(() => ({ ...app, flows: discoverableFlows }), [app, discoverableFlows]);
+  const graphFocus = useMemo(() => recommendedFlow(discoveryApp, { requireRenderableSource: true }), [discoveryApp]);
   const curatedTour = app.bundle.curatedTour;
   const curatedTourSteps = useMemo(
     () => curatedTour?.steps.flatMap((step) => {
@@ -407,18 +412,19 @@ export function HomeView({
   const graphFocusNode = graphFocus?.steps[0]
     ? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
     : undefined;
-  const firstEntry = app.entries[0];
+  const firstEntryItem = discoverableEntries[0];
+  const firstEntry = firstEntryItem?.entry;
   const firstSink = [...app.nodes]
     .filter(
       (node) =>
         node.kind === "sink" ||
-        app.flows.some((flow) =>
+        discoverableFlows.some((flow) =>
           flow.steps.some((step) => step.node_id === node.id && step.role.trim().toLowerCase() === "sink"),
         ),
     )
     .sort((a, b) => {
-      const flowCount = (node: Node) => app.flows.filter((flow) => flow.steps.some((step) => step.node_id === node.id)).length;
-      const stepCount = (node: Node) => app.flows.reduce((total, flow) => total + flow.steps.filter((step) => step.node_id === node.id).length, 0);
+      const flowCount = (node: Node) => discoverableFlows.filter((flow) => flow.steps.some((step) => step.node_id === node.id)).length;
+      const stepCount = (node: Node) => discoverableFlows.reduce((total, flow) => total + flow.steps.filter((step) => step.node_id === node.id).length, 0);
       return flowCount(b) - flowCount(a) || stepCount(b) - stepCount(a);
     })[0];
   const visibleFindings = useMemo(
@@ -447,7 +453,7 @@ export function HomeView({
     visibleFindings.find((item) => item.flow.id === selectedId) ??
     visibleFindings[0];
   const queueItems = graphOnly
-    ? app.flows.map((flow) => ({
+    ? discoverableFlows.map((flow) => ({
         flow,
         evidence: undefined,
         sink: sinkFor(flow, app),
@@ -497,7 +503,7 @@ export function HomeView({
     const endNode = graphFocus
       ? sinkFor(graphFocus, app) ?? app.nodes.find((node) => node.id === graphFocus.steps.at(-1)?.node_id)
       : undefined;
-    const otherPaths = app.flows.filter((flow) => flow.id !== graphFocus?.id).slice(0, 4);
+    const otherPaths = discoverableFlows.filter((flow) => flow.id !== graphFocus?.id).slice(0, 4);
 
     return (
       <main className="understand-home">
@@ -524,14 +530,14 @@ export function HomeView({
                 <button
                   type="button"
                   className="understand-primary"
-                  aria-label={`Follow ${flowDisplayName(graphFocus, app.nodes, app.flows)}`}
-                  title={`Follow ${flowDisplayName(graphFocus, app.nodes, app.flows)}`}
+                  aria-label={`Follow ${flowDisplayName(graphFocus, app.nodes, discoverableFlows)}`}
+                  title={`Follow ${flowDisplayName(graphFocus, app.nodes, discoverableFlows)}`}
                   onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}
                 >
                   Follow “{flowActionLabel(graphFocus, app)}” <Icon name="arrow" size={14} />
                 </button>
               )}
-              {!graphFocus && app.flows.length > 0 && (
+              {!graphFocus && discoverableFlows.length > 0 && (
                 <button type="button" className="understand-secondary" onClick={() => onView("trace")}>
                   Review bundled paths <Icon name="arrow" size={14} />
                 </button>
@@ -559,7 +565,7 @@ export function HomeView({
             <RepositoryArtifactShelf index={repositoryIndex} />
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
-            <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} {graphFocus ? "ready to follow" : app.flows.length ? "bundled" : "included"}</dd></div>
+            <div><dt>Code paths</dt><dd>{(graphOnly ? discoverableFlows.length : app.flows.length).toLocaleString()} {graphFocus ? "ready to follow" : (graphOnly ? discoverableFlows.length : app.flows.length) ? "bundled" : "included"}</dd></div>
             <div><dt>Request flows</dt><dd>{app.entries.length.toLocaleString()} starting points</dd></div>
             <div><dt>Files</dt><dd>{(app.files.length || new Set(app.nodes.map((node) => node.file).filter(Boolean)).size).toLocaleString()} in this bundle</dd></div>
             <div><dt>Source previews</dt><dd>{countLabel(app.nodes.filter((node) => node.snippet.trim() || node.sourceWindow?.lines.length).length, "source preview")} of {countLabel(app.nodes.length, "symbol")}</dd></div>
@@ -634,7 +640,7 @@ export function HomeView({
               <span><b>How does this behavior work?</b><small>{graphFocus ? "Follow one complete call or data path." : "No traceable code path is included in this bundle."}</small></span>
               <Icon name="arrow" size={14} />
             </button>
-            <button type="button" onClick={() => firstEntry ? onEntry(0, firstEntry.hops[0]?.node_id ?? "") : onView("map")}>
+            <button type="button" onClick={() => firstEntry ? onEntry(firstEntryItem?.index ?? 0, firstEntry.hops[0]?.node_id ?? "") : onView("map")}>
               <span><b>What happens after a starting point?</b><small>{firstEntry ? "Walk the request from handler to effect." : "No request flow is included in this bundle."}</small></span>
               <Icon name="arrow" size={14} />
             </button>
@@ -658,7 +664,7 @@ export function HomeView({
             <div className="understand-path">
               <div className="understand-path-copy">
                 <span>{pathKindLabel(graphFocus)} · {countLabel(graphFocus.steps.length, "symbol")}</span>
-                <h3 title={flowDisplayName(graphFocus, app.nodes, app.flows)}>{flowActionLabel(graphFocus, app)}</h3>
+                <h3 title={flowDisplayName(graphFocus, app.nodes, discoverableFlows)}>{flowActionLabel(graphFocus, app)}</h3>
                 <p>{graphFocus.description || `Follow the path from ${startNode ? nodeDisplayName(startNode) : "its first symbol"} to ${endNode ? nodeDisplayName(endNode) : "its final symbol"}.`}</p>
               </div>
               <div className="understand-route" aria-label="Recommended path endpoints">
@@ -688,7 +694,7 @@ export function HomeView({
             <div className="understand-path-list">
               {otherPaths.map((flow) => (
                 <button type="button" key={flow.id} onClick={() => onFlow(flow.id, flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
-                  <span><b title={flowDisplayName(flow, app.nodes, app.flows)}>{flowActionLabel(flow, app)}</b><small>{pathKindLabel(flow)} · {countLabel(flow.steps.length, "symbol")}{flowDisplayName(flow, app.nodes, app.flows) === flow.name ? ` · ${pathLocation(flow, app)}` : ""}</small></span>
+                  <span><b title={flowDisplayName(flow, app.nodes, discoverableFlows)}>{flowActionLabel(flow, app)}</b><small>{pathKindLabel(flow)} · {countLabel(flow.steps.length, "symbol")}{flowDisplayName(flow, app.nodes, discoverableFlows) === flow.name ? ` · ${pathLocation(flow, app)}` : ""}</small></span>
                   <Icon name="arrow" size={13} />
                 </button>
               ))}
@@ -1030,7 +1036,7 @@ export function HomeView({
                   : "Choose a lead to keep it in context"}
               </small>
             </div>
-            <b>{graphOnly ? app.flows.length : metadataOnly ? app.mcp.length : visibleFindings.length}</b>
+            <b>{graphOnly ? discoverableFlows.length : metadataOnly ? app.mcp.length : visibleFindings.length}</b>
           </div>
           {!graphOnly && !metadataOnly && (
             <div className="queue-filters" role="group" aria-label="Filter evidence queue">

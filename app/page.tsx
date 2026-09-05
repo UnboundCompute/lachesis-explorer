@@ -19,7 +19,7 @@ import {
   InvestigationTrail,
   type InvestigationEvent,
 } from "../components/InvestigationTrail";
-import { countLabel, recommendedFlow, starter, normalize, type App } from "../lib/lachesis";
+import { countLabel, recommendedFlow, starter, normalize, type App, type ExplorerMode } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
@@ -54,6 +54,7 @@ type PendingLink = {
   mapMode?: string;
   mapOrder?: string;
   mapNeighborhood?: boolean;
+  mode?: ExplorerMode;
 };
 type ViewUrlOverrides = Record<string, string | undefined>;
 type BuildState = { status: "idle" | BuildResponse["status"]; steps: Array<{ key: string; state: string }>; message?: string };
@@ -140,6 +141,7 @@ function isSinkNode(app: App, nodeId: string) {
 
 export default function Page() {
   const [view, setView] = useState<View>("home");
+  const [explorerMode, setExplorerMode] = useState<ExplorerMode>("guided");
   const [direction, setDirection] = useState<"backward" | "forward">(
     "backward",
   );
@@ -259,6 +261,20 @@ export default function Page() {
     if (readLocal("lachesis-theme") === "light") setDark(false);
   }, []);
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlMode = params.get("mode");
+    const storedMode = readLocal("lachesis-explorer-mode");
+    if (urlMode === "guided" || urlMode === "full") setExplorerMode(urlMode);
+    else if (!window.location.pathname.startsWith("/r/") && (storedMode === "guided" || storedMode === "full")) setExplorerMode(storedMode);
+  }, []);
+  useEffect(() => {
+    writeLocal("lachesis-explorer-mode", explorerMode);
+    if (!urlReady.current || !sourceSelected) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("mode", explorerMode);
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
+  }, [explorerMode, sourceSelected, urlInitialized]);
+  useEffect(() => {
     if (!sourceSelected && view !== "home") setView("home");
   }, [sourceSelected, view]);
   useEffect(() => {
@@ -332,6 +348,7 @@ export default function Page() {
       mapMode: params.get("map_mode") ?? undefined,
       mapOrder: params.get("map_order") ?? undefined,
       mapNeighborhood: params.get("map_focus") === "neighborhood",
+      mode: params.get("mode") === "full" ? "full" : params.get("mode") === "guided" ? "guided" : undefined,
     };
     setHandoffContext({
       repository: link.repository,
@@ -488,6 +505,7 @@ export default function Page() {
   useEffect(() => {
     if (!urlInitialized) return;
     const params = new URLSearchParams();
+    params.set("mode", explorerMode);
     if (handoffContext.repository) params.set("repository", handoffContext.repository);
     if (handoffContext.revision) params.set("revision", handoffContext.revision);
     if (handoffContext.region) params.set("region", handoffContext.region);
@@ -523,7 +541,7 @@ export default function Page() {
       if (mapNeighborhoodOnly) params.set("map_focus", "neighborhood");
     }
     window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, bundleOrigin, direction, entryIndex, focusNodeId, handoffContext, flowId, hostedBundleId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
+  }, [app, bundleOrigin, direction, entryIndex, explorerMode, focusNodeId, handoffContext, flowId, hostedBundleId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
@@ -910,6 +928,7 @@ export default function Page() {
     setFocusNodeId("");
     let restored = false;
     if (pending) {
+      if (pending.mode) setExplorerMode(pending.mode);
       const hasNavigationContext = Boolean(
         pending.view ||
           pending.flow ||
@@ -1284,6 +1303,8 @@ export default function Page() {
         view={view}
         setView={changeView}
         app={app}
+        explorerMode={explorerMode}
+        setExplorerMode={setExplorerMode}
         sourceSelected={sourceSelected}
         menu={menu}
         setMenu={setMenu}
@@ -1330,6 +1351,7 @@ export default function Page() {
       {commandOpen && (
         <CommandPalette
           app={app}
+          explorerMode={explorerMode}
           opener={commandOpenerRef.current}
           onClose={() => setCommandOpen(false)}
           onView={changeView}
@@ -1413,6 +1435,7 @@ export default function Page() {
       {view === "home" && (
         <HomeView
           app={app}
+          explorerMode={explorerMode}
           isDemo={isDemo}
           loadState={loadState}
           onUpload={() => fileRef.current?.click()}
@@ -1622,6 +1645,7 @@ export default function Page() {
       {view === "map" && (
         <OverviewView
           app={app}
+          explorerMode={explorerMode}
           mode={mapMode}
           setMode={changeMapMode}
           nodeOrder={mapOrder}
