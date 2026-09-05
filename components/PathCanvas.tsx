@@ -198,7 +198,7 @@ export function PathCanvas({
       {selectedItem && (
         <div className="path-reading-cue" aria-live="polite">
           <span>NOW READING · STEP {String(selectedIndex + 1).padStart(2, '0')}</span>
-          <strong>{selectedItem.node.label || selectedItem.node.id}</strong>
+          <strong>{nodeDisplayName(selectedItem.node)}</strong>
           <small>
             {selectedItem.label} · {nodeLocation(selectedItem.node)}
             {selectedItem.node.scope && ` · ${scopeLabel(selectedItem.node)}`}
@@ -278,7 +278,7 @@ export function PathCanvas({
                   className={`path-edge ${edgeClass}`}
                   markerEnd={`url(#path-arrow-${edgeClass})`}
                   d={`M${point.x + 30} ${point.y} C${point.x + 62} ${point.y},${next.x - 62} ${next.y},${next.x - 30} ${next.y}`}
-                ><title>{shown[index]?.node.label || shown[index]?.node.id} → {item?.node.label || item?.node.id}: {relation || edgeClass}</title></path>
+                ><title>{shown[index] ? nodeDisplayName(shown[index].node) : 'Unknown'} → {item ? nodeDisplayName(item.node) : 'Unknown'}: {relation || edgeClass}</title></path>
                 {(relation || edgeClass !== 'exact') && (
                   <text
                     className={`edge-caption ${edgeClass}`}
@@ -334,7 +334,7 @@ export function PathCanvas({
                 aria-keyshortcuts="ArrowLeft ArrowRight Home End"
                 aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${nodeDisplayName(item.node)}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${repeatedIds.has(item.id) ? `, revisit ${occurrenceNumbers[start + index]}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
               >
-                <title>{item.node.label || item.node.id}</title>
+                <title>{nodeDisplayName(item.node)}</title>
                 <circle className="node-halo" cx={point.x} cy={point.y} r="38" />
                 <circle className="node-body" cx={point.x} cy={point.y} r="29" />
                 <text className="node-index" x={point.x} y={point.y + 4} textAnchor="middle">
@@ -370,7 +370,7 @@ export function PathCanvas({
               <span>{String(start + index + 1).padStart(2, '0')}</span>
               <b>{item.label || nodeDisplayName(item.node)}</b>
               <small>
-                {item.node.label || item.node.id} · {item.node.scope ? `${scopeLabel(item.node)} · ` : ''}{nodeLocation(item.node)}
+                {nodeDisplayName(item.node)} · {item.node.scope ? `${scopeLabel(item.node)} · ` : ''}{nodeLocation(item.node)}
                 {item.relation ? ` · via ${item.relation}` : ''}
                 {repeatedIds.has(item.id) ? ` · revisit ${occurrenceNumbers[start + index]}` : ''}
                 {item.edge?.alias ? ' · alternate connection' : ''}

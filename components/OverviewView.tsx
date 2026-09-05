@@ -392,10 +392,10 @@ export function OverviewView({
   const querySuggestions = queryTarget
     ? [
         app.edges.some((edge) => edge.target === queryTarget.id)
-          ? { label: `What reaches ${queryTarget.label || queryTarget.id}?`, query: `calls:${queryTarget.id}` }
+          ? { label: `What reaches ${nodeDisplayName(queryTarget)}?`, query: `calls:${queryTarget.id}` }
           : null,
         app.edges.some((edge) => edge.source === queryTarget.id)
-          ? { label: `What does ${queryTarget.label || queryTarget.id} reach?`, query: `reaches:${queryTarget.id}` }
+          ? { label: `What does ${nodeDisplayName(queryTarget)} reach?`, query: `reaches:${queryTarget.id}` }
           : null,
       ].filter(Boolean) as { label: string; query: string }[]
     : [];
@@ -988,7 +988,7 @@ export function OverviewView({
                           className={`topology-edge ${kind}${boundary ? " boundary" : ""}${focusActive && !nearby ? " dimmed" : ""}`}
                           markerEnd={`url(#topology-arrow-${kind})`}
                           d={`M${a.x} ${a.y} C${(a.x + b.x) / 2} ${a.y},${(a.x + b.x) / 2} ${b.y},${b.x} ${b.y}`}
-                        ><title>{source.label || source.id} → {target.label || target.id}: {boundary ? "context boundary · " : ""}{edge.relation || "connected"}</title></path>
+                        ><title>{nodeDisplayName(source)} → {nodeDisplayName(target)}: {boundary ? "context boundary · " : ""}{edge.relation || "connected"}</title></path>
                         {focusActive && touchesSelected && (
                           <text
                             className={`topology-edge-label ${kind}`}
@@ -1091,10 +1091,10 @@ export function OverviewView({
                       onClick={() => selectNode(node.id)}
                       aria-pressed={selected?.id === node.id}
                       aria-current={selected?.id === node.id ? "step" : undefined}
-                      aria-label={`${node.label || node.id}, ${node.kind}, ${countLabel(flowCount(node.id), "graph path")}, ${countLabel(entryCount(node.id), "request flow")}, ${nodeLocation(node)}`}
+                        aria-label={`${nodeDisplayName(node)}, ${node.kind}, ${countLabel(flowCount(node.id), "graph path")}, ${countLabel(entryCount(node.id), "request flow")}, ${nodeLocation(node)}`}
                     >
                       <span>{labelIndex(node)}</span>
-                      <b>{node.label || node.id}</b>
+                      <b>{nodeDisplayName(node)}</b>
                       <small>
                         {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>

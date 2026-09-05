@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, entryDisplayName, flowDisplayName, isSecurityProjection, type App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, flowDisplayName, isSecurityProjection, nodeDisplayName, nodeKindLabel, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 
@@ -248,8 +248,8 @@ export function CommandPalette({
         })),
         ...app.nodes.map((node) => ({
           id: `node-${node.id}`,
-          label: node.label || node.id,
-          meta: `Symbol · ${node.kind} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
+          label: nodeDisplayName(node),
+          meta: `Symbol · ${nodeKindLabel(node.kind)} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
           keywords: [node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.module].filter(Boolean).join(" "),
           run: () => onNode(node.id),
         })),
@@ -293,7 +293,7 @@ export function CommandPalette({
           )
           .map((node) => ({
             id: `sink-${node.id}`,
-            label: node.label || node.id,
+            label: nodeDisplayName(node),
           meta: `${isSecurityProjection(app) ? "Sink" : "Destination"} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"}`,
             run: () => onSink(node.id),
           })),
