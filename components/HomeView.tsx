@@ -420,8 +420,11 @@ export function HomeView({
   const orientationItems = useMemo(() => orientationConcepts.length > 0
     ? orientationConcepts.map((concept) => ({ id: concept.id, label: concept.label, detail: concept.description || "Code concept", nodes: concept.nodes }))
     : orientationModules.map((module) => ({ id: module.id, label: module.name, detail: module.path || "Code area", nodes: module.nodes })), [orientationConcepts, orientationModules]);
+  const firstEntryItem = discoverableEntries[0];
+  const firstEntry = firstEntryItem?.entry;
+  const featuredEntry = explorerMode === "simple" ? firstEntry : undefined;
   const discoveryApp = useMemo(() => ({ ...app, flows: discoverableFlows }), [app, discoverableFlows]);
-  const graphFocus = useMemo(() => recommendedFlow(discoveryApp, { requireRenderableSource: true }), [discoveryApp]);
+  const graphFocus = useMemo(() => featuredEntry ? undefined : recommendedFlow(discoveryApp, { requireRenderableSource: true }), [discoveryApp, featuredEntry]);
   const curatedTour = app.bundle.curatedTour;
   const curatedTourSteps = useMemo(
     () => curatedTour?.steps.flatMap((step) => {
@@ -433,8 +436,6 @@ export function HomeView({
   const graphFocusNode = graphFocus?.steps[0]
     ? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
     : undefined;
-  const firstEntryItem = discoverableEntries[0];
-  const firstEntry = firstEntryItem?.entry;
   const firstSink = [...app.nodes]
     .filter(
       (node) =>
@@ -510,7 +511,9 @@ export function HomeView({
         : metadataOnly
         ? "Linked records are present, but no traceable path steps are available."
         : graphOnly
-        ? graphFocus
+        ? featuredEntry
+          ? "Understand this code through a request."
+          : graphFocus
           ? "Understand this code by following one path."
           : "Explore how this code is connected."
         : "No open evidence paths in this bundle.";
@@ -547,7 +550,17 @@ export function HomeView({
             </p>
             <div className="understand-actions">
               {onChangeSource && <button type="button" className="understand-secondary" onClick={onChangeSource}><Icon name="back" size={14} /> Change codebase</button>}
-              {graphFocus && (
+              {featuredEntry ? (
+                <button
+                  type="button"
+                  className="understand-primary"
+                  aria-label={`Follow request ${featuredEntry.label}`}
+                  title={`Follow request ${featuredEntry.label}`}
+                  onClick={() => onEntry(firstEntryItem?.index ?? 0, featuredEntry.hops[0]?.node_id ?? "")}
+                >
+                  Follow “{featuredEntry.label}” <Icon name="arrow" size={14} />
+                </button>
+              ) : graphFocus && (
                 <button
                   type="button"
                   className="understand-primary"
@@ -558,7 +571,7 @@ export function HomeView({
                   Follow “{flowActionLabel(graphFocus, app)}” <Icon name="arrow" size={14} />
                 </button>
               )}
-              {!graphFocus && discoverableFlows.length > 0 && (
+              {!featuredEntry && !graphFocus && discoverableFlows.length > 0 && (
                 <button type="button" className="understand-secondary" onClick={() => onView("trace")}>
                   Review bundled paths <Icon name="arrow" size={14} />
                 </button>
@@ -704,7 +717,27 @@ export function HomeView({
           </div>
         </section>
 
-        {graphFocus ? (
+        {featuredEntry ? (
+          <section className="understand-start" aria-labelledby="understand-start-title">
+            <div className="understand-section-heading">
+              <h2 id="understand-start-title">A useful place to start</h2>
+              <p>The clearest request path included in this codebase map.</p>
+            </div>
+            <div className="understand-path">
+              <div className="understand-path-copy">
+                <span>request flow · {countLabel(featuredEntry.hops.length, "step")}</span>
+                <h3 title={featuredEntry.label}>{featuredEntry.label}</h3>
+                <p>{featuredEntry.description || "Follow the request from its entry point through the code."}</p>
+              </div>
+              <div className="understand-route" aria-label="Request flow endpoints">
+                <span><small>Starts at</small><b>{app.nodes.find((node) => node.id === featuredEntry.hops[0]?.node_id)?.label || "Entry point"}</b><em>{nodeLocation(app.nodes.find((node) => node.id === featuredEntry.hops[0]?.node_id))}</em></span>
+                <i><span /></i>
+                <span><small>Reaches</small><b>{app.nodes.find((node) => node.id === featuredEntry.hops.at(-1)?.node_id)?.label || "Final effect"}</b><em>{nodeLocation(app.nodes.find((node) => node.id === featuredEntry.hops.at(-1)?.node_id))}</em></span>
+              </div>
+              <button type="button" onClick={() => onEntry(firstEntryItem?.index ?? 0, featuredEntry.hops[0]?.node_id ?? "")}>Open this request <Icon name="arrow" size={14} /></button>
+            </div>
+          </section>
+        ) : graphFocus ? (
           <section className="understand-start" aria-labelledby="understand-start-title">
             <div className="understand-section-heading">
               <h2 id="understand-start-title">A useful place to start</h2>

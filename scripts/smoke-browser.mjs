@@ -40,6 +40,11 @@ try {
   assert.equal(await page.getByRole("button", { name: /Switch to simple mode/i }).count(), 1, "Dense mode toggle did not update its label");
   await page.getByRole("button", { name: /Switch to simple mode/i }).click();
   assert.equal(new URL(page.url()).searchParams.get("mode"), "simple", "Simple mode did not restore from Dense mode");
+  await page.getByRole("button", { name: /^Understand/ }).first().click();
+  const simpleHomeText = await page.locator("body").innerText();
+  assert.match(simpleHomeText, /Follow “POST \/api\/search”/, "Simple home did not feature the exported request flow");
+  assert.doesNotMatch(simpleHomeText, /re\.split|redos/i, "Simple home featured a security/value path instead of the request flow");
+  await page.getByRole("button", { name: /^Explore See the codebase$/ }).click();
   const nodes = page.locator(".topology-node-list button");
   assert.ok(await nodes.count() > 0, "graph node list is empty");
   await nodes.first().click();
