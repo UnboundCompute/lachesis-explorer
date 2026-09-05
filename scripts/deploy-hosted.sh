@@ -112,16 +112,21 @@ sam validate \
   --lint
 
 echo "Deploying ${STACK_NAME}..."
+parameter_overrides=(
+  "ExplorerOrigin=$EXPLORER_ORIGIN"
+  "WorkerImageUri=$WORKER_IMAGE_URI"
+)
+if [[ -n "$ALERT_TOPIC_ARN" ]]; then
+  parameter_overrides+=("AlertTopicArn=$ALERT_TOPIC_ARN")
+fi
 sam deploy \
   --template-file .aws-sam/build/template.yaml \
   --stack-name "$STACK_NAME" \
   --region "$AWS_REGION" \
   --capabilities CAPABILITY_IAM \
   --resolve-s3 \
-  --parameter-overrides \
-    "ExplorerOrigin=$EXPLORER_ORIGIN" \
-    "WorkerImageUri=$WORKER_IMAGE_URI" \
-    "AlertTopicArn=$ALERT_TOPIC_ARN" \
+  --resolve-image-repos \
+  --parameter-overrides "${parameter_overrides[@]}" \
   --no-confirm-changeset \
   --no-fail-on-empty-changeset
 
