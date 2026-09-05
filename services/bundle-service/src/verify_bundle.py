@@ -55,6 +55,58 @@ def _validate_source_url_template(value: Any) -> None:
         _fail("meta.source_url_template must not contain credentials")
 
 
+def _validate_curated_tour(
+    value: Any,
+    value_paths: list[Any],
+    request_paths: list[Any],
+    node_ids: set[str],
+) -> None:
+    if value is None:
+        return
+    if not isinstance(value, dict):
+        _fail("meta.curated_tour must be an object")
+    _non_empty_string(value.get("id"), "meta.curated_tour.id")
+    _non_empty_string(value.get("title"), "meta.curated_tour.title")
+    steps = value.get("steps")
+    if not isinstance(steps, list) or not steps:
+        _fail("meta.curated_tour.steps must be a non-empty array")
+    paths: dict[str, set[str]] = {}
+    for path in [*value_paths, *request_paths]:
+        if not isinstance(path, dict) or not isinstance(path.get("id"), str) or not path["id"]:
+            continue
+        raw_nodes = path.get("steps") if isinstance(path.get("steps"), list) else path.get("hops")
+        paths[path["id"]] = {
+            step.get("node_id")
+            for step in raw_nodes or []
+            if isinstance(step, dict) and isinstance(step.get("node_id"), str)
+        }
+    for index, step in enumerate(steps):
+        if not isinstance(step, dict):
+            _fail(f"meta.curated_tour.steps[{index}] must be an object")
+        _non_empty_string(step.get("flow_id"), f"meta.curated_tour.steps[{index}].flow_id")
+        flow_id = step["flow_id"]
+        if flow_id not in paths:
+            _fail(f"meta.curated_tour.steps[{index}] references an unknown path")
+        node_id = step.get("node_id")
+        if node_id is not None:
+            _non_empty_string(node_id, f"meta.curated_tour.steps[{index}].node_id")
+            if node_id not in node_ids or node_id not in paths[flow_id]:
+                _fail(f"meta.curated_tour.steps[{index}] references an unknown path node")
+    maintainer = value.get("maintainer")
+    if maintainer is None:
+        return
+    if not isinstance(maintainer, dict):
+        _fail("meta.curated_tour.maintainer must be an object")
+    _non_empty_string(maintainer.get("name"), "meta.curated_tour.maintainer.name")
+    if maintainer.get("verified") is not True:
+        _fail("meta.curated_tour.maintainer.verified must be true")
+    if "url" in maintainer:
+        _non_empty_string(maintainer["url"], "meta.curated_tour.maintainer.url")
+        parsed = urlparse(maintainer["url"].strip())
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
+            _fail("meta.curated_tour.maintainer.url must be an absolute HTTP(S) URL without credentials")
+
+
 def _understanding_path_has_source(path: Any, nodes: dict[str, dict[str, Any]], key: str) -> bool:
     if not isinstance(path, dict):
         return False
@@ -224,6 +276,8 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
         for hop in path["hops"]:
             if not isinstance(hop, dict) or hop.get("node_id") not in node_ids:
                 _fail(f"paths.requests[{index}] references an unknown node")
+
+    _validate_curated_tour(meta.get("curated_tour"), value_paths, request_paths, node_ids)
 
     findings = (bundle.get("security") or {}).get("findings", [])
     if not isinstance(findings, list):

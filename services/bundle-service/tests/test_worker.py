@@ -189,6 +189,51 @@ class WorkerTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_bundle(bundle)
 
+    def test_validator_accepts_a_path_linked_curated_tour(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {
+                "repository": "owner/repo", "language": "python", "revision": "a" * 40,
+                "lines": 2, "indexed_nodes": 2,
+                "curated_tour": {
+                    "id": "start-here", "title": "Read the request path",
+                    "maintainer": {"name": "Owner", "verified": True, "url": "https://github.com/owner/repo"},
+                    "steps": [{"flow_id": "flow.main", "node_id": "n1"}],
+                },
+            },
+            "graph": {"nodes": [
+                {"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"},
+                {"id": "n2", "kind": "call", "file": "main.py", "line": 2, "label": "run", "snippet": "run()"},
+            ]},
+            "paths": {"values": [{"id": "flow.main", "steps": [{"node_id": "n1"}, {"node_id": "n2"}]}]},
+        }
+
+        self.assertIs(validate_bundle(bundle), bundle)
+
+    def test_validator_rejects_a_curated_tour_with_untrusted_or_unknown_metadata(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {
+                "repository": "owner/repo", "language": "python", "revision": "a" * 40,
+                "lines": 2, "indexed_nodes": 2,
+                "curated_tour": {
+                    "id": "start-here", "title": "Read the request path",
+                    "maintainer": {"name": "Unknown", "verified": False},
+                    "steps": [{"flow_id": "flow.missing"}],
+                },
+            },
+            "graph": {"nodes": [
+                {"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"},
+                {"id": "n2", "kind": "call", "file": "main.py", "line": 2, "label": "run", "snippet": "run()"},
+            ]},
+            "paths": {"values": [{"id": "flow.main", "steps": [{"node_id": "n1"}, {"node_id": "n2"}]}]},
+        }
+
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
     def test_validator_requires_understanding_entrypoint_and_source_backed_path(self):
         bundle = {
             "format": "lachesis-explorer-bundle",

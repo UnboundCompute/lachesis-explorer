@@ -33,6 +33,18 @@ producer should include:
 Security findings can be attached as an overlay, but they should not be the only way to navigate
 the codebase.
 
+## Curate a “Start here” tour
+
+Graph-first bundles may include `meta.curated_tour` with a short ordered list of
+`flow_id` values and optional `node_id` anchors. Explorer checks those references
+against the bundle before rendering the tour, so a stale path is omitted rather
+than becoming a broken onboarding link.
+
+Only an authenticated ownership flow or another trusted service boundary may
+set `maintainer.verified: true`. Explorer then labels the publisher as verified;
+it never infers ownership from a README badge, repository name, or self-asserted
+metadata.
+
 ## Refresh and revision behavior
 
 The unpinned route resolves the latest indexed `main` or `master` build. A refresh submits the
@@ -40,6 +52,6 @@ repository’s accepted URL and ref to the hosted builder; the current graph rem
 new build runs. Revision-pinned routes never move when the default branch changes.
 
 The Explorer repository-index contract is documented in
-[`HOSTED_REPOSITORY_INDEX.md`](HOSTED_REPOSITORY_INDEX.md). Maintainer ownership and curated tours
-are intentionally not implied by a badge: those require an explicit verification flow before they
-should be presented as trusted metadata.
+[`HOSTED_REPOSITORY_INDEX.md`](HOSTED_REPOSITORY_INDEX.md). The current hosted
+service does not yet provide the authenticated claim flow; until it does, use
+curated tours as exporter metadata without presenting ownership as verified.
