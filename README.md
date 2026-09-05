@@ -151,7 +151,7 @@ deployment gates are specified in [`docs/URL_INTAKE_SPEC.md`](docs/URL_INTAKE_SP
 
 ## Bundle format
 
-The explorer ships with two downloadable, explicitly synthetic fixtures. The app opens on [`code-exploration-bundle.json`](public/code-exploration-bundle.json), a graph-first bundle with symbols, modules, relationships, request paths, and no security findings. [`demo-bundle.json`](public/demo-bundle.json) is available as an explicit alternate for exercising security evidence states.
+The explorer ships with two explicitly synthetic fixtures for local development and contract checks. They are not loaded automatically: the first-run screen requires a hosted repository, cached repository, or explicit `bundle.json` upload before opening the workspace. [`code-exploration-bundle.json`](public/code-exploration-bundle.json) is the graph-first fixture with symbols, modules, relationships, request paths, and no security findings; [`demo-bundle.json`](public/demo-bundle.json) is available as an explicit alternate for exercising security evidence states.
 
 The preferred contract is `lachesis-explorer-bundle` `2.0`: a graph-first snapshot with optional `paths` and an optional `security.findings` overlay. The importer maps security evidence into the security lenses without making findings a prerequisite for code exploration. The existing `1.0` security envelope and earlier flow-centric shape remain available through backward-compatible adapters.
 
