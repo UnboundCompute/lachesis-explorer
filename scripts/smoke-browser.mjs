@@ -60,6 +60,22 @@ try {
   assert.doesNotMatch(projectionText, /Security evidence projection/, "optional findings overrode code-understanding mode");
   await projectionPage.close();
 
+  const invalidSourceTemplatePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await invalidSourceTemplatePage.route("**/demo-bundle.json", async (route) => {
+    const response = await route.fetch();
+    const payload = await response.json();
+    payload.meta.source_url_template = "https://example.com/{revision}";
+    await route.fulfill({ response, body: JSON.stringify(payload) });
+  });
+  await invalidSourceTemplatePage.goto(`${base}/?sample=security&view=map`, { waitUntil: "networkidle" });
+  const invalidTemplateNode = invalidSourceTemplatePage.locator(".topology-node-list button").first();
+  await invalidTemplateNode.click();
+  const invalidTemplateInspector = invalidSourceTemplatePage.locator("#source-inspector");
+  await invalidTemplateInspector.waitFor({ state: "visible", timeout: 10_000 });
+  assert.equal(await invalidTemplateInspector.locator("a.source-open").count(), 0, "invalid source URL template produced an external link");
+  assert.match(await invalidTemplateInspector.innerText(), /Repository link not configured|Repository link unavailable/, "invalid source URL template was not sanitized");
+  await invalidSourceTemplatePage.close();
+
   const localBuildPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   await localBuildPage.goto(`${base}/`, { waitUntil: "networkidle" });
   await localBuildPage.getByLabel("Repository URL").fill("git@github.com:example/repository.git");
