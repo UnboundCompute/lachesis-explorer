@@ -592,7 +592,7 @@ export function HomeView({
                   {curatedTour.maintainer.url ? (
                     <a href={curatedTour.maintainer.url} target="_blank" rel="noreferrer">{curatedTour.maintainer.name}</a>
                   ) : curatedTour.maintainer.name}
-                  {" · verified publisher"}
+                  {" · publisher-provided tour"}
                 </p>
               )}
             </div>

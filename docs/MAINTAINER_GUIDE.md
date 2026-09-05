@@ -41,7 +41,7 @@ against the bundle before rendering the tour, so a stale path is omitted rather
 than becoming a broken onboarding link.
 
 Only an authenticated ownership flow or another trusted service boundary may
-set `maintainer.verified: true`. Explorer then labels the publisher as verified;
+set `maintainer.verified: true`. Explorer labels the tour as publisher-provided;
 it never infers ownership from a README badge, repository name, or self-asserted
 metadata.
 

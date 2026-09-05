@@ -216,10 +216,11 @@ An optional `meta.curated_tour` gives newcomers a publisher-selected reading
 sequence. Each `steps[].flow_id` must resolve to a path in the same bundle;
 `node_id`, when present, must resolve to a step in that path. The Explorer
 silently omits invalid tour steps and only renders the tour when at least one
-path remains. A `maintainer` object is displayed as a verified publisher only
+path remains. A `maintainer` object is accepted for publisher provenance only
 when it contains `verified: true`; that flag must be added by an authenticated
 repository-ownership flow or another trusted service boundary, never inferred
-from a public README badge or from bundle self-assertion alone.
+from a public README badge or from bundle self-assertion alone. The current UI
+labels this as publisher-provided context, not as an independent ownership claim.
 
 `coverage.scope`, `coverage.limitations`, and `graph.capabilities` make missing
 language constructs, unresolved calls, omitted dependencies, and projections
