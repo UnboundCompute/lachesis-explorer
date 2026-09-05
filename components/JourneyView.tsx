@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, entryDisplayName, type App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, nodeDisplayName, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainEntry } from "../lib/explanations";
@@ -467,7 +467,7 @@ export function JourneyView({
           <div className="toolbar-actions">
             {previousEntry && (
               <button type="button" className="inspector-reopen selection-back" onClick={returnToPreviousEntry} title={`Return to ${entryDisplayName(previousEntry, app.nodes, app.entries)}`}>
-                ← Back to previous flow
+                ← Back to previous request flow
               </button>
             )}
             {!inspectorOpen && (
@@ -499,7 +499,7 @@ export function JourneyView({
                 aria-keyshortcuts="["
                 onClick={() => moveHop(-1)}
               >
-                Previous
+                Previous step
               </button>
               <button
                 className="inspector-reopen"
@@ -508,7 +508,7 @@ export function JourneyView({
                 aria-keyshortcuts="]"
                 onClick={() => moveHop(1)}
               >
-                Next
+                Next step
               </button>
               <span className="step-nav-hint" aria-label="Use left bracket and right bracket to navigate steps">
                 <kbd>[</kbd><kbd>]</kbd>
@@ -528,7 +528,7 @@ export function JourneyView({
         >
           <div>
             <span>STARTING POINT</span>
-            <b>{firstNode?.label || entryDisplayName(entry, app.nodes, app.entries)}</b>
+                  <b>{firstNode ? nodeDisplayName(firstNode) : entryDisplayName(entry, app.nodes, app.entries)}</b>
             <small>
               {nodeLocation(firstNode)}
             </small>

@@ -1,4 +1,4 @@
-import { countLabel, type App, type Entry, type Flow, type Node, type Step } from "./lachesis";
+import { countLabel, nodeDisplayName, nodeKindLabel, type App, type Entry, type Flow, type Node, type Step } from "./lachesis";
 
 function location(node?: Node) {
   if (!node) return "Source location unavailable";
@@ -51,10 +51,10 @@ export function explainFlow(app: App, flow: Flow, direction: "backward" | "forwa
     const node = app.nodes.find((item) => item.id === step.node_id);
     const context = scope(node);
     const relation = step.edge?.relation || step.role || "continues to";
-    return `${index + 1}. **${node?.label || step.node_id}** — ${relation}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${step.note ? `\n   ${step.note}` : ""}`;
+    return `${index + 1}. **${node ? nodeDisplayName(node) : step.node_id}** — ${relation}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${step.note ? `\n   ${step.note}` : ""}`;
   }).join("\n");
 
-  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${countLabel(steps.length, "symbol")}.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(flowLimitations(flow))}${explorerReference(url)}`;
+  return `# ${flow.name}\n\n${flow.description || `A ${flow.kind || "graph"} path through ${countLabel(steps.length, "symbol")}.`}\n\n${repositoryHeader(app)}\nExplorer order: ${direction === "backward" ? "start to end" : "end to start"}\n\n## Path\n\n${path}\n\n## Current focus\n\n**${selectedNode ? nodeDisplayName(selectedNode) : selectedStep?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(flowLimitations(flow))}${explorerReference(url)}`;
 }
 
 export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?: string) {
@@ -63,10 +63,10 @@ export function explainEntry(app: App, entry: Entry, selectedIndex: number, url?
   const path = entry.hops.map((hop, index) => {
     const node = app.nodes.find((item) => item.id === hop.node_id);
     const context = scope(node);
-    return `${index + 1}. **${node?.label || hop.node_id}** — ${hop.edge_label || "calls"}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${hop.caption ? `\n   ${hop.caption}` : ""}`;
+    return `${index + 1}. **${node ? nodeDisplayName(node) : hop.node_id}** — ${hop.edge_label || "calls"}\n   \`${location(node)}\`${context ? ` · ${context}` : ""}${hop.caption ? `\n   ${hop.caption}` : ""}`;
   }).join("\n");
 
-  return `# ${entry.label}\n\n${entry.description || `A request flow through ${entry.hops.length} symbols.`}\n\n${repositoryHeader(app)}\n\n## Request flow\n\n${path}\n\n## Current focus\n\n**${selectedNode?.label || selectedHop?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(entry.limitations)}${explorerReference(url)}`;
+  return `# ${entry.label}\n\n${entry.description || `A request flow through ${countLabel(entry.hops.length, "symbol")}.`}\n\n${repositoryHeader(app)}\n\n## Request flow\n\n${path}\n\n## Current focus\n\n**${selectedNode ? nodeDisplayName(selectedNode) : selectedHop?.node_id || "Unknown symbol"}** at \`${location(selectedNode)}\`\n\n${codeBlock(sourceText(selectedNode))}${limitationsSection(entry.limitations)}${explorerReference(url)}`;
 }
 
 export function explainNode(app: App, node: Node, url?: string) {
@@ -81,7 +81,7 @@ export function explainNode(app: App, node: Node, url?: string) {
       const outgoing = edge.source === node.id;
       const peerId = outgoing ? edge.target : edge.source;
       const peer = app.nodes.find((item) => item.id === peerId);
-      return `- ${outgoing ? "leads to" : "receives from"} **${peer?.label || peerId}** — ${edge.relation || "connected"} (\`${location(peer)}\`)`;
+      return `- ${outgoing ? "leads to" : "receives from"} **${peer ? nodeDisplayName(peer) : peerId}** — ${edge.relation || "connected"} (\`${location(peer)}\`)`;
     })
     .join("\n");
   const relationshipLimitations = [...new Set(
@@ -93,8 +93,8 @@ export function explainNode(app: App, node: Node, url?: string) {
   const entryNames = entries.slice(0, 8).map((entry) => `- ${entry.label}`).join("\n");
 
   const hierarchy = [
-    parent ? `Enclosed by: **${parent.label || parent.id}**` : "",
-    children.length ? `\n## Contained symbols\n\n${children.map((child) => `- ${child.label || child.id} (${child.kind}, line ${child.line || "—"})`).join("\n")}` : "",
+    parent ? `Enclosed by: **${nodeDisplayName(parent)}**` : "",
+    children.length ? `\n## Contained symbols\n\n${children.map((child) => `- ${nodeDisplayName(child)} (${nodeKindLabel(child.kind)}, line ${child.line || "—"})`).join("\n")}` : "",
   ].filter(Boolean).join("\n");
-  return `# ${node.label || node.id}\n\n${node.documentation || `A ${node.kind} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${node.kind}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n${hierarchy ? `${hierarchy}\n` : ""}## Source\n\n${codeBlock(sourceText(node))}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${limitationsSection(relationshipLimitations)}${explorerReference(url)}`;
+  return `# ${nodeDisplayName(node)}\n\n${node.documentation || `A ${nodeKindLabel(node.kind).toLowerCase()} in the loaded code graph.`}\n\n${repositoryHeader(app)}\nKind: ${nodeKindLabel(node.kind)}\nLocation: \`${location(node)}\`${scope(node) ? `\nContext: ${scope(node)}` : ""}\n\n${hierarchy ? `${hierarchy}\n` : ""}## Source\n\n${codeBlock(sourceText(node))}\n\n## Where it appears\n\n${pathNames || "No graph paths include this symbol."}\n\n${entryNames ? `## Request flows\n\n${entryNames}\n\n` : ""}## Nearby relationships\n\n${relationships || "No connected relationships are included."}${limitationsSection(relationshipLimitations)}${explorerReference(url)}`;
 }

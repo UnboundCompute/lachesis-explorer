@@ -63,6 +63,10 @@ jobs:
         run: python -m unittest discover -s services/bundle-service/tests -v
         env:
           PYTHONPATH: services/bundle-service
+      - name: Validate checked-in graph-first fixture
+        run: python -c "from src.verify_bundle import validate_file; validate_file('public/code-exploration-bundle.json')"
+        env:
+          PYTHONPATH: services/bundle-service
       - name: Check hosted smoke runner syntax
         run: node --check services/bundle-service/smoke-hosted.mjs
       - name: Install CloudFormation linter

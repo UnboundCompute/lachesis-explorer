@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { countLabel, flowDisplayName, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
+import { countLabel, flowDisplayName, isSecurityProjection, nodeDisplayName, recommendedFlow, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
+import { loadHostedRepositories } from "../lib/hosted-bundle";
+import { copyText } from "../lib/clipboard";
 import { Icon } from "./Icon";
 
 type LoadState = {
   type: "idle" | "loading" | "success" | "error";
   message: string;
+};
+type RepositoryIndex = {
+  repository?: string;
+  revision?: string;
+  ref?: string;
+  git_url?: string;
+  built_at?: number;
+  bundle_url?: string;
 };
 type Props = {
   app: App;
@@ -14,8 +24,7 @@ type Props = {
   loadState: LoadState;
   onUpload: () => void;
   onReviewCoverage: () => void;
-  onLoadSample: () => void;
-  onLoadSecuritySample: () => void;
+  sourceSelected: boolean;
   onView: (view: "map" | "investigate" | "trace" | "journey" | "compare") => void;
   onSearch?: (query: string) => void;
   onDismiss: () => void;
@@ -26,6 +35,8 @@ type Props = {
   onBuild?: (gitUrl: string, ref: string) => void;
   onCancelBuild?: () => void;
   buildState?: { status: string; steps: Array<{ key: string; state: string }>; message?: string };
+  repositoryIndex?: RepositoryIndex | null;
+  onRefreshRepository?: () => void;
 };
 
 const statusCopy: Record<string, string> = {
@@ -100,13 +111,6 @@ function pathScopes(flow: Flow, app: App) {
   return labels;
 }
 
-function recommendationScore(flow: Flow) {
-  const roles = flow.steps.map((step) => step.role.trim().toLowerCase());
-  const hasSource = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin"].includes(role));
-  const hasSink = Boolean(flow.sinkNodeId) || roles.includes("sink");
-  return (flow.steps.length > 1 ? 100 : 0) + (hasSource ? 20 : 0) + (hasSink ? 20 : 0) + flow.steps.length;
-}
-
 function pathKindLabel(flow: Flow) {
   const kind = flow.kind?.trim().toLowerCase();
   if (kind === "call-path" || kind === "callpath") return "call path";
@@ -147,22 +151,190 @@ function EvidenceState({ evidence }: { evidence?: Evidence }) {
 function BuildIntake({ onBuild, onCancelBuild, buildState }: Pick<Props, "onBuild" | "onCancelBuild" | "buildState">) {
   const [gitUrl, setGitUrl] = useState("");
   const [ref, setRef] = useState("");
+  const [formError, setFormError] = useState("");
   if (!onBuild) return null;
   const busy = buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!gitUrl.trim() || busy) return;
+    let parsed: URL;
+    try {
+      parsed = new URL(gitUrl.trim());
+    } catch {
+      setFormError("Enter a full HTTPS repository URL, such as https://github.com/org/repository.");
+      return;
+    }
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.replace(/\/$/, "").replace(/\.git$/, "");
+    const segments = path.split("/").filter(Boolean);
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.search || parsed.hash || !["github.com", "gitlab.com", "bitbucket.org"].includes(host) || segments.length !== 2) {
+      setFormError("Use a public HTTPS GitHub, GitLab, or Bitbucket repository URL without credentials or extra path segments.");
+      return;
+    }
+    setFormError("");
     onBuild?.(gitUrl.trim(), ref.trim());
   }
+  const statusLabels: Record<string, string> = { queued: "Queued", clone: "Clone repository", cloning: "Cloning repository", build: "Build graph", building: "Building graph", export: "Export bundle", exporting: "Exporting bundle", ready: "Bundle ready", cancelled: "Build cancelled", too_large: "Repository is too large", unsupported_language: "Language is not supported", expired: "Build expired", error: "Build failed" };
   return <section className="hosted-build" aria-labelledby="hosted-build-title">
-    <div><span className="panel-label">OPEN A CODEBASE</span><h2 id="hosted-build-title">Build a graph from a public repository</h2><p>Paste a GitHub, GitLab, or Bitbucket URL. Lachesis builds the graph remotely; your browser only receives the exported bundle.</p></div>
+    <div className="hosted-build-heading"><span className="selection-option-number">01</span><div><span className="panel-label">FRESH GRAPH</span><h2 id="hosted-build-title">Paste a repository URL</h2><p>Build a fresh graph from a public GitHub, GitLab, or Bitbucket repository.</p></div></div>
     <form onSubmit={submit} className="hosted-build-form" aria-label="Build graph from repository">
-      <label htmlFor="hosted-repository-url"><span>Repository URL</span><input id="hosted-repository-url" value={gitUrl} onChange={event => setGitUrl(event.target.value)} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" disabled={Boolean(busy)} /></label>
+      <label htmlFor="hosted-repository-url"><span>Repository URL</span><input id="hosted-repository-url" value={gitUrl} onChange={event => { setGitUrl(event.target.value); if (formError) setFormError(""); }} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" aria-invalid={Boolean(formError)} aria-describedby={formError ? "hosted-repository-error" : "hosted-repository-help"} disabled={Boolean(busy)} /></label>
       <label htmlFor="hosted-repository-ref"><span>Ref <small>optional</small></span><input id="hosted-repository-ref" value={ref} onChange={event => setRef(event.target.value)} placeholder="main" disabled={Boolean(busy)} /></label>
       {busy ? <button type="button" className="hosted-build-cancel" onClick={onCancelBuild}>Cancel build</button> : <button type="submit" disabled={!gitUrl.trim()}>Build graph<Icon name="arrow" size={13} /></button>}
     </form>
-    {buildState?.status && buildState.status !== "idle" && <div className={`hosted-build-status ${buildState.status}`} role={["error", "too_large", "unsupported_language"].includes(buildState.status) ? "alert" : "status"} aria-live="polite" aria-busy={Boolean(busy)}><b>{buildState.message || (buildState.status === "ready" ? "Bundle ready." : `Build ${buildState.status}.`)}</b>{buildState.steps.length > 0 && <span>{buildState.steps.map(step => `${step.key}: ${step.state}`).join(" · ")}</span>}{["too_large", "unsupported_language"].includes(buildState.status) && <small>Use “Load another bundle” to upload a locally generated bundle.</small>}</div>}
+    <p id="hosted-repository-help" className="hosted-build-help">Public repositories only. Private URLs, SSH URLs, credentials, and nested paths are not accepted.</p>
+    {formError && <p id="hosted-repository-error" className="hosted-build-form-error" role="alert">{formError}</p>}
+    {buildState?.status && buildState.status !== "idle" && <div className={`hosted-build-status ${buildState.status}`} role={["error", "too_large", "unsupported_language"].includes(buildState.status) ? "alert" : "status"} aria-live="polite" aria-busy={Boolean(busy)}><b>{buildState.message || statusLabels[buildState.status] || `Build ${buildState.status}.`}</b>{buildState.steps.length > 0 && <ol aria-label="Build progress">{buildState.steps.map(step => <li key={step.key} className={step.state}><span aria-hidden="true" />{statusLabels[step.key] || step.key}<small>{step.state === "done" ? "Complete" : step.state === "running" ? "In progress" : "Waiting"}</small></li>)}</ol>}{["too_large", "unsupported_language"].includes(buildState.status) && <small>Run <code>lachesis trace . --out bundle.json</code>, then use “Load another bundle” to continue locally.</small>}</div>}
   </section>;
+}
+
+function RepositoryFreshness({ index, onRefresh, busy }: { index: RepositoryIndex; onRefresh?: () => void; busy: boolean }) {
+  const builtAt = index.built_at ? new Date(index.built_at * 1000) : undefined;
+  const age = builtAt
+    ? new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(
+        -Math.max(0, Math.round((Date.now() - builtAt.getTime()) / 86_400_000)),
+        "day",
+      )
+    : "unknown time";
+  return (
+    <aside className="repository-freshness" aria-label="Repository graph freshness">
+      <div>
+        <span className="panel-label">REPOSITORY GRAPH</span>
+        <b>{index.repository || "Canonical repository"}</b>
+        <small>Built {age}{index.revision ? ` · ${index.revision.slice(0, 12)}` : ""}</small>
+      </div>
+      {onRefresh && <button type="button" onClick={onRefresh} disabled={busy}>{busy ? "Refreshing…" : "Refresh graph"}<Icon name="arrow" size={13} /></button>}
+    </aside>
+  );
+}
+
+function RepositoryGallery() {
+  const [repositories, setRepositories] = useState<RepositoryIndex[]>([]);
+  const [page, setPage] = useState(0);
+  const hostedConfigured = Boolean(process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim());
+  const pageSize = 6;
+  useEffect(() => {
+    if (!hostedConfigured) return;
+    const controller = new AbortController();
+    loadHostedRepositories(controller.signal).then((items) => { setRepositories(items); setPage(0); }).catch(() => undefined);
+    return () => controller.abort();
+  }, [hostedConfigured]);
+  const pageCount = Math.max(1, Math.ceil(repositories.length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageItems = repositories.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  function routeFor(repository?: string) {
+    const parts = repository?.split("/").filter(Boolean) ?? [];
+    if (parts.length !== 3) return "#";
+    return parts[0] === "github.com"
+      ? `/r/${encodeURIComponent(parts[1])}/${encodeURIComponent(parts[2])}`
+      : `/r/${parts.map((part) => encodeURIComponent(part)).join("/")}`;
+  }
+  if (!hostedConfigured) return (
+    <section className="repository-gallery" aria-labelledby="repository-gallery-title">
+      <div className="understand-section-heading"><div><span className="panel-label">CACHED CODEBASES</span><h2 id="repository-gallery-title">Connect the hosted catalog to browse cached repositories.</h2></div><p>Local development intentionally makes no hosted requests. Configure the hosted API to show warm repository cards here.</p></div>
+    </section>
+  );
+  if (!repositories.length) return (
+    <section className="repository-gallery repository-gallery-empty" aria-labelledby="repository-gallery-title">
+      <div className="understand-section-heading"><div><span className="panel-label">CACHED CODEBASES</span><h2 id="repository-gallery-title">No cached repositories yet.</h2></div><p>Build a public repository above and it will appear here once its graph is ready.</p></div>
+    </section>
+  );
+  return (
+    <section className="repository-gallery" aria-labelledby="repository-gallery-title">
+      <div className="understand-section-heading"><div className="repository-gallery-heading"><span className="selection-option-number">02</span><div><span className="panel-label">READY TO EXPLORE</span><h2 id="repository-gallery-title">Choose a cached codebase</h2></div></div><p>Open a warm graph instantly. Every card shows the revision you are about to read.</p></div>
+      <div className="repository-gallery-grid">
+        {pageItems.map((item) => <a className="repository-card" href={routeFor(item.repository)} key={item.repository + ":" + item.revision}>
+          <b>{item.repository || "Unnamed repository"}</b>
+          <small>{item.revision ? item.revision.slice(0, 12) : "revision unavailable"}{item.ref ? ` · ${item.ref}` : ""}</small>
+          <span>Open graph <Icon name="arrow" size={13} /></span>
+        </a>)}
+      </div>
+      <div className="repository-gallery-footer">
+        <small>Showing {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, repositories.length)} of {repositories.length} cached codebases</small>
+        <nav aria-label="Cached codebase pages">
+          <button type="button" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={currentPage === 0}>Previous</button>
+          <span>Page {currentPage + 1} of {pageCount}</span>
+          <button type="button" onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} disabled={currentPage === pageCount - 1}>Next</button>
+        </nav>
+      </div>
+    </section>
+  );
+}
+
+function RepositorySelection({ onUpload, onBuild, onCancelBuild, buildState, loadState, onDismiss }: Pick<Props, "onUpload" | "onBuild" | "onCancelBuild" | "buildState" | "loadState" | "onDismiss">) {
+  return (
+    <main className="repository-selection" aria-labelledby="repository-selection-title">
+      <section className="repository-selection-hero">
+        <h1 id="repository-selection-title">Understand a codebase without opening every file.</h1>
+        <p>Lachesis turns a code graph into a guided reading surface. Start with a fresh repository graph or open one that is already cached; the workspace opens when its evidence is ready.</p>
+        <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
+      </section>
+      {loadState.message && (
+        <p className={`briefing-notice ${loadState.type}`} role={loadState.type === "error" ? "alert" : "status"}>
+          <i />
+          <span>{loadState.message}</span>
+          <button className="notice-dismiss" type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
+        </p>
+      )}
+      <RepositoryGallery />
+      <section className="repository-selection-upload" aria-labelledby="repository-selection-upload-title">
+        <div>
+          <span className="panel-label">LOCAL OPTION</span>
+          <h2 id="repository-selection-upload-title">Already have a bundle?</h2>
+          <p>Use a <code>bundle.json</code> from a local Lachesis run. It stays in this browser and skips the hosted build queue.</p>
+        </div>
+        <button type="button" className="load-bundle-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
+          <span className="load-bundle-secondary-icon"><Icon name="upload" size={15} /></span>
+          <span><b>{loadState.type === "loading" ? "Reading bundle…" : "Upload bundle.json"}</b><small>Local only · no hosted build</small></span>
+          <Icon name="arrow" size={14} />
+        </button>
+      </section>
+      <p className="repository-selection-note">Already opening a design-map link? A valid bundle deep link skips this screen and restores its pointed-to repository context.</p>
+    </main>
+  );
+}
+
+function RepositoryArtifactShelf({ index }: { index?: RepositoryIndex | null }) {
+  const [copied, setCopied] = useState("");
+  const repository = index?.repository?.split("/").filter(Boolean) ?? [];
+  const canonicalPath = repository.length === 3
+    ? repository[0] === "github.com"
+      ? `/r/${encodeURIComponent(repository[1])}/${encodeURIComponent(repository[2])}`
+      : `/r/${repository.map((part) => encodeURIComponent(part)).join("/")}`
+    : "";
+  async function copyArtifact(kind: string, value: string) {
+    try {
+      await copyText(value);
+      setCopied(kind);
+      window.setTimeout(() => setCopied((current) => current === kind ? "" : current), 1800);
+    } catch {
+      setCopied("");
+    }
+  }
+  if (!index || !canonicalPath) return (
+    <section className="artifact-shelf artifact-shelf-empty" aria-labelledby="artifact-shelf-title">
+      <div><span className="panel-label">SHAREABLE ARTIFACTS</span><h2 id="artifact-shelf-title">Keep this investigation portable.</h2><p>Local bundles can share the current investigation link in this browser. A hosted repository page additionally unlocks a README badge and downloadable bundle artifact.</p></div>
+      <div className="artifact-shelf-actions"><button type="button" onClick={() => copyArtifact("local", typeof window === "undefined" ? "" : window.location.href)}>{copied === "local" ? "Local link copied" : "Copy local investigation link"}</button></div>
+    </section>
+  );
+  const canonicalUrl = typeof window === "undefined" ? canonicalPath : `${window.location.origin}${canonicalPath}`;
+  const badge = `[![Understand with Lachesis](https://img.shields.io/badge/understand_with-Lachesis-18c79a?logo=github)](${canonicalUrl})`;
+  const markdown = `## Understand this codebase\n\n[Open ${index.repository} in Lachesis](${canonicalUrl})\n\nRevision: ${index.revision || "unknown"}`;
+  const bundleUrl = index.bundle_url && process.env.NEXT_PUBLIC_BUNDLE_API_URL
+    ? new URL(index.bundle_url, process.env.NEXT_PUBLIC_BUNDLE_API_URL).toString()
+    : undefined;
+  return (
+    <section className="artifact-shelf" aria-labelledby="artifact-shelf-title">
+      <div className="artifact-shelf-heading"><div><span className="panel-label">SHAREABLE ARTIFACTS</span><h2 id="artifact-shelf-title">Package the path you just understood.</h2></div><small>{index.revision ? `revision ${index.revision.slice(0, 12)}` : "revision unavailable"}</small></div>
+      <div className="artifact-shelf-actions">
+        <button type="button" onClick={() => copyArtifact("link", canonicalUrl)}>{copied === "link" ? "Link copied" : "Copy canonical link"}</button>
+        <button type="button" onClick={() => copyArtifact("badge", badge)}>{copied === "badge" ? "Badge copied" : "Copy README badge"}</button>
+        <button type="button" onClick={() => copyArtifact("markdown", markdown)}>{copied === "markdown" ? "Markdown copied" : "Copy Markdown"}</button>
+        {bundleUrl && <a href={bundleUrl} download={`${index.repository?.replaceAll("/", "-") || "lachesis"}-bundle.json`}>Download bundle <Icon name="arrow" size={12} /></a>}
+      </div>
+      <code className="artifact-shelf-preview">{canonicalUrl}</code>
+    </section>
+  );
 }
 
 export function HomeView({
@@ -171,8 +343,6 @@ export function HomeView({
   loadState,
   onUpload,
   onReviewCoverage,
-  onLoadSample,
-  onLoadSecuritySample,
   onView,
   onSearch,
   onDismiss,
@@ -183,6 +353,9 @@ export function HomeView({
   onBuild,
   onCancelBuild,
   buildState,
+  repositoryIndex,
+  onRefreshRepository,
+  sourceSelected,
 }: Props) {
   const [selectedId, setSelectedId] = useState(app.findings[0]?.id ?? "");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
@@ -215,14 +388,19 @@ export function HomeView({
     [app],
   );
   const metadataOnly = findings.length === 0 && app.flows.length === 0 && app.mcp.length > 0;
-  const graphOnly = findings.length === 0 && app.nodes.length > 0 && !metadataOnly;
-  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const securityMode = isSecurityProjection(app);
+  const graphOnly = !securityMode && app.nodes.length > 0 && !metadataOnly;
   const bundleMode = securityMode
     ? "Security evidence projection"
     : "Code exploration graph";
-  const graphFocus = useMemo(
-    () => [...app.flows].sort((a, b) => recommendationScore(b) - recommendationScore(a))[0],
-    [app.flows],
+  const graphFocus = useMemo(() => recommendedFlow(app, { requireRenderableSource: true }), [app]);
+  const curatedTour = app.bundle.curatedTour;
+  const curatedTourSteps = useMemo(
+    () => curatedTour?.steps.flatMap((step) => {
+      const flow = app.flows.find((item) => item.id === step.flowId);
+      return flow ? [{ step, flow }] : [];
+    }) ?? [],
+    [app.flows, curatedTour],
   );
   const graphFocusNode = graphFocus?.steps[0]
     ? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
@@ -308,6 +486,8 @@ export function HomeView({
           : "Explore how this code is connected."
         : "No open evidence paths in this bundle.";
 
+  if (!sourceSelected) return <RepositorySelection onUpload={onUpload} onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} loadState={loadState} onDismiss={onDismiss} />;
+
   if (graphOnly) {
     const startNode = graphFocus
       ? sourceFor(graphFocus, app) ?? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
@@ -321,6 +501,13 @@ export function HomeView({
       <main className="understand-home">
         <header className="understand-hero">
           <div className="understand-copy">
+            <div className="briefing-status-line">
+              <span className={isDemo ? "fixture-flag" : "fixture-flag live"}>
+                <i />
+                {isDemo ? "Synthetic working bundle" : "Loaded local bundle"}
+              </span>
+              <span>{bundleMode} · contract {app.bundle.schemaVersion}</span>
+            </div>
             <h1>Understand {app.name || "this codebase"}, one path at a time.</h1>
             <p>
               {app.bundle.description ||
@@ -339,6 +526,11 @@ export function HomeView({
                   onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}
                 >
                   Follow “{flowActionLabel(graphFocus, app)}” <Icon name="arrow" size={14} />
+                </button>
+              )}
+              {!graphFocus && app.flows.length > 0 && (
+                <button type="button" className="understand-secondary" onClick={() => onView("trace")}>
+                  Review bundled paths <Icon name="arrow" size={14} />
                 </button>
               )}
               <button type="button" className="understand-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
@@ -362,9 +554,12 @@ export function HomeView({
               </form>
             )}
             <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
+            {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
+            <RepositoryGallery />
+            <RepositoryArtifactShelf index={repositoryIndex} />
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
-            <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} ready to follow</dd></div>
+            <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} {graphFocus ? "ready to follow" : app.flows.length ? "bundled" : "included"}</dd></div>
             <div><dt>Request flows</dt><dd>{app.entries.length.toLocaleString()} starting points</dd></div>
             <div><dt>Files</dt><dd>{(app.files.length || new Set(app.nodes.map((node) => node.file).filter(Boolean)).size).toLocaleString()} in this bundle</dd></div>
             <div><dt>Source previews</dt><dd>{countLabel(app.nodes.filter((node) => node.snippet.trim() || node.sourceWindow?.lines.length).length, "source preview")} of {countLabel(app.nodes.length, "symbol")}</dd></div>
@@ -396,6 +591,37 @@ export function HomeView({
               <button type="button" onClick={onReviewCoverage}>Review data quality <Icon name="arrow" size={12} /></button>
             </div>
           </aside>
+        )}
+
+        {curatedTourSteps.length > 0 && (
+          <section className="understand-tour" aria-labelledby="understand-tour-title">
+            <div className="understand-section-heading">
+              <div>
+                <span className="panel-label">CURATED START</span>
+                <h2 id="understand-tour-title">{curatedTour?.title || "Start here"}</h2>
+              </div>
+              {curatedTour?.maintainer && (
+                <p className="understand-tour-byline">
+                  {curatedTour.maintainer.url ? (
+                    <a href={curatedTour.maintainer.url} target="_blank" rel="noreferrer">{curatedTour.maintainer.name}</a>
+                  ) : curatedTour.maintainer.name}
+                  {" · publisher-provided tour"}
+                </p>
+              )}
+            </div>
+            {curatedTour?.description && <p className="understand-tour-description">{curatedTour.description}</p>}
+            <ol className="understand-tour-list">
+              {curatedTourSteps.map(({ step, flow }, index) => (
+                <li key={`${curatedTour?.id}-${flow.id}-${index}`}>
+                  <button type="button" onClick={() => onFlow(flow.id, step.nodeId ?? flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
+                    <span className="understand-tour-index">{String(index + 1).padStart(2, "0")}</span>
+                    <span><b>{step.label || flowActionLabel(flow, app)}</b><small>{step.note || `${pathKindLabel(flow)} · ${countLabel(flow.steps.length, "symbol")}`}</small></span>
+                    <Icon name="arrow" size={13} />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
         )}
 
         <section className="understand-questions" aria-labelledby="understand-questions-title">
@@ -433,7 +659,7 @@ export function HomeView({
               <div className="understand-path-copy">
                 <span>{pathKindLabel(graphFocus)} · {countLabel(graphFocus.steps.length, "symbol")}</span>
                 <h3 title={flowDisplayName(graphFocus, app.nodes, app.flows)}>{flowActionLabel(graphFocus, app)}</h3>
-                <p>{graphFocus.description || `Follow the path from ${startNode?.label || "its first symbol"} to ${endNode?.label || "its final symbol"}.`}</p>
+                <p>{graphFocus.description || `Follow the path from ${startNode ? nodeDisplayName(startNode) : "its first symbol"} to ${endNode ? nodeDisplayName(endNode) : "its final symbol"}.`}</p>
               </div>
               <div className="understand-route" aria-label="Recommended path endpoints">
                 <span><small>Starts at</small><b>{startNode?.label || "Not reported"}</b><em>{nodeLocation(startNode)}</em></span>
@@ -473,7 +699,7 @@ export function HomeView({
         <footer className="understand-footer">
           <span>Source stays beside every step. Path explanations can be copied as portable Markdown.</span>
           <span>{isDemo ? "Synthetic sample" : "Processed locally"} · {app.language || "language not reported"}</span>
-          {isDemo && <button type="button" onClick={onLoadSecuritySample}>View security projection</button>}
+          {isDemo && <span>Explicit fixture link</span>}
         </footer>
       </main>
     );
@@ -520,26 +746,10 @@ export function HomeView({
               <Icon name="arrow" size={14} />
             </span>
           </button>
-          {isDemo && (
-            <div className="fixture-links">
-              <a
-                className="download-fixture"
-                href={securityMode ? "/demo-bundle.json" : "/code-exploration-bundle.json"}
-                download
-              >
-                Download current sample <Icon name="arrow" size={12} />
-              </a>
-              <button
-                className="download-fixture sample-load"
-                type="button"
-                disabled={loadState.type === "loading"}
-                onClick={securityMode ? onLoadSample : onLoadSecuritySample}
-              >
-                {securityMode ? "Switch to code sample" : "View security sample"} <Icon name="arrow" size={12} />
-              </button>
-            </div>
-          )}
           <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
+          {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
+          <RepositoryGallery />
+          <RepositoryArtifactShelf index={repositoryIndex} />
         </div>
       </header>
 
@@ -695,7 +905,7 @@ export function HomeView({
                   <span>
                     <small>Starts at</small>
                     <b>
-                      {sourceFor(graphFocus, app)?.label ?? "Source not reported"}
+                      {sourceFor(graphFocus, app) ? nodeDisplayName(sourceFor(graphFocus, app)!) : "Source not reported"}
                     </b>
                   </span>
                   <i>
@@ -704,7 +914,7 @@ export function HomeView({
                   <span>
                     <small>Reaches</small>
                     <b>
-                      {sinkFor(graphFocus, app)?.label ?? "Boundary not reported"}
+                      {sinkFor(graphFocus, app) ? nodeDisplayName(sinkFor(graphFocus, app)!) : "Boundary not reported"}
                     </b>
                   </span>
                 </div>
@@ -712,7 +922,7 @@ export function HomeView({
                 <div className="witness-route single-symbol-route" aria-label="Selected symbol">
                   <span>
                     <small>Starting symbol</small>
-                    <b>{graphFocusNode?.label ?? graphFocus.steps[0]?.node_id ?? "Symbol not reported"}</b>
+                    <b>{graphFocusNode ? nodeDisplayName(graphFocusNode) : graphFocus.steps[0]?.node_id ?? "Symbol not reported"}</b>
                   </span>
                   <span>
                     <small>Location</small>
@@ -779,13 +989,12 @@ export function HomeView({
             </div>
           ) : graphOnly ? (
             <div className="briefing-empty">
-              <h2>Graph structure is ready to explore</h2>
-              <p>
-                This bundle includes {countLabel(app.nodes.length, "node")} and{" "}
-                {countLabel(app.edges.length, "relationship")}, but no graph paths were
-                included.
-              </p>
+              <h2>{app.flows.length ? "Paths need more source context" : "Graph structure is ready to explore"}</h2>
+              <p>{app.flows.length
+                ? `This bundle includes ${countLabel(app.flows.length, "bundled path")}, but none has complete source previews for a guided starting point. Review the paths as exported, or explore the graph directly.`
+                : `This bundle includes ${countLabel(app.nodes.length, "node")} and ${countLabel(app.edges.length, "relationship")}, but no graph paths were included.`}</p>
               <div className="priority-actions">
+                {app.flows.length > 0 && <button type="button" onClick={() => onView("trace")}>Review paths</button>}
                 <button type="button" onClick={() => onView("map")}>
                   Open full graph{" "}
                   <span className="action-orb">
@@ -1021,6 +1230,8 @@ export function HomeView({
                   ? "Open the graph while these records await traceable path steps."
                   : graphOnly && graphFocus
                   ? "Trace a bundled path through its connected symbols."
+                  : graphOnly && app.flows.length
+                    ? "Review the exported paths, then open the graph for broader context."
                   : graphOnly
                     ? "Open the graph to inspect its included structure."
                     : "Compare every value converging on a sink."}

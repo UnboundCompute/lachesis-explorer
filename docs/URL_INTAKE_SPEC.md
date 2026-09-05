@@ -93,22 +93,29 @@ Request:
 { "git_url": "https://github.com/GNOME/libxml2", "ref": "master" }
 ```
 
-Response for a new job:
+Response for an accepted build request:
 
 ```json
-{ "job_id": "j_…", "status": "queued", "sha": "…" }
+{ "job_id": "j_…", "status": "queued" }
 ```
 
-Response for a cache hit or completed job:
+The initial response is always an accepted job. Cache reuse is resolved by the worker and is
+reported by the normal status response; callers must not assume that a cache hit is synchronous.
+When the job reaches a terminal state, the status response is:
 
 ```json
-{ "status": "ready", "bundle_id": "b_…", "sha": "…" }
+{ "job_id": "j_…", "status": "ready", "bundle_id": "b_…", "sha": "…", "steps": [] }
 ```
 
 Poll `GET /api/build/{job_id}` with backoff and jitter. Honor `Retry-After`, stop polling when
 the page is hidden or unmounted, and enforce a client deadline. Use stable statuses:
 `queued`, `cloning`, `building`, `exporting`, `ready`, `too_large`, `unsupported_language`,
-`error`, and `expired`.
+`error`, `cancelled`, and `expired`. Non-ready terminal responses may include an `error` object
+with a user-safe `message` and machine-readable `kind`.
+
+An active job may be cancelled with `POST /api/build/{job_id}/cancel`. Cancellation is best
+effort: a job already in a terminal state is returned unchanged, and a cancelled job will not
+publish a bundle.
 
 The UI should show clone/build/export progress, preserve the submitted form on failure, and offer
 the local fallback for size or language limits.
@@ -139,8 +146,10 @@ bundle contents. Expired entries should be removed or shown as unavailable.
 
 ### API
 
-`POST /api/build` validates the URL, resolves the ref, performs a bounded preflight, checks the
-cache, and enqueues a job. It must not return repository details in errors or logs.
+`POST /api/build` validates the URL, resolves or records the requested ref for the worker,
+performs bounded admission checks, and enqueues a job. It must not return repository details in
+errors or logs. The endpoint returns `202` with a job ID; cache reuse is intentionally asynchronous
+and is not a separate synchronous response shape.
 
 `GET /api/build/{job_id}` returns bounded progress information. It must use high-entropy job IDs,
 rate limits, quotas, expiration, cancellation, retry/DLQ handling, and an explicit access policy.
@@ -184,11 +193,15 @@ keeps the security-oriented 1.0 export for compatibility, while `lachesis trace`
 the graph-first export. The 2.0 bundle should include:
 
 - repository, language, revision, line count and indexed-node count;
+- explicit `analysis_projection` metadata (`code-understanding` for the
+  comprehension-first surface or a security/audit value for witness-first
+  bundles);
 - graph nodes and edges;
 - files, modules and entrypoints where available;
 - optional value/request paths and security findings;
 - exporter limitations and provenance;
-- `meta.source_url_template` using only `{file}`, `{line}`, `{end_line}`, `{revision}`.
+- `meta.source_url_template` as an absolute HTTP(S) template containing `{file}` and using only
+  `{file}`, `{line}`, `{end_line}`, and `{revision}` placeholders.
 
 Example:
 

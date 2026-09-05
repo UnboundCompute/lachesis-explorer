@@ -1,4 +1,4 @@
-import { countLabel, type App } from "../lib/lachesis";
+import { countLabel, isSecurityProjection, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -21,7 +21,7 @@ export function Intro({
   onUpload: () => void;
   onDismiss: () => void;
 }) {
-  const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+  const securityMode = isSecurityProjection(app);
   const bundleMode = securityMode
     ? "Security evidence projection"
     : "Code exploration graph";

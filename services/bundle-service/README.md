@@ -20,12 +20,12 @@ Example commands:
 
 ```bash
 docker build \
-  --build-arg LACHESIS_WHEEL_URL=https://files.pythonhosted.org/<immutable-path>/lachesis_cpg-0.5.0-py3-none-manylinux_2_28_x86_64.whl \
+  --build-arg LACHESIS_WHEEL_URL=https://files.pythonhosted.org/<immutable-path>/lachesis_cpg-0.5.1-py3-none-manylinux_2_28_x86_64.whl \
   --build-arg LACHESIS_WHEEL_SHA256=<published-sha256> \
   --platform linux/amd64 \
   --provenance=false \
-  -f worker/Dockerfile -t <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.0 .
-docker push <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.0
+  -f worker/Dockerfile -t <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.1 .
+docker push <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.1
 
 sam build --template-file template.yaml
 sam deploy --guided --template-file .aws-sam/build/template.yaml
@@ -39,8 +39,9 @@ The launch worker rejects repositories above 5,000 tracked files before invoking
 limit is configurable through `MAX_REPOSITORY_FILES`, but should only be raised after an equivalent
 Lambda memory, disk, and wall-time benchmark.
 Validated bundles are cached privately by a SHA-256 key containing the canonical repository, resolved
-commit, build timeout, and `LACHESIS_CACHE_VERSION`. Bump that version whenever analyzer, exporter,
-toolchain, or relevant options change; cache objects expire with the bucket lifecycle.
+commit, schema version, analyzer cache version, toolchain fingerprint, build-options fingerprint, and
+build timeout. Bump the relevant value whenever analyzer, exporter, schema, toolchain, or build options
+change; cache objects expire with the bucket lifecycle.
 
 The wheel URL must be immutable, its `LACHESIS_WHEEL_SHA256` must match the digest published by the
 artifact registry, and its version must match the exporter version used in the cache identity. The
@@ -82,6 +83,18 @@ Run the service contract and worker tests from the Explorer repository root:
 PYTHONPATH=services/bundle-service python3 -m unittest discover -s services/bundle-service/tests -v
 sam validate --template-file services/bundle-service/template.yaml --region us-east-1 --lint
 ```
+
+The Python tests use mocks and do not contact AWS. For routine Explorer/UI work, use only the
+frontend checks and mocked service tests with hosted API variables unset:
+
+```bash
+env -u NEXT_PUBLIC_BUNDLE_API_URL -u BUNDLE_API_URL corepack pnpm run check
+PYTHONPATH=services/bundle-service python3 -m unittest discover -s services/bundle-service/tests -q
+```
+
+Do not run `sam deploy`, `docker push`, `smoke-hosted.mjs`, or a build request against a deployed
+API as part of local testing. The SAM validation and hosted smoke commands below are release-gate
+steps and require an explicit deployment decision.
 
 After deployment, run the API smoke test with the stack URL and a known bundle ID:
 

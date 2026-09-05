@@ -7,6 +7,38 @@ from src.verify_bundle import prepare_file, validate_bundle
 
 
 class WorkerTests(unittest.TestCase):
+    def test_repository_index_publishes_revision_and_default_branch_pointers(self):
+        storage = Mock()
+        worker._publish_repository_index(
+            storage,
+            "bucket",
+            url="https://github.com/owner/repo.git",
+            ref="main",
+            sha="a" * 40,
+            bundle_id="b_12345678",
+            cache_hit=False,
+        )
+
+        self.assertEqual(storage.put_object.call_count, 2)
+        keys = {call.kwargs["Key"] for call in storage.put_object.call_args_list}
+        self.assertIn("repository-index/github.com/owner/repo/revisions/" + "a" * 40 + ".json", keys)
+        self.assertIn("repository-index/github.com/owner/repo/latest.json", keys)
+
+    def test_repository_index_does_not_move_latest_for_feature_refs(self):
+        storage = Mock()
+        worker._publish_repository_index(
+            storage,
+            "bucket",
+            url="https://github.com/owner/repo.git",
+            ref="feature/new-flow",
+            sha="a" * 40,
+            bundle_id="b_12345678",
+            cache_hit=True,
+        )
+
+        self.assertEqual(storage.put_object.call_count, 1)
+        self.assertIn("/revisions/", storage.put_object.call_args.kwargs["Key"])
+
     def test_update_preserves_expiry_for_dynamodb_ttl(self):
         table = Mock()
 
@@ -116,6 +148,152 @@ class WorkerTests(unittest.TestCase):
 
         self.assertIs(validate_bundle(bundle), bundle)
 
+    def test_validator_accepts_a_source_less_graph_node(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {"nodes": [{"id": "synthetic", "kind": "module", "file": "", "line": 0, "label": "generated module"}]},
+        }
+        self.assertIs(validate_bundle(bundle), bundle)
+
+    def test_validator_accepts_a_safe_source_url_template(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {
+                "repository": "owner/repo", "language": "python", "revision": "a" * 40,
+                "lines": 1, "indexed_nodes": 1,
+                "source_url_template": "https://github.com/owner/repo/blob/{revision}/{file}#L{line}-L{end_line}",
+            },
+            "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}]},
+        }
+        self.assertIs(validate_bundle(bundle), bundle)
+
+    def test_validator_rejects_an_unsafe_source_url_template(self):
+        for template in (
+            "javascript:alert(1)",
+            "https://user:pass@example.com/{file}",
+            "https://example.com/{owner}/{file}",
+            "https://example.com/{revision}",
+        ):
+            bundle = {
+                "format": "lachesis-explorer-bundle",
+                "schema_version": "2.0",
+                "meta": {
+                    "repository": "owner/repo", "language": "python", "revision": "a" * 40,
+                    "lines": 1, "indexed_nodes": 1, "source_url_template": template,
+                },
+                "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}]},
+            }
+            with self.assertRaises(ValueError):
+                validate_bundle(bundle)
+
+    def test_validator_accepts_a_path_linked_curated_tour(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {
+                "repository": "owner/repo", "language": "python", "revision": "a" * 40,
+                "lines": 2, "indexed_nodes": 2,
+                "curated_tour": {
+                    "id": "start-here", "title": "Read the request path",
+                    "maintainer": {"name": "Owner", "verified": True, "url": "https://github.com/owner/repo"},
+                    "steps": [{"flow_id": "flow.main", "node_id": "n1"}],
+                },
+            },
+            "graph": {"nodes": [
+                {"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"},
+                {"id": "n2", "kind": "call", "file": "main.py", "line": 2, "label": "run", "snippet": "run()"},
+            ]},
+            "paths": {"values": [{"id": "flow.main", "steps": [{"node_id": "n1"}, {"node_id": "n2"}]}]},
+        }
+
+        self.assertIs(validate_bundle(bundle), bundle)
+
+    def test_validator_rejects_a_curated_tour_with_untrusted_or_unknown_metadata(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {
+                "repository": "owner/repo", "language": "python", "revision": "a" * 40,
+                "lines": 2, "indexed_nodes": 2,
+                "curated_tour": {
+                    "id": "start-here", "title": "Read the request path",
+                    "maintainer": {"name": "Unknown", "verified": False},
+                    "steps": [{"flow_id": "flow.missing"}],
+                },
+            },
+            "graph": {"nodes": [
+                {"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"},
+                {"id": "n2", "kind": "call", "file": "main.py", "line": 2, "label": "run", "snippet": "run()"},
+            ]},
+            "paths": {"values": [{"id": "flow.main", "steps": [{"node_id": "n1"}, {"node_id": "n2"}]}]},
+        }
+
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
+    def test_validator_requires_understanding_entrypoint_and_source_backed_path(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "analysis_projection": "code-understanding",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 2, "indexed_nodes": 2},
+            "graph": {"nodes": [
+                {"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"},
+                {"id": "n2", "kind": "call", "file": "main.py", "line": 2, "label": "run", "snippet": "run()"},
+            ], "entrypoints": [{"id": "entry.main", "label": "main", "node_id": "n1"}]},
+            "paths": {"values": [{"id": "flow.main", "kind": "call-path", "steps": [{"node_id": "n1"}, {"node_id": "n2"}]}]},
+        }
+        self.assertIs(validate_bundle(bundle), bundle)
+
+    def test_validator_rejects_understanding_projection_without_guided_path(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "analysis_projection": "code-understanding",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}], "entrypoints": [{"id": "entry.main", "label": "main", "node_id": "n1"}]},
+        }
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
+    def test_validator_rejects_a_request_path_with_an_unknown_hop(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}]},
+            "paths": {"requests": [{"id": "request.main", "hops": [{"node_id": "missing"}]}]},
+        }
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
+    def test_validator_rejects_a_path_with_an_unknown_endpoint(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}]},
+            "paths": {"values": [{"id": "flow.main", "source_node": "missing", "steps": [{"node_id": "n1"}]}]},
+        }
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
+    def test_validator_rejects_a_module_with_an_unknown_parent(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {
+                "nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}],
+                "modules": [{"id": "module.main", "name": "main", "parent_id": "module.missing", "node_ids": ["n1"]}],
+            },
+        }
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
     def test_prepare_file_canonicalizes_a_null_source_mapping(self):
         bundle = {
             "format": "lachesis-explorer-bundle",
@@ -168,6 +346,14 @@ class WorkerTests(unittest.TestCase):
             second = worker._cache_key("https://github.com/owner/repo.git", "a" * 40)
         self.assertNotEqual(first, second)
         self.assertRegex(first, r"^cache/[0-9a-f]{64}\.json$")
+
+    def test_cache_key_changes_with_schema_toolchain_and_build_options(self):
+        url = "https://github.com/owner/repo.git"
+        sha = "a" * 40
+        baseline = worker._cache_key(url, sha)
+        for key in ("BUNDLE_SCHEMA_VERSION", "LACHESIS_TOOLCHAIN_FINGERPRINT", "BUILD_OPTIONS_FINGERPRINT", "BUILD_TIMEOUT_SECONDS"):
+            with self.subTest(key=key), patch.dict(worker.os.environ, {key: "changed"}):
+                self.assertNotEqual(baseline, worker._cache_key(url, sha))
 
     def test_cache_hit_skips_analysis_and_publishes_a_new_opaque_bundle(self):
         table = Mock()

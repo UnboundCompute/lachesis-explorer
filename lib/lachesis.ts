@@ -16,8 +16,30 @@ export type GraphEntrypoint = { id: string; label: string; kind?: string; nodeId
 export type GraphCoverage = { scope?: string; includedNodes?: number; indexedNodes?: number; limitations: string[]; capabilities: string[] }
 export type EdgeOrigin = 'bundle' | 'value-flow' | 'request-path'
 export type GraphEdge = { id:string; source:string; target:string; relation:string; alias:boolean; dynamic:boolean; confidence?:string; limitations?:string[]; origins:EdgeOrigin[]; flow_ids:string[]; entry_ids:string[] }
-export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; sourceUrlTemplate?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[] }
+export type CuratedTourStep = { flowId: string; nodeId?: string; label?: string; note?: string }
+export type CuratedTour = { id: string; title: string; description?: string; steps: CuratedTourStep[]; maintainer?: { name: string; url?: string } }
+export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; sourceUrlTemplate?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[]; curatedTour?: CuratedTour }
 export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; findings: Flow[]; entries: Entry[]; mcp: Evidence[]; files: GraphFile[]; modules: GraphModule[]; entrypoints: GraphEntrypoint[]; coverage: GraphCoverage; bundle:BundleInfo }
+
+const sourceTemplateFields = new Set(['file', 'line', 'end_line', 'revision'])
+function normalizeSourceUrlTemplate(value: unknown): string | undefined {
+  if (typeof value !== 'string' || !value.trim()) return undefined
+  const template = value.trim()
+  const fields = [...template.matchAll(/\{([^{}]+)\}/g)].map(match => match[1])
+  if (!fields.includes('file') || fields.some(field => !sourceTemplateFields.has(field))) return undefined
+  const rendered = template
+    .replaceAll('{file}', 'src/main.py')
+    .replaceAll('{line}', '12')
+    .replaceAll('{end_line}', '18')
+    .replaceAll('{revision}', 'a'.repeat(40))
+  try {
+    const parsed = new URL(rendered)
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) return undefined
+    return template
+  } catch {
+    return undefined
+  }
+}
 
 function coverageLimitations(includedNodes: number, indexedNodes: number | undefined, limitations: string[] = []) {
   const result = [...limitations]
@@ -123,6 +145,50 @@ function normalizeNode(n:any,i:number):Node {
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }
 function normalizeModules(raw:unknown):GraphModule[] { return Array.isArray(raw)?raw.map((m:any,i:number)=>({id:String(m.id??m.path??`module_${i}`),name:String(m.name??m.label??m.path??m.id??''),path:m.path==null?undefined:String(m.path),parentId:m.parent_id==null?m.parentId==null?undefined:String(m.parentId):String(m.parent_id),nodeIds:Array.isArray(m.node_ids)?m.node_ids.map(String):undefined})):[] }
 function normalizeEntrypoints(raw:unknown):GraphEntrypoint[] { return Array.isArray(raw)?raw.map((e:any,i:number)=>({id:String(e.id??`entrypoint_${i}`),label:String(e.label??e.name??e.path??e.id??''),kind:e.kind==null?undefined:String(e.kind),nodeId:e.node_id==null?e.nodeId==null?undefined:String(e.nodeId):String(e.node_id),file:e.file==null?undefined:String(e.file)})):[] }
+function normalizeCuratedTour(raw: unknown, flows: Flow[]): CuratedTour | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
+  const value = raw as Record<string, unknown>
+  const flowById = new Map(flows.map((flow) => [flow.id, flow]))
+  const rawSteps = Array.isArray(value.steps) ? value.steps : []
+  const steps = rawSteps.flatMap((step): CuratedTourStep[] => {
+    if (!step || typeof step !== 'object' || Array.isArray(step)) return []
+    const item = step as Record<string, unknown>
+    const flowId = String(item.flow_id ?? item.flowId ?? item.flow ?? '').trim()
+    const flow = flowById.get(flowId)
+    if (!flow) return []
+    const nodeId = String(item.node_id ?? item.nodeId ?? '').trim()
+    if (nodeId && !flow.steps.some((pathStep) => pathStep.node_id === nodeId)) return []
+    return [{
+      flowId,
+      ...(nodeId ? { nodeId } : {}),
+      ...(item.label != null && String(item.label).trim() ? { label: String(item.label).trim() } : {}),
+      ...(item.note != null && String(item.note).trim() ? { note: String(item.note).trim() } : {}),
+    }]
+  })
+  if (!steps.length) return undefined
+  const maintainerRaw = value.maintainer
+  const maintainer = maintainerRaw && typeof maintainerRaw === 'object' && !Array.isArray(maintainerRaw)
+    ? maintainerRaw as Record<string, unknown>
+    : undefined
+  const maintainerName = maintainer?.verified === true && maintainer.name != null ? String(maintainer.name).trim() : ''
+  const maintainerUrl = maintainer?.verified === true && maintainer.url != null ? String(maintainer.url).trim() : ''
+  let url: string | undefined
+  if (maintainerUrl) {
+    try {
+      const parsed = new URL(maintainerUrl)
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') url = parsed.toString()
+    } catch {
+      url = undefined
+    }
+  }
+  return {
+    id: String(value.id ?? 'start-here').trim() || 'start-here',
+    title: String(value.title ?? 'Start here').trim() || 'Start here',
+    ...(value.description != null && String(value.description).trim() ? { description: String(value.description).trim() } : {}),
+    steps,
+    ...(maintainerName ? { maintainer: { name: maintainerName, ...(url ? { url } : {}) } } : {}),
+  }
+}
 function assertUniqueIds(items:{id:string}[], label:string) {
   const seen=new Set<string>()
   for (const item of items) {
@@ -153,12 +219,31 @@ function assertGraphV2Nodes(nodes:Node[]) {
     for (const [field, value] of [['id', node.id], ['kind', node.kind], ['label', node.label]] as const) {
       if (!value.trim()) throw new Error(`${label}.${field} must be a non-empty string.`)
     }
-    if (!node.snippet.trim() && !node.sourceWindow?.lines.length) throw new Error(`${label} must include a snippet or source_window.`)
     const locations: Array<[string, number | undefined]> = [['line', node.line], ['column', node.column], ['endLine', node.endLine], ['endColumn', node.endColumn]]
     for (const [field, value] of locations) {
       if (value != null && (!Number.isInteger(value) || value < 0)) throw new Error(`${label}.${field} must be a non-negative integer.`)
     }
   }
+}
+function assertUnderstandingProjection(projection: unknown, nodes: Node[], entrypoints: GraphEntrypoint[], flows: Flow[], entries: Entry[]) {
+  if (String(projection ?? '').trim().toLowerCase() !== 'code-understanding') return
+  const nodeById = new Map(nodes.map(node => [node.id, node]))
+  if (!entrypoints.length || entrypoints.some(entrypoint => !entrypoint.nodeId || !nodeById.has(entrypoint.nodeId))) {
+    throw new Error('Code-understanding bundles require graph entrypoints mapped to graph nodes.')
+  }
+  const sourceBacked = (node: Node | undefined) => Boolean(
+    node?.file?.trim() && Number.isInteger(node.line) && node.line > 0 &&
+    (node.snippet.trim() || Boolean(node.sourceWindow?.lines.length)),
+  )
+  const guidedPaths = [
+    ...flows.map(flow => flow.steps.map(step => step.node_id)),
+    ...entries.map(entry => entry.hops.map(hop => hop.node_id)),
+  ]
+  const hasReadablePath = guidedPaths.some(path => {
+    const uniqueIds = new Set(path)
+    return uniqueIds.size >= 2 && path.every(nodeId => sourceBacked(nodeById.get(nodeId)))
+  })
+  if (!hasReadablePath) throw new Error('Code-understanding bundles require a multi-node source-backed guided path.')
 }
 function assertNodeParentReferences(nodes:Node[]) {
   const ids = new Set(nodes.map((node) => node.id))
@@ -300,7 +385,7 @@ export function normalize(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeBundleV1(raw: any): App {
@@ -308,6 +393,7 @@ function normalizeBundleV1(raw: any): App {
   const graph = raw.graph ?? {}
   const manifest = raw.evidence_manifest ?? {}
   const meta = raw.meta ?? {}
+  const projection = String(raw.analysis_projection ?? manifest.analysis_projection ?? 'security projection')
   if (!Array.isArray(graph.nodes)) throw new Error('Expected graph.nodes to be an array.')
   if (!Array.isArray(raw.findings)) throw new Error('Expected findings to be an array.')
   const nodes:Node[] = graph.nodes.map(normalizeNode)
@@ -352,7 +438,7 @@ function normalizeBundleV1(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:'security projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection:String(manifest.analysis_projection??'security projection'),description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:projection,includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeGraphV2(raw:any):App {
@@ -415,6 +501,7 @@ function normalizeGraphV2(raw:any):App {
   if(brokenEntry)throw new Error(`An entrypoint references missing node "${brokenEntry.node_id}".`)
   const brokenEdge=explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
   if(brokenEdge)throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
+  assertUnderstandingProjection(raw.analysis_projection, nodes, entrypoints, flows, entries)
   const findingEvidence:Evidence[]=Array.isArray(findings)?findings.map((f:any)=>{const id=String(f.finding_id??f.id??'');const steps=Array.isArray(f.witness?.steps)?f.witness.steps:[];const nodeIds=steps.map((s:any)=>String(s.node_id??s.nodeId??s.node??'')).filter(Boolean);const loc=(f.locations??[]).map((l:any)=>l.symbol?`${l.symbol}${l.file?` (${l.file}${l.line?`:${l.line}`:''})`:''}`:'').filter(Boolean).join(' · ');return {for:id,verb:String(f.analysis?.projection??f.projection??'finding'),args:loc,result_summary:String(f.result_summary??f.objective??'Security evidence attached to this graph path.'),nodes:nodeIds.length,node_ids:nodeIds,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:String(f.origin??f.analysis?.origin??'finding envelope'),status:f.status==null?undefined:String(f.status),lifecycle:f.lifecycle_state==null?undefined:String(f.lifecycle_state),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}}):[]
   const rawMcp=raw.mcp??graph.mcp
   const mcpEvidence:Array<Evidence>=Array.isArray(rawMcp)?rawMcp.map(normalizeEvidence):[]
@@ -432,7 +519,8 @@ function normalizeGraphV2(raw:any):App {
   if(!Number.isFinite(includedNodes)||includedNodes!==nodes.length)throw new Error(`Coverage included_nodes (${coverage.included_nodes}) does not match graph.nodes (${nodes.length}).`)
   if(indexedNodes!==undefined&&indexedNodes<includedNodes)throw new Error(`Coverage indexed_nodes (${indexedNodes}) cannot be less than included_nodes (${includedNodes}).`)
   const effectiveLimitations=coverageLimitations(includedNodes,indexedNodes,limitations)
-  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations}}
+  const curatedTour = normalizeCuratedTour(meta.curated_tour ?? raw.curated_tour, allFlows)
+  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations,...(curatedTour ? { curatedTour } : {})}}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {
@@ -441,6 +529,74 @@ export function indirectionCount(flow: Flow, evidence?: Evidence) {
 
 export function countLabel(count: number, singular: string, plural = `${singular}s`) {
   return `${count.toLocaleString()} ${count === 1 ? singular : plural}`
+}
+
+export function isSecurityProjection(app: App) {
+  const projection = app.bundle.projection?.trim().toLowerCase()
+  if (projection) return /(?:^|[-_\s])(security|audit)(?:$|[-_\s])/.test(projection)
+  return app.findings.length > 0
+}
+
+const supportingCodePath = /(?:^|\/)(?:tests?|examples?|fixtures?|benchmarks?|docs?)(?:\/|$)/i
+
+export function flowRecommendationScore(flow: Flow, nodes: Node[]) {
+  const pathNodes = flow.steps
+    .map((step) => nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean) as Node[]
+  const uniqueNodeIds = new Set(pathNodes.map((node) => node.id))
+  const sourceBacked = pathNodes.filter((node) => Boolean(node.file && node.line > 0 && (node.snippet.trim() || node.sourceWindow?.lines.length)))
+  const files = new Set(pathNodes.map((node) => node.file).filter(Boolean))
+  const supportingNodes = pathNodes.filter((node) => supportingCodePath.test(node.file)).length
+  const roles = flow.steps.map((step) => step.role.trim().toLowerCase())
+  const hasSourceRole = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin", "entry", "entrypoint"].includes(role))
+  const hasDestinationRole = Boolean(flow.sinkNodeId) || roles.some((role) => ["sink", "boundary", "effect", "return"].includes(role))
+  const isDegenerate = flow.steps.length < 2 || uniqueNodeIds.size < 2
+
+  return (isDegenerate ? -500 : 160)
+    + uniqueNodeIds.size * 8
+    + Math.min(files.size, 5) * 20
+    + sourceBacked.length * 15
+    + (sourceBacked.length === pathNodes.length && pathNodes.length > 1 ? 1000 : 0)
+    + (hasSourceRole ? 15 : 0)
+    + (hasDestinationRole ? 15 : 0)
+    - supportingNodes * 35
+    - (pathNodes.length === 0 ? 500 : 0)
+}
+
+function hasRenderablePath(flow: Flow, nodes: Node[]) {
+  const pathNodes = flow.steps
+    .map((step) => nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean) as Node[]
+  return flow.steps.length > 1
+    && new Set(pathNodes.map((node) => node.id)).size > 1
+    && pathNodes.length === flow.steps.length
+    && pathNodes.every((node) => Boolean(node.file && node.line > 0 && (node.snippet.trim() || node.sourceWindow?.lines.length)))
+}
+
+export function recommendedFlow(app: App, options: { requireRenderableSource?: boolean } = {}) {
+  const candidates = options.requireRenderableSource
+    ? app.flows.filter((flow) => hasRenderablePath(flow, app.nodes))
+    : app.flows
+  return [...candidates].sort((a, b) =>
+    flowRecommendationScore(b, app.nodes) - flowRecommendationScore(a, app.nodes)
+      || candidates.indexOf(a) - candidates.indexOf(b),
+  )[0]
+}
+
+export function nodeKindLabel(kind: string) {
+  const normalized = kind.replace(/^v2:core:/i, "").replace(/[:_-]+/g, " ").trim()
+  return normalized ? normalized.replace(/^\w/, (letter) => letter.toUpperCase()) : "Graph node"
+}
+
+export function nodeDisplayName(node: Node) {
+  const raw = (node.label || node.qualifiedName || node.id).trim()
+  const withoutNamespace = raw.replace(/^v2:core:/i, "")
+  const prefixed = withoutNamespace.match(/^([a-z][a-z0-9_-]*):(.*)$/i)
+  const readablePrefixes = new Set(["parameter-object", "heap-identity", "call-site", "source-span"])
+  if (!prefixed || !readablePrefixes.has(prefixed[1].toLowerCase())) return withoutNamespace || nodeKindLabel(node.kind)
+  const [, prefix, value] = prefixed
+  const readablePrefix = nodeKindLabel(prefix)
+  return value.trim() ? `${readablePrefix} · ${value.trim()}` : readablePrefix
 }
 
 export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
@@ -455,7 +611,7 @@ export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
   const route = locations.length > 1 && locations[0] !== locations.at(-1)
     ? `${locations[0]} → ${locations.at(-1)}`
     : locations[0]
-  const labels = pathNodes.map((node) => node.label || node.qualifiedName || node.id)
+  const labels = pathNodes.map((node) => nodeDisplayName(node))
   const endpoints = labels.length > 1 && labels[0] !== labels.at(-1)
     ? `${labels[0]} → ${labels.at(-1)}`
     : labels[0]

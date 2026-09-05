@@ -5,7 +5,7 @@ function serviceUrl(path: string) {
   const base = process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim().replace(/\/$/, "");
   if (!base) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("Hosted repository builds are not configured for this deployment.");
+      throw new Error("Hosted repository builds are not configured. Load a bundle.json or set NEXT_PUBLIC_BUNDLE_API_URL.");
     }
     return path;
   }
@@ -90,6 +90,62 @@ export async function loadHostedBundle(bundleId: string, signal?: AbortSignal) {
   return parseJson(new TextDecoder().decode(bytes));
 }
 
+export type RepositoryIndex = {
+  schema_version?: string;
+  repository?: string;
+  git_url?: string;
+  ref?: string;
+  revision?: string;
+  bundle_id: string;
+  bundle_url?: string;
+  built_at?: number;
+  cache_hit?: boolean;
+};
+
+const REPOSITORY_PART = /^[A-Za-z0-9._-]{1,100}$/;
+const REPOSITORY_HOSTS = new Set(["github.com", "gitlab.com", "bitbucket.org"]);
+
+export async function loadHostedRepository(host: string, owner: string, repo: string, revision?: string, signal?: AbortSignal): Promise<RepositoryIndex> {
+  if (!REPOSITORY_HOSTS.has(host) || !REPOSITORY_PART.test(owner) || !REPOSITORY_PART.test(repo)) {
+    throw new Error("This repository link is invalid.");
+  }
+  if (revision && !/^[0-9a-f]{40,64}$/i.test(revision)) throw new Error("This repository revision is invalid.");
+  if (!process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim()) {
+    throw new Error("Canonical repository links are not configured on this server. Load a bundle.json or configure the hosted API.");
+  }
+  const route = host === "github.com"
+    ? `/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`
+    : `/api/repos/${encodeURIComponent(host)}/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+  const suffix = revision ? `?revision=${encodeURIComponent(revision)}` : "";
+  const response = await fetchHosted(serviceUrl(`${route}${suffix}`), {
+    redirect: "error",
+    signal: requestSignal(signal),
+    headers: { Accept: "application/json" },
+  });
+  if (response.status === 404) {
+    throw new Error("This repository has not been built on Lachesis yet. Submit it from the home page to create its graph.");
+  }
+  if (!response.ok) throw await requestError(response, `The repository index could not be loaded (HTTP ${response.status}).`);
+  const body = await responseJson(response);
+  if (typeof body.bundle_id !== "string" || !BUNDLE_ID.test(body.bundle_id)) {
+    throw new Error("The repository index returned an invalid bundle link.");
+  }
+  return body as RepositoryIndex;
+}
+
+export async function loadHostedRepositories(signal?: AbortSignal): Promise<RepositoryIndex[]> {
+  if (!process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim()) return [];
+  const response = await fetchHosted(serviceUrl("/api/repos"), {
+    redirect: "error",
+    signal: requestSignal(signal),
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw await requestError(response, `The repository gallery could not be loaded (HTTP ${response.status}).`);
+  const body = await responseJson(response);
+  if (!Array.isArray(body.repositories)) throw new Error("The repository gallery returned an invalid response.");
+  return body.repositories.filter((item): item is RepositoryIndex => typeof item === "object" && item !== null && typeof (item as Record<string, unknown>).bundle_id === "string" && BUNDLE_ID.test((item as Record<string, unknown>).bundle_id as string));
+}
+
 export type BuildStatus = "queued" | "cloning" | "building" | "exporting" | "ready" | "too_large" | "unsupported_language" | "error" | "expired" | "cancelled";
 export type BuildResponse = { job_id?: string; status: BuildStatus; bundle_id?: string; sha?: string; steps?: Array<{ key: string; state: string }>; error?: { message?: string; kind?: string } };
 
@@ -136,6 +192,9 @@ export async function submitHostedBuild(gitUrl: string, ref: string, signal?: Ab
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify({ git_url: gitUrl, ...(ref ? { ref } : {}) }),
   });
+  if (response.status === 404 && !process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim()) {
+    throw new Error("Hosted repository builds are not configured for this local server. Load a bundle.json or set NEXT_PUBLIC_BUNDLE_API_URL.");
+  }
   if (!response.ok) throw await requestError(response, `The build request failed (HTTP ${response.status}).`);
   return (await responseJson(response)) as BuildResponse;
 }

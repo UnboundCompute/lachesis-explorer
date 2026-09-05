@@ -11,8 +11,10 @@ from typing import Any
 
 try:  # Lambda loads this directory as the module root; tests load it as a package.
     from contract import canonical_git_url, opaque_id, valid_opaque_id, valid_ref
+    from repository_index import latest_key, revision_key
 except ImportError:
     from .contract import canonical_git_url, opaque_id, valid_opaque_id, valid_ref
+    from .repository_index import latest_key, revision_key
 
 MAX_RESPONSE_BYTES = 5 * 1024 * 1024
 MAX_REQUEST_BYTES = 64 * 1024
@@ -89,6 +91,58 @@ def _source_ip(event: dict[str, Any]) -> str:
     return str(http.get("sourceIp") or identity.get("sourceIp") or "unknown")
 
 
+def _repository_url(path: str) -> str:
+    """Turn /api/repos/{owner}/{repo} or /api/repos/{host}/{owner}/{repo} into a URL."""
+    parts = [part for part in path.strip("/").split("/") if part]
+    if len(parts) == 4 and parts[:2] == ["api", "repos"]:
+        host, owner, repo = "github.com", parts[2], parts[3]
+    elif len(parts) == 5 and parts[:2] == ["api", "repos"]:
+        host, owner, repo = parts[2:5]
+    else:
+        raise ValueError("repository route is invalid")
+    return canonical_git_url(f"https://{host}/{owner}/{repo}")
+
+
+def _repository_view(storage: Any, bucket: str, path: str, revision: str | None) -> dict[str, Any] | None:
+    git_url = _repository_url(path)
+    key = revision_key(git_url, revision) if revision else latest_key(git_url)
+    return _read_repository_record(storage, bucket, key)
+
+
+def _read_repository_record(storage: Any, bucket: str, key: str) -> dict[str, Any] | None:
+    try:
+        obj = storage.get_object(Bucket=bucket, Key=key)
+    except Exception as error:
+        error_code = str(getattr(error, "response", {}).get("Error", {}).get("Code", ""))
+        if error_code in {"404", "NoSuchKey", "NoSuchBucket", "NotFound"}:
+            return None
+        raise
+    if int(obj.get("ContentLength", 0)) > 64 * 1024:
+        raise ValueError("repository index record is too large")
+    payload = obj["Body"].read(64 * 1024 + 1)
+    if len(payload) > 64 * 1024:
+        raise ValueError("repository index record is too large")
+    record = json.loads(payload.decode("utf-8"))
+    if not isinstance(record, dict) or not valid_opaque_id(record.get("bundle_id"), "b"):
+        raise ValueError("repository index record is invalid")
+    record["bundle_url"] = f"/api/bundles/{record['bundle_id']}"
+    return record
+
+
+def _repository_gallery(storage: Any, bucket: str) -> list[dict[str, Any]]:
+    """Read a bounded set of latest pointers for the public gallery."""
+    records: list[dict[str, Any]] = []
+    response = storage.list_objects_v2(Bucket=bucket, Prefix="repository-index/", MaxKeys=1000)
+    for item in response.get("Contents", []):
+        key = str(item.get("Key", ""))
+        if not key.endswith("/latest.json"):
+            continue
+        record = _read_repository_record(storage, bucket, key)
+        if record is not None:
+            records.append(record)
+    return sorted(records, key=lambda item: int(item.get("built_at", 0)), reverse=True)[:24]
+
+
 def _within_build_quota(jobs: Any, event: dict[str, Any]) -> bool:
     """Consume one hourly quota slot without storing the caller's raw IP."""
     now = int(time.time())
@@ -158,6 +212,14 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             if not item:
                 return _response(404, {"error": {"message": "job not found"}})
             return _response(200, _job_view(_cancel_job(jobs, job_id) or item))
+        if method == "GET" and path == "/api/repos":
+            _jobs, _queue, storage = _aws()
+            return _response(200, {"repositories": _repository_gallery(storage, os.environ["BUNDLE_BUCKET"])})
+        if method == "GET" and path.startswith("/api/repos/"):
+            revision = (event.get("queryStringParameters") or {}).get("revision") or None
+            _jobs, _queue, storage = _aws()
+            record = _repository_view(storage, os.environ["BUNDLE_BUCKET"], path, revision)
+            return _response(404, {"error": {"message": "repository has not been built yet"}}) if record is None else _response(200, record)
         if method == "GET" and "/api/build/" in path:
             job_id = path.rsplit("/", 1)[-1]
             if not valid_opaque_id(job_id, "j"):

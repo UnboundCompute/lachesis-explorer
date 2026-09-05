@@ -14,6 +14,15 @@ label. A `2.0` bundle with another format value is invalid and must be
 rejected before it replaces the active bundle. The Explorer still accepts
 older flow-centric bundles through its compatibility adapter.
 
+Producers should include an `analysis_projection` string at the top level.
+Use `code-understanding` when the bundle is selected to teach a reader how
+the codebase is organized and how a representative behavior travels through
+it; use `security-evidence` (or another value containing `security` or
+`audit`) when the bundle is selected primarily for security witnesses. This
+explicit value takes precedence over the presence of optional security
+findings, so adding a finding to an understanding bundle must not turn its
+default UI into an audit queue.
+
 `graph.nodes` must contain at least one node. An empty graph cannot provide a
 meaningful exploration surface and should be reported as an export error
 rather than loaded as a successful snapshot.
@@ -49,11 +58,12 @@ rather than loaded as a successful snapshot.
 
 ## Graph entities
 
-Every node has a stable `id`, semantic `kind`, display `label`, and optional
-`qualified_name`, `module`, `signature`,
-`documentation`, and either a `snippet` or `source_window`. Locations may
-include an end line and column. A node must include at least one of those
-source representations so it remains readable in the Explorer.
+Every node has a stable `id`, semantic `kind`, and display `label`, plus optional
+`qualified_name`, `module`, `signature`, `documentation`, `snippet`, or
+`source_window`. Locations may include an end line and column. Source context is
+optional for graph-only nodes so architecture consumers can inspect shape before
+source retrieval is available; any featured code-understanding path must still
+use source-backed nodes.
 Concrete source nodes use a repository-relative `file`. Synthetic or unmapped
 nodes use an empty `file` string and line `0`; the Explorer identifies their
 source as unavailable and does not offer a repository jump.
@@ -118,8 +128,8 @@ Entrypoints identify places a developer can start, including HTTP routes,
 CLI commands, jobs, event handlers, public APIs, and exported functions.
 
 When a bundle can link back to a browsable source repository, `meta.source_url_template`
-may provide an HTTP(S) template with `{file}`, `{line}`, `{end_line}`, and
-`{revision}` placeholders. The Explorer only renders an external source link
+may provide an HTTP(S) template with a required `{file}` placeholder and optional
+`{line}`, `{end_line}`, and `{revision}` placeholders. The Explorer only renders an external source link
 when this field is present and produces a valid HTTP(S) URL; it never guesses a
 hosting provider from the repository name. Producers should include the line
 range fragment when their host supports it, for example
@@ -160,6 +170,28 @@ zero findings remains valid and must present a clean security state rather
 than failing to load. Findings without witness steps may remain as metadata,
 but are not exposed as traceable paths until a witness is available.
 
+### Code-understanding projection requirements
+
+For `analysis_projection: "code-understanding"`, the default guided surface
+must be useful without security findings. A producer should provide:
+
+- at least one `graph.entrypoints` record for a public API, request handler,
+  CLI command, job, event handler, or exported function, with `node_id` mapped
+  to a concrete graph node;
+- at least one `paths.requests` or `paths.values` path with two or more
+  distinct, source-backed nodes, a meaningful `kind` such as `call-path` or
+  `data-flow`, and explicit `source_node` / `sink_node` metadata when the
+  endpoints are known;
+- `graph.modules` and/or node `module` / `scope` metadata sufficient to group
+  the included symbols into real code areas; and
+- `coverage.limitations` that names omitted dependencies, unresolved calls,
+  or projection boundaries rather than implying that the bundle is complete.
+
+The featured path must not be a self-loop, a single-node witness, or a path
+whose nodes all lack file locations and source text. Security findings may be
+included as an optional overlay, but they must not replace the understanding
+paths or entrypoint metadata in the default projection.
+
 Top-level `mcp` records are an independent provenance layer and may be present
 even when `security.findings` is absent. Their `for`/`flow` value identifies the
 path or finding they explain, and their node references must resolve against
@@ -179,6 +211,16 @@ least that large.
 `meta.description` is optional exporter-authored context for the graph
 projection. The Explorer may show it as orientation copy, but must not infer or
 rewrite it into a security conclusion.
+
+An optional `meta.curated_tour` gives newcomers a publisher-selected reading
+sequence. Each `steps[].flow_id` must resolve to a path in the same bundle;
+`node_id`, when present, must resolve to a step in that path. The Explorer
+silently omits invalid tour steps and only renders the tour when at least one
+path remains. A `maintainer` object is accepted for publisher provenance only
+when it contains `verified: true`; that flag must be added by an authenticated
+repository-ownership flow or another trusted service boundary, never inferred
+from a public README badge or from bundle self-assertion alone. The current UI
+labels this as publisher-provided context, not as an independent ownership claim.
 
 `coverage.scope`, `coverage.limitations`, and `graph.capabilities` make missing
 language constructs, unresolved calls, omitted dependencies, and projections

@@ -19,11 +19,11 @@ import {
   InvestigationTrail,
   type InvestigationEvent,
 } from "../components/InvestigationTrail";
-import { countLabel, starter, normalize, type App, type Flow } from "../lib/lachesis";
+import { countLabel, recommendedFlow, starter, normalize, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
-import { cancelHostedBuild, getHostedBuildStatus, HostedRequestError, loadHostedBundle, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
+import { cancelHostedBuild, getHostedBuildStatus, HostedRequestError, loadHostedBundle, loadHostedRepository, submitHostedBuild, type BuildResponse, type RepositoryIndex } from "../lib/hosted-bundle";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -109,18 +109,6 @@ function positionForEntry(app: App, entryIndex: number, nodeId: string) {
   return position >= 0 ? position : 0;
 }
 
-function recommendedFlow(flows: Flow[]) {
-  return [...flows].sort((a, b) => {
-    const score = (flow: Flow) => {
-      const roles = flow.steps.map((step) => step.role.trim().toLowerCase());
-      const hasSource = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin"].includes(role));
-      const hasSink = Boolean(flow.sinkNodeId) || roles.includes("sink");
-      return (flow.steps.length > 1 ? 100 : 0) + (hasSource ? 20 : 0) + (hasSink ? 20 : 0) + flow.steps.length;
-    };
-    return score(b) - score(a);
-  })[0];
-}
-
 function recommendedSink(app: App) {
   return [...app.nodes]
     .filter((node) => isSinkNode(app, node.id))
@@ -178,8 +166,10 @@ export default function Page() {
     message: "",
   });
   const [isDemo, setIsDemo] = useState(true);
+  const [sourceSelected, setSourceSelected] = useState(false);
   const [bundleOrigin, setBundleOrigin] = useState<"sample" | "local" | "hosted">("sample");
   const [hostedBundleId, setHostedBundleId] = useState<string | undefined>();
+  const [repositoryIndex, setRepositoryIndex] = useState<RepositoryIndex | null>(null);
   const [buildState, setBuildState] = useState<BuildState>({ status: "idle", steps: [] });
   const [dragActive, setDragActive] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -269,6 +259,9 @@ export default function Page() {
     if (readLocal("lachesis-theme") === "light") setDark(false);
   }, []);
   useEffect(() => {
+    if (!sourceSelected && view !== "home") setView("home");
+  }, [sourceSelected, view]);
+  useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     writeLocal("lachesis-theme", dark ? "dark" : "light");
   }, [dark]);
@@ -350,26 +343,6 @@ export default function Page() {
       step: link.step,
       domain: link.domain,
     });
-    if (params.get("sample") === "security") {
-      pendingLink.current = link;
-      setLoadState({ type: "loading", message: "Loading the security sample…" });
-      fetch("/demo-bundle.json")
-        .then((response) => {
-          if (!response.ok) throw new Error("The security sample could not be loaded.");
-          return response.json();
-        })
-        .then((raw) => activate(normalize(raw), true))
-        .catch((error) => {
-          pendingLink.current = null;
-          urlReady.current = true;
-          setUrlInitialized(true);
-          setLoadState({
-            type: "error",
-            message: `${error instanceof Error ? error.message : "Could not load the security sample"} The current bundle was kept.`,
-          });
-        });
-      return;
-    }
     const hostedBundleId = params.get("bundle");
     if (hostedBundleId) {
       pendingLink.current = link;
@@ -390,6 +363,47 @@ export default function Page() {
         });
       return () => controller.abort();
     }
+    const routeParts = window.location.pathname.split("/").filter(Boolean);
+    const repositoryRoute = routeParts[0] === "r" && (routeParts.length === 3 || routeParts.length === 4)
+      ? routeParts
+      : null;
+    if (repositoryRoute) {
+      const host = repositoryRoute.length === 3 ? "github.com" : repositoryRoute[1];
+      const owner = repositoryRoute.length === 3 ? repositoryRoute[1] : repositoryRoute[2];
+      const revisionPart = repositoryRoute.length === 3 ? repositoryRoute[2] : repositoryRoute[3];
+      const at = revisionPart.indexOf("@");
+      const repo = at >= 0 ? revisionPart.slice(0, at) : revisionPart;
+      const revision = at >= 0 ? revisionPart.slice(at + 1) : undefined;
+      const repository = `${owner}/${repo}`;
+      const routeLink = { ...link, repository, revision };
+      pendingLink.current = routeLink;
+      setHandoffContext({ ...routeLink, repository, revision });
+      setLoadState({ type: "loading", message: `Resolving ${repository}…` });
+      const controller = new AbortController();
+      loadHostedRepository(host, owner, repo, revision, controller.signal)
+        .then(async (index) => {
+          setRepositoryIndex(index);
+          pendingLink.current = { ...routeLink, repository: index.repository?.replace(`${host}/`, "") || repository, revision: index.revision || revision };
+          setHandoffContext({ ...routeLink, repository: index.repository?.replace(`${host}/`, "") || repository, revision: index.revision || revision });
+          const raw = await loadHostedBundle(index.bundle_id, controller.signal);
+          activate(normalize(raw), false, "hosted", index.bundle_id);
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) return;
+          pendingLink.current = null;
+          urlReady.current = true;
+          setUrlInitialized(true);
+          setLoadState({
+            type: "error",
+            message: `${error instanceof Error ? error.message : "Could not load the repository"} The current bundle was kept.`,
+          });
+          trackEvent("repository_route_load_failed");
+        });
+      return () => controller.abort();
+    }
+    // A view deep link without a bundle is not enough to enter the workspace.
+    // Keep the source picker as the only first-run surface.
+    setView("home");
     if (params.get("scope") === "local") {
       pendingLink.current = link;
       setLoadState({
@@ -456,9 +470,7 @@ export default function Page() {
     if (link.view === "map") {
       setMapMode(link.mapMode && ["map", "architecture", "health"].includes(link.mapMode)
         ? link.mapMode as OverviewMode
-        : link.filter || link.node || link.mapNeighborhood
-          ? "map"
-          : "architecture");
+        : "map");
     }
     if (link.mapOrder && ["path", "centrality"].includes(link.mapOrder)) setMapOrder(link.mapOrder as OverviewNodeOrder);
     setMapNeighborhoodOnly(Boolean(link.mapNeighborhood));
@@ -485,10 +497,8 @@ export default function Page() {
     if (handoffContext.step) params.set("step_context", handoffContext.step);
     if (handoffContext.domain) params.set("domain", handoffContext.domain);
     params.set("view", view);
-    const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
     if (bundleOrigin === "hosted" && hostedBundleId) params.set("bundle", hostedBundleId);
     else if (!isDemo) params.set("scope", "local");
-    if (isDemo && securityMode) params.set("sample", "security");
     if (view === "trace") {
       params.set("flow", flowId);
       params.set("node", stepId);
@@ -551,11 +561,7 @@ export default function Page() {
       const nextMapMode = params.get("map_mode");
       setMapMode(nextMapMode && ["map", "architecture", "health"].includes(nextMapMode)
         ? nextMapMode as OverviewMode
-        : nextView === "map"
-          ? params.get("filter") || params.get("node") || params.get("map_focus")
-            ? "map"
-            : "architecture"
-          : "map");
+        : "map");
       const nextMapOrder = params.get("map_order");
       setMapOrder(nextMapOrder === "centrality" ? "centrality" : "path");
       setMapNeighborhoodOnly(params.get("map_focus") === "neighborhood");
@@ -604,6 +610,10 @@ export default function Page() {
       const inDialog = Boolean(target.closest('[role="dialog"]'));
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        if (!sourceSelected) {
+          setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before using Jump." });
+          return;
+        }
         setMenu(false);
         setHelpOpen(false);
         setCommandOpen((open) => {
@@ -650,6 +660,10 @@ export default function Page() {
       }
       if (editing || inDialog || event.defaultPrevented || target.closest("button, a, [role='button'], [role='option']")) return;
       if (event.key === "/") {
+        if (!sourceSelected) {
+          setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before using Jump." });
+          return;
+        }
         const searchSelector = view === "trace"
           ? ".sidebar .search input"
           : view === "home"
@@ -696,9 +710,14 @@ export default function Page() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [view, flowId, record, commandOpen, helpOpen, menu]);
+  }, [view, flowId, record, commandOpen, helpOpen, menu, sourceSelected]);
 
   function changeView(next: View, mapModeOverride?: OverviewMode, focusNodeOverride?: string, mapQueryOverride?: string, urlOverrides?: ViewUrlOverrides) {
+    if (!sourceSelected && next !== "home") {
+      setView("home");
+      setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before opening an analysis lens." });
+      return;
+    }
     if (next !== view && urlReady.current) {
       const params = new URLSearchParams(window.location.search);
       [
@@ -721,7 +740,6 @@ export default function Page() {
       if (next === "map" && focusNodeOverride) params.set("node", focusNodeOverride);
       if (next === "map" && mapQueryOverride) params.set("filter", mapQueryOverride);
       if (next === "map" && mapModeOverride && mapModeOverride !== "map") params.set("map_mode", mapModeOverride);
-      else if (next === "map" && !focusNodeId && !mapModeOverride && !focusNodeOverride) params.set("map_mode", "architecture");
       Object.entries(urlOverrides ?? {}).forEach(([key, value]) => {
         if (value) params.set(key, value);
       });
@@ -729,8 +747,8 @@ export default function Page() {
     }
     if (next === "map" && mapModeOverride) {
       setMapMode(mapModeOverride);
-    } else if (next === "map" && view !== "map" && !focusNodeId) {
-      setMapMode("architecture");
+    } else if (next === "map" && view !== "map") {
+      setMapMode("map");
       setMapNeighborhoodOnly(false);
     }
     setView(next);
@@ -789,11 +807,9 @@ export default function Page() {
   async function copyInvestigationLink(params: Record<string, string>) {
     const url = new URL(window.location.href);
     url.search = "";
-    if (bundleOrigin === "hosted" && hostedBundleId) {
+    const canonicalRepositoryRoute = window.location.pathname.startsWith("/r/");
+    if (bundleOrigin === "hosted" && hostedBundleId && !canonicalRepositoryRoute) {
       url.searchParams.set("bundle", hostedBundleId);
-    } else if (isDemo) {
-      const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
-      if (securityMode) url.searchParams.set("sample", "security");
     } else {
       url.searchParams.set("scope", "local");
     }
@@ -810,6 +826,7 @@ export default function Page() {
       });
       trackEvent("investigation_link_copied", {
         view: params.view ?? "unknown",
+        link_kind: canonicalRepositoryRoute ? "canonical_repository" : bundleOrigin === "hosted" ? "opaque_bundle" : "local_or_sample",
       });
       return true;
     } catch {
@@ -873,7 +890,7 @@ export default function Page() {
     });
     const pending = pendingLink.current;
     const firstSink = recommendedSink(next)?.id ?? "";
-    const firstFlow = recommendedFlow(next.flows);
+    const firstFlow = recommendedFlow(next);
     setApp(next);
     setCompareApp(null);
     setFlowId(firstFlow?.id ?? "");
@@ -965,7 +982,7 @@ export default function Page() {
       if (pending.direction === "forward") setDirection("forward");
       if (pending.view === "trace") setQuery(pending.filter ?? "");
       if (requestedView === "map") setMapQuery(pending.filter ?? "");
-      if (requestedView === "map") setMapMode(pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode) ? pending.mapMode as OverviewMode : "architecture");
+      if (requestedView === "map") setMapMode(pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode) ? pending.mapMode as OverviewMode : "map");
       if (requestedView === "map") setMapOrder(pending.mapOrder === "centrality" ? "centrality" : "path");
       if (requestedView === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
       pendingLink.current = null;
@@ -976,8 +993,10 @@ export default function Page() {
     setMenu(false);
     setInspectorOpen(true);
     setIsDemo(origin === "sample");
+    setSourceSelected(true);
     setBundleOrigin(origin);
     setHostedBundleId(origin === "hosted" ? loadedBundleId : undefined);
+    if (origin !== "hosted") setRepositoryIndex(null);
     setActivity([]);
     setLoadState({
       type: restored || !pending ? "success" : "error",
@@ -1108,8 +1127,16 @@ export default function Page() {
         return;
       }
       if (status.status !== "ready" || !status.bundle_id) throw new Error(status.error?.message || "The hosted build did not produce a bundle.");
-      const raw = await loadHostedBundle(status.bundle_id, controller.signal);
-      activate(normalize(raw), false, "hosted", status.bundle_id);
+      const bundleId = status.bundle_id;
+      const raw = await loadHostedBundle(bundleId, controller.signal);
+      setRepositoryIndex((current) => current ? {
+        ...current,
+        bundle_id: bundleId,
+        revision: status.sha || current.revision,
+        built_at: Math.floor(Date.now() / 1000),
+        cache_hit: false,
+      } : current);
+      activate(normalize(raw), false, "hosted", bundleId);
     } catch (error) {
       if (controller.signal.aborted) return;
       setBuildState({ status: "error", steps: [], message: error instanceof Error ? error.message : "Hosted build failed." });
@@ -1137,51 +1164,6 @@ export default function Page() {
     }
   }
 
-  async function loadCodeSample() {
-    if (importBusy.current) return;
-    importBusy.current = true;
-    setLoadState({
-      type: "loading",
-      message: "Reading the code exploration sample…",
-    });
-    try {
-      const response = await fetch("/code-exploration-bundle.json");
-      if (!response.ok)
-        throw new Error("The code exploration sample could not be loaded.");
-      activate(normalize(await response.json()), true);
-    } catch (error) {
-      setLoadState({
-        type: "error",
-        message: `${error instanceof Error ? error.message : "Could not load the code exploration sample"} The current bundle was kept.`,
-      });
-      trackEvent("bundle_load_failed");
-    } finally {
-      importBusy.current = false;
-    }
-  }
-
-  async function loadSecuritySample() {
-    if (importBusy.current) return;
-    importBusy.current = true;
-    setLoadState({
-      type: "loading",
-      message: "Reading the security sample…",
-    });
-    try {
-      const response = await fetch("/demo-bundle.json");
-      if (!response.ok)
-        throw new Error("The security sample could not be loaded.");
-      activate(normalize(await response.json()), true);
-    } catch (error) {
-      setLoadState({
-        type: "error",
-        message: `${error instanceof Error ? error.message : "Could not load the security sample"} The current bundle was kept.`,
-      });
-      trackEvent("bundle_load_failed");
-    } finally {
-      importBusy.current = false;
-    }
-  }
 
   async function uploadComparison(file?: File) {
     if (!file) return;
@@ -1246,10 +1228,15 @@ export default function Page() {
         view={view}
         setView={changeView}
         app={app}
+        sourceSelected={sourceSelected}
         menu={menu}
         setMenu={setMenu}
         onUpload={() => fileRef.current?.click()}
         onCommand={() => {
+          if (!sourceSelected) {
+            setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before using Jump." });
+            return;
+          }
           commandOpenerRef.current = document.activeElement as HTMLElement | null;
           setMenu(false);
           setHelpOpen(false);
@@ -1377,9 +1364,12 @@ export default function Page() {
             setMapQuery("");
             changeView("map", "health");
           }}
-          onLoadSample={loadCodeSample}
-          onLoadSecuritySample={loadSecuritySample}
+          sourceSelected={sourceSelected}
           onBuild={startHostedBuild}
+          repositoryIndex={repositoryIndex}
+          onRefreshRepository={() => {
+            if (repositoryIndex?.git_url) startHostedBuild(repositoryIndex.git_url, repositoryIndex.ref || "main");
+          }}
           buildState={buildState}
           onView={(next) => changeView(next)}
           onSearch={(nextQuery) => {

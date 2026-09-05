@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
@@ -12,8 +13,11 @@ try {
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     page.on("pageerror", (error) => errors.push(error.message));
 
-    await page.goto(`${base}/`, { waitUntil: "networkidle" });
-    assert.equal(await page.title(), "Lachesis — Deterministic code graph reader");
+   await page.goto(`${base}/`, { waitUntil: "networkidle" });
+   assert.equal(await page.title(), "Lachesis — Deterministic code graph reader");
+    const landingText = await page.locator("body").innerText();
+    assert.match(landingText, /Understand a codebase without opening every file/i, "source picker was not surfaced");
+    assert.doesNotMatch(landingText, /Synthetic working bundle|example\/webapp/i, "starter bundle leaked onto the first-run surface");
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     assert.equal(dimensions.scrollWidth, dimensions.width, `horizontal overflow at ${viewport.width}px`);
     assert.equal(await page.locator('meta[name="generator"]').count(), 0, "framework metadata is exposed");
@@ -23,8 +27,12 @@ try {
     await page.close();
   }
 
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto(`${base}/?view=map&map_mode=map`, { waitUntil: "networkidle" });
+ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+ await page.goto(`${base}/?view=map`, { waitUntil: "networkidle" });
+ await page.locator("#bundle-upload").setInputFiles("public/code-exploration-bundle.json");
+ await page.getByText("What do you want to understand?", { exact: true }).waitFor();
+  await page.getByRole("button", { name: /^Explore/ }).click();
+ assert.equal(await page.getByRole("button", { name: "Map", exact: true }).getAttribute("aria-pressed"), "true", "Explore did not default to Map");
   const nodes = page.locator(".topology-node-list button");
   assert.ok(await nodes.count() > 0, "graph node list is empty");
   await nodes.first().click();
@@ -32,8 +40,61 @@ try {
   for (const [label, view] of [["Trace", "trace"], ["Compare", "compare"], ["Understand", "home"]]) {
     await page.getByRole("button", { name: new RegExp(`^${label}`) }).first().click();
     assert.equal(new URL(page.url()).searchParams.get("view"), view, `${label} navigation failed`);
+    if (view === "trace") {
+      assert.equal(await page.getByRole("button", { name: "Previous step", exact: true }).count(), 1, "trace step navigation is ambiguous");
+      assert.equal(await page.getByRole("button", { name: "Next step", exact: true }).count(), 1, "trace step navigation is ambiguous");
+    }
   }
-  await page.close();
+  await page.getByRole("button", { name: /^More/ }).click();
+  const requestFlowItem = page.getByRole("menuitem", { name: /^Request flow/ });
+  assert.equal(await requestFlowItem.count(), 1, "More menu did not expose focused views");
+  await requestFlowItem.click();
+  assert.equal(new URL(page.url()).searchParams.get("view"), "journey", "More menu navigation failed");
+ await page.close();
+ const projectionPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const projectionPayload = JSON.parse(fs.readFileSync("public/demo-bundle.json", "utf8"));
+  projectionPayload.evidence_manifest.analysis_projection = "code-understanding";
+  projectionPayload.security = { findings: [{ finding_id: "optional-security-context", witness: { steps: [{ node_id: "route.search" }] } }] };
+  await projectionPage.goto(`${base}/`, { waitUntil: "networkidle" });
+  await projectionPage.locator("#bundle-upload").setInputFiles({ name: "projection-bundle.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(projectionPayload)) });
+ await projectionPage.waitForFunction(() => document.body.innerText.includes("Understand demo/atlas-commerce"), undefined, { timeout: 10_000 });
+  const projectionText = await projectionPage.locator("body").innerText();
+  assert.match(projectionText, /Understand demo\/atlas-commerce/, "explicit code-understanding projection entered the wrong mode");
+  assert.doesNotMatch(projectionText, /Security evidence projection/, "optional findings overrode code-understanding mode");
+  await projectionPage.close();
+
+ const invalidSourceTemplatePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const invalidTemplatePayload = JSON.parse(fs.readFileSync("public/demo-bundle.json", "utf8"));
+  invalidTemplatePayload.meta.source_url_template = "https://example.com/{revision}";
+  await invalidSourceTemplatePage.goto(`${base}/`, { waitUntil: "networkidle" });
+  await invalidSourceTemplatePage.locator("#bundle-upload").setInputFiles({ name: "invalid-source-template.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(invalidTemplatePayload)) });
+  await invalidSourceTemplatePage.getByRole("button", { name: /^Explore/ }).click();
+ const invalidTemplateNode = invalidSourceTemplatePage.locator(".topology-node-list button").first();
+  await invalidTemplateNode.click();
+  const invalidTemplateInspector = invalidSourceTemplatePage.locator("#source-inspector");
+  await invalidTemplateInspector.waitFor({ state: "visible", timeout: 10_000 });
+  assert.equal(await invalidTemplateInspector.locator("a.source-open").count(), 0, "invalid source URL template produced an external link");
+  assert.match(await invalidTemplateInspector.innerText(), /Repository link not configured|Repository link unavailable/, "invalid source URL template was not sanitized");
+  await invalidSourceTemplatePage.close();
+
+  const localBuildPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await localBuildPage.goto(`${base}/`, { waitUntil: "networkidle" });
+  await localBuildPage.getByRole("textbox", { name: "Repository URL" }).fill("git@github.com:example/repository.git");
+  await localBuildPage.getByRole("button", { name: "Build graph", exact: true }).click();
+  const localFormError = localBuildPage.locator(".hosted-build-form-error");
+  await localFormError.waitFor({ state: "visible", timeout: 10_000 });
+  assert.match(await localFormError.innerText(), /full HTTPS|public HTTPS GitHub, GitLab, or Bitbucket/i, "invalid repository URL was not rejected locally");
+  assert.equal(await localBuildPage.locator(".hosted-build-status").count(), 0, "invalid repository URL reached the build service");
+  await localBuildPage.getByRole("textbox", { name: "Repository URL" }).fill("https://github.com/example/repository");
+  await localBuildPage.getByRole("button", { name: "Build graph", exact: true }).click();
+  const localBuildStatus = localBuildPage.locator(".hosted-build-status[role=alert]");
+  await localBuildStatus.waitFor({ state: "visible", timeout: 10_000 });
+  assert.match(
+    await localBuildStatus.innerText(),
+    /Hosted repository builds are not configured/i,
+    "local hosted-build fallback did not explain the missing API configuration",
+  );
+  await localBuildPage.close();
 
   const hostedBundleId = process.env.LACHESIS_BUNDLE_ID;
   if (hostedBundleId) {

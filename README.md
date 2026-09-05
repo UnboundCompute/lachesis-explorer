@@ -8,6 +8,21 @@ The browser companion for [Lachesis](https://github.com/UnboundCompute/lachesis)
 
 Explorer loads a Lachesis `bundle.json` locally and makes the graph readable without a server or model in the loop. It is designed for inspecting deterministic evidence: where a value originated, which nodes it reaches, and how a request travels through an application.
 
+## Link a repository
+
+Once a public repository has a hosted graph, link readers directly to its canonical page:
+
+```markdown
+[![Understand with Lachesis](https://img.shields.io/badge/understand_with-Lachesis-18c79a?logo=github)](https://lachesis.unboundcompute.com/r/ORG/REPO)
+```
+
+The canonical page resolves the latest indexed default-branch graph and keeps the resolved
+revision visible. Use the revision-pinned form when documentation must remain stable:
+`https://lachesis.unboundcompute.com/r/ORG/REPO@COMMIT_SHA`.
+
+See [`docs/MAINTAINER_GUIDE.md`](docs/MAINTAINER_GUIDE.md) for badge placement, refresh behavior,
+and the bundle expectations for a useful code-understanding landing page.
+
 ## What it does
 
 - Trace a value backward to its origin or forward to its sink.
@@ -101,6 +116,27 @@ after rebuilding so the HTML and static chunk hashes stay in sync.
 When probing this from a separate Next.js dev server, use the `localhost` hostname for both apps;
 Next’s development-origin guard can reject hydration from a `127.0.0.1` page before the API call.
 
+### Local API surface
+
+The local Next server exposes one deterministic bundle transport for integration work:
+
+```bash
+curl http://localhost:3000/api/bundles/b_demo1234
+```
+
+It returns the checked-in `public/code-exploration-bundle.json` fixture. The local server does not
+clone repositories or implement `POST /api/build`; leaving `NEXT_PUBLIC_BUNDLE_API_URL` empty keeps
+local development on this fixture-only path and prevents accidental hosted/AWS requests. To test
+the real build lifecycle, configure an external service origin in `.env.local` and use the contract
+in [`docs/URL_INTAKE_SPEC.md`](docs/URL_INTAKE_SPEC.md):
+
+```text
+POST /api/build
+GET  /api/build/{job_id}
+POST /api/build/{job_id}/cancel
+GET  /api/bundles/{bundle_id}
+```
+
 ### Hosted bundle service
 
 Hosted links use an opaque bundle ID and never put a repository URL or storage URL in the browser
@@ -115,7 +151,7 @@ deployment gates are specified in [`docs/URL_INTAKE_SPEC.md`](docs/URL_INTAKE_SP
 
 ## Bundle format
 
-The explorer ships with two downloadable, explicitly synthetic fixtures. The app opens on [`code-exploration-bundle.json`](public/code-exploration-bundle.json), a graph-first bundle with symbols, modules, relationships, request paths, and no security findings. [`demo-bundle.json`](public/demo-bundle.json) is available as an explicit alternate for exercising security evidence states.
+The explorer ships with two explicitly synthetic fixtures for local development and contract checks. They are not loaded automatically: the first-run screen requires a hosted repository, cached repository, or explicit `bundle.json` upload before opening the workspace. [`code-exploration-bundle.json`](public/code-exploration-bundle.json) is the graph-first fixture with symbols, modules, relationships, request paths, and no security findings; [`demo-bundle.json`](public/demo-bundle.json) is available as an explicit alternate for exercising security evidence states.
 
 The preferred contract is `lachesis-explorer-bundle` `2.0`: a graph-first snapshot with optional `paths` and an optional `security.findings` overlay. The importer maps security evidence into the security lenses without making findings a prerequisite for code exploration. The existing `1.0` security envelope and earlier flow-centric shape remain available through backward-compatible adapters.
 
@@ -139,11 +175,11 @@ external or generated nodes. Missing scope is supported for older bundles; those
 file and module context. Scope is descriptive graph context, not a security conclusion.
 
 For source reading, nodes may also provide `parent_id` for their enclosing symbol and a
-`source_window` containing surrounding lines plus optional highlight bounds. A node must provide
-either a non-empty `snippet` or a non-empty `source_window`; this lets the Explorer preserve useful
-context even when an exporter cannot reduce a whole symbol to one short snippet.
+`source_window` containing surrounding lines plus optional highlight bounds. Source context is
+optional for graph-only nodes; when a bundle advertises a code-understanding projection, its
+featured guided paths must use source-backed nodes so the reading surface remains grounded.
 
-At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional `meta.source_url_template` can link a selected symbol to a browsable source host using `{file}`, `{line}`, `{end_line}`, and `{revision}` placeholders. The Explorer validates the result as HTTP(S) and never infers a hosting provider. Optional fields include:
+At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional `meta.source_url_template` can link a selected symbol to a browsable source host; it must be an absolute HTTP(S) template containing `{file}` and may use `{line}`, `{end_line}`, and `{revision}`. The Explorer validates the result and never infers a hosting provider. Optional fields include:
 
 ```json
 {

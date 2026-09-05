@@ -18,7 +18,8 @@ Lachesis remains security-oriented at the product level. Explorer is the code-un
 
 ## Current experience
 
-- **Understand:** first-run orientation, recommended starting path, question-based entry points, bundle coverage, source search, and partial-bundle empty states.
+- **First run:** source-selection gate with hosted URL intake and cached-repository discovery as primary paths, explicit local bundle upload as the fallback, and no automatic sample bundle.
+- **Understand:** recommended starting path, question-based entry points, bundle coverage, source search, and partial-bundle empty states.
 - **Trace:** step-by-step graph paths with Previous/Next controls, direction switching, path canvas, source inspector, relationship captions, and path limitations.
 - **Request flow:** starting-point-to-effect reading flow with the same source context and navigation model.
 - **Explore:** topology, minimap, focused neighborhoods, module grouping, data-quality view, semantic search, and graph limits for dense bundles.
