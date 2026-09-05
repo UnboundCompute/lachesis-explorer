@@ -31,7 +31,7 @@ try {
  await page.goto(`${base}/?view=map`, { waitUntil: "networkidle" });
  await page.locator("#bundle-upload").setInputFiles("public/code-exploration-bundle.json");
  await page.getByText("What do you want to understand?", { exact: true }).waitFor();
- await page.getByRole("button", { name: /^Explore/ }).click();
+ await page.getByRole("button", { name: /^Explore See the codebase$/ }).click();
  assert.equal(await page.getByRole("button", { name: "Map", exact: true }).getAttribute("aria-pressed"), "true", "Explore did not default to Map");
   assert.equal(new URL(page.url()).searchParams.get("mode"), "guided", "fresh bundle did not default to Guided mode");
   const modeToggle = page.getByRole("button", { name: /Switch to full graph mode/i });

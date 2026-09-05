@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { countLabel, entriesForExplorerMode, flowDisplayName, flowsForExplorerMode, isSecurityProjection, nodeDisplayName, recommendedFlow, type App, type Evidence, type ExplorerMode, type Flow, type Node } from "../lib/lachesis";
+import { countLabel, entriesForExplorerMode, flowDisplayName, flowsForExplorerMode, isSecurityProjection, nodeDisplayName, nodesForExplorerMode, recommendedFlow, type App, type Evidence, type ExplorerMode, type Flow, type Node } from "../lib/lachesis";
 import { loadHostedRepositories } from "../lib/hosted-bundle";
 import { copyText } from "../lib/clipboard";
 import { Icon } from "./Icon";
@@ -399,6 +399,17 @@ export function HomeView({
     : "Code exploration graph";
   const discoverableFlows = useMemo(() => flowsForExplorerMode(app, explorerMode), [app, explorerMode]);
   const discoverableEntries = useMemo(() => entriesForExplorerMode(app, explorerMode), [app, explorerMode]);
+  const discoverableNodes = useMemo(() => nodesForExplorerMode(app, explorerMode), [app, explorerMode]);
+  const orientationModules = useMemo(() => app.modules
+    .map((module) => ({
+      ...module,
+      nodes: discoverableNodes.filter((node) =>
+        module.nodeIds?.includes(node.id) || node.module === module.id || node.module === module.name,
+      ),
+    }))
+    .filter((module) => module.nodes.length > 0)
+    .sort((a, b) => b.nodes.length - a.nodes.length || a.name.localeCompare(b.name))
+    .slice(0, 6), [app.modules, discoverableNodes]);
   const discoveryApp = useMemo(() => ({ ...app, flows: discoverableFlows }), [app, discoverableFlows]);
   const graphFocus = useMemo(() => recommendedFlow(discoveryApp, { requireRenderableSource: true }), [discoveryApp]);
   const curatedTour = app.bundle.curatedTour;
@@ -584,7 +595,7 @@ export function HomeView({
           </p>
         )}
 
-        {app.coverage.limitations.length > 0 && (
+        {explorerMode === "full" && app.coverage.limitations.length > 0 && (
           <aside className="understand-coverage" aria-label="Bundle coverage note">
             <div>
               <span className="panel-label">WHAT THIS BUNDLE INCLUDES</span>
@@ -597,6 +608,32 @@ export function HomeView({
               <button type="button" onClick={onReviewCoverage}>Review data quality <Icon name="arrow" size={12} /></button>
             </div>
           </aside>
+        )}
+
+        {explorerMode === "guided" && orientationModules.length > 0 && (
+          <section className="understand-overview" aria-labelledby="understand-overview-title">
+            <div className="understand-section-heading">
+              <div>
+                <span className="panel-label">CODEBASE MAP</span>
+                <h2 id="understand-overview-title">A quick map of this codebase</h2>
+              </div>
+              <p>Start with an area, then follow a behavior through it.</p>
+            </div>
+            <div className="understand-overview-grid">
+              {orientationModules.map((module) => (
+                <button
+                  type="button"
+                  key={module.id}
+                  onClick={() => onSearch?.(module.name)}
+                  aria-label={`Explore ${module.name}, ${countLabel(module.nodes.length, "symbol")}`}
+                >
+                  <span className="kind-dot" />
+                  <span><b>{module.name}</b><small>{module.path || "Code area"} · {countLabel(module.nodes.length, "symbol")}</small></span>
+                  <Icon name="arrow" size={13} />
+                </button>
+              ))}
+            </div>
+          </section>
         )}
 
         {curatedTourSteps.length > 0 && (
