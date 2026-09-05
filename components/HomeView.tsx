@@ -311,6 +311,13 @@ export function HomeView({
       <main className="understand-home">
         <header className="understand-hero">
           <div className="understand-copy">
+            <div className="briefing-status-line">
+              <span className={isDemo ? "fixture-flag" : "fixture-flag live"}>
+                <i />
+                {isDemo ? "Synthetic working bundle" : "Loaded local bundle"}
+              </span>
+              <span>{bundleMode} · contract {app.bundle.schemaVersion}</span>
+            </div>
             <h1>Understand {app.name || "this codebase"}, one path at a time.</h1>
             <p>
               {app.bundle.description ||
