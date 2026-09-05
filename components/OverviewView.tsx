@@ -1183,7 +1183,7 @@ export function OverviewView({
                       {[
                         ...new Set(
                           module.nodes.map(
-                            (node) => node.file || "Unknown file",
+                            (node) => node.file || "Source mapping unavailable",
                           ),
                         ),
                       ].map((file) => (
@@ -1191,7 +1191,7 @@ export function OverviewView({
                           <span>{file}</span>
                           {module.nodes
                             .filter(
-                              (node) => (node.file || "Unknown file") === file,
+                              (node) => (node.file || "Source mapping unavailable") === file,
                             )
                             .map((node) => (
                               <button
@@ -1200,7 +1200,7 @@ export function OverviewView({
                                 onClick={() => selectNode(node.id)}
                               >
                                 <i className={`kind-dot kind-${node.kind}`} />
-                                <b>{node.label || node.id}</b>
+                                <b>{nodeDisplayName(node)}</b>
                                 <small>
                                   {node.kind} · line {node.line || "—"}
                                 </small>

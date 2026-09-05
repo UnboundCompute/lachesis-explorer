@@ -391,8 +391,8 @@ export function NodeInspector({ node, contextRole, contextNote, contextOccurrenc
                   aria-label={`Inspect ${child.label || child.id} at line ${child.line || "unknown"}`}
                 >
                   <span>
-                    <b>{child.label || child.id}</b>
-                    <small>{child.kind} · line {child.line || "—"}</small>
+                    <b>{nodeDisplayName(child)}</b>
+                    <small>{nodeKindLabel(child.kind)} · line {child.line || "—"}</small>
                   </span>
                   <Icon name="arrow" size={11} />
                 </button>

@@ -510,7 +510,7 @@ export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
   const route = locations.length > 1 && locations[0] !== locations.at(-1)
     ? `${locations[0]} → ${locations.at(-1)}`
     : locations[0]
-  const labels = pathNodes.map((node) => node.label || node.qualifiedName || node.id)
+  const labels = pathNodes.map((node) => nodeDisplayName(node))
   const endpoints = labels.length > 1 && labels[0] !== labels.at(-1)
     ? `${labels[0]} → ${labels.at(-1)}`
     : labels[0]

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { countLabel, type LayoutPoint, type Node, type Step } from '../lib/lachesis'
+import { countLabel, nodeDisplayName, type LayoutPoint, type Node, type Step } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
 import { Icon } from './Icon'
 
@@ -332,7 +332,7 @@ export function PathCanvas({
                 tabIndex={0}
                 aria-pressed={selected}
                 aria-keyshortcuts="ArrowLeft ArrowRight Home End"
-                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${repeatedIds.has(item.id) ? `, revisit ${occurrenceNumbers[start + index]}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
+                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${nodeDisplayName(item.node)}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${repeatedIds.has(item.id) ? `, revisit ${occurrenceNumbers[start + index]}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
               >
                 <title>{item.node.label || item.node.id}</title>
                 <circle className="node-halo" cx={point.x} cy={point.y} r="38" />
@@ -361,14 +361,14 @@ export function PathCanvas({
               type="button"
               key={`${item.id}-${start + index}`}
               className={occurrenceSelected ? 'selected' : ''}
-              title={`${item.label} · ${item.node.label || item.node.id}`}
+              title={`${item.label} · ${nodeDisplayName(item.node)}`}
               onClick={() => onSelect(item.id, start + index)}
               aria-pressed={occurrenceSelected}
               aria-current={occurrenceSelected ? 'step' : undefined}
-                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.relation ? `, via ${item.relation}` : ''}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
+                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${nodeDisplayName(item.node)}${item.relation ? `, via ${item.relation}` : ''}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
             >
               <span>{String(start + index + 1).padStart(2, '0')}</span>
-              <b>{item.label}</b>
+              <b>{item.label || nodeDisplayName(item.node)}</b>
               <small>
                 {item.node.label || item.node.id} · {item.node.scope ? `${scopeLabel(item.node)} · ` : ''}{nodeLocation(item.node)}
                 {item.relation ? ` · via ${item.relation}` : ''}

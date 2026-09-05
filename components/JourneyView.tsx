@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { countLabel, entryDisplayName, type App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, nodeDisplayName, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText, downloadText } from "../lib/clipboard";
 import { explainEntry } from "../lib/explanations";
@@ -528,7 +528,7 @@ export function JourneyView({
         >
           <div>
             <span>STARTING POINT</span>
-            <b>{firstNode?.label || entryDisplayName(entry, app.nodes, app.entries)}</b>
+                  <b>{firstNode ? nodeDisplayName(firstNode) : entryDisplayName(entry, app.nodes, app.entries)}</b>
             <small>
               {nodeLocation(firstNode)}
             </small>
