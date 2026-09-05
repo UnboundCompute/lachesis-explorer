@@ -35,6 +35,14 @@ try {
 
   const hostedBundleId = process.env.LACHESIS_BUNDLE_ID;
   if (hostedBundleId) {
+    for (const [path, expectedStatus] of [[`/api/bundles/${encodeURIComponent(hostedBundleId)}`, 200], ["/api/bundles/not-a-bundle", 400], ["/api/bundles/b_unknown1234", 404]]) {
+      const response = await fetch(`${base}${path}`);
+      assert.equal(response.status, expectedStatus, `${path} returned an unexpected status`);
+      assert.equal(response.headers.get("access-control-allow-origin"), "*", `${path} did not expose CORS for recovery`);
+    }
+    const options = await fetch(`${base}/api/bundles/${encodeURIComponent(hostedBundleId)}`, { method: "OPTIONS" });
+    assert.equal(options.status, 204, "bundle OPTIONS preflight failed");
+    assert.equal(options.headers.get("access-control-allow-origin"), "*", "bundle OPTIONS omitted CORS");
     const hostedPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     const bundleRequests = [];
     hostedPage.on("request", (request) => {

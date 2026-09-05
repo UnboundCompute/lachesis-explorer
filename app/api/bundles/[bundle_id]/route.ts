@@ -10,20 +10,25 @@ const DEMO_IDS = new Set(['b_demo1234']);
 
 export const dynamic = 'force-dynamic';
 
+function jsonResponse(body: unknown, status: number, headers: Record<string, string> = {}) {
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      'access-control-allow-origin': '*',
+      ...headers,
+    },
+  });
+}
+
 export async function GET(_request: Request, { params }: { params: Promise<{ bundle_id: string }> }) {
   const { bundle_id: bundleId } = await params;
   if (!/^b_[A-Za-z0-9_-]{8,128}$/.test(bundleId)) {
-    return NextResponse.json({ error: { message: 'bundle_id is invalid' } }, { status: 400 });
+    return jsonResponse({ error: { message: 'bundle_id is invalid' } }, 400);
   }
   if (!DEMO_IDS.has(bundleId)) {
-    return NextResponse.json({ error: { message: 'hosted bundle not found or expired' } }, { status: 404 });
+    return jsonResponse({ error: { message: 'hosted bundle not found or expired' } }, 404);
   }
-  return NextResponse.json(demoBundle, {
-    headers: {
-      'cache-control': 'public, max-age=60',
-      'access-control-allow-origin': '*',
-    },
-  });
+  return jsonResponse(demoBundle, 200, { 'cache-control': 'public, max-age=60' });
 }
 
 export async function OPTIONS() {
