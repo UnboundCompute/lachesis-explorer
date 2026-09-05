@@ -26,6 +26,10 @@ on:
         description: Immutable HTTPS URL for the Lachesis wheel
         required: true
         type: string
+      wheel_sha256:
+        description: Published SHA-256 digest for the Lachesis wheel
+        required: true
+        type: string
       alert_topic_arn:
         description: SNS topic ARN for production alarms
         required: true
@@ -56,6 +60,7 @@ jobs:
       EXPLORER_ORIGIN: ${{ inputs.explorer_origin }}
       ECR_REPOSITORY: ${{ inputs.ecr_repository }}
       WHEEL_URL: ${{ inputs.wheel_url }}
+      WHEEL_SHA256: ${{ inputs.wheel_sha256 }}
       ALERT_TOPIC_ARN: ${{ inputs.alert_topic_arn }}
       SMOKE_REPOSITORY: ${{ inputs.smoke_repository }}
     steps:
@@ -89,6 +94,13 @@ jobs:
               exit 1
               ;;
           esac
+          case "$WHEEL_SHA256" in
+            *[!0-9a-f]*|'')
+              echo "wheel_sha256 must be 64 lowercase hexadecimal characters" >&2
+              exit 1
+              ;;
+          esac
+          test "${#WHEEL_SHA256}" -eq 64
 
       - name: Build and push immutable worker image
         env:
@@ -97,7 +109,9 @@ jobs:
         run: |
           set -euo pipefail
           docker build \
+            --platform linux/amd64 \
             --build-arg LACHESIS_WHEEL_URL="$WHEEL_URL" \
+            --build-arg LACHESIS_WHEEL_SHA256="$WHEEL_SHA256" \
             -f services/bundle-service/worker/Dockerfile \
             -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
             services/bundle-service

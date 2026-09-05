@@ -106,6 +106,7 @@ Resources:
     Properties:
       PackageType: Image
       ImageUri: !Ref WorkerImageUri
+      Architectures: [x86_64]
       ImageConfig: { Command: [worker.handler] }
       MemorySize: 10240
       Timeout: 900
@@ -113,7 +114,7 @@ Resources:
       ReservedConcurrentExecutions: 2
       Events: { Build: { Type: SQS, Properties: { Queue: !GetAtt BuildQueue.Arn, BatchSize: 1, FunctionResponseTypes: [ReportBatchItemFailures] } } }
       Environment:
-        Variables: { JOBS_TABLE: !Ref JobsTable, BUNDLE_BUCKET: !Ref BundleBucket, BUILD_TIMEOUT_SECONDS: '600', MAX_REPOSITORY_FILES: '5000', LACHESIS_CACHE_VERSION: 'lachesis-0.4.2|explorer-2.0' }
+        Variables: { JOBS_TABLE: !Ref JobsTable, BUNDLE_BUCKET: !Ref BundleBucket, BUILD_TIMEOUT_SECONDS: '600', MAX_REPOSITORY_FILES: '5000', LACHESIS_CACHE_VERSION: 'lachesis-0.5.0|explorer-2.0' }
       Policies:
         - DynamoDBCrudPolicy: { TableName: !Ref JobsTable }
         - S3ReadPolicy: { BucketName: !Ref BundleBucket }

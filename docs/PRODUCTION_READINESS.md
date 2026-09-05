@@ -6,9 +6,9 @@ usable without the hosted service: users can load a local `bundle.json` directly
 ## Before deployment
 
 - [ ] Confirm the Explorer production origin is an exact HTTPS origin with no path or wildcard.
-- [ ] Publish the Lachesis wheel to an immutable artifact location. Do not use `latest` or a
-  mutable object key.
-- [ ] Build the worker image with that wheel URL and push it to regional ECR.
+- [ ] Publish the Lachesis wheel to an immutable artifact location. Record its registry-published
+  SHA-256; do not use `latest` or a mutable object key.
+- [ ] Build the worker image with that wheel URL and SHA-256, then push it to regional ECR.
 - [ ] Resolve the pushed image to a full ECR digest (`repository@sha256:...`).
 - [ ] Review the Lachesis version, exporter options, and `LACHESIS_CACHE_VERSION` together. Bump
   the cache version whenever any of them changes.

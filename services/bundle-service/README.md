@@ -20,9 +20,11 @@ Example commands:
 
 ```bash
 docker build \
-  --build-arg LACHESIS_WHEEL_URL=https://artifacts.example.com/lachesis_cpg-0.4.2-py3-none-any.whl \
-  -f worker/Dockerfile -t <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.4.2 .
-docker push <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.4.2
+  --build-arg LACHESIS_WHEEL_URL=https://files.pythonhosted.org/<immutable-path>/lachesis_cpg-0.5.0-py3-none-manylinux_2_28_x86_64.whl \
+  --build-arg LACHESIS_WHEEL_SHA256=<published-sha256> \
+  --platform linux/amd64 \
+  -f worker/Dockerfile -t <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.0 .
+docker push <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.0
 
 sam build --template-file template.yaml
 sam deploy --guided --template-file .aws-sam/build/template.yaml
@@ -39,8 +41,10 @@ Validated bundles are cached privately by a SHA-256 key containing the canonical
 commit, build timeout, and `LACHESIS_CACHE_VERSION`. Bump that version whenever analyzer, exporter,
 toolchain, or relevant options change; cache objects expire with the bucket lifecycle.
 
-The wheel URL must be immutable and match the exporter version used in the cache identity. Do not
-use a floating `latest` image or wheel in production.
+The wheel URL must be immutable, its `LACHESIS_WHEEL_SHA256` must match the digest published by the
+artifact registry, and its version must match the exporter version used in the cache identity. The
+image build also rejects a wheel whose native kernel stamp differs from its Python package version.
+Do not use a floating `latest` image or wheel in production.
 
 For repeatable releases, the repository includes a manually triggered
 [`deploy-hosted.yml`](../../.github/workflows/deploy-hosted.yml) workflow. Configure the
