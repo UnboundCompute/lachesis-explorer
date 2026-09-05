@@ -169,6 +169,14 @@ class WorkerTests(unittest.TestCase):
         self.assertNotEqual(first, second)
         self.assertRegex(first, r"^cache/[0-9a-f]{64}\.json$")
 
+    def test_cache_key_changes_with_schema_toolchain_and_build_options(self):
+        url = "https://github.com/owner/repo.git"
+        sha = "a" * 40
+        baseline = worker._cache_key(url, sha)
+        for key in ("BUNDLE_SCHEMA_VERSION", "LACHESIS_TOOLCHAIN_FINGERPRINT", "BUILD_OPTIONS_FINGERPRINT", "BUILD_TIMEOUT_SECONDS"):
+            with self.subTest(key=key), patch.dict(worker.os.environ, {key: "changed"}):
+                self.assertNotEqual(baseline, worker._cache_key(url, sha))
+
     def test_cache_hit_skips_analysis_and_publishes_a_new_opaque_bundle(self):
         table = Mock()
         table.get_item.return_value = {"Item": {

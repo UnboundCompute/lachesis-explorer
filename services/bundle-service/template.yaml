@@ -128,8 +128,11 @@ Resources:
           JOBS_TABLE: !Ref JobsTable
           BUNDLE_BUCKET: !Ref BundleBucket
           BUILD_TIMEOUT_SECONDS: '600'
+          BUNDLE_SCHEMA_VERSION: '2.0'
+          LACHESIS_TOOLCHAIN_FINGERPRINT: 'worker-toolchain-v1'
+          BUILD_OPTIONS_FINGERPRINT: 'default'
           MAX_REPOSITORY_FILES: '5000'
-          LACHESIS_CACHE_VERSION: 'lachesis-0.5.0|explorer-2.0'
+          LACHESIS_CACHE_VERSION: 'lachesis-0.5.0'
           # Leave headroom for Lambda, Python, and toolchain overhead.
           LACHESIS_MEMORY_BUDGET_MB: '2400'
           # Bound Kuzu's sparse virtual reservation inside the Lambda runtime.

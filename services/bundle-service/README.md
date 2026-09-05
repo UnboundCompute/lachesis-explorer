@@ -39,8 +39,9 @@ The launch worker rejects repositories above 5,000 tracked files before invoking
 limit is configurable through `MAX_REPOSITORY_FILES`, but should only be raised after an equivalent
 Lambda memory, disk, and wall-time benchmark.
 Validated bundles are cached privately by a SHA-256 key containing the canonical repository, resolved
-commit, build timeout, and `LACHESIS_CACHE_VERSION`. Bump that version whenever analyzer, exporter,
-toolchain, or relevant options change; cache objects expire with the bucket lifecycle.
+commit, schema version, analyzer cache version, toolchain fingerprint, build-options fingerprint, and
+build timeout. Bump the relevant value whenever analyzer, exporter, schema, toolchain, or build options
+change; cache objects expire with the bucket lifecycle.
 
 The wheel URL must be immutable, its `LACHESIS_WHEEL_SHA256` must match the digest published by the
 artifact registry, and its version must match the exporter version used in the cache identity. The
