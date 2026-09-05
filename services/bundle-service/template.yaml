@@ -102,6 +102,11 @@ Resources:
         - DynamoDBCrudPolicy: { TableName: !Ref JobsTable }
         - SQSSendMessagePolicy: { QueueName: !GetAtt BuildQueue.QueueName }
         - S3ReadPolicy: { BucketName: !Ref BundleBucket }
+        - Statement:
+            - Effect: Allow
+              Action: s3:ListBucket
+              Resource: !GetAtt BundleBucket.Arn
+              Condition: { StringLike: { 's3:prefix': ['repository-index/*'] } }
 
   WorkerFunction:
     Type: AWS::Serverless::Function
