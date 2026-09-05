@@ -99,10 +99,8 @@ function verify(file, bundle) {
       const label = `graph.nodes[${index}]`;
       requireFields(file, node, ["id", "kind", "file", "line", "label"], label);
       requireNonEmptyStrings(file, node, ["id", "kind", "file", "label"], label);
-      const hasSnippet = typeof node.snippet === "string" && node.snippet.trim() !== "";
       const sourceWindow = node.source_window;
       const hasSourceWindow = sourceWindow && typeof sourceWindow === "object" && !Array.isArray(sourceWindow) && Array.isArray(sourceWindow.lines) && sourceWindow.lines.length > 0;
-      if (!hasSnippet && !hasSourceWindow) fail(file, `${label} must include a non-empty snippet or source_window.lines`);
       if (sourceWindow != null) {
         if (!hasSourceWindow) fail(file, `${label}.source_window must contain a non-empty lines array`);
         if (typeof sourceWindow.start_line !== "number" || !Number.isInteger(sourceWindow.start_line) || sourceWindow.start_line < 1)
@@ -242,4 +240,13 @@ const requestedFiles = process.argv.slice(2).filter((argument) => argument !== "
 for (const file of (requestedFiles.length ? requestedFiles : fixtures)) {
   const bundle = JSON.parse(await readFile(file, "utf8"));
   verify(file, bundle);
+}
+
+// Source is an optional evidence layer in the 2.0 contract. A graph-only export
+// must still validate so architecture consumers can explain shape before source
+// retrieval is available.
+if (!requestedFiles.length) {
+  const sourceOptional = JSON.parse(await readFile(fixtures[0], "utf8"));
+  sourceOptional.graph.nodes = sourceOptional.graph.nodes.map(({ snippet: _snippet, source_window: _sourceWindow, ...node }) => node);
+  verify("source-less regression", sourceOptional);
 }
