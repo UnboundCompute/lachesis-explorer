@@ -179,6 +179,26 @@ function assertGraphV2Nodes(nodes:Node[]) {
     }
   }
 }
+function assertUnderstandingProjection(projection: unknown, nodes: Node[], entrypoints: GraphEntrypoint[], flows: Flow[], entries: Entry[]) {
+  if (String(projection ?? '').trim().toLowerCase() !== 'code-understanding') return
+  const nodeById = new Map(nodes.map(node => [node.id, node]))
+  if (!entrypoints.length || entrypoints.some(entrypoint => !entrypoint.nodeId || !nodeById.has(entrypoint.nodeId))) {
+    throw new Error('Code-understanding bundles require graph entrypoints mapped to graph nodes.')
+  }
+  const sourceBacked = (node: Node | undefined) => Boolean(
+    node?.file?.trim() && Number.isInteger(node.line) && node.line > 0 &&
+    (node.snippet.trim() || Boolean(node.sourceWindow?.lines.length)),
+  )
+  const guidedPaths = [
+    ...flows.map(flow => flow.steps.map(step => step.node_id)),
+    ...entries.map(entry => entry.hops.map(hop => hop.node_id)),
+  ]
+  const hasReadablePath = guidedPaths.some(path => {
+    const uniqueIds = new Set(path)
+    return uniqueIds.size >= 2 && path.every(nodeId => sourceBacked(nodeById.get(nodeId)))
+  })
+  if (!hasReadablePath) throw new Error('Code-understanding bundles require a multi-node source-backed guided path.')
+}
 function assertNodeParentReferences(nodes:Node[]) {
   const ids = new Set(nodes.map((node) => node.id))
   nodes.forEach((node) => {
@@ -435,6 +455,7 @@ function normalizeGraphV2(raw:any):App {
   if(brokenEntry)throw new Error(`An entrypoint references missing node "${brokenEntry.node_id}".`)
   const brokenEdge=explicitEdges.find(edge=>!ids.has(edge.source)||!ids.has(edge.target))
   if(brokenEdge)throw new Error(`A graph edge references missing node "${!ids.has(brokenEdge.source)?brokenEdge.source:brokenEdge.target}".`)
+  assertUnderstandingProjection(raw.analysis_projection, nodes, entrypoints, flows, entries)
   const findingEvidence:Evidence[]=Array.isArray(findings)?findings.map((f:any)=>{const id=String(f.finding_id??f.id??'');const steps=Array.isArray(f.witness?.steps)?f.witness.steps:[];const nodeIds=steps.map((s:any)=>String(s.node_id??s.nodeId??s.node??'')).filter(Boolean);const loc=(f.locations??[]).map((l:any)=>l.symbol?`${l.symbol}${l.file?` (${l.file}${l.line?`:${l.line}`:''})`:''}`:'').filter(Boolean).join(' · ');return {for:id,verb:String(f.analysis?.projection??f.projection??'finding'),args:loc,result_summary:String(f.result_summary??f.objective??'Security evidence attached to this graph path.'),nodes:nodeIds.length,node_ids:nodeIds,confidence:f.analysis?.confidence==null?undefined:String(f.analysis.confidence),origin:String(f.origin??f.analysis?.origin??'finding envelope'),status:f.status==null?undefined:String(f.status),lifecycle:f.lifecycle_state==null?undefined:String(f.lifecycle_state),limitations:Array.isArray(f.analysis?.limitations)?f.analysis.limitations.map(String):undefined,guards:f.witness?.guards}}):[]
   const rawMcp=raw.mcp??graph.mcp
   const mcpEvidence:Array<Evidence>=Array.isArray(rawMcp)?rawMcp.map(normalizeEvidence):[]
