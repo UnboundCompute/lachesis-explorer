@@ -63,7 +63,7 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "kind": { "type": "string", "minLength": 1 },
-        "file": { "type": "string", "minLength": 1 },
+        "file": { "type": "string", "description": "Repository-relative source path, or an empty string for a synthetic or unmapped node." },
         "line": { "type": "integer", "minimum": 0 },
         "column": { "type": "integer", "minimum": 0 },
         "end_line": { "type": "integer", "minimum": 0 },

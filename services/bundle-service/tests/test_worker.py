@@ -95,6 +95,19 @@ class WorkerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_bundle(bundle)
 
+    def test_validator_accepts_a_readable_unmapped_node(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "typescript", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {
+                "nodes": [{"id": "synthetic", "kind": "value", "file": "", "line": 0, "label": "synthetic value", "snippet": "synthetic value"}],
+                "edges": [],
+            },
+        }
+
+        self.assertIs(validate_bundle(bundle), bundle)
+
     def test_process_exports_and_validates_before_uploading(self):
         table = Mock()
         table.get_item.return_value = {"Item": {

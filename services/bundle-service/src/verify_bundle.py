@@ -36,8 +36,10 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
     for index, node in enumerate(graph["nodes"]):
         if not isinstance(node, dict):
             _fail(f"graph.nodes[{index}] must be an object")
-        for key in ("id", "kind", "file", "label"):
+        for key in ("id", "kind", "label"):
             _non_empty_string(node.get(key), f"graph.nodes[{index}].{key}")
+        if not isinstance(node.get("file"), str):
+            _fail(f"graph.nodes[{index}].file must be a string")
         if node["id"] in node_ids:
             _fail(f"graph.nodes[{index}].id is duplicated")
         node_ids.add(node["id"])

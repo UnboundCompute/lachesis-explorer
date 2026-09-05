@@ -150,7 +150,7 @@ function assertExplicitEdgeIds(items:EdgeSeed[], label:string) {
 function assertGraphV2Nodes(nodes:Node[]) {
   for (const [index, node] of nodes.entries()) {
     const label = `Graph node ${index}`
-    for (const [field, value] of [['id', node.id], ['kind', node.kind], ['file', node.file], ['label', node.label]] as const) {
+    for (const [field, value] of [['id', node.id], ['kind', node.kind], ['label', node.label]] as const) {
       if (!value.trim()) throw new Error(`${label}.${field} must be a non-empty string.`)
     }
     if (!node.snippet.trim() && !node.sourceWindow?.lines.length) throw new Error(`${label} must include a snippet or source_window.`)
