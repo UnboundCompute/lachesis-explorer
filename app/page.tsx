@@ -131,6 +131,14 @@ function recommendedSink(app: App) {
     })[0];
 }
 
+function nodeForHandoff(app: App, anchor?: string, region?: string) {
+  const needle = (anchor || region || '').trim().toLowerCase();
+  if (!needle) return undefined;
+  return app.nodes.find((node) => [node.id, node.label, node.qualifiedName, node.signature, node.file, node.scope?.label, node.scope?.module]
+    .filter(Boolean)
+    .some((value) => value!.trim().toLowerCase() === needle));
+}
+
 function isSinkNode(app: App, nodeId: string) {
   return app.nodes.some(
     (node) =>
@@ -885,16 +893,17 @@ export default function Page() {
     setFocusNodeId("");
     let restored = false;
     if (pending) {
+      const requestedView = pending.view ?? (pending.region || pending.label || pending.anchor || pending.domain ? "map" : pending.flow || pending.step ? "trace" : undefined);
       if (
-        pending.view === "home" ||
-        pending.view === "trace" ||
-        pending.view === "journey" ||
-        pending.view === "investigate" ||
-        pending.view === "map" ||
-        pending.view === "compare" ||
-        pending.view === "install"
+        requestedView === "home" ||
+        requestedView === "trace" ||
+        requestedView === "journey" ||
+        requestedView === "investigate" ||
+        requestedView === "map" ||
+        requestedView === "compare" ||
+        requestedView === "install"
       )
-        setView(pending.view);
+        setView(requestedView);
       const linkedFlow = next.flows.find((flow) => flow.id === pending.flow);
       if (linkedFlow) {
         setFlowId(linkedFlow.id);
@@ -940,25 +949,25 @@ export default function Page() {
         }
         restored = true;
       }
+      const handoffNode = nodeForHandoff(next, pending.anchor, pending.region);
       if (
-        pending.view === "map" &&
-        pending.node &&
-        next.nodes.some((node) => node.id === pending.node)
+        requestedView === "map" &&
+        ((pending.node && next.nodes.some((node) => node.id === pending.node)) || handoffNode)
       ) {
-        setFocusNodeId(pending.node);
+        setFocusNodeId(pending.node && next.nodes.some((node) => node.id === pending.node) ? pending.node : handoffNode!.id);
         restored = true;
       }
       if (pending.sink && next.nodes.some((node) => node.id === pending.sink)) {
         setSinkId(pending.sink);
         restored = true;
       }
-      if (pending.view === "install" || pending.view === "map") restored = true;
+      if (requestedView === "install" || requestedView === "map") restored = true;
       if (pending.direction === "forward") setDirection("forward");
       if (pending.view === "trace") setQuery(pending.filter ?? "");
-      if (pending.view === "map") setMapQuery(pending.filter ?? "");
-      if (pending.view === "map" && pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode)) setMapMode(pending.mapMode as OverviewMode);
-      if (pending.view === "map") setMapOrder(pending.mapOrder === "centrality" ? "centrality" : "path");
-      if (pending.view === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
+      if (requestedView === "map") setMapQuery(pending.filter ?? "");
+      if (requestedView === "map") setMapMode(pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode) ? pending.mapMode as OverviewMode : "architecture");
+      if (requestedView === "map") setMapOrder(pending.mapOrder === "centrality" ? "centrality" : "path");
+      if (requestedView === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
       pendingLink.current = null;
     }
     initializeNavigation();
