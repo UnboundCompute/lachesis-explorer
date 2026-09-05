@@ -14,6 +14,53 @@ def _non_empty_string(value: Any, label: str) -> None:
         _fail(f"{label} must be a non-empty string")
 
 
+def _source_backed(node: dict[str, Any]) -> bool:
+    if not isinstance(node.get("file"), str) or not node["file"].strip():
+        return False
+    if not isinstance(node.get("line"), int) or node["line"] < 1:
+        return False
+    snippet = node.get("snippet")
+    window = node.get("source_window")
+    return bool(isinstance(snippet, str) and snippet.strip()) or bool(
+        isinstance(window, dict) and isinstance(window.get("lines"), list) and window["lines"]
+    )
+
+
+def _understanding_path_has_source(path: Any, nodes: dict[str, dict[str, Any]], key: str) -> bool:
+    if not isinstance(path, dict):
+        return False
+    raw_steps = path.get("steps") if key == "values" else path.get("hops")
+    if not isinstance(raw_steps, list):
+        return False
+    node_ids = [step.get("node_id") for step in raw_steps if isinstance(step, dict)]
+    if len(node_ids) < 2 or len(set(node_ids)) < 2:
+        return False
+    if any(node_id not in nodes or not _source_backed(nodes[node_id]) for node_id in node_ids):
+        return False
+    source_id = path.get("source_node")
+    sink_id = path.get("sink_node")
+    return source_id is None or sink_id is None or source_id != sink_id
+
+
+def _validate_understanding_projection(bundle: dict[str, Any], graph: dict[str, Any], node_ids: set[str]) -> None:
+    if str(bundle.get("analysis_projection", "")).strip().lower() != "code-understanding":
+        return
+    entrypoints = graph.get("entrypoints")
+    if not isinstance(entrypoints, list) or not entrypoints:
+        _fail("code-understanding projections must include graph.entrypoints")
+    for index, entrypoint in enumerate(entrypoints):
+        if not isinstance(entrypoint, dict) or entrypoint.get("node_id") not in node_ids:
+            _fail(f"graph.entrypoints[{index}] must reference a graph node")
+    paths = bundle.get("paths") or {}
+    nodes = {node["id"]: node for node in graph["nodes"]}
+    candidates = [
+        *(paths.get("values", paths.get("value_flows", [])) if isinstance(paths, dict) else []),
+        *(paths.get("requests", paths.get("request_paths", [])) if isinstance(paths, dict) else []),
+    ]
+    if not any(_understanding_path_has_source(path, nodes, "values" if isinstance(path, dict) and "steps" in path else "requests") for path in candidates):
+        _fail("code-understanding projections need a multi-node source-backed path")
+
+
 def validate_bundle(bundle: Any) -> dict[str, Any]:
     if not isinstance(bundle, dict):
         _fail("bundle must be an object")
@@ -86,6 +133,7 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
             if not isinstance(finding_id, str) or not finding_id or finding_id in finding_ids or finding_id in value_path_ids:
                 _fail("security finding IDs must be unique and distinct from value path IDs")
             finding_ids.add(finding_id)
+    _validate_understanding_projection(bundle, graph, node_ids)
     return bundle
 
 

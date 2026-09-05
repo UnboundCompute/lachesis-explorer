@@ -116,6 +116,31 @@ class WorkerTests(unittest.TestCase):
 
         self.assertIs(validate_bundle(bundle), bundle)
 
+    def test_validator_requires_understanding_entrypoint_and_source_backed_path(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "analysis_projection": "code-understanding",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 2, "indexed_nodes": 2},
+            "graph": {"nodes": [
+                {"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"},
+                {"id": "n2", "kind": "call", "file": "main.py", "line": 2, "label": "run", "snippet": "run()"},
+            ], "entrypoints": [{"id": "entry.main", "label": "main", "node_id": "n1"}]},
+            "paths": {"values": [{"id": "flow.main", "kind": "call-path", "steps": [{"node_id": "n1"}, {"node_id": "n2"}]}]},
+        }
+        self.assertIs(validate_bundle(bundle), bundle)
+
+    def test_validator_rejects_understanding_projection_without_guided_path(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "analysis_projection": "code-understanding",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}], "entrypoints": [{"id": "entry.main", "label": "main", "node_id": "n1"}]},
+        }
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
     def test_prepare_file_canonicalizes_a_null_source_mapping(self):
         bundle = {
             "format": "lachesis-explorer-bundle",
