@@ -163,7 +163,7 @@ function BuildIntake({ onBuild, onCancelBuild, buildState }: Pick<Props, "onBuil
     setFormError("");
     onBuild?.(gitUrl.trim(), ref.trim());
   }
-  const statusLabels: Record<string, string> = { queued: "Queued", cloning: "Cloning repository", building: "Building graph", exporting: "Exporting bundle", ready: "Bundle ready", cancelled: "Build cancelled", too_large: "Repository is too large", unsupported_language: "Language is not supported", expired: "Build expired", error: "Build failed" };
+  const statusLabels: Record<string, string> = { queued: "Queued", clone: "Clone repository", cloning: "Cloning repository", build: "Build graph", building: "Building graph", export: "Export bundle", exporting: "Exporting bundle", ready: "Bundle ready", cancelled: "Build cancelled", too_large: "Repository is too large", unsupported_language: "Language is not supported", expired: "Build expired", error: "Build failed" };
   return <section className="hosted-build" aria-labelledby="hosted-build-title">
     <div><span className="panel-label">OPEN A CODEBASE</span><h2 id="hosted-build-title">Build a graph from a public repository</h2><p>Paste a GitHub, GitLab, or Bitbucket URL. Lachesis builds the graph remotely; your browser only receives the exported bundle.</p></div>
     <form onSubmit={submit} className="hosted-build-form" aria-label="Build graph from repository">
