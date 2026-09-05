@@ -92,3 +92,16 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
 def validate_file(path: str) -> dict[str, Any]:
     with open(path, encoding="utf-8") as stream:
         return validate_bundle(json.load(stream))
+
+
+def prepare_file(path: str) -> dict[str, Any]:
+    """Canonicalize exporter nulls, validate, and persist the publishable artifact."""
+    with open(path, encoding="utf-8") as stream:
+        bundle = json.load(stream)
+    for node in ((bundle.get("graph") or {}).get("nodes") or []):
+        if isinstance(node, dict) and node.get("file") is None:
+            node["file"] = ""
+    validate_bundle(bundle)
+    with open(path, "w", encoding="utf-8") as stream:
+        json.dump(bundle, stream, separators=(",", ":"), ensure_ascii=False)
+    return bundle

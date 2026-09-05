@@ -13,10 +13,10 @@ from urllib.parse import urlsplit
 
 try:  # Lambda loads this directory as the module root; tests may load it as a package.
     from contract import canonical_git_url, opaque_id, valid_ref
-    from verify_bundle import validate_file
+    from verify_bundle import prepare_file
 except ImportError:
     from .contract import canonical_git_url, opaque_id, valid_ref
-    from .verify_bundle import validate_file
+    from .verify_bundle import prepare_file
 
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
 DEFAULT_MAX_REPOSITORY_FILES = 5_000
@@ -220,7 +220,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
             return
         if os.path.getsize(bundle) > 5 * 1024 * 1024:
             raise RuntimeError("bundle exceeds direct API response limit")
-        validate_file(bundle)
+        prepare_file(bundle)
         bundle_id = opaque_id("b")
         storage.upload_file(bundle, bucket, cache_key, ExtraArgs={"ContentType": "application/json", "ServerSideEncryption": "AES256"})
         _copy_bundle(storage, bucket, cache_key, bundle_id)
