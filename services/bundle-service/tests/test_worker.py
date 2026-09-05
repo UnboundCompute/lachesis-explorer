@@ -163,6 +163,19 @@ class WorkerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_bundle(bundle)
 
+    def test_validator_rejects_a_module_with_an_unknown_parent(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {
+                "nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}],
+                "modules": [{"id": "module.main", "name": "main", "parent_id": "module.missing", "node_ids": ["n1"]}],
+            },
+        }
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
     def test_prepare_file_canonicalizes_a_null_source_mapping(self):
         bundle = {
             "format": "lachesis-explorer-bundle",

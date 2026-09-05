@@ -61,6 +61,56 @@ def _validate_understanding_projection(bundle: dict[str, Any], graph: dict[str, 
         _fail("code-understanding projections need a multi-node source-backed path")
 
 
+def _validate_graph_hierarchy(graph: dict[str, Any], node_ids: set[str]) -> None:
+    modules = graph.get("modules", [])
+    if not isinstance(modules, list):
+        _fail("graph.modules must be an array")
+    module_ids: set[str] = set()
+    parents: dict[str, str] = {}
+    for index, module in enumerate(modules):
+        if not isinstance(module, dict):
+            _fail(f"graph.modules[{index}] must be an object")
+        _non_empty_string(module.get("id"), f"graph.modules[{index}].id")
+        module_id = module["id"]
+        if module_id in module_ids:
+            _fail(f"graph.modules[{index}].id is duplicated")
+        module_ids.add(module_id)
+        members = module.get("node_ids", [])
+        if not isinstance(members, list) or not all(isinstance(member, str) and member for member in members) or len(set(members)) != len(members):
+            _fail(f"graph.modules[{index}].node_ids must be a unique array")
+        if any(member not in node_ids for member in members):
+            _fail(f"graph.modules[{index}].node_ids references an unknown node")
+        parent = module.get("parent_id", module.get("parentId"))
+        if parent is not None:
+            _non_empty_string(parent, f"graph.modules[{index}].parent_id")
+            parents[module_id] = parent
+    for module_id, parent in parents.items():
+        if parent not in module_ids:
+            _fail(f"graph.modules[{module_id}] references an unknown parent module")
+        seen: set[str] = set()
+        current = module_id
+        while current in parents:
+            if current in seen:
+                _fail("graph.modules contains a parent cycle")
+            seen.add(current)
+            current = parents[current]
+
+    entrypoints = graph.get("entrypoints", [])
+    if not isinstance(entrypoints, list):
+        _fail("graph.entrypoints must be an array")
+    entrypoint_ids: set[str] = set()
+    for index, entrypoint in enumerate(entrypoints):
+        if not isinstance(entrypoint, dict):
+            _fail(f"graph.entrypoints[{index}] must be an object")
+        _non_empty_string(entrypoint.get("id"), f"graph.entrypoints[{index}].id")
+        entrypoint_id = entrypoint["id"]
+        if entrypoint_id in entrypoint_ids:
+            _fail(f"graph.entrypoints[{index}].id is duplicated")
+        entrypoint_ids.add(entrypoint_id)
+        if entrypoint.get("node_id") is not None and entrypoint["node_id"] not in node_ids:
+            _fail(f"graph.entrypoints[{index}] references an unknown node")
+
+
 def validate_bundle(bundle: Any) -> dict[str, Any]:
     if not isinstance(bundle, dict):
         _fail("bundle must be an object")
@@ -106,6 +156,7 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
     for index, edge in enumerate(edges):
         if not isinstance(edge, dict) or edge.get("source") not in node_ids or edge.get("target") not in node_ids:
             _fail(f"graph.edges[{index}] references an unknown node")
+    _validate_graph_hierarchy(graph, node_ids)
 
     paths = bundle.get("paths") or {}
     if not isinstance(paths, dict):
