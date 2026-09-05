@@ -218,3 +218,12 @@ license text are preserved.
 
 The Lachesis reader that produces the `bundle.json` Explorer renders is a separate project
 under its own license — see the [Lachesis repository](https://github.com/UnboundCompute/lachesis).
+### Demo bundle transport
+
+The Explorer app exposes one intentionally allowlisted demo bundle for local and preview integrations:
+
+```text
+GET /api/bundles/b_demo1234
+```
+
+It serves the schema-valid `public/code-exploration-bundle.json` fixture with permissive CORS, so Design Map and other readers can exercise the opaque-bundle handoff before AWS is deployed. The response is explicitly marked as a demo fixture in `meta.fixture`; it is transport-valid, not verified repository evidence. Uploaded production bundles are served by the AWS SAM service in `services/bundle-service` and use generated opaque IDs.
