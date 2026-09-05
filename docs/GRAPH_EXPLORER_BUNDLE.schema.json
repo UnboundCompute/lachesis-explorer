@@ -29,7 +29,8 @@
         "lines": { "type": "integer", "minimum": 0 },
         "indexed_nodes": { "type": "integer", "minimum": 0 },
         "generated_at": { "type": "string" },
-        "fixture": { "type": "boolean" }
+        "fixture": { "type": "boolean" },
+        "curated_tour": { "$ref": "#/$defs/curated_tour", "description": "Optional publisher-curated reading sequence. The service should expose maintainer metadata only after explicit verification." }
       },
       "additionalProperties": true
     },
@@ -91,6 +92,39 @@
         "label": { "type": "string" }
       },
       "additionalProperties": true
+    },
+    "curated_tour": {
+      "type": "object",
+      "required": ["id", "title", "steps"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "maintainer": { "$ref": "#/$defs/verified_maintainer" },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/curated_tour_step" } }
+      },
+      "additionalProperties": false
+    },
+    "curated_tour_step": {
+      "type": "object",
+      "required": ["flow_id"],
+      "properties": {
+        "flow_id": { "type": "string", "minLength": 1 },
+        "node_id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "verified_maintainer": {
+      "type": "object",
+      "required": ["name", "verified"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "verified": { "const": true }
+      },
+      "additionalProperties": false
     },
     "source_window": {
       "type": "object",

@@ -16,7 +16,9 @@ export type GraphEntrypoint = { id: string; label: string; kind?: string; nodeId
 export type GraphCoverage = { scope?: string; includedNodes?: number; indexedNodes?: number; limitations: string[]; capabilities: string[] }
 export type EdgeOrigin = 'bundle' | 'value-flow' | 'request-path'
 export type GraphEdge = { id:string; source:string; target:string; relation:string; alias:boolean; dynamic:boolean; confidence?:string; limitations?:string[]; origins:EdgeOrigin[]; flow_ids:string[]; entry_ids:string[] }
-export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; sourceUrlTemplate?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[] }
+export type CuratedTourStep = { flowId: string; nodeId?: string; label?: string; note?: string }
+export type CuratedTour = { id: string; title: string; description?: string; steps: CuratedTourStep[]; maintainer?: { name: string; url?: string } }
+export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; sourceUrlTemplate?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[]; curatedTour?: CuratedTour }
 export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; findings: Flow[]; entries: Entry[]; mcp: Evidence[]; files: GraphFile[]; modules: GraphModule[]; entrypoints: GraphEntrypoint[]; coverage: GraphCoverage; bundle:BundleInfo }
 
 const sourceTemplateFields = new Set(['file', 'line', 'end_line', 'revision'])
@@ -143,6 +145,50 @@ function normalizeNode(n:any,i:number):Node {
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }
 function normalizeModules(raw:unknown):GraphModule[] { return Array.isArray(raw)?raw.map((m:any,i:number)=>({id:String(m.id??m.path??`module_${i}`),name:String(m.name??m.label??m.path??m.id??''),path:m.path==null?undefined:String(m.path),parentId:m.parent_id==null?m.parentId==null?undefined:String(m.parentId):String(m.parent_id),nodeIds:Array.isArray(m.node_ids)?m.node_ids.map(String):undefined})):[] }
 function normalizeEntrypoints(raw:unknown):GraphEntrypoint[] { return Array.isArray(raw)?raw.map((e:any,i:number)=>({id:String(e.id??`entrypoint_${i}`),label:String(e.label??e.name??e.path??e.id??''),kind:e.kind==null?undefined:String(e.kind),nodeId:e.node_id==null?e.nodeId==null?undefined:String(e.nodeId):String(e.node_id),file:e.file==null?undefined:String(e.file)})):[] }
+function normalizeCuratedTour(raw: unknown, flows: Flow[]): CuratedTour | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
+  const value = raw as Record<string, unknown>
+  const flowById = new Map(flows.map((flow) => [flow.id, flow]))
+  const rawSteps = Array.isArray(value.steps) ? value.steps : []
+  const steps = rawSteps.flatMap((step): CuratedTourStep[] => {
+    if (!step || typeof step !== 'object' || Array.isArray(step)) return []
+    const item = step as Record<string, unknown>
+    const flowId = String(item.flow_id ?? item.flowId ?? item.flow ?? '').trim()
+    const flow = flowById.get(flowId)
+    if (!flow) return []
+    const nodeId = String(item.node_id ?? item.nodeId ?? '').trim()
+    if (nodeId && !flow.steps.some((pathStep) => pathStep.node_id === nodeId)) return []
+    return [{
+      flowId,
+      ...(nodeId ? { nodeId } : {}),
+      ...(item.label != null && String(item.label).trim() ? { label: String(item.label).trim() } : {}),
+      ...(item.note != null && String(item.note).trim() ? { note: String(item.note).trim() } : {}),
+    }]
+  })
+  if (!steps.length) return undefined
+  const maintainerRaw = value.maintainer
+  const maintainer = maintainerRaw && typeof maintainerRaw === 'object' && !Array.isArray(maintainerRaw)
+    ? maintainerRaw as Record<string, unknown>
+    : undefined
+  const maintainerName = maintainer?.verified === true && maintainer.name != null ? String(maintainer.name).trim() : ''
+  const maintainerUrl = maintainer?.verified === true && maintainer.url != null ? String(maintainer.url).trim() : ''
+  let url: string | undefined
+  if (maintainerUrl) {
+    try {
+      const parsed = new URL(maintainerUrl)
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') url = parsed.toString()
+    } catch {
+      url = undefined
+    }
+  }
+  return {
+    id: String(value.id ?? 'start-here').trim() || 'start-here',
+    title: String(value.title ?? 'Start here').trim() || 'Start here',
+    ...(value.description != null && String(value.description).trim() ? { description: String(value.description).trim() } : {}),
+    steps,
+    ...(maintainerName ? { maintainer: { name: maintainerName, ...(url ? { url } : {}) } } : {}),
+  }
+}
 function assertUniqueIds(items:{id:string}[], label:string) {
   const seen=new Set<string>()
   for (const item of items) {
@@ -473,7 +519,8 @@ function normalizeGraphV2(raw:any):App {
   if(!Number.isFinite(includedNodes)||includedNodes!==nodes.length)throw new Error(`Coverage included_nodes (${coverage.included_nodes}) does not match graph.nodes (${nodes.length}).`)
   if(indexedNodes!==undefined&&indexedNodes<includedNodes)throw new Error(`Coverage indexed_nodes (${indexedNodes}) cannot be less than included_nodes (${includedNodes}).`)
   const effectiveLimitations=coverageLimitations(includedNodes,indexedNodes,limitations)
-  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations}}
+  const curatedTour = normalizeCuratedTour(meta.curated_tour ?? raw.curated_tour, allFlows)
+  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations,...(curatedTour ? { curatedTour } : {})}}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {

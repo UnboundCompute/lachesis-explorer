@@ -212,6 +212,15 @@ least that large.
 projection. The Explorer may show it as orientation copy, but must not infer or
 rewrite it into a security conclusion.
 
+An optional `meta.curated_tour` gives newcomers a publisher-selected reading
+sequence. Each `steps[].flow_id` must resolve to a path in the same bundle;
+`node_id`, when present, must resolve to a step in that path. The Explorer
+silently omits invalid tour steps and only renders the tour when at least one
+path remains. A `maintainer` object is displayed as a verified publisher only
+when it contains `verified: true`; that flag must be added by an authenticated
+repository-ownership flow or another trusted service boundary, never inferred
+from a public README badge or from bundle self-assertion alone.
+
 `coverage.scope`, `coverage.limitations`, and `graph.capabilities` make missing
 language constructs, unresolved calls, omitted dependencies, and projections
 visible to the Explorer. If `indexed_nodes` is greater than the number of

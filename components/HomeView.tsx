@@ -381,6 +381,14 @@ export function HomeView({
     ? "Security evidence projection"
     : "Code exploration graph";
   const graphFocus = useMemo(() => recommendedFlow(app, { requireRenderableSource: true }), [app]);
+  const curatedTour = app.bundle.curatedTour;
+  const curatedTourSteps = useMemo(
+    () => curatedTour?.steps.flatMap((step) => {
+      const flow = app.flows.find((item) => item.id === step.flowId);
+      return flow ? [{ step, flow }] : [];
+    }) ?? [],
+    [app.flows, curatedTour],
+  );
   const graphFocusNode = graphFocus?.steps[0]
     ? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
     : undefined;
@@ -570,6 +578,37 @@ export function HomeView({
               <button type="button" onClick={onReviewCoverage}>Review data quality <Icon name="arrow" size={12} /></button>
             </div>
           </aside>
+        )}
+
+        {curatedTourSteps.length > 0 && (
+          <section className="understand-tour" aria-labelledby="understand-tour-title">
+            <div className="understand-section-heading">
+              <div>
+                <span className="panel-label">CURATED START</span>
+                <h2 id="understand-tour-title">{curatedTour?.title || "Start here"}</h2>
+              </div>
+              {curatedTour?.maintainer && (
+                <p className="understand-tour-byline">
+                  {curatedTour.maintainer.url ? (
+                    <a href={curatedTour.maintainer.url} target="_blank" rel="noreferrer">{curatedTour.maintainer.name}</a>
+                  ) : curatedTour.maintainer.name}
+                  {" · verified publisher"}
+                </p>
+              )}
+            </div>
+            {curatedTour?.description && <p className="understand-tour-description">{curatedTour.description}</p>}
+            <ol className="understand-tour-list">
+              {curatedTourSteps.map(({ step, flow }, index) => (
+                <li key={`${curatedTour?.id}-${flow.id}-${index}`}>
+                  <button type="button" onClick={() => onFlow(flow.id, step.nodeId ?? flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
+                    <span className="understand-tour-index">{String(index + 1).padStart(2, "0")}</span>
+                    <span><b>{step.label || flowActionLabel(flow, app)}</b><small>{step.note || `${pathKindLabel(flow)} · ${countLabel(flow.steps.length, "symbol")}`}</small></span>
+                    <Icon name="arrow" size={13} />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
         )}
 
         <section className="understand-questions" aria-labelledby="understand-questions-title">
