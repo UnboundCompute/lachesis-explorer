@@ -122,7 +122,7 @@ class WorkerTests(unittest.TestCase):
             "schema_version": "2.0",
             "meta": {"repository": "owner/repo", "language": "typescript", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
             "graph": {
-                "nodes": [{"id": "synthetic", "kind": "value", "file": None, "line": 0, "label": "synthetic value", "snippet": "synthetic value"}],
+                "nodes": [{"id": "synthetic", "kind": "value", "file": None, "line": None, "label": "synthetic value", "snippet": "synthetic value"}],
                 "edges": [],
             },
         }
@@ -132,6 +132,7 @@ class WorkerTests(unittest.TestCase):
             prepared = prepare_file(artifact.name)
 
         self.assertEqual(prepared["graph"]["nodes"][0]["file"], "")
+        self.assertEqual(prepared["graph"]["nodes"][0]["line"], 0)
 
     def test_process_exports_and_validates_before_uploading(self):
         table = Mock()

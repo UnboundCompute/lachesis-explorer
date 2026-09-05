@@ -99,8 +99,11 @@ def prepare_file(path: str) -> dict[str, Any]:
     with open(path, encoding="utf-8") as stream:
         bundle = json.load(stream)
     for node in ((bundle.get("graph") or {}).get("nodes") or []):
-        if isinstance(node, dict) and node.get("file") is None:
-            node["file"] = ""
+        if isinstance(node, dict):
+            if node.get("file") is None:
+                node["file"] = ""
+            if node.get("line") is None:
+                node["line"] = 0
     validate_bundle(bundle)
     with open(path, "w", encoding="utf-8") as stream:
         json.dump(bundle, stream, separators=(",", ":"), ensure_ascii=False)
