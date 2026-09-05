@@ -836,21 +836,21 @@ export function OverviewView({
                 {selected ? `Selected ${selected.label || selected.id}, ${nodeLocation(selected)}.` : "No graph node selected."}
               </span>
               <div>
-                <span>{neighborhoodOnly ? "CANVAS NODES" : "VISIBLE NODES"}</span>
+                <span>{neighborhoodOnly ? "SYMBOLS IN VIEW" : "SYMBOLS MATCHING"}</span>
                 <b>
                   {neighborhoodOnly ? topologyNodes.length : visible.length}
                   <small> / {visible.length}</small>
                 </b>
               </div>
               <div>
-                <span>{neighborhoodOnly ? "CANVAS EDGES" : "VISIBLE EDGES"}</span>
+                <span>{neighborhoodOnly ? "CONNECTIONS IN VIEW" : "CONNECTIONS MATCHING"}</span>
                 <b>
                   {neighborhoodOnly ? topologyEdges.length : edges.length}
                   <small> / {edges.length}</small>
                 </b>
               </div>
               <div>
-                <span>SELECTED ROLE / KIND</span>
+                <span>SELECTED ROLE</span>
                 <b>{visible.length ? rolesForNode(selected?.id ?? "").join(" / ") || selected?.kind || "—" : "—"}</b>
               </div>
               <p>
@@ -915,10 +915,24 @@ export function OverviewView({
             </div>
             {visible.length ? (
               <>
+              <div className="topology-guide">
+                <div>
+                  <span className="panel-label">HOW TO USE THIS VIEW</span>
+                  <h3>Pick a symbol, then follow its connections.</h3>
+                  <p>The map shows relationships recorded in this bundle. It is a neighborhood view, not an execution timeline.</p>
+                </div>
+                {selected && (
+                  <button type="button" className="topology-selected-summary" onClick={() => selectNode(selected.id)}>
+                    <span>SELECTED SYMBOL · {labelIndex(selected)}</span>
+                    <b>{nodeDisplayName(selected)}</b>
+                    <small>{rolesForNode(selected.id).join(" / ") || nodeKindLabel(selected.kind)} · {nodeLocation(selected)}</small>
+                  </button>
+                )}
+              </div>
               <div className="topology-minimap">
                 <div>
-                  <span className="panel-label">MAP OVERVIEW</span>
-                  <small>Overview only · use the node list below to focus source context.</small>
+                  <span className="panel-label">MAP CONTROLS</span>
+                  <small>Zoom the relationship map when you need more space.</small>
                 </div>
                 <div className="topology-zoom" role="group" aria-label="Topology zoom controls">
                   <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out"><Icon name="minus" size={13} /></button>
@@ -1072,13 +1086,23 @@ export function OverviewView({
                     );
                   })}
                 </svg>
-                <div className="topology-legend" aria-label="Topology relationship legend">
-                  <span title="The bundle recorded this connection directly"><i className="legend-exact" />recorded connection</span>
-                  <span title="The connection uses an alternate or aliased name"><i className="legend-alias" />alternate connection</span>
-                  <span title="The connection depends on runtime behavior"><i className="legend-dynamic" />runtime-dependent connection</span>
-                  <span title="The connection crosses a module, service, or repository boundary"><i className="legend-boundary" />module / service boundary</span>
-                  {visible.some((node) => node.scope?.kind === "external" || node.scope?.kind === "generated") && <span title="This symbol belongs to generated or external code"><i className="legend-scope" />external / generated code</span>}
-                  <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
+                <details className="topology-legend">
+                  <summary>How to read this map</summary>
+                  <div className="topology-legend-items" aria-label="Topology relationship legend">
+                    <span title="The bundle recorded this connection directly"><i className="legend-exact" />recorded connection</span>
+                    <span title="The connection uses an alternate or aliased name"><i className="legend-alias" />alternate connection</span>
+                    <span title="The connection depends on runtime behavior"><i className="legend-dynamic" />runtime-dependent connection</span>
+                    <span title="The connection crosses a module, service, or repository boundary"><i className="legend-boundary" />module / service boundary</span>
+                    {visible.some((node) => node.scope?.kind === "external" || node.scope?.kind === "generated") && <span title="This symbol belongs to generated or external code"><i className="legend-scope" />external / generated code</span>}
+                    <span className="topology-hint">Select a symbol to inspect its source · arrows show direction</span>
+                  </div>
+                </details>
+                <div className="topology-list-heading">
+                  <div>
+                    <span className="panel-label">SYMBOLS IN THIS VIEW</span>
+                    <p>Select a readable entry to focus the map and open its source context.</p>
+                  </div>
+                  <span>{topologyNodes.length} shown</span>
                 </div>
                 <div className="topology-node-list" aria-label={neighborhoodOnly ? "Graph nodes in selected neighborhood" : "Graph nodes"}>
                   {topologyNodes.map((node) => {
