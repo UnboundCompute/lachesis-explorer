@@ -125,6 +125,7 @@ sam deploy \
   --region "$AWS_REGION" \
   --capabilities CAPABILITY_IAM \
   --resolve-s3 \
+  --resolve-image-repos \
   --parameter-overrides "${parameter_overrides[@]}" \
   --no-confirm-changeset \
   --no-fail-on-empty-changeset

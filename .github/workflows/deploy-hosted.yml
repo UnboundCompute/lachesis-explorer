@@ -143,6 +143,7 @@ jobs:
             --region "$AWS_REGION" \
             --capabilities CAPABILITY_IAM \
             --resolve-s3 \
+            --resolve-image-repos \
             --parameter-overrides \
               ExplorerOrigin="$EXPLORER_ORIGIN" \
               WorkerImageUri="$WORKER_IMAGE_URI" \
