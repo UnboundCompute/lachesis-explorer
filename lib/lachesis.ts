@@ -12,6 +12,7 @@ export type Hop = { id?: string; node_id: string; edge_label: string; caption: s
 export type Entry = { id: string; label: string; file: string; entry_node?: string; hops: Hop[]; hasLayout: boolean; description?: string; kind?: string; confidence?: string; limitations?: string[] }
 export type GraphFile = { id: string; path: string; module?: string; language?: string; lines?: number }
 export type GraphModule = { id: string; name: string; path?: string; parentId?: string; nodeIds?: string[] }
+export type GraphConcept = { id: string; label: string; description?: string; nodeIds?: string[]; relatedIds?: string[] }
 export type GraphEntrypoint = { id: string; label: string; kind?: string; nodeId?: string; file?: string }
 export type GraphCoverage = { scope?: string; includedNodes?: number; indexedNodes?: number; limitations: string[]; capabilities: string[] }
 export type EdgeOrigin = 'bundle' | 'value-flow' | 'request-path'
@@ -20,7 +21,7 @@ export type CuratedTourStep = { flowId: string; nodeId?: string; label?: string;
 export type CuratedTour = { id: string; title: string; description?: string; steps: CuratedTourStep[]; maintainer?: { name: string; url?: string } }
 export type ExplorerMode = "guided" | "full"
 export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; sourceUrlTemplate?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[]; curatedTour?: CuratedTour }
-export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; findings: Flow[]; entries: Entry[]; mcp: Evidence[]; files: GraphFile[]; modules: GraphModule[]; entrypoints: GraphEntrypoint[]; coverage: GraphCoverage; bundle:BundleInfo }
+export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; findings: Flow[]; entries: Entry[]; mcp: Evidence[]; files: GraphFile[]; modules: GraphModule[]; concepts: GraphConcept[]; entrypoints: GraphEntrypoint[]; coverage: GraphCoverage; bundle:BundleInfo }
 
 const sourceTemplateFields = new Set(['file', 'line', 'end_line', 'revision'])
 function normalizeSourceUrlTemplate(value: unknown): string | undefined {
@@ -145,6 +146,7 @@ function normalizeNode(n:any,i:number):Node {
 
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }
 function normalizeModules(raw:unknown):GraphModule[] { return Array.isArray(raw)?raw.map((m:any,i:number)=>({id:String(m.id??m.path??`module_${i}`),name:String(m.name??m.label??m.path??m.id??''),path:m.path==null?undefined:String(m.path),parentId:m.parent_id==null?m.parentId==null?undefined:String(m.parentId):String(m.parent_id),nodeIds:Array.isArray(m.node_ids)?m.node_ids.map(String):undefined})):[] }
+function normalizeConcepts(raw:unknown):GraphConcept[] { return Array.isArray(raw)?raw.map((c:any,i:number)=>({id:String(c.id??`concept_${i}`),label:String(c.label??c.name??c.id??''),description:c.description==null?undefined:String(c.description),nodeIds:Array.isArray(c.node_ids)?c.node_ids.map(String):Array.isArray(c.nodeIds)?c.nodeIds.map(String):undefined,relatedIds:Array.isArray(c.related_ids)?c.related_ids.map(String):Array.isArray(c.relatedIds)?c.relatedIds.map(String):undefined})):[] }
 function normalizeEntrypoints(raw:unknown):GraphEntrypoint[] { return Array.isArray(raw)?raw.map((e:any,i:number)=>({id:String(e.id??`entrypoint_${i}`),label:String(e.label??e.name??e.path??e.id??''),kind:e.kind==null?undefined:String(e.kind),nodeId:e.node_id==null?e.nodeId==null?undefined:String(e.nodeId):String(e.node_id),file:e.file==null?undefined:String(e.file)})):[] }
 function normalizeCuratedTour(raw: unknown, flows: Flow[]): CuratedTour | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
@@ -242,7 +244,7 @@ function assertUnderstandingProjection(projection: unknown, nodes: Node[], entry
   ]
   const hasReadablePath = guidedPaths.some(path => {
     const uniqueIds = new Set(path)
-    return uniqueIds.size >= 2 && path.every(nodeId => sourceBacked(nodeById.get(nodeId)))
+    return uniqueIds.size >= 3 && path.every(nodeId => sourceBacked(nodeById.get(nodeId)))
   })
   if (!hasReadablePath) throw new Error('Code-understanding bundles require a multi-node source-backed guided path.')
 }
@@ -277,6 +279,25 @@ function assertModuleReferences(modules:GraphModule[], nodeIds:Set<string>) {
       if (visited.has(current)) throw new Error(`Graph module hierarchy contains a cycle at "${current}".`)
       visited.add(current)
       current = parents.get(current)
+    }
+  }
+}
+function assertConceptReferences(concepts:GraphConcept[], nodeIds:Set<string>) {
+  assertUniqueIds(concepts, 'Graph concepts')
+  const conceptIds = new Set(concepts.map((concept) => concept.id))
+  for (const concept of concepts) {
+    if (!concept.label.trim()) throw new Error(`Graph concept "${concept.id}" label must be non-empty.`)
+    const seenNodes = new Set<string>()
+    for (const nodeId of concept.nodeIds ?? []) {
+      if (!nodeIds.has(nodeId)) throw new Error(`Graph concept "${concept.id}" references missing node "${nodeId}".`)
+      if (seenNodes.has(nodeId)) throw new Error(`Graph concept "${concept.id}" contains duplicate node ID "${nodeId}".`)
+      seenNodes.add(nodeId)
+    }
+    const seenRelated = new Set<string>()
+    for (const relatedId of concept.relatedIds ?? []) {
+      if (!conceptIds.has(relatedId) || relatedId === concept.id) throw new Error(`Graph concept "${concept.id}" references an invalid related concept "${relatedId}".`)
+      if (seenRelated.has(relatedId)) throw new Error(`Graph concept "${concept.id}" contains duplicate related concept ID "${relatedId}".`)
+      seenRelated.add(relatedId)
     }
   }
 }
@@ -386,7 +407,7 @@ export function normalize(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),concepts:[],entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeBundleV1(raw: any): App {
@@ -439,7 +460,7 @@ function normalizeBundleV1(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:projection,includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),concepts:[],entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:projection,includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeGraphV2(raw:any):App {
@@ -461,12 +482,14 @@ function normalizeGraphV2(raw:any):App {
   if(nodeIds.size!==nodes.length)throw new Error('The bundle contains duplicate node IDs.')
   const files=normalizeFiles(graph.files)
   const modules=normalizeModules(graph.modules)
+  const concepts=normalizeConcepts(graph.concepts)
   const entrypoints=normalizeEntrypoints(graph.entrypoints)
   assertUniqueIds(files,'Graph files')
   assertUniqueIds(modules,'Graph modules')
   assertUniqueIds(entrypoints,'Graph entrypoints')
   const knownNodeIds=new Set(nodes.map(node=>node.id))
   assertModuleReferences(modules, knownNodeIds)
+  assertConceptReferences(concepts, knownNodeIds)
   const brokenEntrypoint=entrypoints.find(entrypoint=>entrypoint.nodeId&&!knownNodeIds.has(entrypoint.nodeId))
   if (brokenEntrypoint) throw new Error(`Graph entrypoint "${brokenEntrypoint.id}" references missing node "${brokenEntrypoint.nodeId}".`)
   const pathValues=raw.paths?.values??raw.paths?.value_flows??graph.value_flows??raw.value_flows??[]
@@ -521,7 +544,7 @@ function normalizeGraphV2(raw:any):App {
   if(indexedNodes!==undefined&&indexedNodes<includedNodes)throw new Error(`Coverage indexed_nodes (${indexedNodes}) cannot be less than included_nodes (${includedNodes}).`)
   const effectiveLimitations=coverageLimitations(includedNodes,indexedNodes,limitations)
   const curatedTour = normalizeCuratedTour(meta.curated_tour ?? raw.curated_tour, allFlows)
-  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations,...(curatedTour ? { curatedTour } : {})}}
+  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,concepts,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations,...(curatedTour ? { curatedTour } : {})}}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {

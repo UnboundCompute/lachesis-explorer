@@ -49,6 +49,7 @@
         },
         "files": { "type": "array", "items": { "$ref": "#/$defs/file" } },
         "modules": { "type": "array", "items": { "$ref": "#/$defs/module" } },
+        "concepts": { "type": "array", "items": { "$ref": "#/$defs/concept" }, "description": "Optional exporter-authored architecture concepts used to orient code understanding." },
         "entrypoints": { "type": "array", "items": { "$ref": "#/$defs/entrypoint" } },
         "capabilities": { "type": "array", "items": { "type": "string" } },
         "coverage": { "$ref": "#/$defs/coverage" }
@@ -159,6 +160,18 @@
         "parent_id": { "type": "string", "minLength": 1 },
         "parentId": { "type": "string", "minLength": 1 },
         "node_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      },
+      "additionalProperties": true
+    },
+    "concept": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "node_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "related_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
       },
       "additionalProperties": true
     },

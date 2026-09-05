@@ -27,6 +27,11 @@
     "modules": [
       {"id": "module.search", "name": "Search", "path": "src/search", "node_ids": ["route.search", "parse.query", "normalize.query", "search.service", "search.query"]}
     ],
+    "concepts": [
+      {"id": "concept.request-lifecycle", "label": "Request lifecycle", "description": "From the HTTP route to the catalog boundary.", "node_ids": ["route.search", "parse.query", "normalize.query", "search.service", "db.products"]},
+      {"id": "concept.query-pipeline", "label": "Query pipeline", "description": "The small set of steps that turns input into a product query.", "node_ids": ["parse.query", "normalize.query", "search.query"]},
+      {"id": "concept.service-boundary", "label": "Catalog boundary", "description": "Where the search service crosses into the external catalog.", "node_ids": ["search.service", "catalog.client", "db.products"], "related_ids": ["concept.request-lifecycle"]}
+    ],
     "nodes": [
       {"id": "route.search", "kind": "route", "file": "src/routes/search.ts", "line": 24, "label": "POST /api/search", "qualified_name": "routes.search.post", "module": "search", "scope": {"repository": "atlas-commerce", "service": "web-api", "package": "search", "label": "Web API"}, "signature": "async function post(request)", "source_window": {"start_line": 22, "lines": ["", "export async function POST(request: Request) {", "  const input = await parseSearchRequest(request);", "  return Response.json(await search(input));"], "highlight_start": 3, "highlight_end": 3}},
       {"id": "parse.query", "kind": "function", "file": "src/routes/search.ts", "line": 31, "label": "parseSearchRequest", "qualified_name": "routes.search.parseSearchRequest", "parent_id": "route.search", "module": "search", "scope": {"repository": "atlas-commerce", "service": "web-api", "package": "search", "label": "Web API"}, "signature": "parseSearchRequest(request)", "snippet": "const input = await parseSearchRequest(request)"},
