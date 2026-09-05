@@ -65,7 +65,7 @@ def _run(args: list[str], cwd: str | None = None, timeout: int = 60, capture_std
         command = " ".join(args[:2]) if len(args) > 1 else (args[0] if args else "subprocess")
         detail = _redact_build_paths((result.stderr or "").strip())[-2_000:] or "no stderr"
         raise BuildStepFailed(f"{command} exited {result.returncode}: {detail}")
-    return result.stdout.strip()
+    return (result.stdout or "").strip()
 
 
 def _update(

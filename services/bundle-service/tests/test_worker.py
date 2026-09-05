@@ -45,6 +45,13 @@ class WorkerTests(unittest.TestCase):
         self.assertIn("<workspace>/src/main.ts", str(raised.exception))
         self.assertNotIn("lachesis-job-secret", str(raised.exception))
 
+    def test_successful_step_without_stdout_capture_returns_empty_text(self):
+        completed = Mock(returncode=0, stdout=None, stderr="")
+        with patch.object(worker.subprocess, "run", return_value=completed):
+            result = worker._run(["git", "clone"], capture_stdout=False)
+
+        self.assertEqual(result, "")
+
     def test_repository_file_limit_accepts_the_launch_cap(self):
         with patch.object(worker, "_run", return_value="\0".join(f"src/{index}.py" for index in range(5_000)) + "\0"), \
              patch.dict(worker.os.environ, {"MAX_REPOSITORY_FILES": "5000"}):
