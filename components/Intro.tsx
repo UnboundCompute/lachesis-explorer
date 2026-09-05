@@ -1,4 +1,4 @@
-import { countLabel, isSecurityProjection, type App } from "../lib/lachesis";
+import { countLabel, isSecurityProjection, type App, type ExplorerMode } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -9,6 +9,7 @@ type View = "trace" | "journey" | "investigate" | "map" | "compare" | "install";
 export function Intro({
   view,
   app,
+  explorerMode,
   loadState,
   isDemo,
   onUpload,
@@ -16,15 +17,18 @@ export function Intro({
 }: {
   view: View;
   app: App;
+  explorerMode: ExplorerMode;
   loadState: LoadState;
   isDemo: boolean;
   onUpload: () => void;
   onDismiss: () => void;
 }) {
   const securityMode = isSecurityProjection(app);
-  const bundleMode = securityMode
-    ? "Security evidence projection"
-    : "Code exploration graph";
+  const bundleMode = explorerMode === "simple"
+    ? "Codebase map"
+    : securityMode
+      ? "Security evidence projection"
+      : "Code exploration graph";
   const copy = {
     trace: [
       "Follow one behavior through the code.",
@@ -53,7 +57,7 @@ export function Intro({
       "Build the graph locally, query it over MCP, and explore the same bundle here.",
     ],
   }[view];
-  const kicker =
+  const denseKicker =
     view === "trace"
       ? "GRAPH-PATH LENS"
       : view === "journey"
@@ -67,6 +71,19 @@ export function Intro({
             : view === "compare"
               ? "REVISION DIFF"
               : "LOCAL WORKFLOW";
+  const simpleKicker =
+    view === "trace"
+      ? "FOLLOW A PATH"
+      : view === "journey"
+        ? "REQUEST STORY"
+        : view === "investigate"
+          ? "WHERE CODE MEETS"
+          : view === "map"
+            ? "CODEBASE MAP"
+            : view === "compare"
+              ? "COMPARE CHANGES"
+              : "LOCAL WORKFLOW";
+  const kicker = explorerMode === "simple" ? simpleKicker : denseKicker;
   const included = app.coverage.includedNodes ?? app.nodes.length;
   const indexed = app.coverage.indexedNodes ?? included;
   return (
@@ -106,9 +123,9 @@ export function Intro({
         </dl>
         <span className="coverage-note">
           <i />
-          {countLabel(included, "graph node")} shown ·{" "}
-          {countLabel(indexed, "indexed node")}
-          {app.coverage.limitations.length ? " · limited projection" : ""}
+          {explorerMode === "simple"
+            ? `${countLabel(included, "symbol")} in this view`
+            : `${countLabel(included, "graph node")} shown · ${countLabel(indexed, "indexed node")}${app.coverage.limitations.length ? " · limited projection" : ""}`}
         </span>
         <button type="button" className="context-upload" onClick={onUpload} disabled={loadState.type === "loading"} aria-busy={loadState.type === "loading"}>
           <span>

@@ -52,6 +52,13 @@ try {
       assert.equal(await page.getByRole("button", { name: "Next step", exact: true }).count(), 1, "trace step navigation is ambiguous");
     }
   }
+  await page.getByRole("button", { name: /^Trace/ }).first().click();
+  const simpleTraceText = await page.locator("body").innerText();
+  assert.match(simpleTraceText, /FOLLOW A PATH/, "Simple Trace did not use reader-facing vocabulary");
+  assert.doesNotMatch(simpleTraceText, /GRAPH-PATH LENS|limited projection/i, "Simple Trace exposed Dense diagnostics");
+  await page.getByRole("button", { name: /Switch to dense mode/i }).click();
+  const denseTraceText = await page.locator("body").innerText();
+  assert.match(denseTraceText, /GRAPH-PATH LENS/, "Dense Trace did not retain analyst vocabulary");
   await page.getByRole("button", { name: /^More/ }).click();
   const requestFlowItem = page.getByRole("menuitem", { name: /^Request flow/ });
   assert.equal(await requestFlowItem.count(), 1, "More menu did not expose focused views");
