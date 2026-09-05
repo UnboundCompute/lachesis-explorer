@@ -108,7 +108,9 @@ Resources:
       ImageUri: !Ref WorkerImageUri
       Architectures: [x86_64]
       ImageConfig: { Command: [worker.handler] }
-      MemorySize: 10240
+      # This account/region currently rejects values above 3008 MB for Lambda.
+      # Keep the worker within that deployed quota until a higher-memory quota is approved.
+      MemorySize: 3008
       Timeout: 900
       EphemeralStorage: { Size: 10240 }
       ReservedConcurrentExecutions: 2
