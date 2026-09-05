@@ -140,21 +140,40 @@ function EvidenceState({ evidence }: { evidence?: Evidence }) {
 function BuildIntake({ onBuild, onCancelBuild, buildState }: Pick<Props, "onBuild" | "onCancelBuild" | "buildState">) {
   const [gitUrl, setGitUrl] = useState("");
   const [ref, setRef] = useState("");
+  const [formError, setFormError] = useState("");
   if (!onBuild) return null;
   const busy = buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!gitUrl.trim() || busy) return;
+    let parsed: URL;
+    try {
+      parsed = new URL(gitUrl.trim());
+    } catch {
+      setFormError("Enter a full HTTPS repository URL, such as https://github.com/org/repository.");
+      return;
+    }
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.replace(/\/$/, "").replace(/\.git$/, "");
+    const segments = path.split("/").filter(Boolean);
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.search || parsed.hash || !["github.com", "gitlab.com", "bitbucket.org"].includes(host) || segments.length !== 2) {
+      setFormError("Use a public HTTPS GitHub, GitLab, or Bitbucket repository URL without credentials or extra path segments.");
+      return;
+    }
+    setFormError("");
     onBuild?.(gitUrl.trim(), ref.trim());
   }
+  const statusLabels: Record<string, string> = { queued: "Queued", cloning: "Cloning repository", building: "Building graph", exporting: "Exporting bundle", ready: "Bundle ready", cancelled: "Build cancelled", too_large: "Repository is too large", unsupported_language: "Language is not supported", expired: "Build expired", error: "Build failed" };
   return <section className="hosted-build" aria-labelledby="hosted-build-title">
     <div><span className="panel-label">OPEN A CODEBASE</span><h2 id="hosted-build-title">Build a graph from a public repository</h2><p>Paste a GitHub, GitLab, or Bitbucket URL. Lachesis builds the graph remotely; your browser only receives the exported bundle.</p></div>
     <form onSubmit={submit} className="hosted-build-form" aria-label="Build graph from repository">
-      <label htmlFor="hosted-repository-url"><span>Repository URL</span><input id="hosted-repository-url" value={gitUrl} onChange={event => setGitUrl(event.target.value)} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" disabled={Boolean(busy)} /></label>
+      <label htmlFor="hosted-repository-url"><span>Repository URL</span><input id="hosted-repository-url" value={gitUrl} onChange={event => { setGitUrl(event.target.value); if (formError) setFormError(""); }} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" aria-invalid={Boolean(formError)} aria-describedby={formError ? "hosted-repository-error" : "hosted-repository-help"} disabled={Boolean(busy)} /></label>
       <label htmlFor="hosted-repository-ref"><span>Ref <small>optional</small></span><input id="hosted-repository-ref" value={ref} onChange={event => setRef(event.target.value)} placeholder="main" disabled={Boolean(busy)} /></label>
       {busy ? <button type="button" className="hosted-build-cancel" onClick={onCancelBuild}>Cancel build</button> : <button type="submit" disabled={!gitUrl.trim()}>Build graph<Icon name="arrow" size={13} /></button>}
     </form>
-    {buildState?.status && buildState.status !== "idle" && <div className={`hosted-build-status ${buildState.status}`} role={["error", "too_large", "unsupported_language"].includes(buildState.status) ? "alert" : "status"} aria-live="polite" aria-busy={Boolean(busy)}><b>{buildState.message || (buildState.status === "ready" ? "Bundle ready." : `Build ${buildState.status}.`)}</b>{buildState.steps.length > 0 && <span>{buildState.steps.map(step => `${step.key}: ${step.state}`).join(" · ")}</span>}{["too_large", "unsupported_language"].includes(buildState.status) && <small>Use “Load another bundle” to upload a locally generated bundle.</small>}</div>}
+    <p id="hosted-repository-help" className="hosted-build-help">Public repositories only. Private URLs, SSH URLs, credentials, and nested paths are not accepted.</p>
+    {formError && <p id="hosted-repository-error" className="hosted-build-form-error" role="alert">{formError}</p>}
+    {buildState?.status && buildState.status !== "idle" && <div className={`hosted-build-status ${buildState.status}`} role={["error", "too_large", "unsupported_language"].includes(buildState.status) ? "alert" : "status"} aria-live="polite" aria-busy={Boolean(busy)}><b>{buildState.message || statusLabels[buildState.status] || `Build ${buildState.status}.`}</b>{buildState.steps.length > 0 && <ol aria-label="Build progress">{buildState.steps.map(step => <li key={step.key} className={step.state}><span aria-hidden="true" />{statusLabels[step.key] || step.key}<small>{step.state === "done" ? "Complete" : step.state === "running" ? "In progress" : "Waiting"}</small></li>)}</ol>}{["too_large", "unsupported_language"].includes(buildState.status) && <small>Run <code>lachesis trace . --out bundle.json</code>, then use “Load another bundle” to continue locally.</small>}</div>}
   </section>;
 }
 
