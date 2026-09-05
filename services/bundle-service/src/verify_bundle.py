@@ -173,11 +173,6 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
         node_ids.add(node["id"])
         if not isinstance(node.get("line"), int) or isinstance(node["line"], bool) or node["line"] < 0:
             _fail(f"graph.nodes[{index}].line must be a non-negative integer")
-        source_window = node.get("source_window")
-        has_snippet = isinstance(node.get("snippet"), str) and bool(node["snippet"].strip())
-        has_window = isinstance(source_window, dict) and isinstance(source_window.get("lines"), list) and bool(source_window["lines"])
-        if not has_snippet and not has_window:
-            _fail(f"graph.nodes[{index}] needs snippet or source_window")
 
     edges = graph.get("edges", [])
     if not isinstance(edges, list):

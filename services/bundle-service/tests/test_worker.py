@@ -116,6 +116,15 @@ class WorkerTests(unittest.TestCase):
 
         self.assertIs(validate_bundle(bundle), bundle)
 
+    def test_validator_accepts_a_source_less_graph_node(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {"nodes": [{"id": "synthetic", "kind": "module", "file": "", "line": 0, "label": "generated module"}]},
+        }
+        self.assertIs(validate_bundle(bundle), bundle)
+
     def test_validator_accepts_a_safe_source_url_template(self):
         bundle = {
             "format": "lachesis-explorer-bundle",

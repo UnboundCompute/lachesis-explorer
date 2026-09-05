@@ -58,11 +58,12 @@ rather than loaded as a successful snapshot.
 
 ## Graph entities
 
-Every node has a stable `id`, semantic `kind`, display `label`, and optional
-`qualified_name`, `module`, `signature`,
-`documentation`, and either a `snippet` or `source_window`. Locations may
-include an end line and column. A node must include at least one of those
-source representations so it remains readable in the Explorer.
+Every node has a stable `id`, semantic `kind`, and display `label`, plus optional
+`qualified_name`, `module`, `signature`, `documentation`, `snippet`, or
+`source_window`. Locations may include an end line and column. Source context is
+optional for graph-only nodes so architecture consumers can inspect shape before
+source retrieval is available; any featured code-understanding path must still
+use source-backed nodes.
 Concrete source nodes use a repository-relative `file`. Synthetic or unmapped
 nodes use an empty `file` string and line `0`; the Explorer identifies their
 source as unavailable and does not offer a repository jump.
