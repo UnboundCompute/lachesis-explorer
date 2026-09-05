@@ -259,6 +259,9 @@ export default function Page() {
     if (readLocal("lachesis-theme") === "light") setDark(false);
   }, []);
   useEffect(() => {
+    if (!sourceSelected && view !== "home") setView("home");
+  }, [sourceSelected, view]);
+  useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     writeLocal("lachesis-theme", dark ? "dark" : "light");
   }, [dark]);
