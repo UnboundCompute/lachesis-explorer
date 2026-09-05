@@ -95,6 +95,8 @@ LACHESIS_BUNDLE_ID=b_demo1234 node scripts/smoke-browser.mjs http://127.0.0.1:32
 The hosted deep-link check confirms that Explorer requests the opaque bundle, restores the map
 lens, and keeps the bundle ID in the URL. `b_demo1234` is a demo-only fixture; production IDs come
 from the deployed SAM bundle service.
+When probing this from a separate Next.js dev server, use the `localhost` hostname for both apps;
+Next’s development-origin guard can reject hydration from a `127.0.0.1` page before the API call.
 
 ### Hosted bundle service
 
