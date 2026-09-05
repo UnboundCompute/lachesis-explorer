@@ -101,6 +101,27 @@ after rebuilding so the HTML and static chunk hashes stay in sync.
 When probing this from a separate Next.js dev server, use the `localhost` hostname for both apps;
 Next’s development-origin guard can reject hydration from a `127.0.0.1` page before the API call.
 
+### Local API surface
+
+The local Next server exposes one deterministic bundle transport for integration work:
+
+```bash
+curl http://localhost:3000/api/bundles/b_demo1234
+```
+
+It returns the checked-in `public/code-exploration-bundle.json` fixture. The local server does not
+clone repositories or implement `POST /api/build`; leaving `NEXT_PUBLIC_BUNDLE_API_URL` empty keeps
+local development on this fixture-only path and prevents accidental hosted/AWS requests. To test
+the real build lifecycle, configure an external service origin in `.env.local` and use the contract
+in [`docs/URL_INTAKE_SPEC.md`](docs/URL_INTAKE_SPEC.md):
+
+```text
+POST /api/build
+GET  /api/build/{job_id}
+POST /api/build/{job_id}/cancel
+GET  /api/bundles/{bundle_id}
+```
+
 ### Hosted bundle service
 
 Hosted links use an opaque bundle ID and never put a repository URL or storage URL in the browser
