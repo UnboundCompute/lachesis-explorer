@@ -1095,10 +1095,21 @@ export default function Page() {
     try {
       let status = await submitHostedBuild(gitUrl, ref, controller.signal);
       activeJobId.current = status.job_id ?? null;
-      setBuildState({ status: status.status, steps: status.steps ?? [], message: "Build queued…" });
+      const terminalStatuses = ["ready", "too_large", "unsupported_language", "error", "expired", "cancelled"];
+      const statusMessage = (next: typeof status) =>
+        next.error?.message ||
+        (next.status === "queued" ? "Build queued…" :
+          next.status === "ready" ? "Bundle ready." :
+          next.status === "too_large" ? "This repository is too large for the hosted builder." :
+          next.status === "unsupported_language" ? "This repository uses an unsupported language." :
+          next.status === "expired" ? "The build expired before it completed." :
+          next.status === "cancelled" ? "Build cancelled." :
+          next.status === "error" ? "The hosted build failed." :
+          "Waiting for a worker…");
+      setBuildState({ status: status.status, steps: status.steps ?? [], message: statusMessage(status) });
       let attempts = 0;
       const buildDeadline = Date.now() + 15 * 60 * 1000;
-      while (!["ready", "too_large", "unsupported_language", "error", "expired", "cancelled"].includes(status.status)) {
+      while (!terminalStatuses.includes(status.status)) {
         await new Promise((resolve, reject) => {
           const remaining = buildDeadline - Date.now();
           if (remaining <= 0) { reject(new Error("The hosted build took too long. You can build this repository locally instead.")); return; }
@@ -1119,14 +1130,22 @@ export default function Page() {
           });
           continue;
         }
-        setBuildState({ status: status.status, steps: status.steps ?? [], message: status.status === "queued" ? "Waiting for a worker…" : undefined });
+        setBuildState({ status: status.status, steps: status.steps ?? [], message: statusMessage(status) });
       }
       if (status.status === "too_large" || status.status === "unsupported_language") {
-        setBuildState({ status: status.status, steps: status.steps ?? [], message: "This repository needs the local build path." });
-        setLoadState({ type: "error", message: "The hosted builder cannot handle this repository yet. Run Lachesis locally and upload the resulting bundle.json." });
+        setBuildState({ status: status.status, steps: status.steps ?? [], message: statusMessage(status) });
+        setLoadState({ type: "error", message: `${statusMessage(status)} Run Lachesis locally and upload the resulting bundle.json.` });
+        trackEvent("hosted_build_failed");
         return;
       }
-      if (status.status !== "ready" || !status.bundle_id) throw new Error(status.error?.message || "The hosted build did not produce a bundle.");
+      if (status.status !== "ready") {
+        const message = statusMessage(status);
+        setBuildState({ status: status.status, steps: status.steps ?? [], message });
+        setLoadState({ type: "error", message: `${message} The current bundle was kept.` });
+        trackEvent("hosted_build_failed");
+        return;
+      }
+      if (!status.bundle_id) throw new Error("The hosted build did not produce a bundle.");
       const bundleId = status.bundle_id;
       const raw = await loadHostedBundle(bundleId, controller.signal);
       setRepositoryIndex((current) => current ? {
