@@ -86,12 +86,17 @@ export function PathCanvas({
   const end = focused ? Math.min(items.length, selectedIndex + 3) : items.length
   const shown = items.slice(start, end)
   const shownPoints = points?.slice(start, end)
-  const resolved = shown.map((_, index) =>
-    shownPoints?.[index] ?? {
-      x: 78 + index * (564 / Math.max(1, shown.length - 1)),
-      y: 116,
-    },
-  )
+  const singleNode = shown.length === 1
+  const resolved = shown.reduce<Array<{ x: number; y: number }>>((result, _, index) => {
+    const source = shownPoints?.[index]
+    const minimumX = singleNode ? 140 : 78 + index * 104
+    const previousX = result.at(-1)?.x ?? 0
+    result.push({
+      x: Math.max(source?.x ?? minimumX, minimumX, previousX + (index === 0 ? 0 : 104)),
+      y: source?.y ?? 116,
+    })
+    return result
+  }, [])
   const selectedItem = items[selectedIndex]
   const readingExplanation = selectedItem
     ? selectedIndex === 0
@@ -137,10 +142,11 @@ export function PathCanvas({
 
   const xs = resolved.map((point) => point.x)
   const ys = resolved.map((point) => point.y)
-  const minX = Math.min(0, ...xs) - 48
-  const maxX = Math.max(672, ...xs) + 48
-  const minY = Math.min(0, ...ys) - 52
-  const maxY = Math.max(220, ...ys) + 72
+  const minX = singleNode ? (xs[0] ?? 140) - 120 : Math.min(0, ...xs) - 48
+  const maxX = singleNode ? (xs[0] ?? 140) + 120 : Math.max(672, ...xs) + 48
+  const minY = singleNode ? (ys[0] ?? 116) - 52 : Math.min(0, ...ys) - 52
+  const maxY = singleNode ? (ys[0] ?? 116) + 72 : Math.max(220, ...ys) + 72
+  const canvasWidth = maxX - minX
   const viewBox =
     viewport === 'fit'
       ? `${minX} ${minY} ${maxX - minX} ${maxY - minY}`
@@ -245,7 +251,7 @@ export function PathCanvas({
       <div className="canvas-viewport" role="region" aria-label={`${title}, read ${direction === 'forward' ? 'end to start' : 'start to end'}`}>
         <svg
           viewBox={viewBox}
-          style={{ width: `${zoom * 100}%`, minWidth: `${Math.max(420, 620 * zoom)}px`, height: `${270 * zoom}px` }}
+          style={{ width: `${zoom * 100}%`, minWidth: `${(singleNode ? 320 : Math.max(620, canvasWidth)) * zoom}px`, height: `${(singleNode ? 170 : 270) * zoom}px` }}
           aria-label={`Interactive ${title.toLowerCase()}`}
           focusable="false"
         >
