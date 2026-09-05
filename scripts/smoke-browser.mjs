@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
 const base = process.argv[2] || "http://127.0.0.1:3000";
+const hosted = process.env.EXPECT_ANALYTICS === "true" || /https:\/\/(?:[^/]+\.)?(?:vercel\.app|lachesis\.unboundcompute\.com)/.test(base);
 const browser = await chromium.launch({ headless: true });
 
 try {
@@ -16,7 +17,8 @@ try {
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     assert.equal(dimensions.scrollWidth, dimensions.width, `horizontal overflow at ${viewport.width}px`);
     assert.equal(await page.locator('meta[name="generator"]').count(), 0, "framework metadata is exposed");
-    assert.equal(await page.locator('script[src*="_vercel/insights"]').count(), 0, "analytics loaded outside Vercel");
+    const analyticsLoaded = await page.locator('script[src*="_vercel/insights"]').count() > 0;
+    assert.equal(analyticsLoaded, hosted, hosted ? "hosted analytics did not load" : "analytics loaded outside Vercel");
     assert.deepEqual(errors, [], `browser errors at ${viewport.width}px`);
     await page.close();
   }
