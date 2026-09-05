@@ -32,7 +32,8 @@ on:
         type: string
       alert_topic_arn:
         description: SNS topic ARN for production alarms
-        required: true
+        required: false
+        default: ''
         type: string
       smoke_repository:
         description: Optional public repository URL for a full build smoke test
