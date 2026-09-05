@@ -82,6 +82,14 @@ class WorkerTests(unittest.TestCase):
 
         table.put_item.assert_not_called()
 
+    def test_worker_reads_queued_job_strongly_consistently(self):
+        table = Mock()
+        table.get_item.return_value = {"Item": {"job_id": "j_12345678", "status": "cancelled"}}
+
+        worker._process({"job_id": "j_12345678"}, table, Mock())
+
+        table.get_item.assert_called_once_with(Key={"job_id": "j_12345678"}, ConsistentRead=True)
+
     def test_validator_rejects_a_bundle_with_an_unknown_edge_target(self):
         bundle = {
             "format": "lachesis-explorer-bundle",

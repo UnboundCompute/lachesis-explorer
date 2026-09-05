@@ -176,9 +176,14 @@ def _copy_bundle(storage: Any, bucket: str, source_key: str, bundle_id: str) -> 
     )
 
 
+def _job_record(table: Any, job_id: str) -> dict[str, Any]:
+    response = table.get_item(Key={"job_id": job_id}, ConsistentRead=True)
+    return response.get("Item") or {}
+
+
 def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     job_id = str(job["job_id"])
-    record = table.get_item(Key={"job_id": job_id}).get("Item") or {}
+    record = _job_record(table, job_id)
     if record.get("status") in {"ready", "cancelled", "expired"}:
         return
     url = canonical_git_url(record.get("git_url"))
@@ -188,7 +193,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
     steps = [{"key": key, "state": "pending"} for key in ("clone", "build", "export")]
     with tempfile.TemporaryDirectory(prefix="lachesis-job-") as work:
         sha = _sha(url, ref)
-        if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
+        if _job_record(table, job_id).get("status") == "cancelled":
             return
         cache_key = _cache_key(url, sha)
         if _cache_exists(storage, bucket, cache_key):
@@ -206,7 +211,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         steps[0]["state"] = "done"; steps[1]["state"] = "active"; _update(table, job_id, "building", steps, expires_at=expires_at, expected_statuses={"cloning"}, sha=sha)
         graph = os.path.join(work, "graph.kuzu")
         _run(["lachesis", "build", work, graph, "--timeout", os.environ.get("BUILD_TIMEOUT_SECONDS", "600")], timeout=660, capture_stdout=False)
-        if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
+        if _job_record(table, job_id).get("status") == "cancelled":
             return
         steps[1]["state"] = "done"; steps[2]["state"] = "active"; _update(table, job_id, "exporting", steps, expires_at=expires_at, expected_statuses={"building"}, sha=sha)
         bundle = os.path.join(work, "bundle.json")
@@ -216,7 +221,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         if template:
             trace_args.extend(["--source-url-template", template])
         _run(trace_args, timeout=660, capture_stdout=False)
-        if table.get_item(Key={"job_id": job_id}).get("Item", {}).get("status") == "cancelled":
+        if _job_record(table, job_id).get("status") == "cancelled":
             return
         if os.path.getsize(bundle) > 5 * 1024 * 1024:
             raise RuntimeError("bundle exceeds direct API response limit")
