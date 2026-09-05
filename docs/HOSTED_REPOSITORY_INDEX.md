@@ -14,10 +14,13 @@ The hosted builder has two intentionally separate storage projections:
 The API exposes the index through:
 
 ```text
+GET /api/repos
 GET /api/repos/{owner}/{repo}
 GET /api/repos/{host}/{owner}/{repo}?revision=<40-or-64-char-sha>
 ```
 
+The collection endpoint returns at most 24 newest `latest.json` pointers for
+the cached-repository gallery. It never lists revision records or storage keys.
 The two-segment form is GitHub shorthand. The host-qualified form supports the
 same public GitHub, GitLab, and Bitbucket hosts accepted by repository intake.
 The response contains repository identity, resolved revision, build timestamp,

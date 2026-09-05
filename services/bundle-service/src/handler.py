@@ -106,6 +106,10 @@ def _repository_url(path: str) -> str:
 def _repository_view(storage: Any, bucket: str, path: str, revision: str | None) -> dict[str, Any] | None:
     git_url = _repository_url(path)
     key = revision_key(git_url, revision) if revision else latest_key(git_url)
+    return _read_repository_record(storage, bucket, key)
+
+
+def _read_repository_record(storage: Any, bucket: str, key: str) -> dict[str, Any] | None:
     try:
         obj = storage.get_object(Bucket=bucket, Key=key)
     except Exception as error:
@@ -123,6 +127,20 @@ def _repository_view(storage: Any, bucket: str, path: str, revision: str | None)
         raise ValueError("repository index record is invalid")
     record["bundle_url"] = f"/api/bundles/{record['bundle_id']}"
     return record
+
+
+def _repository_gallery(storage: Any, bucket: str) -> list[dict[str, Any]]:
+    """Read a bounded set of latest pointers for the public gallery."""
+    records: list[dict[str, Any]] = []
+    response = storage.list_objects_v2(Bucket=bucket, Prefix="repository-index/", MaxKeys=1000)
+    for item in response.get("Contents", []):
+        key = str(item.get("Key", ""))
+        if not key.endswith("/latest.json"):
+            continue
+        record = _read_repository_record(storage, bucket, key)
+        if record is not None:
+            records.append(record)
+    return sorted(records, key=lambda item: int(item.get("built_at", 0)), reverse=True)[:24]
 
 
 def _within_build_quota(jobs: Any, event: dict[str, Any]) -> bool:
@@ -194,6 +212,9 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
             if not item:
                 return _response(404, {"error": {"message": "job not found"}})
             return _response(200, _job_view(_cancel_job(jobs, job_id) or item))
+        if method == "GET" and path == "/api/repos":
+            _jobs, _queue, storage = _aws()
+            return _response(200, {"repositories": _repository_gallery(storage, os.environ["BUNDLE_BUCKET"])})
         if method == "GET" and path.startswith("/api/repos/"):
             revision = (event.get("queryStringParameters") or {}).get("revision") or None
             _jobs, _queue, storage = _aws()

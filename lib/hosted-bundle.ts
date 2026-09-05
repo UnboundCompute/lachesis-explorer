@@ -133,6 +133,19 @@ export async function loadHostedRepository(host: string, owner: string, repo: st
   return body as RepositoryIndex;
 }
 
+export async function loadHostedRepositories(signal?: AbortSignal): Promise<RepositoryIndex[]> {
+  if (!process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim()) return [];
+  const response = await fetchHosted(serviceUrl("/api/repos"), {
+    redirect: "error",
+    signal: requestSignal(signal),
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw await requestError(response, `The repository gallery could not be loaded (HTTP ${response.status}).`);
+  const body = await responseJson(response);
+  if (!Array.isArray(body.repositories)) throw new Error("The repository gallery returned an invalid response.");
+  return body.repositories.filter((item): item is RepositoryIndex => typeof item === "object" && item !== null && typeof (item as Record<string, unknown>).bundle_id === "string" && BUNDLE_ID.test((item as Record<string, unknown>).bundle_id as string));
+}
+
 export type BuildStatus = "queued" | "cloning" | "building" | "exporting" | "ready" | "too_large" | "unsupported_language" | "error" | "expired" | "cancelled";
 export type BuildResponse = { job_id?: string; status: BuildStatus; bundle_id?: string; sha?: string; steps?: Array<{ key: string; state: string }>; error?: { message?: string; kind?: string } };
 

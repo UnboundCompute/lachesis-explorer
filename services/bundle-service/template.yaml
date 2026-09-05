@@ -93,6 +93,7 @@ Resources:
         Build: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: /api/build, Method: POST } }
         BuildStatus: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/build/{job_id}', Method: GET } }
         BuildCancel: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/build/{job_id}/cancel', Method: POST } }
+        RepositoryGallery: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: /api/repos, Method: GET } }
         Repository: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/repos/{proxy+}', Method: GET } }
         Bundle: { Type: HttpApi, Properties: { ApiId: !Ref BuildApi, Path: '/api/bundles/{bundle_id}', Method: GET } }
       Environment:

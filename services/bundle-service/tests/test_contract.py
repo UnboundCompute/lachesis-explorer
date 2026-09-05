@@ -177,6 +177,35 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         self.assertIn(f"/revisions/{revision}.json", storage.kwargs["Key"])
 
+    def test_repository_gallery_reads_only_latest_pointers_and_returns_newest_first(self):
+        class Body:
+            def __init__(self, record): self.record = record
+            def read(self, _amount): return json.dumps(self.record).encode()
+
+        class Storage:
+            def list_objects_v2(self, **_kwargs):
+                return {"Contents": [
+                    {"Key": "repository-index/github.com/owner/old/latest.json"},
+                    {"Key": "repository-index/github.com/owner/new/latest.json"},
+                    {"Key": "repository-index/github.com/owner/new/revisions/abc.json"},
+                ]}
+            def get_object(self, **kwargs):
+                repo = "new" if "/new/" in kwargs["Key"] else "old"
+                return {"Body": Body({"bundle_id": f"b_{repo}12345678", "repository": f"github.com/owner/{repo}", "built_at": 20 if repo == "new" else 10}), "ContentLength": 128}
+
+        with patch.object(handler, "_aws", return_value=(object(), object(), Storage())), patch.dict(
+            handler.os.environ, {"BUNDLE_BUCKET": "bucket"}
+        ):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "GET"}},
+                "rawPath": "/api/repos",
+            }, None)
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual([item["repository"] for item in body["repositories"]], [
+            "github.com/owner/new", "github.com/owner/old",
+        ])
+
     def test_status_endpoint_expires_jobs_before_dynamodb_ttl_cleanup(self):
         class Jobs:
             def get_item(self, **_kwargs): return {"Item": {

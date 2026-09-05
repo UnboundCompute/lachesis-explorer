@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { countLabel, flowDisplayName, isSecurityProjection, nodeDisplayName, recommendedFlow, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
+import { loadHostedRepositories } from "../lib/hosted-bundle";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -203,6 +204,36 @@ function RepositoryFreshness({ index, onRefresh, busy }: { index: RepositoryInde
       </div>
       {onRefresh && <button type="button" onClick={onRefresh} disabled={busy}>{busy ? "Refreshing…" : "Refresh graph"}<Icon name="arrow" size={13} /></button>}
     </aside>
+  );
+}
+
+function RepositoryGallery() {
+  const [repositories, setRepositories] = useState<RepositoryIndex[]>([]);
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim()) return;
+    const controller = new AbortController();
+    loadHostedRepositories(controller.signal).then(setRepositories).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+  if (!repositories.length) return null;
+  function routeFor(repository?: string) {
+    const parts = repository?.split("/").filter(Boolean) ?? [];
+    if (parts.length !== 3) return "#";
+    return parts[0] === "github.com"
+      ? `/r/${encodeURIComponent(parts[1])}/${encodeURIComponent(parts[2])}`
+      : `/r/${parts.map((part) => encodeURIComponent(part)).join("/")}`;
+  }
+  return (
+    <section className="repository-gallery" aria-labelledby="repository-gallery-title">
+      <div className="understand-section-heading"><div><span className="panel-label">CACHED CODEBASES</span><h2 id="repository-gallery-title">Open a repository that is already mapped.</h2></div><p>Warm graphs open immediately; each card keeps its source revision visible.</p></div>
+      <div className="repository-gallery-grid">
+        {repositories.map((item) => <a className="repository-card" href={routeFor(item.repository)} key={`${item.repository}:${item.revision}`}>
+          <b>{item.repository || "Unnamed repository"}</b>
+          <small>{item.revision ? item.revision.slice(0, 12) : "revision unavailable"}{item.ref ? ` · ${item.ref}` : ""}</small>
+          <span>Open graph <Icon name="arrow" size={13} /></span>
+        </a>)}
+      </div>
+    </section>
   );
 }
 
@@ -415,6 +446,7 @@ export function HomeView({
             )}
             <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
             {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
+            <RepositoryGallery />
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
             <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} {graphFocus ? "ready to follow" : app.flows.length ? "bundled" : "included"}</dd></div>
@@ -594,6 +626,7 @@ export function HomeView({
           )}
           <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
           {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
+          <RepositoryGallery />
         </div>
       </header>
 
