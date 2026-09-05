@@ -43,6 +43,20 @@ try {
     const options = await fetch(`${base}/api/bundles/${encodeURIComponent(hostedBundleId)}`, { method: "OPTIONS" });
     assert.equal(options.status, 204, "bundle OPTIONS preflight failed");
     assert.equal(options.headers.get("access-control-allow-origin"), "*", "bundle OPTIONS omitted CORS");
+    const corsOrigin = process.env.CORS_TEST_ORIGIN;
+    if (corsOrigin) {
+      const corsPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+      await corsPage.goto(`${corsOrigin.replace(/\/$/, '')}/`, { waitUntil: "domcontentloaded" });
+      for (const [path, expectedStatus] of [[`/api/bundles/${encodeURIComponent(hostedBundleId)}`, 200], ["/api/bundles/not-a-bundle", 400], ["/api/bundles/b_unknown1234", 404]]) {
+        const result = await corsPage.evaluate(async ({ apiOrigin, requestPath }) => {
+          const response = await fetch(`${apiOrigin}${requestPath}`, { headers: { Accept: "application/json" } });
+          return { status: response.status, body: await response.text() };
+        }, { apiOrigin: base, requestPath: path });
+        assert.equal(result.status, expectedStatus, `browser cross-origin ${path} returned an unexpected status`);
+        assert.ok(result.body.length > 0, `browser cross-origin ${path} returned no readable body`);
+      }
+      await corsPage.close();
+    }
     const hostedPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     const bundleRequests = [];
     hostedPage.on("request", (request) => {
