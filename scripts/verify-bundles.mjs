@@ -98,7 +98,7 @@ function verify(file, bundle) {
     graph.nodes.forEach((node, index) => {
       const label = `graph.nodes[${index}]`;
       requireFields(file, node, ["id", "kind", "file", "line", "label"], label);
-      requireNonEmptyStrings(file, node, ["id", "kind", "file", "label"], label);
+      requireNonEmptyStrings(file, node, ["id", "kind", "label"], label);
       const sourceWindow = node.source_window;
       const hasSourceWindow = sourceWindow && typeof sourceWindow === "object" && !Array.isArray(sourceWindow) && Array.isArray(sourceWindow.lines) && sourceWindow.lines.length > 0;
       if (sourceWindow != null) {
@@ -247,6 +247,6 @@ for (const file of (requestedFiles.length ? requestedFiles : fixtures)) {
 // retrieval is available.
 if (!requestedFiles.length) {
   const sourceOptional = JSON.parse(await readFile(fixtures[0], "utf8"));
-  sourceOptional.graph.nodes = sourceOptional.graph.nodes.map(({ snippet: _snippet, source_window: _sourceWindow, ...node }) => node);
+  sourceOptional.graph.nodes = sourceOptional.graph.nodes.map(({ snippet: _snippet, source_window: _sourceWindow, ...node }, index) => ({ ...node, ...(index === 0 ? { file: "", line: 0 } : {}) }));
   verify("source-less regression", sourceOptional);
 }
