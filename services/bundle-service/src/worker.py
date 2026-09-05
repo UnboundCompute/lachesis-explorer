@@ -34,6 +34,14 @@ class RepositoryTooLarge(Exception):
         self.limit = limit
 
 
+class BuildStepFailed(RuntimeError):
+    """A subprocess failed; details are safe for private operational logs."""
+
+
+def _redact_build_paths(value: str) -> str:
+    return re.sub(r"/tmp/lachesis-job-[^/\s]+", "<workspace>", value)
+
+
 def _run(args: list[str], cwd: str | None = None, timeout: int = 60, capture_stdout: bool = True) -> str:
     env = None
     if args and args[0] == "git":
@@ -47,14 +55,16 @@ def _run(args: list[str], cwd: str | None = None, timeout: int = 60, capture_std
         args,
         cwd=cwd,
         stdout=subprocess.PIPE if capture_stdout else subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
         text=True,
         timeout=timeout,
         check=False,
         env=env,
     )
     if result.returncode != 0:
-        raise RuntimeError("build step failed")
+        command = " ".join(args[:2]) if len(args) > 1 else (args[0] if args else "subprocess")
+        detail = _redact_build_paths((result.stderr or "").strip())[-2_000:] or "no stderr"
+        raise BuildStepFailed(f"{command} exited {result.returncode}: {detail}")
     return result.stdout.strip()
 
 
@@ -241,10 +251,16 @@ def handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 except Exception:
                     pass
             continue
-        except Exception:
+        except Exception as error:
             job_id = ""
             try: job_id = str(json.loads(message["body"])["job_id"])
             except Exception: pass
+            print(json.dumps({
+                "event": "worker_job_failed",
+                "job_id": job_id or None,
+                "error_type": type(error).__name__,
+                "detail": _redact_build_paths(str(error))[:2_000],
+            }, separators=(",", ":")), flush=True)
             if job_id:
                 try:
                     existing = table.get_item(Key={"job_id": job_id}).get("Item") or {}

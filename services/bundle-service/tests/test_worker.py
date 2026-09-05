@@ -35,6 +35,16 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(env["GIT_CONFIG_NOSYSTEM"], "1")
         self.assertEqual(env["GIT_CONFIG_GLOBAL"], worker.os.devnull)
 
+    def test_failed_build_step_keeps_private_diagnostics_and_redacts_workspace(self):
+        completed = Mock(returncode=2, stdout="", stderr="/tmp/lachesis-job-secret/src/main.ts: failed")
+        with patch.object(worker.subprocess, "run", return_value=completed):
+            with self.assertRaises(worker.BuildStepFailed) as raised:
+                worker._run(["lachesis", "build", "/tmp/lachesis-job-secret"])
+
+        self.assertIn("lachesis build exited 2", str(raised.exception))
+        self.assertIn("<workspace>/src/main.ts", str(raised.exception))
+        self.assertNotIn("lachesis-job-secret", str(raised.exception))
+
     def test_repository_file_limit_accepts_the_launch_cap(self):
         with patch.object(worker, "_run", return_value="\0".join(f"src/{index}.py" for index in range(5_000)) + "\0"), \
              patch.dict(worker.os.environ, {"MAX_REPOSITORY_FILES": "5000"}):
