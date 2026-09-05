@@ -8,6 +8,21 @@ The browser companion for [Lachesis](https://github.com/UnboundCompute/lachesis)
 
 Explorer loads a Lachesis `bundle.json` locally and makes the graph readable without a server or model in the loop. It is designed for inspecting deterministic evidence: where a value originated, which nodes it reaches, and how a request travels through an application.
 
+## Link a repository
+
+Once a public repository has a hosted graph, link readers directly to its canonical page:
+
+```markdown
+[![Understand with Lachesis](https://img.shields.io/badge/understand_with-Lachesis-18c79a?logo=github)](https://lachesis.unboundcompute.com/r/ORG/REPO)
+```
+
+The canonical page resolves the latest indexed default-branch graph and keeps the resolved
+revision visible. Use the revision-pinned form when documentation must remain stable:
+`https://lachesis.unboundcompute.com/r/ORG/REPO@COMMIT_SHA`.
+
+See [`docs/MAINTAINER_GUIDE.md`](docs/MAINTAINER_GUIDE.md) for badge placement, refresh behavior,
+and the bundle expectations for a useful code-understanding landing page.
+
 ## What it does
 
 - Trace a value backward to its origin or forward to its sink.
