@@ -80,6 +80,9 @@ corepack pnpm run build
 corepack pnpm run start
 ```
 
+To verify a hosted opaque-bundle deep link against a running Explorer server, set
+`LACHESIS_BUNDLE_ID` (for example `b_demo1234`) before running `scripts/smoke-browser.mjs`.
+
 ### Hosted bundle service
 
 Hosted links use an opaque bundle ID and never put a repository URL or storage URL in the browser

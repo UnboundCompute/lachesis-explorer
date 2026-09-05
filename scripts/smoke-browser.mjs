@@ -32,6 +32,23 @@ try {
     assert.equal(new URL(page.url()).searchParams.get("view"), view, `${label} navigation failed`);
   }
   await page.close();
+
+  const hostedBundleId = process.env.LACHESIS_BUNDLE_ID;
+  if (hostedBundleId) {
+    const hostedPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const bundleRequests = [];
+    hostedPage.on("request", (request) => {
+      if (request.url().includes(`/api/bundles/${encodeURIComponent(hostedBundleId)}`)) bundleRequests.push(request.url());
+    });
+    await hostedPage.goto(`${base}/?bundle=${encodeURIComponent(hostedBundleId)}&view=map&map_mode=architecture`, { waitUntil: "domcontentloaded" });
+    await hostedPage.waitForFunction(() => document.body.innerText.includes("LOADED BUNDLE"), undefined, { timeout: 10_000 });
+    assert.ok(bundleRequests.length > 0, "hosted deep link did not request its opaque bundle");
+    assert.match(await hostedPage.locator("body").innerText(), /demo\/atlas-commerce/);
+    const hostedAlerts = await hostedPage.locator('[role="alert"]').allTextContents();
+    assert.ok(hostedAlerts.every((text) => !/could not|error|failed|invalid/i.test(text)), "hosted deep link rendered an error");
+    assert.equal(new URL(hostedPage.url()).searchParams.get("bundle"), hostedBundleId);
+    await hostedPage.close();
+  }
   console.log("browser smoke test passed");
 } finally {
   await browser.close();
