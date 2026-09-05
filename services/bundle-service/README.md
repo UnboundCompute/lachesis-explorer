@@ -118,3 +118,17 @@ artifact. The frontend still performs its full bundle verifier check when loadin
 
 This is the deployment foundation; production launch still requires AWS quota review, container
 image hardening, monitoring/alerts, domain/TLS setup, and an end-to-end deployed smoke test.
+The same release path is available as [`scripts/deploy-hosted.sh`](../../scripts/deploy-hosted.sh)
+for an authorized deployment environment. It validates the wheel URL and checksum, builds and
+pushes a temporary image, resolves its immutable ECR digest, validates SAM, deploys the stack, and
+optionally runs the hosted smoke test. It never changes `NEXT_PUBLIC_BUNDLE_API_URL`.
+
+```bash
+LACHESIS_VERSION=0.5.1 \
+WHEEL_URL=https://files.pythonhosted.org/<immutable-path>/lachesis_cpg-0.5.1-py3-none-manylinux_2_28_x86_64.whl \
+WHEEL_SHA256=<published-sha256> \
+./scripts/deploy-hosted.sh
+```
+
+The script is deployment-only. Do not run it as part of routine local UI checks; those should keep
+the hosted API variables unset and use the mocked service tests.
