@@ -1425,6 +1425,7 @@ export default function Page() {
         <Intro
           view={view as Exclude<View, "home">}
           app={app}
+          explorerMode={explorerMode}
           loadState={loadState}
           isDemo={isDemo}
           onUpload={() => fileRef.current?.click()}
