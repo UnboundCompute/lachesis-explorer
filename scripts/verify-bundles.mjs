@@ -203,6 +203,30 @@ function verify(file, bundle) {
     }
   }
 
+  if (String(bundle.analysis_projection ?? "").trim().toLowerCase() === "code-understanding") {
+    const entrypoints = graph.entrypoints;
+    if (!Array.isArray(entrypoints) || entrypoints.length === 0)
+      fail(file, "code-understanding projections must include graph.entrypoints");
+    for (const [index, entrypoint] of entrypoints.entries()) {
+      if (!ids.has(String(entrypoint?.node_id ?? entrypoint?.nodeId ?? "")))
+        fail(file, `graph.entrypoints[${index}] must reference a graph node`);
+    }
+    const sourceBacked = (node) => Boolean(
+      typeof node?.file === "string" && node.file.trim() && Number.isInteger(node.line) && node.line > 0 &&
+      ((typeof node.snippet === "string" && node.snippet.trim()) || (node.source_window?.lines?.length > 0)),
+    );
+    const nodesById = new Map(graph.nodes.map((node) => [String(node.id), node]));
+    const guidedPaths = [
+      ...(paths.values ?? paths.value_flows ?? graph.value_flows ?? graph.flows ?? []).map((path) => path.steps ?? []),
+      ...(paths.requests ?? paths.request_paths ?? graph.request_paths ?? graph.callpaths ?? []).map((path) => path.hops ?? []),
+    ];
+    const hasReadablePath = guidedPaths.some((steps) => {
+      const nodeIds = steps.map((step) => String(step?.node_id ?? step?.nodeId ?? step?.node ?? ""));
+      return new Set(nodeIds).size >= 2 && nodeIds.every((nodeId) => sourceBacked(nodesById.get(nodeId)));
+    });
+    if (!hasReadablePath) fail(file, "code-understanding projections need a multi-node source-backed guided path");
+  }
+
   const mcpRecords = bundle.mcp ?? graph.mcp;
   if (mcpRecords != null && !Array.isArray(mcpRecords)) fail(file, "mcp must be an array");
   for (const [index, record] of (mcpRecords ?? []).entries()) {
@@ -247,6 +271,13 @@ for (const file of (requestedFiles.length ? requestedFiles : fixtures)) {
 // retrieval is available.
 if (!requestedFiles.length) {
   const sourceOptional = JSON.parse(await readFile(fixtures[0], "utf8"));
+  sourceOptional.analysis_projection = "architecture";
   sourceOptional.graph.nodes = sourceOptional.graph.nodes.map(({ snippet: _snippet, source_window: _sourceWindow, ...node }, index) => ({ ...node, ...(index === 0 ? { file: "", line: 0 } : {}) }));
   verify("source-less regression", sourceOptional);
+
+  const invalidUnderstanding = JSON.parse(await readFile(fixtures[0], "utf8"));
+  invalidUnderstanding.graph.nodes = invalidUnderstanding.graph.nodes.map(({ snippet: _snippet, source_window: _sourceWindow, ...node }) => node);
+  let rejected = false;
+  try { verify("invalid understanding regression", invalidUnderstanding); } catch { rejected = true; }
+  if (!rejected) fail("invalid understanding regression", "source-less code-understanding projection was accepted");
 }
