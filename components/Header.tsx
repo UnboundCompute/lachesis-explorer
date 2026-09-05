@@ -166,6 +166,8 @@ export function Header({ view, setView, app, explorerMode, setExplorerMode, sour
     : currentLens.id === 'investigate'
       ? 'Boundary'
       : currentLens.label
+  const visiblePrimary = explorerMode === 'simple' ? primary.filter(item => item.id !== 'compare') : primary
+  const visibleSecondary = explorerMode === 'simple' ? secondary.filter(item => item.id !== 'investigate') : secondary
 
   return (
     <div className="topbar-wrap">
@@ -175,7 +177,7 @@ export function Header({ view, setView, app, explorerMode, setExplorerMode, sour
           <span><b>Lachesis</b><small>graph explorer</small></span>
         </a>
         <nav className="nav-tabs" aria-label="Primary analysis lenses">
-          {primary.map(item => (
+          {visiblePrimary.map(item => (
             <button type="button" key={item.id} className={view === item.id ? 'nav-tab active' : 'nav-tab'} aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)} disabled={!sourceSelected && item.id !== 'home'}>
               <span>{item.label}</span><small>{item.detail}</small>
             </button>
@@ -187,7 +189,7 @@ export function Header({ view, setView, app, explorerMode, setExplorerMode, sour
           </button>
           {mobileLensOpen && (
             <div id="mobile-analysis-menu" className="mobile-lens-menu" role="menu" aria-label="Analysis lenses">
-              {[...primary, ...secondary].map(item => (
+              {[...visiblePrimary, ...visibleSecondary].map(item => (
                 <button type="button" key={item.id} role="menuitem" aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
                   <span><b>{item.label}</b><small>{item.detail}</small></span><Icon name="arrow" size={12} />
                 </button>
@@ -196,12 +198,12 @@ export function Header({ view, setView, app, explorerMode, setExplorerMode, sour
           )}
         </div>
         <div className="more-views" ref={moreRef}>
-          <button ref={moreTriggerRef} type="button" className={secondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={secondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMobileLensOpen(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls={moreOpen ? "more-analysis-menu" : undefined} aria-haspopup="menu">
+          <button ref={moreTriggerRef} type="button" className={visibleSecondary.some(item => item.id === view) ? 'nav-tab active' : 'nav-tab'} aria-current={visibleSecondary.some(item => item.id === view) ? 'page' : undefined} onClick={() => { setMenu(false); setMobileLensOpen(false); setMoreOpen(open => !open) }} aria-expanded={moreOpen} aria-controls={moreOpen ? "more-analysis-menu" : undefined} aria-haspopup="menu">
             <span>More</span><small>Focused views</small><Icon name="chevron" size={11} />
           </button>
           {moreOpen && (
             <div id="more-analysis-menu" className="more-menu" role="menu" aria-label="More analysis views">
-              {secondary.map(item => (
+              {visibleSecondary.map(item => (
                 <button type="button" key={item.id} role="menuitem" tabIndex={-1} aria-current={view === item.id ? 'page' : undefined} onClick={() => choose(item.id)}>
                   <span><b>{item.label}</b><small>{item.detail}</small></span><Icon name="arrow" size={12} />
                 </button>

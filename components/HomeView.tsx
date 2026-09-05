@@ -695,10 +695,12 @@ export function HomeView({
               <span><b>How is the codebase organized?</b><small>Explore modules and their relationships.</small></span>
               <Icon name="arrow" size={14} />
             </button>
-            <button type="button" onClick={() => firstSink ? onSink(firstSink.id) : onView("map")}>
-              <span><b>What reaches this code?</b><small>{firstSink ? "Compare paths that arrive at one destination." : "No destination is available in this bundle."}</small></span>
-              <Icon name="arrow" size={14} />
-            </button>
+            {explorerMode === "dense" && (
+              <button type="button" onClick={() => firstSink ? onSink(firstSink.id) : onView("map")}>
+                <span><b>What reaches this code?</b><small>{firstSink ? "Compare paths that arrive at one destination." : "No destination is available in this bundle."}</small></span>
+                <Icon name="arrow" size={14} />
+              </button>
+            )}
           </div>
         </section>
 

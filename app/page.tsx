@@ -280,6 +280,11 @@ export default function Page() {
     if (!sourceSelected && view !== "home") setView("home");
   }, [sourceSelected, view]);
   useEffect(() => {
+    if (!sourceSelected || explorerMode !== "simple" || (view !== "compare" && view !== "investigate")) return;
+    setView("home");
+    setLoadState({ type: "success", message: "That contributor lens is available in Dense mode; showing Understand instead." });
+  }, [explorerMode, sourceSelected, view]);
+  useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     writeLocal("lachesis-theme", dark ? "dark" : "light");
   }, [dark]);
@@ -738,6 +743,11 @@ export default function Page() {
       setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before opening an analysis lens." });
       return;
     }
+    if (explorerMode === "simple" && (next === "compare" || next === "investigate")) {
+      setView("home");
+      setLoadState({ type: "success", message: "That contributor lens is available in Dense mode; showing Understand instead." });
+      return;
+    }
     if (next !== view && urlReady.current) {
       const params = new URLSearchParams(window.location.search);
       [
@@ -949,6 +959,7 @@ export default function Page() {
           pending.mapNeighborhood,
       );
       const requestedView = pending.view ?? (pending.region || pending.label || pending.anchor || pending.domain ? "map" : pending.flow || pending.step ? "trace" : undefined);
+      const allowedRequestedView = (pending.mode ?? explorerMode) === "simple" && (requestedView === "compare" || requestedView === "investigate") ? "home" : requestedView;
       if (
         requestedView === "home" ||
         requestedView === "trace" ||
@@ -958,7 +969,7 @@ export default function Page() {
         requestedView === "compare" ||
         requestedView === "install"
       )
-        setView(requestedView);
+        if (allowedRequestedView) setView(allowedRequestedView as View);
       const linkedFlow = next.flows.find((flow) => flow.id === pending.flow);
       if (linkedFlow) {
         setFlowId(linkedFlow.id);
