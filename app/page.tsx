@@ -23,7 +23,7 @@ import { countLabel, isSecurityProjection, recommendedFlow, starter, normalize, 
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
-import { cancelHostedBuild, getHostedBuildStatus, HostedRequestError, loadHostedBundle, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
+import { cancelHostedBuild, getHostedBuildStatus, HostedRequestError, loadHostedBundle, loadHostedRepository, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -375,6 +375,43 @@ export default function Page() {
             message: `${error instanceof Error ? error.message : "Could not load the hosted bundle"} The current bundle was kept.`,
           });
           trackEvent("bundle_load_failed");
+        });
+      return () => controller.abort();
+    }
+    const routeParts = window.location.pathname.split("/").filter(Boolean);
+    const repositoryRoute = routeParts[0] === "r" && (routeParts.length === 3 || routeParts.length === 4)
+      ? routeParts
+      : null;
+    if (repositoryRoute) {
+      const host = repositoryRoute.length === 3 ? "github.com" : repositoryRoute[1];
+      const owner = repositoryRoute.length === 3 ? repositoryRoute[1] : repositoryRoute[2];
+      const revisionPart = repositoryRoute.length === 3 ? repositoryRoute[2] : repositoryRoute[3];
+      const at = revisionPart.indexOf("@");
+      const repo = at >= 0 ? revisionPart.slice(0, at) : revisionPart;
+      const revision = at >= 0 ? revisionPart.slice(at + 1) : undefined;
+      const repository = `${owner}/${repo}`;
+      const routeLink = { ...link, repository, revision };
+      pendingLink.current = routeLink;
+      setHandoffContext({ ...routeLink, repository, revision });
+      setLoadState({ type: "loading", message: `Resolving ${repository}…` });
+      const controller = new AbortController();
+      loadHostedRepository(host, owner, repo, revision, controller.signal)
+        .then(async (index) => {
+          pendingLink.current = { ...routeLink, repository: index.repository?.replace(`${host}/`, "") || repository, revision: index.revision || revision };
+          setHandoffContext({ ...routeLink, repository: index.repository?.replace(`${host}/`, "") || repository, revision: index.revision || revision });
+          const raw = await loadHostedBundle(index.bundle_id, controller.signal);
+          activate(normalize(raw), false, "hosted", index.bundle_id);
+        })
+        .catch((error) => {
+          if (controller.signal.aborted) return;
+          pendingLink.current = null;
+          urlReady.current = true;
+          setUrlInitialized(true);
+          setLoadState({
+            type: "error",
+            message: `${error instanceof Error ? error.message : "Could not load the repository"} The current bundle was kept.`,
+          });
+          trackEvent("repository_route_load_failed");
         });
       return () => controller.abort();
     }
@@ -770,7 +807,8 @@ export default function Page() {
   async function copyInvestigationLink(params: Record<string, string>) {
     const url = new URL(window.location.href);
     url.search = "";
-    if (bundleOrigin === "hosted" && hostedBundleId) {
+    const canonicalRepositoryRoute = window.location.pathname.startsWith("/r/");
+    if (bundleOrigin === "hosted" && hostedBundleId && !canonicalRepositoryRoute) {
       url.searchParams.set("bundle", hostedBundleId);
     } else if (isDemo) {
       const securityMode = isSecurityProjection(app);
@@ -791,6 +829,7 @@ export default function Page() {
       });
       trackEvent("investigation_link_copied", {
         view: params.view ?? "unknown",
+        link_kind: canonicalRepositoryRoute ? "canonical_repository" : bundleOrigin === "hosted" ? "opaque_bundle" : "local_or_sample",
       });
       return true;
     } catch {
