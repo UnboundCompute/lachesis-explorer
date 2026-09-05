@@ -255,12 +255,6 @@ function RepositorySelection({ onUpload, onBuild, onCancelBuild, buildState, loa
         <span className="panel-label">START WITH A CODEBASE</span>
         <h1 id="repository-selection-title">Choose what you want to understand.</h1>
         <p>Lachesis turns a code graph into a guided reading surface. Select a repository first; the graph workspace opens only after its evidence is available.</p>
-        <div className="repository-selection-actions">
-          <button type="button" className="load-bundle-action" onClick={onUpload} disabled={loadState.type === "loading"}>
-            <span><Icon name="upload" size={16} /><b>{loadState.type === "loading" ? "Reading bundle…" : "Upload bundle.json"}</b><small>Processed only in this browser</small></span>
-            <span className="action-orb"><Icon name="arrow" size={14} /></span>
-          </button>
-        </div>
         <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
       </section>
       {loadState.message && (
@@ -271,6 +265,17 @@ function RepositorySelection({ onUpload, onBuild, onCancelBuild, buildState, loa
         </p>
       )}
       <RepositoryGallery />
+      <section className="repository-selection-upload" aria-labelledby="repository-selection-upload-title">
+        <div>
+          <span className="panel-label">LOCAL OPTION</span>
+          <h2 id="repository-selection-upload-title">Already have a bundle?</h2>
+          <p>Use a <code>bundle.json</code> from a local Lachesis run. It stays in this browser and skips the hosted build queue.</p>
+        </div>
+        <button type="button" className="load-bundle-action" onClick={onUpload} disabled={loadState.type === "loading"}>
+          <span><Icon name="upload" size={16} /><b>{loadState.type === "loading" ? "Reading bundle…" : "Upload bundle.json"}</b><small>Processed only in this browser</small></span>
+          <span className="action-orb"><Icon name="arrow" size={14} /></span>
+        </button>
+      </section>
       <p className="repository-selection-note">Already opening a design-map link? A valid bundle deep link skips this screen and restores its pointed-to repository context.</p>
     </main>
   );

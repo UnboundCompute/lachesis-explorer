@@ -629,6 +629,10 @@ export default function Page() {
       const inDialog = Boolean(target.closest('[role="dialog"]'));
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        if (!sourceSelected) {
+          setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before using Jump." });
+          return;
+        }
         setMenu(false);
         setHelpOpen(false);
         setCommandOpen((open) => {
@@ -675,6 +679,10 @@ export default function Page() {
       }
       if (editing || inDialog || event.defaultPrevented || target.closest("button, a, [role='button'], [role='option']")) return;
       if (event.key === "/") {
+        if (!sourceSelected) {
+          setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before using Jump." });
+          return;
+        }
         const searchSelector = view === "trace"
           ? ".sidebar .search input"
           : view === "home"
@@ -721,9 +729,14 @@ export default function Page() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [view, flowId, record, commandOpen, helpOpen, menu]);
+  }, [view, flowId, record, commandOpen, helpOpen, menu, sourceSelected]);
 
   function changeView(next: View, mapModeOverride?: OverviewMode, focusNodeOverride?: string, mapQueryOverride?: string, urlOverrides?: ViewUrlOverrides) {
+    if (!sourceSelected && next !== "home") {
+      setView("home");
+      setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before opening an analysis lens." });
+      return;
+    }
     if (next !== view && urlReady.current) {
       const params = new URLSearchParams(window.location.search);
       [
@@ -1287,6 +1300,10 @@ export default function Page() {
         setMenu={setMenu}
         onUpload={() => fileRef.current?.click()}
         onCommand={() => {
+          if (!sourceSelected) {
+            setLoadState({ type: "idle", message: "Choose a repository or upload a bundle before using Jump." });
+            return;
+          }
           commandOpenerRef.current = document.activeElement as HTMLElement | null;
           setMenu(false);
           setHelpOpen(false);
