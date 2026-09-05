@@ -100,7 +100,7 @@ The hosted stack is deployed in `us-east-1` as `lachesis-bundle-service`.
 
 - API: `https://56h5zgua56.execute-api.us-east-1.amazonaws.com`
 - Explorer origin: `https://lachesis.unboundcompute.com`
-- Worker: Lachesis `0.5.0`, x86_64 Lambda image
+- Worker: Lachesis `0.5.1`, x86_64 Lambda image
 - Worker image digest: `sha256:980d2961ffcfb63956107b236197a8331046ed155f943f076b12f96ed5a7cd4f`
 - Wheel SHA-256: `1ebeb5d1b9f19f018141ea6a86a1faf17b2065756363ec83b8a88a43b17ca007`
 - Hosted limit: 5,000 tracked files per repository

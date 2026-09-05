@@ -151,7 +151,7 @@ def _cache_key(url: str, sha: str) -> str:
     identity = "|".join((
         url,
         sha,
-        os.environ.get("LACHESIS_CACHE_VERSION", "lachesis-0.5.0"),
+        os.environ.get("LACHESIS_CACHE_VERSION", "lachesis-0.5.1"),
         os.environ.get("BUNDLE_SCHEMA_VERSION", "2.0"),
         os.environ.get("LACHESIS_TOOLCHAIN_FINGERPRINT", "worker-toolchain-v1"),
         os.environ.get("BUILD_OPTIONS_FINGERPRINT", "default"),

@@ -20,12 +20,12 @@ Example commands:
 
 ```bash
 docker build \
-  --build-arg LACHESIS_WHEEL_URL=https://files.pythonhosted.org/<immutable-path>/lachesis_cpg-0.5.0-py3-none-manylinux_2_28_x86_64.whl \
+  --build-arg LACHESIS_WHEEL_URL=https://files.pythonhosted.org/<immutable-path>/lachesis_cpg-0.5.1-py3-none-manylinux_2_28_x86_64.whl \
   --build-arg LACHESIS_WHEEL_SHA256=<published-sha256> \
   --platform linux/amd64 \
   --provenance=false \
-  -f worker/Dockerfile -t <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.0 .
-docker push <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.0
+  -f worker/Dockerfile -t <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.1 .
+docker push <account>.dkr.ecr.<region>.amazonaws.com/lachesis-worker:0.5.1
 
 sam build --template-file template.yaml
 sam deploy --guided --template-file .aws-sam/build/template.yaml
