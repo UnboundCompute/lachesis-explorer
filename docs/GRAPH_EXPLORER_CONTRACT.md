@@ -178,10 +178,11 @@ must be useful without security findings. A producer should provide:
 - at least one `graph.entrypoints` record for a public API, request handler,
   CLI command, job, event handler, or exported function, with `node_id` mapped
   to a concrete graph node;
-- at least one `paths.requests` or `paths.values` path with two or more
+- at least one `paths.requests` or `paths.values` path with three or more
   distinct, source-backed nodes, a meaningful `kind` such as `call-path` or
   `data-flow`, and explicit `source_node` / `sink_node` metadata when the
-  endpoints are known;
+  endpoints are known; shorter paths may remain bundled for lookup but must
+  not become the featured understanding path;
 - `graph.modules` and/or node `module` / `scope` metadata sufficient to group
   the included symbols into real code areas; and
 - `coverage.limitations` that names omitted dependencies, unresolved calls,

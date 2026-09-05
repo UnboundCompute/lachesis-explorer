@@ -580,7 +580,7 @@ export function flowRecommendationScore(flow: Flow, nodes: Node[]) {
   const roles = flow.steps.map((step) => step.role.trim().toLowerCase())
   const hasSourceRole = Boolean(flow.sourceNodeId) || roles.some((role) => ["source", "origin", "entry", "entrypoint"].includes(role))
   const hasDestinationRole = Boolean(flow.sinkNodeId) || roles.some((role) => ["sink", "boundary", "effect", "return"].includes(role))
-  const isDegenerate = flow.steps.length < 2 || uniqueNodeIds.size < 2
+  const isDegenerate = flow.steps.length <= 2 || uniqueNodeIds.size < 3
 
   return (isDegenerate ? -500 : 160)
     + uniqueNodeIds.size * 8
@@ -597,16 +597,27 @@ function hasRenderablePath(flow: Flow, nodes: Node[]) {
   const pathNodes = flow.steps
     .map((step) => nodes.find((node) => node.id === step.node_id))
     .filter(Boolean) as Node[]
-  return flow.steps.length > 1
-    && new Set(pathNodes.map((node) => node.id)).size > 1
+  return flow.steps.length > 2
+    && new Set(pathNodes.map((node) => node.id)).size > 2
     && pathNodes.length === flow.steps.length
     && pathNodes.every((node) => Boolean(node.file && node.line > 0 && (node.snippet.trim() || node.sourceWindow?.lines.length)))
 }
 
+function hasMeaningfulFeaturePath(flow: Flow, nodes: Node[]) {
+  const pathNodes = flow.steps
+    .map((step) => nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean) as Node[]
+  if (flow.steps.length <= 2 || new Set(pathNodes.map((node) => node.id)).size <= 2) return false
+  const source = flow.sourceNodeId ?? flow.steps[0]?.node_id
+  const destination = flow.sinkNodeId ?? flow.steps.at(-1)?.node_id
+  return Boolean(source && destination && source !== destination)
+}
+
 export function recommendedFlow(app: App, options: { requireRenderableSource?: boolean } = {}) {
+  const meaningful = app.flows.filter((flow) => hasMeaningfulFeaturePath(flow, app.nodes))
   const candidates = options.requireRenderableSource
-    ? app.flows.filter((flow) => hasRenderablePath(flow, app.nodes))
-    : app.flows
+    ? meaningful.filter((flow) => hasRenderablePath(flow, app.nodes))
+    : meaningful
   return [...candidates].sort((a, b) =>
     flowRecommendationScore(b, app.nodes) - flowRecommendationScore(a, app.nodes)
       || candidates.indexOf(a) - candidates.indexOf(b),
