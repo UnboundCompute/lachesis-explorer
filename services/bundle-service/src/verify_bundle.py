@@ -117,6 +117,9 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
     for index, path in enumerate(value_paths):
         if not isinstance(path, dict) or not isinstance(path.get("steps"), list) or not path["steps"]:
             _fail(f"paths.values[{index}] must contain steps")
+        for endpoint in ("source_node", "sink_node"):
+            if path.get(endpoint) is not None and path[endpoint] not in node_ids:
+                _fail(f"paths.values[{index}].{endpoint} references an unknown node")
         if path.get("id") is not None:
             if not isinstance(path["id"], str) or not path["id"] or path["id"] in value_path_ids:
                 _fail(f"paths.values[{index}].id is invalid or duplicated")
@@ -132,6 +135,9 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
     for index, path in enumerate(request_paths):
         if not isinstance(path, dict) or not isinstance(path.get("hops"), list) or not path["hops"]:
             _fail(f"paths.requests[{index}] must contain hops")
+        for endpoint in ("source_node", "sink_node"):
+            if path.get(endpoint) is not None and path[endpoint] not in node_ids:
+                _fail(f"paths.requests[{index}].{endpoint} references an unknown node")
         if path.get("id") is not None:
             if not isinstance(path["id"], str) or not path["id"] or path["id"] in request_path_ids:
                 _fail(f"paths.requests[{index}].id is invalid or duplicated")

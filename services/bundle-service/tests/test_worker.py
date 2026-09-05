@@ -152,6 +152,17 @@ class WorkerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_bundle(bundle)
 
+    def test_validator_rejects_a_path_with_an_unknown_endpoint(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {"repository": "owner/repo", "language": "python", "revision": "a" * 40, "lines": 1, "indexed_nodes": 1},
+            "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}]},
+            "paths": {"values": [{"id": "flow.main", "source_node": "missing", "steps": [{"node_id": "n1"}]}]},
+        }
+        with self.assertRaises(ValueError):
+            validate_bundle(bundle)
+
     def test_prepare_file_canonicalizes_a_null_source_mapping(self):
         bundle = {
             "format": "lachesis-explorer-bundle",
