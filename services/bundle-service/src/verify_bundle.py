@@ -114,13 +114,43 @@ def _understanding_path_has_source(path: Any, nodes: dict[str, dict[str, Any]], 
     if not isinstance(raw_steps, list):
         return False
     node_ids = [step.get("node_id") for step in raw_steps if isinstance(step, dict)]
-    if len(node_ids) < 2 or len(set(node_ids)) < 2:
+    if len(node_ids) < 3 or len(set(node_ids)) < 3:
         return False
     if any(node_id not in nodes or not _source_backed(nodes[node_id]) for node_id in node_ids):
         return False
     source_id = path.get("source_node")
     sink_id = path.get("sink_node")
     return source_id is None or sink_id is None or source_id != sink_id
+
+
+def _validate_concepts(graph: dict[str, Any], node_ids: set[str]) -> None:
+    concepts = graph.get("concepts", [])
+    if not isinstance(concepts, list):
+        _fail("graph.concepts must be an array")
+    concept_ids: set[str] = set()
+    for index, concept in enumerate(concepts):
+        if not isinstance(concept, dict):
+            _fail(f"graph.concepts[{index}] must be an object")
+        _non_empty_string(concept.get("id"), f"graph.concepts[{index}].id")
+        _non_empty_string(concept.get("label"), f"graph.concepts[{index}].label")
+        concept_id = concept["id"]
+        if concept_id in concept_ids:
+            _fail(f"graph.concepts[{index}].id is duplicated")
+        concept_ids.add(concept_id)
+        node_members = concept.get("node_ids", [])
+        if not isinstance(node_members, list) or not all(isinstance(node_id, str) and node_id for node_id in node_members) or len(set(node_members)) != len(node_members):
+            _fail(f"graph.concepts[{index}].node_ids must be a unique array")
+        if any(node_id not in node_ids for node_id in node_members):
+            _fail(f"graph.concepts[{index}].node_ids references an unknown node")
+        related = concept.get("related_ids", [])
+        if not isinstance(related, list) or not all(isinstance(related_id, str) and related_id for related_id in related) or len(set(related)) != len(related):
+            _fail(f"graph.concepts[{index}].related_ids must be a unique array")
+        if concept_id in related:
+            _fail(f"graph.concepts[{index}].related_ids cannot contain its own ID")
+    for index, concept in enumerate(concepts):
+        for related_id in concept.get("related_ids", []):
+            if related_id not in concept_ids:
+                _fail(f"graph.concepts[{index}].related_ids references an unknown concept")
 
 
 def _validate_understanding_projection(bundle: dict[str, Any], graph: dict[str, Any], node_ids: set[str]) -> None:
@@ -278,6 +308,7 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
                 _fail(f"paths.requests[{index}] references an unknown node")
 
     _validate_curated_tour(meta.get("curated_tour"), value_paths, request_paths, node_ids)
+    _validate_concepts(graph, node_ids)
 
     findings = (bundle.get("security") or {}).get("findings", [])
     if not isinstance(findings, list):

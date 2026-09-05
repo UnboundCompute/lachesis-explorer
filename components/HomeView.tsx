@@ -410,6 +410,16 @@ export function HomeView({
     .filter((module) => module.nodes.length > 0)
     .sort((a, b) => b.nodes.length - a.nodes.length || a.name.localeCompare(b.name))
     .slice(0, 6), [app.modules, discoverableNodes]);
+  const orientationConcepts = useMemo(() => app.concepts
+    .map((concept) => ({
+      ...concept,
+      nodes: discoverableNodes.filter((node) => concept.nodeIds?.includes(node.id)),
+    }))
+    .filter((concept) => concept.nodes.length > 0)
+    .slice(0, 6), [app.concepts, discoverableNodes]);
+  const orientationItems = useMemo(() => orientationConcepts.length > 0
+    ? orientationConcepts.map((concept) => ({ id: concept.id, label: concept.label, detail: concept.description || "Code concept", nodes: concept.nodes }))
+    : orientationModules.map((module) => ({ id: module.id, label: module.name, detail: module.path || "Code area", nodes: module.nodes })), [orientationConcepts, orientationModules]);
   const discoveryApp = useMemo(() => ({ ...app, flows: discoverableFlows }), [app, discoverableFlows]);
   const graphFocus = useMemo(() => recommendedFlow(discoveryApp, { requireRenderableSource: true }), [discoveryApp]);
   const curatedTour = app.bundle.curatedTour;
@@ -610,25 +620,25 @@ export function HomeView({
           </aside>
         )}
 
-        {explorerMode === "guided" && orientationModules.length > 0 && (
+        {explorerMode === "guided" && orientationItems.length > 0 && (
           <section className="understand-overview" aria-labelledby="understand-overview-title">
             <div className="understand-section-heading">
               <div>
                 <span className="panel-label">CODEBASE MAP</span>
                 <h2 id="understand-overview-title">A quick map of this codebase</h2>
               </div>
-              <p>Start with an area, then follow a behavior through it.</p>
+              <p>Start with a concept, then follow a behavior through it.</p>
             </div>
             <div className="understand-overview-grid">
-              {orientationModules.map((module) => (
+              {orientationItems.map((item) => (
                 <button
                   type="button"
-                  key={module.id}
-                  onClick={() => onSearch?.(module.name)}
-                  aria-label={`Explore ${module.name}, ${countLabel(module.nodes.length, "symbol")}`}
+                  key={item.id}
+                  onClick={() => onSearch?.(item.nodes[0]?.label || item.label)}
+                  aria-label={`Explore ${item.label}, ${countLabel(item.nodes.length, "symbol")}`}
                 >
                   <span className="kind-dot" />
-                  <span><b>{module.name}</b><small>{module.path || "Code area"} · {countLabel(module.nodes.length, "symbol")}</small></span>
+                  <span><b>{item.label}</b><small>{item.detail} · {countLabel(item.nodes.length, "symbol")}</small></span>
                   <Icon name="arrow" size={13} />
                 </button>
               ))}
