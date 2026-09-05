@@ -23,7 +23,7 @@ import { countLabel, isSecurityProjection, recommendedFlow, starter, normalize, 
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
-import { cancelHostedBuild, getHostedBuildStatus, HostedRequestError, loadHostedBundle, loadHostedRepository, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
+import { cancelHostedBuild, getHostedBuildStatus, HostedRequestError, loadHostedBundle, loadHostedRepository, submitHostedBuild, type BuildResponse, type RepositoryIndex } from "../lib/hosted-bundle";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -168,6 +168,7 @@ export default function Page() {
   const [isDemo, setIsDemo] = useState(true);
   const [bundleOrigin, setBundleOrigin] = useState<"sample" | "local" | "hosted">("sample");
   const [hostedBundleId, setHostedBundleId] = useState<string | undefined>();
+  const [repositoryIndex, setRepositoryIndex] = useState<RepositoryIndex | null>(null);
   const [buildState, setBuildState] = useState<BuildState>({ status: "idle", steps: [] });
   const [dragActive, setDragActive] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -397,6 +398,7 @@ export default function Page() {
       const controller = new AbortController();
       loadHostedRepository(host, owner, repo, revision, controller.signal)
         .then(async (index) => {
+          setRepositoryIndex(index);
           pendingLink.current = { ...routeLink, repository: index.repository?.replace(`${host}/`, "") || repository, revision: index.revision || revision };
           setHandoffContext({ ...routeLink, repository: index.repository?.replace(`${host}/`, "") || repository, revision: index.revision || revision });
           const raw = await loadHostedBundle(index.bundle_id, controller.signal);
@@ -998,6 +1000,7 @@ export default function Page() {
     setIsDemo(origin === "sample");
     setBundleOrigin(origin);
     setHostedBundleId(origin === "hosted" ? loadedBundleId : undefined);
+    if (origin !== "hosted") setRepositoryIndex(null);
     setActivity([]);
     setLoadState({
       type: restored || !pending ? "success" : "error",
@@ -1128,8 +1131,16 @@ export default function Page() {
         return;
       }
       if (status.status !== "ready" || !status.bundle_id) throw new Error(status.error?.message || "The hosted build did not produce a bundle.");
-      const raw = await loadHostedBundle(status.bundle_id, controller.signal);
-      activate(normalize(raw), false, "hosted", status.bundle_id);
+      const bundleId = status.bundle_id;
+      const raw = await loadHostedBundle(bundleId, controller.signal);
+      setRepositoryIndex((current) => current ? {
+        ...current,
+        bundle_id: bundleId,
+        revision: status.sha || current.revision,
+        built_at: Math.floor(Date.now() / 1000),
+        cache_hit: false,
+      } : current);
+      activate(normalize(raw), false, "hosted", bundleId);
     } catch (error) {
       if (controller.signal.aborted) return;
       setBuildState({ status: "error", steps: [], message: error instanceof Error ? error.message : "Hosted build failed." });
@@ -1400,6 +1411,10 @@ export default function Page() {
           onLoadSample={loadCodeSample}
           onLoadSecuritySample={loadSecuritySample}
           onBuild={startHostedBuild}
+          repositoryIndex={repositoryIndex}
+          onRefreshRepository={() => {
+            if (repositoryIndex?.git_url) startHostedBuild(repositoryIndex.git_url, repositoryIndex.ref || "main");
+          }}
           buildState={buildState}
           onView={(next) => changeView(next)}
           onSearch={(nextQuery) => {

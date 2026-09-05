@@ -8,6 +8,13 @@ type LoadState = {
   type: "idle" | "loading" | "success" | "error";
   message: string;
 };
+type RepositoryIndex = {
+  repository?: string;
+  revision?: string;
+  ref?: string;
+  git_url?: string;
+  built_at?: number;
+};
 type Props = {
   app: App;
   isDemo: boolean;
@@ -26,6 +33,8 @@ type Props = {
   onBuild?: (gitUrl: string, ref: string) => void;
   onCancelBuild?: () => void;
   buildState?: { status: string; steps: Array<{ key: string; state: string }>; message?: string };
+  repositoryIndex?: RepositoryIndex | null;
+  onRefreshRepository?: () => void;
 };
 
 const statusCopy: Record<string, string> = {
@@ -177,6 +186,26 @@ function BuildIntake({ onBuild, onCancelBuild, buildState }: Pick<Props, "onBuil
   </section>;
 }
 
+function RepositoryFreshness({ index, onRefresh, busy }: { index: RepositoryIndex; onRefresh?: () => void; busy: boolean }) {
+  const builtAt = index.built_at ? new Date(index.built_at * 1000) : undefined;
+  const age = builtAt
+    ? new Intl.RelativeTimeFormat(undefined, { numeric: "auto" }).format(
+        -Math.max(0, Math.round((Date.now() - builtAt.getTime()) / 86_400_000)),
+        "day",
+      )
+    : "unknown time";
+  return (
+    <aside className="repository-freshness" aria-label="Repository graph freshness">
+      <div>
+        <span className="panel-label">REPOSITORY GRAPH</span>
+        <b>{index.repository || "Canonical repository"}</b>
+        <small>Built {age}{index.revision ? ` · ${index.revision.slice(0, 12)}` : ""}</small>
+      </div>
+      {onRefresh && <button type="button" onClick={onRefresh} disabled={busy}>{busy ? "Refreshing…" : "Refresh graph"}<Icon name="arrow" size={13} /></button>}
+    </aside>
+  );
+}
+
 export function HomeView({
   app,
   isDemo,
@@ -195,6 +224,8 @@ export function HomeView({
   onBuild,
   onCancelBuild,
   buildState,
+  repositoryIndex,
+  onRefreshRepository,
 }: Props) {
   const [selectedId, setSelectedId] = useState(app.findings[0]?.id ?? "");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
@@ -383,6 +414,7 @@ export function HomeView({
               </form>
             )}
             <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
+            {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
             <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} {graphFocus ? "ready to follow" : app.flows.length ? "bundled" : "included"}</dd></div>
@@ -561,6 +593,7 @@ export function HomeView({
             </div>
           )}
           <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
+          {repositoryIndex && <RepositoryFreshness index={repositoryIndex} onRefresh={onRefreshRepository} busy={Boolean(buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status))} />}
         </div>
       </header>
 
