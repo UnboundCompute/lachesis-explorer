@@ -309,6 +309,11 @@ export default function Page() {
     };
   }, [loadState.type]);
   useEffect(() => {
+    if (loadState.type !== "success" || !loadState.message) return;
+    const timeout = window.setTimeout(() => setLoadState({ type: "idle", message: "" }), 5200);
+    return () => window.clearTimeout(timeout);
+  }, [loadState.type, loadState.message]);
+  useEffect(() => {
     const bundle = app.name || "Untitled bundle";
     document.title = `${viewLabels[view]} · ${bundle} · Lachesis`;
   }, [app.name, view]);
@@ -1051,7 +1056,7 @@ export default function Page() {
     setLoadState({
       type: restored || !pending ? "success" : "error",
       message: restored
-        ? `Loaded ${next.name || "bundle.json"} and restored the local investigation link. ${bundleLoadSummary(next)}`
+        ? `Loaded ${next.name || "bundle.json"}. Your place is restored. ${bundleLoadSummary(next)}`
         : pending
           ? `Loaded ${next.name || "bundle.json"}, but its linked evidence IDs were not found. Opened the first available evidence. ${bundleLoadSummary(next)}`
           : `Loaded ${next.name || "bundle.json"}. ${bundleLoadSummary(next)}`,
