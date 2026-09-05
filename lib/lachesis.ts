@@ -19,6 +19,26 @@ export type GraphEdge = { id:string; source:string; target:string; relation:stri
 export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; sourceUrlTemplate?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[] }
 export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; findings: Flow[]; entries: Entry[]; mcp: Evidence[]; files: GraphFile[]; modules: GraphModule[]; entrypoints: GraphEntrypoint[]; coverage: GraphCoverage; bundle:BundleInfo }
 
+const sourceTemplateFields = new Set(['file', 'line', 'end_line', 'revision'])
+function normalizeSourceUrlTemplate(value: unknown): string | undefined {
+  if (typeof value !== 'string' || !value.trim()) return undefined
+  const template = value.trim()
+  const fields = [...template.matchAll(/\{([^{}]+)\}/g)].map(match => match[1])
+  if (!fields.includes('file') || fields.some(field => !sourceTemplateFields.has(field))) return undefined
+  const rendered = template
+    .replaceAll('{file}', 'src/main.py')
+    .replaceAll('{line}', '12')
+    .replaceAll('{end_line}', '18')
+    .replaceAll('{revision}', 'a'.repeat(40))
+  try {
+    const parsed = new URL(rendered)
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) return undefined
+    return template
+  } catch {
+    return undefined
+  }
+}
+
 function coverageLimitations(includedNodes: number, indexedNodes: number | undefined, limitations: string[] = []) {
   const result = [...limitations]
   if (indexedNodes != null && indexedNodes > includedNodes && !result.some((item) => /projected subset|indexed nodes/i.test(item))) {
@@ -299,7 +319,7 @@ export function normalize(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeBundleV1(raw: any): App {
@@ -352,7 +372,7 @@ function normalizeBundleV1(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:projection,includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:projection,includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeGraphV2(raw:any):App {
@@ -432,7 +452,7 @@ function normalizeGraphV2(raw:any):App {
   if(!Number.isFinite(includedNodes)||includedNodes!==nodes.length)throw new Error(`Coverage included_nodes (${coverage.included_nodes}) does not match graph.nodes (${nodes.length}).`)
   if(indexedNodes!==undefined&&indexedNodes<includedNodes)throw new Error(`Coverage indexed_nodes (${indexedNodes}) cannot be less than included_nodes (${includedNodes}).`)
   const effectiveLimitations=coverageLimitations(includedNodes,indexedNodes,limitations)
-  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations}}
+  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:normalizeSourceUrlTemplate(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations}}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {
