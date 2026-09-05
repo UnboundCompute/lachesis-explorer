@@ -512,6 +512,32 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .understand-coverage-detail>small{color:var(--ink-2)}
 .evidence-panel.path-context .evidence-command code:first-child{color:var(--ink-2)}
 .topology-legend,.convergence-legend{color:var(--ink-2)}
+
+/* The topology is supporting context; explain it before asking people to decode it. */
+.topology-guide{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.8fr);gap:12px;margin-top:14px;padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--surface-2)}
+.topology-guide h3{margin:5px 0 4px;font:600 18px/1.15 var(--display);letter-spacing:-.03em}
+.topology-guide p{max-width:620px;margin:0;color:var(--ink-2);font:10px/1.5 var(--mono)}
+.topology-selected-summary{display:grid;gap:5px;min-width:0;padding:12px;border:1px solid var(--line-strong);border-radius:9px;background:var(--canvas-raised);color:var(--ink);text-align:left;cursor:pointer}
+.topology-selected-summary:hover,.topology-selected-summary:focus-visible{border-color:var(--cyan);outline:none}
+.topology-selected-summary span,.topology-selected-summary small{overflow:hidden;color:var(--ink-3);font:8px var(--mono);text-overflow:ellipsis;white-space:nowrap}
+.topology-selected-summary b{overflow:hidden;font:11px var(--mono);text-overflow:ellipsis;white-space:nowrap}
+.topology-list-heading{display:flex;align-items:end;justify-content:space-between;gap:16px;padding:15px 12px 10px;border-top:1px solid var(--line);background:var(--surface-1)}
+.topology-list-heading p{margin:4px 0 0;color:var(--ink-3);font:9px/1.4 var(--mono)}
+.topology-list-heading>span{flex:none;color:var(--ink-3);font:9px var(--mono)}
+.topology-legend{display:block;padding:0;border-top:1px solid var(--line);font:8px var(--mono)}
+.topology-legend summary{padding:10px 12px;color:var(--ink-2);cursor:pointer;list-style:none}
+.topology-legend summary::-webkit-details-marker{display:none}
+.topology-legend summary::before{content:'+';display:inline-block;width:15px;color:var(--cyan);font-weight:700}
+.topology-legend[open] summary::before{content:'−'}
+.topology-legend-items{display:flex;flex-wrap:wrap;gap:10px;padding:0 12px 11px;color:var(--ink-2)}
+.topology-legend-items span{display:inline-flex;align-items:center;gap:6px}
+.topology-legend-items i{width:14px;height:2px;background:var(--line-strong)}
+.topology-legend-items .legend-alias{background:var(--violet)}
+.topology-legend-items .legend-dynamic{background:var(--amber);background-image:linear-gradient(90deg,var(--amber) 50%,transparent 50%);background-size:5px 100%}
+.topology-legend-items .legend-boundary{height:4px;background:var(--brand);box-shadow:0 0 0 2px var(--brand-wash)}
+.topology-legend-items .legend-scope{height:7px;width:7px;border:1px dashed var(--amber);border-radius:50%;background:transparent}
+.topology-legend-items .topology-hint{margin-left:auto;color:var(--ink-2)}
+@media(max-width:760px){.topology-guide{grid-template-columns:1fr}.topology-list-heading{align-items:flex-start;flex-direction:column;gap:6px}.topology-legend-items .topology-hint{margin-left:0}}
 @media(max-width:280px){.path-route-summary{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center}.path-route-summary small,.path-route-summary b{white-space:normal;overflow:visible;overflow-wrap:anywhere;text-overflow:clip}.path-route-summary>i{justify-self:center}}
 @media(max-width:280px){.overview-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.overview-switch button{min-width:0;justify-content:center;padding-inline:4px;text-align:center;white-space:normal}}
 .health-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
