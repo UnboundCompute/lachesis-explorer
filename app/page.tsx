@@ -32,6 +32,13 @@ type LoadState = {
   message: string;
 };
 type PendingLink = {
+  repository?: string;
+  revision?: string;
+  region?: string;
+  label?: string;
+  anchor?: string;
+  domain?: string;
+  step?: string;
   view?: string;
   flow?: string;
   node?: string;
@@ -50,6 +57,7 @@ type PendingLink = {
 };
 type ViewUrlOverrides = Record<string, string | undefined>;
 type BuildState = { status: "idle" | BuildResponse["status"]; steps: Array<{ key: string; state: string }>; message?: string };
+type HandoffContext = Pick<PendingLink, "repository" | "revision" | "region" | "label" | "anchor" | "flow" | "step" | "domain">;
 
 const viewLabels: Record<View, string> = {
   home: "Understand",
@@ -175,6 +183,7 @@ export default function Page() {
   const [recentBundles, setRecentBundles] = useState<RecentBundle[]>([]);
   const [activity, setActivity] = useState<InvestigationEvent[]>([]);
   const [urlInitialized, setUrlInitialized] = useState(false);
+  const [handoffContext, setHandoffContext] = useState<HandoffContext>({});
   const [navigation, setNavigation] = useState({ canBack: false, canForward: false });
   const fileRef = useRef<HTMLInputElement>(null);
   const compareFileRef = useRef<HTMLInputElement>(null);
@@ -300,8 +309,15 @@ export default function Page() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const link: PendingLink = {
+      repository: params.get("repository") ?? undefined,
+      revision: params.get("revision") ?? undefined,
+      region: params.get("region") ?? undefined,
+      label: params.get("label") ?? undefined,
+      anchor: params.get("anchor") ?? undefined,
+      domain: params.get("domain") ?? undefined,
+      step: params.get("step_context") ?? params.get("step") ?? undefined,
       view: params.get("view") ?? undefined,
-      flow: params.get("flow") ?? undefined,
+      flow: params.get("flow_context") ?? params.get("flow") ?? undefined,
       node: params.get("node") ?? undefined,
       direction: params.get("direction") ?? undefined,
       entry: params.get("entry") ?? undefined,
@@ -316,6 +332,16 @@ export default function Page() {
       mapOrder: params.get("map_order") ?? undefined,
       mapNeighborhood: params.get("map_focus") === "neighborhood",
     };
+    setHandoffContext({
+      repository: link.repository,
+      revision: link.revision,
+      region: link.region,
+      label: link.label,
+      anchor: link.anchor,
+      flow: link.flow,
+      step: link.step,
+      domain: link.domain,
+    });
     if (params.get("sample") === "security") {
       pendingLink.current = link;
       setLoadState({ type: "loading", message: "Loading the security sample…" });
@@ -442,6 +468,14 @@ export default function Page() {
   useEffect(() => {
     if (!urlInitialized) return;
     const params = new URLSearchParams();
+    if (handoffContext.repository) params.set("repository", handoffContext.repository);
+    if (handoffContext.revision) params.set("revision", handoffContext.revision);
+    if (handoffContext.region) params.set("region", handoffContext.region);
+    if (handoffContext.label) params.set("label", handoffContext.label);
+    if (handoffContext.anchor) params.set("anchor", handoffContext.anchor);
+    if (handoffContext.flow) params.set("flow_context", handoffContext.flow);
+    if (handoffContext.step) params.set("step_context", handoffContext.step);
+    if (handoffContext.domain) params.set("domain", handoffContext.domain);
     params.set("view", view);
     const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
     if (bundleOrigin === "hosted" && hostedBundleId) params.set("bundle", hostedBundleId);
@@ -471,7 +505,7 @@ export default function Page() {
       if (mapNeighborhoodOnly) params.set("map_focus", "neighborhood");
     }
     window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, bundleOrigin, direction, entryIndex, focusNodeId, flowId, hostedBundleId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
+  }, [app, bundleOrigin, direction, entryIndex, focusNodeId, handoffContext, flowId, hostedBundleId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
@@ -1401,6 +1435,7 @@ export default function Page() {
         hopIndex={hopIndex}
         sinkId={sinkId}
         focusNodeId={focusNodeId}
+        handoff={handoffContext}
       />
       {view === "trace" && (
         <TraceView

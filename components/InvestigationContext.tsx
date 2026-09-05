@@ -1,6 +1,7 @@
 import type { App } from '../lib/lachesis'
 
-type Props={app:App;view:string;flowId:string;stepId:string;stepIndex?:number;entryIndex:number;hopId:string;hopIndex?:number;sinkId:string;focusNodeId?:string;onHome?:()=>void}
+type HandoffContext = {repository?: string; revision?: string; region?: string; label?: string; anchor?: string; flow?: string; step?: string; domain?: string}
+type Props={app:App;view:string;flowId:string;stepId:string;stepIndex?:number;entryIndex:number;hopId:string;hopIndex?:number;sinkId:string;focusNodeId?:string;handoff?:HandoffContext;onHome?:()=>void}
 const viewNames: Record<string, string> = {
   trace: 'Trace',
   journey: 'Request flow',
@@ -34,7 +35,7 @@ function flowContextLabel(flow: App['flows'][number], app: App) {
   const endpoints = firstLabel === lastLabel ? firstLabel : `${firstLabel} → ${lastLabel}`
   return `${pathContextLabel(flow.kind, app.findings.some(item => item.id === flow.id)).toLowerCase()} · ${endpoints} · ${nodeLocation(first) || 'source unavailable'}`
 }
-export function InvestigationContext({app,view,flowId,stepId,stepIndex=0,entryIndex,hopId,hopIndex=0,sinkId,focusNodeId,onHome}:Props){
+export function InvestigationContext({app,view,flowId,stepId,stepIndex=0,entryIndex,hopId,hopIndex=0,sinkId,focusNodeId,handoff,onHome}:Props){
   if(view==='home')return null
   const flow=app.flows.find(item=>item.id===flowId),step=app.nodes.find(item=>item.id===stepId),entry=app.entries[entryIndex],hop=app.nodes.find(item=>item.id===hopId),sink=app.nodes.find(item=>item.id===sinkId),focused=app.nodes.find(item=>item.id===focusNodeId)
   const withContext = (value: string | undefined, node?: App['nodes'][number]) => `${value||'—'}${nodeContext(node) ? ` · ${nodeContext(node)}` : ''}${nodeLocation(node) ? ` · ${nodeLocation(node)}` : ''}`
@@ -51,5 +52,8 @@ export function InvestigationContext({app,view,flowId,stepId,stepIndex=0,entryIn
         : view === 'map'
           ? [['EXPLORE', focused ? withContext(focused.label || focused.id, focused) : 'Workspace']]
           : [[viewNames[view] || view, 'Workspace']]
-  return <div className="investigation-context" aria-label="Current code exploration context" aria-live="polite" aria-atomic="true">{onHome ? <button type="button" className="context-home" onClick={onHome} title="Return to understanding home">{app.name||'Untitled bundle'}</button> : <span className="context-home">{app.name||'Untitled bundle'}</span>}{parts.map(([label,value])=><span key={label} className="context-crumb"><i>／</i><small>{label}</small><b title={value||'—'}>{value||'—'}</b></span>)}</div>
+  const handoffParts: Array<[string, string | undefined]> = handoff
+    ? ([['REPOSITORY', handoff.repository], ['REVISION', handoff.revision], ['REGION', handoff.region || handoff.label], ['ANCHOR', handoff.anchor], ['FLOW', handoff.flow], ['STEP', handoff.step], ['DOMAIN', handoff.domain]] as Array<[string, string | undefined]>).filter(([, value]) => Boolean(value))
+    : []
+  return <div className="investigation-context" aria-label="Current code exploration context" aria-live="polite" aria-atomic="true">{onHome ? <button type="button" className="context-home" onClick={onHome} title="Return to understanding home">{app.name||'Untitled bundle'}</button> : <span className="context-home">{app.name||'Untitled bundle'}</span>}{parts.map(([label,value])=><span key={label} className="context-crumb"><i>／</i><small>{label}</small><b title={value||'—'}>{value||'—'}</b></span>)}{handoffParts.map(([label,value])=><span key={`handoff-${label}`} className="context-crumb context-handoff-crumb"><i>／</i><small>{label}</small><b title={value}>{value}</b></span>)}</div>
 }
