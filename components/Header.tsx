@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
-import { countLabel, type App } from '../lib/lachesis'
+import { countLabel, type App, type ExplorerMode } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
 
 type View = 'home' | 'trace' | 'journey' | 'investigate' | 'map' | 'compare' | 'install'
 export type RecentBundle = { name: string; language: string; commit: string; lines: number; flows: number; loadedAt: number; bundleId?: string }
-type Props = { view: View; setView: (view: View) => void; app: App; sourceSelected: boolean; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[]; onOpenRecent: (bundleId: string) => void; canGoBack: boolean; canGoForward: boolean; onGoBack: () => void; onGoForward: () => void }
+type Props = { view: View; setView: (view: View) => void; app: App; explorerMode: ExplorerMode; setExplorerMode: (mode: ExplorerMode) => void; sourceSelected: boolean; menu: boolean; setMenu: (open: boolean) => void; onUpload: () => void; onCommand: () => void; dark: boolean; setDark: (dark: boolean) => void; recentBundles: RecentBundle[]; onOpenRecent: (bundleId: string) => void; canGoBack: boolean; canGoForward: boolean; onGoBack: () => void; onGoForward: () => void }
 
 const primary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'home', label: 'Understand', detail: 'Start with a question' },
@@ -21,7 +21,7 @@ const secondary: Array<{ id: View; label: string; detail: string }> = [
   { id: 'install', label: 'Setup', detail: 'Build graphs locally' },
 ]
 
-export function Header({ view, setView, app, sourceSelected, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles, onOpenRecent, canGoBack, canGoForward, onGoBack, onGoForward }: Props) {
+export function Header({ view, setView, app, explorerMode, setExplorerMode, sourceSelected, menu, setMenu, onUpload, onCommand, dark, setDark, recentBundles, onOpenRecent, canGoBack, canGoForward, onGoBack, onGoForward }: Props) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [mobileLensOpen, setMobileLensOpen] = useState(false)
   const moreRef = useRef<HTMLDivElement>(null)
@@ -216,6 +216,7 @@ export function Header({ view, setView, app, sourceSelected, menu, setMenu, onUp
           </div>
           <button type="button" className="command-trigger" onClick={onCommand} aria-label="Open command palette"><Icon name="search" size={14} /><span>Jump</span><kbd>⌘K /</kbd></button>
           <button type="button" className="theme-toggle" suppressHydrationWarning aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`} onClick={() => { setDark(!dark); trackEvent('theme_toggled', { theme: dark ? 'light' : 'dark' }) }}><Icon name={dark ? 'sun' : 'moon'} size={15} /><span>{dark ? 'Light' : 'Dark'}</span></button>
+          <button type="button" className="mode-toggle" aria-pressed={explorerMode === 'full'} aria-label={explorerMode === 'guided' ? 'Switch to full graph mode' : 'Switch to guided reading mode'} onClick={() => { const next = explorerMode === 'guided' ? 'full' : 'guided'; setExplorerMode(next); trackEvent('explorer_mode_changed', { mode: next }) }}><span className="mode-toggle-dot" /><span>{explorerMode === 'guided' ? 'Guided' : 'Full graph'}</span></button>
           <div className="app-picker" ref={appPickerRef}>
             <button ref={appTriggerRef} type="button" className="repo-control" onClick={() => setMenu(!menu)} aria-label={sourceSelected ? `Open active bundle context for ${app.name || "current bundle"}` : "Choose a codebase"} title={sourceSelected ? "Open active bundle context" : "Choose a codebase"} aria-expanded={menu} aria-controls={menu ? "bundle-context-menu" : undefined} aria-haspopup="dialog">
               <span className="status-dot" /><span><small>{sourceSelected ? "Active bundle" : "Workspace"}</small><b>{sourceSelected ? app.name || 'Untitled bundle' : 'Choose a codebase'}</b></span><Icon name="chevron" size={14} />

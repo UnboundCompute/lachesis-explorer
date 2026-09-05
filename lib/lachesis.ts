@@ -18,6 +18,7 @@ export type EdgeOrigin = 'bundle' | 'value-flow' | 'request-path'
 export type GraphEdge = { id:string; source:string; target:string; relation:string; alias:boolean; dynamic:boolean; confidence?:string; limitations?:string[]; origins:EdgeOrigin[]; flow_ids:string[]; entry_ids:string[] }
 export type CuratedTourStep = { flowId: string; nodeId?: string; label?: string; note?: string }
 export type CuratedTour = { id: string; title: string; description?: string; steps: CuratedTourStep[]; maintainer?: { name: string; url?: string } }
+export type ExplorerMode = "guided" | "full"
 export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; sourceUrlTemplate?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[]; curatedTour?: CuratedTour }
 export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; findings: Flow[]; entries: Entry[]; mcp: Evidence[]; files: GraphFile[]; modules: GraphModule[]; entrypoints: GraphEntrypoint[]; coverage: GraphCoverage; bundle:BundleInfo }
 
@@ -538,6 +539,35 @@ export function isSecurityProjection(app: App) {
 }
 
 const supportingCodePath = /(?:^|\/)(?:tests?|examples?|fixtures?|benchmarks?|docs?)(?:\/|$)/i
+
+export function isSupportingCodePath(file: string) {
+  return supportingCodePath.test(file.replaceAll("\\", "/"))
+}
+
+export function nodesForExplorerMode(app: App, mode: ExplorerMode) {
+  if (mode === "full") return app.nodes
+  return app.nodes.filter((node) => !isSupportingCodePath(node.file))
+}
+
+export function flowsForExplorerMode(app: App, mode: ExplorerMode) {
+  if (mode === "full") return app.flows
+  return app.flows.filter((flow) =>
+    flow.steps.every((step) => {
+      const node = app.nodes.find((candidate) => candidate.id === step.node_id)
+      return node ? !isSupportingCodePath(node.file) : false
+    }),
+  )
+}
+
+export function entriesForExplorerMode(app: App, mode: ExplorerMode) {
+  if (mode === "full") return app.entries.map((entry, index) => ({ entry, index }))
+  return app.entries
+    .map((entry, index) => ({ entry, index }))
+    .filter(({ entry }) => entry.hops.every((hop) => {
+      const node = app.nodes.find((candidate) => candidate.id === hop.node_id)
+      return node ? !isSupportingCodePath(node.file) : false
+    }))
+}
 
 export function flowRecommendationScore(flow: Flow, nodes: Node[]) {
   const pathNodes = flow.steps
