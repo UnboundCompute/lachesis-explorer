@@ -59,6 +59,19 @@ try {
   assert.doesNotMatch(projectionText, /Security evidence projection/, "optional findings overrode code-understanding mode");
   await projectionPage.close();
 
+  const localBuildPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await localBuildPage.goto(`${base}/`, { waitUntil: "networkidle" });
+  await localBuildPage.getByLabel("Repository URL").fill("https://github.com/example/repository");
+  await localBuildPage.getByRole("button", { name: "Build graph", exact: true }).click();
+  const localBuildStatus = localBuildPage.locator(".hosted-build-status[role=alert]");
+  await localBuildStatus.waitFor({ state: "visible", timeout: 10_000 });
+  assert.match(
+    await localBuildStatus.innerText(),
+    /Hosted repository builds are not configured/i,
+    "local hosted-build fallback did not explain the missing API configuration",
+  );
+  await localBuildPage.close();
+
   const hostedBundleId = process.env.LACHESIS_BUNDLE_ID;
   if (hostedBundleId) {
     for (const [path, expectedStatus] of [[`/api/bundles/${encodeURIComponent(hostedBundleId)}`, 200], ["/api/bundles/not-a-bundle", 400], ["/api/bundles/b_unknown1234", 404]]) {

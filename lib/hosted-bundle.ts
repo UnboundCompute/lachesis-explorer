@@ -5,7 +5,7 @@ function serviceUrl(path: string) {
   const base = process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim().replace(/\/$/, "");
   if (!base) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("Hosted repository builds are not configured for this deployment.");
+      throw new Error("Hosted repository builds are not configured. Load a bundle.json or set NEXT_PUBLIC_BUNDLE_API_URL.");
     }
     return path;
   }
