@@ -7,6 +7,38 @@ from src.verify_bundle import prepare_file, validate_bundle
 
 
 class WorkerTests(unittest.TestCase):
+    def test_repository_index_publishes_revision_and_default_branch_pointers(self):
+        storage = Mock()
+        worker._publish_repository_index(
+            storage,
+            "bucket",
+            url="https://github.com/owner/repo.git",
+            ref="main",
+            sha="a" * 40,
+            bundle_id="b_12345678",
+            cache_hit=False,
+        )
+
+        self.assertEqual(storage.put_object.call_count, 2)
+        keys = {call.kwargs["Key"] for call in storage.put_object.call_args_list}
+        self.assertIn("repository-index/github.com/owner/repo/revisions/" + "a" * 40 + ".json", keys)
+        self.assertIn("repository-index/github.com/owner/repo/latest.json", keys)
+
+    def test_repository_index_does_not_move_latest_for_feature_refs(self):
+        storage = Mock()
+        worker._publish_repository_index(
+            storage,
+            "bucket",
+            url="https://github.com/owner/repo.git",
+            ref="feature/new-flow",
+            sha="a" * 40,
+            bundle_id="b_12345678",
+            cache_hit=True,
+        )
+
+        self.assertEqual(storage.put_object.call_count, 1)
+        self.assertIn("/revisions/", storage.put_object.call_args.kwargs["Key"])
+
     def test_update_preserves_expiry_for_dynamodb_ttl(self):
         table = Mock()
 

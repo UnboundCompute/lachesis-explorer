@@ -13,9 +13,11 @@ from urllib.parse import urlsplit
 
 try:  # Lambda loads this directory as the module root; tests may load it as a package.
     from contract import canonical_git_url, opaque_id, valid_ref
+    from repository_index import latest_key, manifest, revision_key
     from verify_bundle import prepare_file
 except ImportError:
     from .contract import canonical_git_url, opaque_id, valid_ref
+    from .repository_index import latest_key, manifest, revision_key
     from .verify_bundle import prepare_file
 
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40,64}$")
@@ -179,6 +181,31 @@ def _copy_bundle(storage: Any, bucket: str, source_key: str, bundle_id: str) -> 
     )
 
 
+def _publish_repository_index(
+    storage: Any,
+    bucket: str,
+    *,
+    url: str,
+    ref: str,
+    sha: str,
+    bundle_id: str,
+    cache_hit: bool,
+) -> None:
+    """Publish revision and default-branch pointers after the bundle exists."""
+    record = manifest(
+        git_url=url,
+        ref=ref,
+        sha=sha,
+        bundle_id=bundle_id,
+        cache_hit=cache_hit,
+    )
+    body = json.dumps(record, separators=(",", ":")).encode("utf-8")
+    extra = {"ContentType": "application/json", "ServerSideEncryption": "AES256"}
+    storage.put_object(Bucket=bucket, Key=revision_key(url, sha), Body=body, **extra)
+    if ref in {"main", "master"}:
+        storage.put_object(Bucket=bucket, Key=latest_key(url), Body=body, **extra)
+
+
 def _job_record(table: Any, job_id: str) -> dict[str, Any]:
     response = table.get_item(Key={"job_id": job_id}, ConsistentRead=True)
     return response.get("Item") or {}
@@ -202,6 +229,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         if _cache_exists(storage, bucket, cache_key):
             bundle_id = opaque_id("b")
             _copy_bundle(storage, bucket, cache_key, bundle_id)
+            _publish_repository_index(storage, bucket, url=url, ref=ref, sha=sha, bundle_id=bundle_id, cache_hit=True)
             done_steps = [{"key": key, "state": "done"} for key in ("clone", "build", "export")]
             _update(table, job_id, "ready", done_steps, expires_at=expires_at,
                     expected_statuses={"queued"}, sha=sha, bundle_id=bundle_id, cache_hit=True)
@@ -232,6 +260,7 @@ def _process(job: dict[str, Any], table: Any, storage: Any) -> None:
         bundle_id = opaque_id("b")
         storage.upload_file(bundle, bucket, cache_key, ExtraArgs={"ContentType": "application/json", "ServerSideEncryption": "AES256"})
         _copy_bundle(storage, bucket, cache_key, bundle_id)
+        _publish_repository_index(storage, bucket, url=url, ref=ref, sha=sha, bundle_id=bundle_id, cache_hit=False)
         steps[2]["state"] = "done"; _update(table, job_id, "ready", steps, expires_at=expires_at, expected_statuses={"exporting"}, sha=sha, bundle_id=bundle_id)
 
 

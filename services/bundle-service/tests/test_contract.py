@@ -3,10 +3,21 @@ from unittest.mock import patch
 import json
 
 from src.contract import canonical_git_url, valid_opaque_id, valid_ref
+from src.repository_index import latest_key, manifest, repository_slug, revision_key
 from src import handler
 
 
 class ContractTests(unittest.TestCase):
+    def test_repository_index_is_deterministic_and_revision_scoped(self):
+        url = "https://github.com/GNOME/libxml2"
+        sha = "A" * 40
+        self.assertEqual(repository_slug(url), "github.com/GNOME/libxml2")
+        self.assertEqual(latest_key(url), "repository-index/github.com/GNOME/libxml2/latest.json")
+        self.assertEqual(revision_key(url, sha), "repository-index/github.com/GNOME/libxml2/revisions/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.json")
+        record = manifest(git_url=url, ref="main", sha=sha, bundle_id="b_12345678", built_at=12)
+        self.assertEqual(record["revision"], "a" * 40)
+        self.assertEqual(record["repository"], "github.com/GNOME/libxml2")
+
     def test_canonicalizes_supported_public_repo(self):
         self.assertEqual(canonical_git_url("https://github.com/GNOME/libxml2"),
                          "https://github.com/GNOME/libxml2.git")
@@ -116,6 +127,55 @@ class ContractTests(unittest.TestCase):
                 "rawPath": "/api/bundles/b_12345678",
             }, None)
         self.assertEqual(response["statusCode"], 404)
+
+    def test_repository_route_resolves_the_latest_index_record_without_enumerating_jobs(self):
+        class Body:
+            def read(self, _amount):
+                return json.dumps({
+                    "schema_version": "1", "repository": "github.com/owner/repo",
+                    "revision": "a" * 40, "bundle_id": "b_12345678", "built_at": 12,
+                }).encode()
+
+        class Storage:
+            def get_object(self, **kwargs):
+                self.kwargs = kwargs
+                return {"Body": Body(), "ContentLength": 128}
+
+        storage = Storage()
+        with patch.object(handler, "_aws", return_value=(object(), object(), storage)), patch.dict(
+            handler.os.environ, {"BUNDLE_BUCKET": "bucket"}
+        ):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "GET"}},
+                "rawPath": "/api/repos/owner/repo",
+            }, None)
+        body = json.loads(response["body"])
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(body["bundle_url"], "/api/bundles/b_12345678")
+        self.assertEqual(storage.kwargs["Key"], "repository-index/github.com/owner/repo/latest.json")
+
+    def test_repository_route_supports_a_pinned_revision(self):
+        class Body:
+            def read(self, _amount):
+                return json.dumps({"bundle_id": "b_12345678"}).encode()
+
+        class Storage:
+            def get_object(self, **kwargs):
+                self.kwargs = kwargs
+                return {"Body": Body(), "ContentLength": 32}
+
+        storage = Storage()
+        revision = "a" * 40
+        with patch.object(handler, "_aws", return_value=(object(), object(), storage)), patch.dict(
+            handler.os.environ, {"BUNDLE_BUCKET": "bucket"}
+        ):
+            response = handler.handler({
+                "requestContext": {"http": {"method": "GET"}},
+                "rawPath": "/api/repos/gitlab.com/owner/repo",
+                "queryStringParameters": {"revision": revision},
+            }, None)
+        self.assertEqual(response["statusCode"], 200)
+        self.assertIn(f"/revisions/{revision}.json", storage.kwargs["Key"])
 
     def test_status_endpoint_expires_jobs_before_dynamodb_ttl_cleanup(self):
         class Jobs:
