@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import type { App } from "../lib/lachesis";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { countLabel, entryDisplayName, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
-import { copyText } from "../lib/clipboard";
+import { copyText, downloadText } from "../lib/clipboard";
+import { explainEntry } from "../lib/explanations";
 import { Icon } from "./Icon";
 import { PathCanvas, type PathItem } from "./PathCanvas";
 import { NodeInspector } from "./NodeInspector";
@@ -14,13 +15,68 @@ function nodeLocation(node: App["nodes"][number] | undefined) {
 function nodeContext(node: App["nodes"][number] | undefined) {
   return node?.scope?.label || node?.scope?.service || node?.scope?.package || node?.scope?.module || node?.scope?.repository || "";
 }
-function entryContext(entry: App["entries"][number], app: App) {
-  return nodeContext(app.nodes.find((node) => node.id === entry.hops[0]?.node_id));
+const hasSource = (node: App["nodes"][number] | undefined) => Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+type NodeIndex = ReadonlyMap<string, App["nodes"][number]>;
+
+function matchingHopIndex(entry: App["entries"][number], query: string, nodeById: NodeIndex) {
+  const terms = query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!terms.length) return -1;
+  const entryHaystack = [
+    entry.label,
+    entry.description,
+    entryContext(entry, nodeById),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return entry.hops.findIndex((hop) => {
+    const node = nodeById.get(hop.node_id);
+    const haystack = [
+      hop.edge_label,
+      hop.caption,
+      node?.label,
+      node?.file,
+      node?.module,
+      node?.scope?.module,
+      node?.snippet,
+      node?.sourceWindow?.lines.join(" "),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return terms.every((term) => {
+      const [key, ...rest] = term.split(":");
+      const value = rest.join(":");
+      if (rest.length) {
+        if (key === "file") return node?.file.toLowerCase().includes(value);
+        if (key === "kind") return node?.kind.toLowerCase().includes(value);
+        if (key === "module") return [node?.module, node?.scope?.module].some((item) => item?.toLowerCase().includes(value));
+        if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+          return [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package, node?.scope?.module]
+            .some((item) => item?.toLowerCase().includes(value));
+        }
+        if (key === "has" && (value === "source" || value === "source-preview")) return hasSource(node);
+        if (key === "has" && (value === "source-gap" || value === "missing-source")) return !hasSource(node);
+        if (key === "role") return hop.edge_label.toLowerCase().includes(value) || hop.caption.toLowerCase().includes(value);
+        return false;
+      }
+      return entryHaystack.includes(term) || haystack.includes(term);
+    });
+  });
 }
-function entryScopes(entry: App["entries"][number], app: App) {
+
+function entryContext(entry: App["entries"][number], nodeById: NodeIndex) {
+  return nodeContext(nodeById.get(entry.hops[0]?.node_id ?? ""));
+}
+function entryScopes(entry: App["entries"][number], nodeById: NodeIndex) {
   const scopes: string[] = [];
   entry.hops.forEach((hop) => {
-    const scope = nodeContext(app.nodes.find((node) => node.id === hop.node_id));
+    const scope = nodeContext(nodeById.get(hop.node_id));
     if (scope && scopes.at(-1) !== scope) scopes.push(scope);
   });
   return scopes;
@@ -38,9 +94,10 @@ type Props = {
   onInspectorClose: () => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onView: (view: "trace" | "map", nodeId?: string) => void;
-  onShare: (position: number) => Promise<boolean>;
   onFlow: (flowId: string, nodeId: string) => void;
   onEntry: (entryIndex: number, nodeId: string) => void;
+  onFile?: (file: string) => void;
+  onShare?: (params: Record<string, string>) => Promise<boolean>;
 };
 export function JourneyView({
   app,
@@ -55,15 +112,79 @@ export function JourneyView({
   onInspectorClose,
   onRecord,
   onView,
-  onShare,
   onFlow,
   onEntry,
+  onFile,
+  onShare,
 }: Props) {
   const entry = app.entries[entryIndex] ?? app.entries[0];
+  const nodeById = useMemo(() => new Map(app.nodes.map((node) => [node.id, node])), [app.nodes]);
   const [selectedPosition, setSelectedPosition] = useState(position ?? 0);
+  const [entrySearch, setEntrySearch] = useState("");
+  const [previousEntryIndex, setPreviousEntryIndex] = useState<number | null>(null);
+  const [explanationState, setExplanationState] = useState<"idle" | "copied" | "failed">("idle");
+  const [downloadState, setDownloadState] = useState<"idle" | "downloaded" | "failed">("idle");
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
-  const [sequenceState, setSequenceState] = useState<"idle" | "copied" | "failed">("idle");
   const selectedHopRef = useRef<HTMLButtonElement>(null);
+  const visibleEntries = useMemo(() => {
+    const term = entrySearch.trim().toLowerCase();
+    if (!term) return app.entries;
+    return app.entries.filter((item) => {
+      const nodes = item.hops
+        .map((hop) => nodeById.get(hop.node_id))
+        .filter(Boolean);
+      const haystack = [
+          item.label,
+          item.description,
+          entryContext(item, nodeById),
+          ...item.hops.flatMap((hop) => [hop.edge_label, hop.caption]),
+          ...nodes.flatMap((node) => node ? [node.label, node.file, node.module, node.scope?.module, node.snippet, node.sourceWindow?.lines.join(" ")] : []),
+        ].join(" ").toLowerCase();
+      return term.split(/\s+/).every((part) => {
+        const [key, ...rest] = part.split(":");
+        const value = rest.join(":");
+        if (rest.length) {
+          if (key === "kind") return nodes.some((node) => node?.kind.toLowerCase().includes(value));
+          if (key === "file") return nodes.some((node) => node?.file.toLowerCase().includes(value));
+          if (key === "module") return nodes.some((node) => [node?.module, node?.scope?.module].some((item) => item?.toLowerCase().includes(value)));
+          if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+            return nodes.some((node) => [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package, node?.scope?.module]
+              .some((item) => item?.toLowerCase().includes(value)));
+          }
+          if (key === "confidence") return item.confidence?.toLowerCase().includes(value) ?? false;
+          if (key === "has" && value === "mcp") return app.mcp.some((evidence) => evidence.for === item.id);
+          if (key === "has" && (value === "source" || value === "source-preview")) return nodes.some(hasSource);
+          if (key === "has" && (value === "source-gap" || value === "missing-source")) return nodes.some((node) => !hasSource(node));
+          if (key === "role") return item.hops.some((hop) => hop.edge_label.toLowerCase().includes(value) || hop.caption.toLowerCase().includes(value));
+          return false;
+        }
+        return haystack.includes(part);
+      });
+    });
+  }, [app, entrySearch, nodeById]);
+  const entryOptions = entry && visibleEntries.includes(entry)
+    ? visibleEntries
+    : entry
+      ? [entry, ...visibleEntries]
+      : visibleEntries;
+  const filterSuggestions = [
+    ...[...new Set(app.nodes.map((node) => node.kind).filter(Boolean))]
+      .slice(0, 2)
+      .map((kind) => ({ label: kind, query: `kind:${kind}` })),
+    ...[...new Set(app.nodes.map((node) => node.scope?.service).filter(Boolean))]
+      .slice(0, 2)
+      .map((service) => ({ label: service!, query: `service:${service}` })),
+    app.entries.some((item) => item.hops.some((hop) => hasSource(nodeById.get(hop.node_id))))
+      ? { label: "Has source", query: "has:source" }
+      : null,
+    app.entries.some((item) => item.hops.some((hop) => !hasSource(nodeById.get(hop.node_id))))
+      ? { label: "Source gaps", query: "has:source-gap" }
+      : null,
+  ].filter((suggestion): suggestion is { label: string; query: string } => Boolean(suggestion));
+  useEffect(() => {
+    setEntrySearch("");
+    setPreviousEntryIndex(null);
+  }, [app]);
   useEffect(() => {
     if (!entry) return;
     const fallback = entry.hops.findIndex((hop) => hop.node_id === hopId);
@@ -71,8 +192,8 @@ export function JourneyView({
       ? position
       : fallback;
     setSelectedPosition(next >= 0 ? next : 0);
+    setExplanationState("idle");
     setShareState("idle");
-    setSequenceState("idle");
   }, [app, entryIndex, hopId, position]);
   useEffect(() => {
     selectedHopRef.current?.scrollIntoView({ block: "nearest" });
@@ -92,11 +213,11 @@ export function JourneyView({
   }, [entry, hopId, selectedPosition]);
   if (!entry)
     return (
-      <section className="workspace-empty">
-        <h2>No request paths in this bundle</h2>
+      <main className="workspace-empty" aria-label="Request flow workspace">
+        <h2>No request flows in this bundle</h2>
         <p>
           {app.flows.length
-            ? "Graph paths are still available. Open one to follow its symbols and relationships."
+            ? "Code paths are still available. Open one to follow its symbols and relationships."
             : "Open the graph to inspect the structure included in this bundle."}
         </p>
         <button
@@ -104,26 +225,26 @@ export function JourneyView({
           type="button"
           onClick={() => onView(app.flows.length ? "trace" : "map")}
         >
-          <span>{app.flows.length ? "Open graph paths" : "Open graph"}</span>
+          <span>{app.flows.length ? "Open code paths" : "Open graph"}</span>
           <span className="button-icon">
             <Icon name="arrow" size={14} />
           </span>
         </button>
-      </section>
+      </main>
     );
-  const selected = app.nodes.find((node) => node.id === hopId) ?? app.nodes[0];
+  const selected = nodeById.get(hopId) ?? app.nodes[0];
   const evidence = app.mcp.find((item) => item.for === entry.id);
-  const firstNode = app.nodes.find(
-    (node) => node.id === entry.hops[0]?.node_id,
-  );
-  const lastNode = app.nodes.find(
-    (node) => node.id === entry.hops.at(-1)?.node_id,
-  );
-  const contextRoute = entryScopes(entry, app);
+  const firstNode = nodeById.get(entry.hops[0]?.node_id ?? "");
+  const lastNode = nodeById.get(entry.hops.at(-1)?.node_id ?? "");
+  const contextRoute = entryScopes(entry, nodeById);
+  const sourcePreviewCount = entry.hops.filter((hop) => {
+    const node = nodeById.get(hop.node_id);
+    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+  }).length;
   const items: PathItem[] = entry.hops.map((hop) => ({
     id: hop.node_id,
     occurrenceId: hop.id,
-    node: app.nodes.find((node) => node.id === hop.node_id) ?? app.nodes[0],
+    node: nodeById.get(hop.node_id) ?? app.nodes[0],
     label: hop.edge_label,
     caption: hop.caption,
     relation: hop.edge_label,
@@ -134,6 +255,25 @@ export function JourneyView({
       ? selectedPosition
       : items.findIndex((item) => item.id === hopId),
   );
+  const previousEntry = previousEntryIndex == null ? undefined : app.entries[previousEntryIndex];
+  function rememberEntry(nextIndex: number) {
+    if (entry && nextIndex !== entryIndex) setPreviousEntryIndex(entryIndex);
+  }
+  function returnToPreviousEntry() {
+    if (!previousEntry) return;
+    const currentIndex = entryIndex;
+    setPreviousEntryIndex(currentIndex);
+    setEntryIndex(previousEntryIndex!);
+    setHopId(previousEntry.hops[0]?.node_id ?? "");
+    onPositionChange?.(0);
+    onInspectorOpen();
+    onRecord("Returned to request flow", previousEntry.id, countLabel(previousEntry.hops.length, "step"));
+    trackEvent("callpath_reversed");
+  }
+  function openConnectedEntry(nextIndex: number, nextHopId: string) {
+    rememberEntry(nextIndex);
+    onEntry(nextIndex, nextHopId);
+  }
   function moveHop(delta: number) {
     const next = items[selectedIndex + delta];
     if (!next) return;
@@ -150,31 +290,88 @@ export function JourneyView({
       direction: delta > 0 ? "next" : "previous",
     });
   }
-  async function sharePath() {
-    const copied = await onShare(selectedIndex);
+  async function copyExplanation() {
+    try {
+      await copyText(explainEntry(app, entry, selectedIndex, window.location.href));
+      setExplanationState("copied");
+      trackEvent("path_explanation_copied", { surface: "journey" });
+      window.setTimeout(() => setExplanationState("idle"), 1800);
+    } catch {
+      setExplanationState("failed");
+      trackEvent("path_explanation_copy_failed", { surface: "journey" });
+    }
+  }
+  async function shareEntry() {
+    if (!onShare) return;
+    const params: Record<string, string> = {
+      view: "journey",
+      entry: entry.id,
+      hop: hopId,
+      hop_index: String(selectedIndex),
+    };
+    const occurrence = items[selectedIndex]?.occurrenceId;
+    if (occurrence) params.hop_occurrence = occurrence;
+    const copied = await onShare(params);
     setShareState(copied ? "copied" : "failed");
     window.setTimeout(() => setShareState("idle"), 1800);
   }
-  async function copySequence() {
-    const sequence = items
-      .map((item, index) => `${String(index + 1).padStart(2, "0")}. ${item.label} — ${item.node.label || item.node.id} · ${nodeLocation(item.node)}${nodeContext(item.node) ? ` · ${nodeContext(item.node)}` : ""}${item.relation ? ` · via ${item.relation}` : ""}${item.caption ? ` · ${item.caption}` : ""}`)
-      .join("\n");
+  function downloadExplanation() {
     try {
-      await copyText(`${entry.label} · Request path\n${sequence}`);
-      setSequenceState("copied");
-      trackEvent("path_sequence_copied", { surface: "journey" });
-      window.setTimeout(() => setSequenceState("idle"), 1800);
+      const filename = `${(entry.label || "lachesis-request-flow").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64) || "lachesis-request-flow"}.md`;
+      downloadText(explainEntry(app, entry, selectedIndex, window.location.href), filename);
+      setDownloadState("downloaded");
+      trackEvent("path_explanation_downloaded", { surface: "journey" });
+      window.setTimeout(() => setDownloadState("idle"), 1800);
     } catch {
-      setSequenceState("failed");
-      trackEvent("path_sequence_copy_failed", { surface: "journey" });
+      setDownloadState("failed");
+      trackEvent("path_explanation_download_failed", { surface: "journey" });
     }
   }
   return (
-    <section className={`workspace${inspectorOpen ? "" : " inspector-closed"}`}>
+    <section className={`workspace journey-workspace${inspectorOpen ? "" : " inspector-closed"}`}>
       <aside className="journey-rail">
         <label className="panel-label" htmlFor="entrypoint-select">
-          ENTRYPOINT
+          STARTING POINT
         </label>
+        <label className="search entry-search">
+          <Icon name="search" size={14} />
+          <input
+            value={entrySearch}
+            onChange={(event) => setEntrySearch(event.target.value)}
+            placeholder="Find a request flow…"
+            aria-label="Filter request flows by starting point, symbol, file, or description"
+          />
+          {entrySearch && <button type="button" onClick={() => setEntrySearch("")} aria-label="Clear request flow filter"><Icon name="close" size={14} /></button>}
+        </label>
+        <div className="entry-search-status" aria-live="polite">
+          {entrySearch ? `${countLabel(visibleEntries.length, "request flow")} of ${countLabel(app.entries.length, "request flow")} ${visibleEntries.length === 1 ? "matches" : "match"}` : countLabel(app.entries.length, "request flow")}
+        </div>
+        {filterSuggestions.length > 0 && (
+          <div className="filter-hints" role="group" aria-label="Quick request flow filters">
+            {filterSuggestions.map((suggestion) => (
+              <button
+                type="button"
+                key={suggestion.query}
+                onClick={() => {
+                  setEntrySearch(suggestion.query);
+                  trackEvent("semantic_filter_applied", {
+                    surface: "journey",
+                    filter: suggestion.query.split(":", 1)[0] || "text",
+                  });
+                }}
+              >
+                {suggestion.label}
+              </button>
+            ))}
+            {entrySearch && <button type="button" className="query-clear" onClick={() => setEntrySearch("")}>Clear</button>}
+          </div>
+        )}
+        {entrySearch && !visibleEntries.length && (
+          <div className="selector-empty" role="status">
+            <span>No request flows match “{entrySearch}”.</span>
+            <button type="button" onClick={() => setEntrySearch("")}>Clear filter</button>
+          </div>
+        )}
         <select
           id="entrypoint-select"
           className="entry-select"
@@ -182,31 +379,39 @@ export function JourneyView({
           onChange={(event) => {
             const next = Number(event.target.value);
             const selectedEntry = app.entries[next];
+            const matchingHop = selectedEntry
+              ? matchingHopIndex(selectedEntry, entrySearch, nodeById)
+              : -1;
+            const nextPosition = matchingHop >= 0 ? matchingHop : 0;
+            rememberEntry(next);
             setEntryIndex(next);
-            setHopId(selectedEntry?.hops[0]?.node_id ?? "");
-            onPositionChange?.(0);
+            setHopId(selectedEntry?.hops[nextPosition]?.node_id ?? "");
+            onPositionChange?.(nextPosition);
             onInspectorOpen();
             if (selectedEntry)
               onRecord(
-                "Opened request path",
-                selectedEntry.label,
-                `${selectedEntry.hops.length} hops`,
+                "Opened request flow",
+                selectedEntry.id,
+                countLabel(selectedEntry.hops.length, "step"),
               );
             trackEvent("callpath_selected");
           }}
         >
-          {app.entries.map((item, index) => (
-            <option value={index} key={item.id}>
-              {item.label}{entryContext(item, app) ? ` · ${entryContext(item, app)}` : ""} · {item.hops.length} hops
-            </option>
-          ))}
+          {entryOptions.map((item) => {
+            const index = app.entries.indexOf(item);
+            return (
+              <option value={index} key={item.id}>
+                {item.label}{entryContext(item, nodeById) ? ` · ${entryContext(item, nodeById)}` : ""} · {countLabel(item.hops.length, "step")}
+              </option>
+            );
+          })}
         </select>
         <div className="panel-label hops-label">
-          PATH HOPS <span>{entry.hops.length}</span>
+          PATH STEPS <span>{entry.hops.length}</span>
         </div>
         <div className="hop-list">
           {entry.hops.map((hop, index) => {
-            const rowNode = app.nodes.find((item) => item.id === hop.node_id);
+            const rowNode = nodeById.get(hop.node_id);
             return (
             <button
               type="button"
@@ -214,7 +419,7 @@ export function JourneyView({
               ref={selectedIndex === index ? selectedHopRef : undefined}
               className={selectedIndex === index ? "hop-row selected" : "hop-row"}
               onClick={() => {
-                const node = app.nodes.find((item) => item.id === hop.node_id);
+                const node = nodeById.get(hop.node_id);
                 setSelectedPosition(index);
                 onPositionChange?.(index);
                 setHopId(hop.node_id);
@@ -237,6 +442,9 @@ export function JourneyView({
                 <small className="node-row-context">
                   {nodeContext(rowNode) ? `${nodeContext(rowNode)} · ` : ""}{rowNode?.file || "Source unavailable"}:{rowNode?.line || "—"}
                 </small>
+                <small className="node-row-context">
+                  {hasSource(rowNode) ? "Source preview included" : "Source text unavailable"}
+                </small>
               </span>
             </button>
             );
@@ -247,35 +455,43 @@ export function JourneyView({
         <div className="toolbar">
           <div>
             <span className="panel-label">SELECTED REQUEST</span>
-            <h2>{entry.label}</h2>
+            <h2>{entryDisplayName(entry, app.nodes, app.entries)}</h2>
             {entry.description && <p className="path-description">{entry.description}</p>}
-            {(entry.confidence || entry.limitations?.length) && (
-              <p className="path-meta">
-                {entry.confidence && <span>{entry.confidence} confidence</span>}
-                {entry.limitations?.length ? <span>{entry.limitations.length} known limitation{entry.limitations.length === 1 ? "" : "s"}</span> : null}
-                {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
-              </p>
-            )}
-            {!entry.confidence && !entry.limitations?.length && contextRoute.length > 1 && (
-              <p className="path-meta"><span>context: {contextRoute.join(" → ")}</span></p>
-            )}
+            <p className="path-meta">
+              {entry.confidence && <span>{entry.confidence} confidence</span>}
+              <span>{countLabel(sourcePreviewCount, "source preview")} / {countLabel(entry.hops.length, "step")}</span>
+              {entry.limitations?.length ? <span>{countLabel(entry.limitations.length, "known limitation")}</span> : null}
+              {contextRoute.length > 1 && <span>context: {contextRoute.join(" → ")}</span>}
+            </p>
           </div>
           <div className="toolbar-actions">
+            {previousEntry && (
+              <button type="button" className="inspector-reopen selection-back" onClick={returnToPreviousEntry} title={`Return to ${entryDisplayName(previousEntry, app.nodes, app.entries)}`}>
+                ← Back to previous flow
+              </button>
+            )}
             {!inspectorOpen && (
-              <button className="inspector-reopen" type="button" onClick={onInspectorOpen} aria-expanded={inspectorOpen} aria-controls="source-inspector">
+              <button className="inspector-reopen" type="button" onClick={onInspectorOpen} aria-expanded={inspectorOpen}>
                 Show source
               </button>
             )}
             <button className="inspector-reopen" type="button" onClick={() => onView("map", hopId)}>
-              See in graph
+              Open in Explore
             </button>
-            <button className="inspector-reopen" type="button" onClick={copySequence} aria-live="polite">
-              {sequenceState === "copied" ? "Sequence copied" : sequenceState === "failed" ? "Copy failed" : "Copy sequence"}
-            </button>
-            <button className="inspector-reopen" type="button" onClick={sharePath} aria-live="polite">
-              {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
-            </button>
-            <div className="step-nav" role="group" aria-label="Request path step navigation">
+            <div className="toolbar-share-actions" role="group" aria-label="Share this request context">
+              <button className="inspector-reopen share-explanation" type="button" onClick={copyExplanation} aria-live="polite">
+                {explanationState === "copied" ? "Markdown copied" : explanationState === "failed" ? "Copy failed" : "Copy Markdown"}
+              </button>
+              <button className="inspector-reopen share-explanation" type="button" onClick={downloadExplanation} aria-live="polite">
+                {downloadState === "downloaded" ? "Markdown saved" : downloadState === "failed" ? "Download failed" : "Download .md"}
+              </button>
+              {onShare && (
+                <button className="inspector-reopen" type="button" onClick={shareEntry} aria-live="polite">
+                  {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+                </button>
+              )}
+            </div>
+            <div className="step-nav" role="group" aria-label="Request flow step navigation">
               <button
                 className="inspector-reopen"
                 type="button"
@@ -294,7 +510,7 @@ export function JourneyView({
               >
                 Next
               </button>
-              <span className="step-nav-hint" aria-label="Use left bracket and right bracket to navigate hops">
+              <span className="step-nav-hint" aria-label="Use left bracket and right bracket to navigate steps">
                 <kbd>[</kbd><kbd>]</kbd>
               </span>
             </div>
@@ -308,11 +524,11 @@ export function JourneyView({
         </div>
         <div
           className="trace-orientation"
-          aria-label="Selected request path summary"
+          aria-label="Selected request flow summary"
         >
           <div>
-            <span>ENTRYPOINT</span>
-            <b>{firstNode?.label || entry.label}</b>
+            <span>STARTING POINT</span>
+            <b>{firstNode?.label || entryDisplayName(entry, app.nodes, app.entries)}</b>
             <small>
               {nodeLocation(firstNode)}
             </small>
@@ -321,14 +537,14 @@ export function JourneyView({
             <span />
           </i>
           <div>
-            <span>LAST OBSERVED HOP</span>
+            <span>LAST OBSERVED STEP</span>
             <b>{lastNode?.label || "Unknown symbol"}</b>
             <small>
               {nodeLocation(lastNode)}
             </small>
           </div>
           <div className="trace-orientation-fact">
-            <span>HOP / TOTAL</span>
+            <span>STEP / TOTAL</span>
             <b>
               {selectedIndex + 1} / {items.length}
             </b>
@@ -340,11 +556,11 @@ export function JourneyView({
         </div>
         <PathCanvas
           items={items}
-          title="Request path"
+          title="Request flow"
           selectedId={hopId}
           selectedIndex={selectedIndex}
           onSelect={(id, index) => {
-            const node = app.nodes.find((item) => item.id === id);
+            const node = nodeById.get(id);
             setSelectedPosition(index);
             onPositionChange?.(index);
             setHopId(id);
@@ -363,8 +579,8 @@ export function JourneyView({
         <EvidencePanel
           evidence={evidence}
           fallbackTool="journey"
-          fallbackArgs={entry.label}
-          fallbackSummary={`${entry.hops.length} visible hops from the selected entrypoint.`}
+          fallbackArgs={entryDisplayName(entry, app.nodes, app.entries)}
+          fallbackSummary={`${countLabel(entry.hops.length, "step")} visible from the selected starting point.`}
           nodeCount={entry.hops.length}
           variant="path"
         />
@@ -376,8 +592,22 @@ export function JourneyView({
           contextNote={items[selectedIndex]?.caption}
           contextOccurrence={items[selectedIndex]?.occurrenceId}
           app={app}
+          onNode={(nextNodeId) => {
+            const nextIndex = items.findIndex((item) => item.id === nextNodeId);
+            if (nextIndex >= 0) {
+              setSelectedPosition(nextIndex);
+              onPositionChange?.(nextIndex);
+              setHopId(nextNodeId);
+              onInspectorOpen();
+              onRecord("Inspected nearby symbol", nodeById.get(nextNodeId)?.label || nextNodeId, nodeLocation(nodeById.get(nextNodeId)));
+              trackEvent("journey_nearby_node_selected");
+              return;
+            }
+            onView("map", nextNodeId);
+          }}
+          onFile={onFile}
           onFlow={onFlow}
-          onEntry={onEntry}
+          onEntry={openConnectedEntry}
           onClose={onInspectorClose}
         />
       )}

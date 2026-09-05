@@ -27,6 +27,7 @@ rather than loaded as a successful snapshot.
     "language": "typescript",
     "revision": "9f6c2ad",
     "description": "Request and value paths through the search flow.",
+    "source_url_template": "https://github.com/example/app/blob/{revision}/{file}#L{line}",
     "lines": 28416,
     "indexed_nodes": 193057
   },
@@ -48,9 +49,22 @@ rather than loaded as a successful snapshot.
 
 ## Graph entities
 
-Every node has a stable `id`, semantic `kind`, display `label`, source
-location, and optional `qualified_name`, `module`, `signature`,
-`documentation`, and `snippet`. Locations may include an end line and column.
+Every node has a stable `id`, semantic `kind`, display `label`, and optional
+`qualified_name`, `module`, `signature`,
+`documentation`, and either a `snippet` or `source_window`. Locations may
+include an end line and column. A node must include at least one of those
+source representations so it remains readable in the Explorer.
+Concrete source nodes use a repository-relative `file`. Synthetic or unmapped
+nodes use an empty `file` string and line `0`; the Explorer identifies their
+source as unavailable and does not offer a repository jump.
+Nodes may optionally provide `parent_id` to identify their enclosing symbol,
+such as a method’s class or a nested function’s parent. It must reference a
+node in the same graph and must not reference the node itself.
+For a more useful source-reading surface, exporters may also provide a
+`source_window` object with a one-based `start_line` and an ordered `lines`
+array. `highlight_start` and `highlight_end` optionally identify the lines in
+that window belonging to the node. This is source context, not a replacement
+for the repository; the Explorer falls back to `snippet` for older bundles.
 Kinds are treated as case-insensitive semantic labels; new exporters should
 prefer lowercase kebab-case values such as `function`, `call`, `expression`,
 and `source-sink`.
@@ -102,6 +116,14 @@ and navigation ambiguous.
 
 Entrypoints identify places a developer can start, including HTTP routes,
 CLI commands, jobs, event handlers, public APIs, and exported functions.
+
+When a bundle can link back to a browsable source repository, `meta.source_url_template`
+may provide an HTTP(S) template with `{file}`, `{line}`, `{end_line}`, and
+`{revision}` placeholders. The Explorer only renders an external source link
+when this field is present and produces a valid HTTP(S) URL; it never guesses a
+hosting provider from the repository name. Producers should include the line
+range fragment when their host supports it, for example
+`https://github.com/example/app/blob/{revision}/{file}#L{line}-L{end_line}`.
 
 ## Paths and security
 

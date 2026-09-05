@@ -1,4 +1,4 @@
-import type { App } from "../lib/lachesis";
+import { countLabel, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -27,40 +27,37 @@ export function Intro({
     : "Code exploration graph";
   const copy = {
     trace: [
-      "Trace a graph path. See every handoff.",
-      "Follow symbols, calls, transformations, and boundaries with source evidence attached.",
+      "Follow one behavior through the code.",
+      "Move through each call or data handoff, with the exact source beside it.",
     ],
     journey: [
-      "Walk the request as the code sees it.",
-      "Inspect a focused request path from entrypoint to effect, one grounded hop at a time.",
+      "See what happens after a starting point.",
+      "Walk a focused request flow from its first handler to its final effect.",
     ],
-    investigate: securityMode
-      ? [
-          "Start at the effect. Reveal every converging value.",
-          "Compare the bundled paths that reach one execution boundary without turning overlap into a claim.",
-        ]
-      : [
-          "Start at a boundary. See what converges there.",
-          "Compare the bundled value paths that meet at one execution boundary, then follow any path back into the code.",
-        ],
+    investigate: [
+      "See everything that reaches this code.",
+      securityMode
+        ? "Compare bundled paths that meet at one destination, then inspect the source and keep the reported security context visible."
+        : "Compare bundled paths that meet at one destination, then open any path in context.",
+    ],
     map: [
-      "See the shape before you follow the path.",
-      "Survey relationships, module concentration, shared choke points, and bundle health from deterministic graph facts.",
+      "Build a mental model of the codebase.",
+      "Explore modules, relationships, important symbols, and the graph data available to answer questions.",
     ],
     compare: [
-      "Compare revisions. See what changed.",
-      "Load a second bundle to inspect added, removed, and changed evidence without replacing the active investigation.",
+      "Understand what changed between revisions.",
+      "Load a second bundle to compare added, removed, and changed code paths without replacing the active graph.",
     ],
     install: [
-      "Bring deterministic code evidence into your workflow.",
-      "Build the graph locally, query it over MCP, and inspect the same bundle here.",
+      "Bring code understanding into your local workflow.",
+      "Build the graph locally, query it over MCP, and explore the same bundle here.",
     ],
   }[view];
   const kicker =
     view === "trace"
       ? "GRAPH-PATH LENS"
       : view === "journey"
-        ? "REQUEST-PATH LENS"
+        ? "REQUEST-FLOW LENS"
         : view === "investigate"
             ? securityMode
               ? "SINK-FIRST LENS"
@@ -73,7 +70,7 @@ export function Intro({
   const included = app.coverage.includedNodes ?? app.nodes.length;
   const indexed = app.coverage.indexedNodes ?? included;
   return (
-    <section className="context-strip">
+    <section className={`context-strip context-strip-${view}`}>
       <div className="context-copy">
         <div className="context-meta">
           <span className="context-kicker">{kicker}</span>
@@ -99,7 +96,7 @@ export function Intro({
             <dd>{app.language || "Unknown"}</dd>
           </div>
           <div>
-            <dt>Source</dt>
+            <dt>Repository LOC</dt>
             <dd>{app.lines > 0 ? `${app.lines.toLocaleString()} lines` : "Not reported"}</dd>
           </div>
           <div>
@@ -109,15 +106,15 @@ export function Intro({
         </dl>
         <span className="coverage-note">
           <i />
-          {included.toLocaleString()} graph nodes shown ·{" "}
-          {indexed.toLocaleString()} indexed
+          {countLabel(included, "graph node")} shown ·{" "}
+          {countLabel(indexed, "indexed node")}
           {app.coverage.limitations.length ? " · limited projection" : ""}
         </span>
         <button type="button" className="context-upload" onClick={onUpload} disabled={loadState.type === "loading"} aria-busy={loadState.type === "loading"}>
           <span>
             {loadState.type === "loading"
               ? "Reading bundle…"
-              : "Load bundle.json"}
+              : "Load another bundle"}
           </span>
           <span className="button-icon">
             <Icon name="upload" size={14} />
@@ -131,7 +128,11 @@ export function Intro({
         >
           <i />
           <span>{loadState.message}</span>
-          <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
+          {loadState.type === "error" && <span className="notice-actions">
+            <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>
+            <a className="notice-action notice-link" href="https://github.com/UnboundCompute/lachesis-explorer/blob/main/docs/GRAPH_EXPLORER_CONTRACT.md" target="_blank" rel="noreferrer">Open bundle contract</a>
+          </span>}
+          <button className="notice-dismiss" type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
         </p>
       )}
     </section>

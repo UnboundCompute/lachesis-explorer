@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { App, Evidence, Flow, Node } from "../lib/lachesis";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { countLabel, flowDisplayName, type App, type Evidence, type Flow, type Node } from "../lib/lachesis";
 import { Icon } from "./Icon";
 
 type LoadState = {
@@ -13,14 +13,19 @@ type Props = {
   isDemo: boolean;
   loadState: LoadState;
   onUpload: () => void;
+  onReviewCoverage: () => void;
   onLoadSample: () => void;
   onLoadSecuritySample: () => void;
-  onView: (view: "map" | "investigate" | "trace" | "journey") => void;
+  onView: (view: "map" | "investigate" | "trace" | "journey" | "compare") => void;
+  onSearch?: (query: string) => void;
   onDismiss: () => void;
   direction: "backward" | "forward";
   onFlow: (flowId: string, nodeId: string) => void;
   onSink: (sinkId: string) => void;
   onEntry: (entryIndex: number, hopId: string) => void;
+  onBuild?: (gitUrl: string, ref: string) => void;
+  onCancelBuild?: () => void;
+  buildState?: { status: string; steps: Array<{ key: string; state: string }>; message?: string };
 };
 
 const statusCopy: Record<string, string> = {
@@ -110,6 +115,14 @@ function pathKindLabel(flow: Flow) {
   return flow.kind?.trim() || "graph path";
 }
 
+function flowActionLabel(flow: Flow, app: App) {
+  const name = flowDisplayName(flow, app.nodes, app.flows);
+  const analyzerArtifact = /__builtin_|___chk\b/.test(name);
+  if (name.length <= 56 && !analyzerArtifact) return name;
+  const source = sourceFor(flow, app) ?? app.nodes.find((node) => node.id === flow.steps[0]?.node_id);
+  return `${pathKindLabel(flow)} · ${countLabel(flow.steps.length, "symbol")} · ${nodeLocation(source)}`;
+}
+
 function pathQuestion(flow?: Flow) {
   const kind = flow?.kind?.trim().toLowerCase();
   if (kind === "call-path" || kind === "callpath")
@@ -131,26 +144,61 @@ function EvidenceState({ evidence }: { evidence?: Evidence }) {
   );
 }
 
+function BuildIntake({ onBuild, onCancelBuild, buildState }: Pick<Props, "onBuild" | "onCancelBuild" | "buildState">) {
+  const [gitUrl, setGitUrl] = useState("");
+  const [ref, setRef] = useState("");
+  if (!onBuild) return null;
+  const busy = buildState?.status && !["idle", "ready", "error", "too_large", "unsupported_language", "expired", "cancelled"].includes(buildState.status);
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!gitUrl.trim() || busy) return;
+    onBuild?.(gitUrl.trim(), ref.trim());
+  }
+  return <section className="hosted-build" aria-labelledby="hosted-build-title">
+    <div><span className="panel-label">OPEN A CODEBASE</span><h2 id="hosted-build-title">Build a graph from a public repository</h2><p>Paste a GitHub, GitLab, or Bitbucket URL. Lachesis builds the graph remotely; your browser only receives the exported bundle.</p></div>
+    <form onSubmit={submit} className="hosted-build-form" aria-label="Build graph from repository">
+      <label htmlFor="hosted-repository-url"><span>Repository URL</span><input id="hosted-repository-url" value={gitUrl} onChange={event => setGitUrl(event.target.value)} placeholder="https://github.com/org/repository" inputMode="url" autoComplete="url" disabled={Boolean(busy)} /></label>
+      <label htmlFor="hosted-repository-ref"><span>Ref <small>optional</small></span><input id="hosted-repository-ref" value={ref} onChange={event => setRef(event.target.value)} placeholder="main" disabled={Boolean(busy)} /></label>
+      {busy ? <button type="button" className="hosted-build-cancel" onClick={onCancelBuild}>Cancel build</button> : <button type="submit" disabled={!gitUrl.trim()}>Build graph<Icon name="arrow" size={13} /></button>}
+    </form>
+    {buildState?.status && buildState.status !== "idle" && <div className={`hosted-build-status ${buildState.status}`} role={["error", "too_large", "unsupported_language"].includes(buildState.status) ? "alert" : "status"} aria-live="polite" aria-busy={Boolean(busy)}><b>{buildState.message || (buildState.status === "ready" ? "Bundle ready." : `Build ${buildState.status}.`)}</b>{buildState.steps.length > 0 && <span>{buildState.steps.map(step => `${step.key}: ${step.state}`).join(" · ")}</span>}{["too_large", "unsupported_language"].includes(buildState.status) && <small>Use “Load another bundle” to upload a locally generated bundle.</small>}</div>}
+  </section>;
+}
+
 export function HomeView({
   app,
   isDemo,
   loadState,
   onUpload,
+  onReviewCoverage,
   onLoadSample,
   onLoadSecuritySample,
   onView,
+  onSearch,
   onDismiss,
   direction,
   onFlow,
   onSink,
   onEntry,
+  onBuild,
+  onCancelBuild,
+  buildState,
 }: Props) {
   const [selectedId, setSelectedId] = useState(app.findings[0]?.id ?? "");
   const [queueFilter, setQueueFilter] = useState<QueueFilter>("all");
+  const [queueSearch, setQueueSearch] = useState("");
+  const [sourceSearch, setSourceSearch] = useState("");
   useEffect(() => {
     setSelectedId(app.findings[0]?.id ?? "");
     setQueueFilter("all");
+    setQueueSearch("");
+    setSourceSearch("");
   }, [app]);
+  function submitSourceSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const query = sourceSearch.trim();
+    if (query) onSearch?.(query);
+  }
   const findings = useMemo(
     () =>
       app.findings
@@ -194,13 +242,26 @@ export function HomeView({
       return flowCount(b) - flowCount(a) || stepCount(b) - stepCount(a);
     })[0];
   const visibleFindings = useMemo(
-    () =>
-      queueFilter === "all"
-        ? findings
-        : findings.filter(
-            (item) => evidenceStatus(item.evidence) === queueFilter,
-          ),
-    [findings, queueFilter],
+    () => {
+      const term = queueSearch.trim().toLowerCase();
+      return findings.filter((item) => {
+        const matchesStatus = queueFilter === "all" || evidenceStatus(item.evidence) === queueFilter;
+        if (!matchesStatus) return false;
+        if (!term) return true;
+        const nodes = item.flow.steps
+          .map((step) => app.nodes.find((node) => node.id === step.node_id))
+          .filter(Boolean);
+        return [
+          item.flow.name,
+          item.flow.kind,
+          item.flow.description,
+          item.evidence?.result_summary,
+          ...item.flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation]),
+          ...nodes.flatMap((node) => node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module] : []),
+        ].filter(Boolean).join(" ").toLowerCase().includes(term);
+      });
+    },
+    [app, findings, queueFilter, queueSearch],
   );
   const priority =
     visibleFindings.find((item) => item.flow.id === selectedId) ??
@@ -236,9 +297,9 @@ export function HomeView({
   const guardVerdict = priority?.evidence?.guards?.verdict;
   const title =
     leadCount || unresolvedCount
-      ? `${leadCount} lead${leadCount === 1 ? "" : "s"} and ${unresolvedCount} unresolved path${unresolvedCount === 1 ? "" : "s"} deserve review.`
+      ? "Start with the paths that need a closer read."
       : reportedCount
-        ? `${reportedCount} reported path${reportedCount === 1 ? " is" : "s are"} ready to inspect.`
+        ? "Start with a bundled path, then verify it in source."
         : metadataOnly
         ? "Linked records are present, but no traceable path steps are available."
         : graphOnly
@@ -246,6 +307,177 @@ export function HomeView({
           ? "Understand this code by following one path."
           : "Explore how this code is connected."
         : "No open evidence paths in this bundle.";
+
+  if (graphOnly) {
+    const startNode = graphFocus
+      ? sourceFor(graphFocus, app) ?? app.nodes.find((node) => node.id === graphFocus.steps[0]?.node_id)
+      : undefined;
+    const endNode = graphFocus
+      ? sinkFor(graphFocus, app) ?? app.nodes.find((node) => node.id === graphFocus.steps.at(-1)?.node_id)
+      : undefined;
+    const otherPaths = app.flows.filter((flow) => flow.id !== graphFocus?.id).slice(0, 4);
+
+    return (
+      <main className="understand-home">
+        <header className="understand-hero">
+          <div className="understand-copy">
+            <h1>Understand {app.name || "this codebase"}, one path at a time.</h1>
+            <p>
+              {app.bundle.description ||
+                "Start with a real behavior, follow its calls and data handoffs, and inspect the source without losing your place—build a mental model without opening files one by one."}
+            </p>
+            <p className="understand-value">
+              Paths keep the relevant symbols, relationships, and source context together, so unfamiliar code becomes a guided reading instead of file-by-file tab hopping.
+            </p>
+            <div className="understand-actions">
+              {graphFocus && (
+                <button
+                  type="button"
+                  className="understand-primary"
+                  aria-label={`Follow ${flowDisplayName(graphFocus, app.nodes, app.flows)}`}
+                  title={`Follow ${flowDisplayName(graphFocus, app.nodes, app.flows)}`}
+                  onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}
+                >
+                  Follow “{flowActionLabel(graphFocus, app)}” <Icon name="arrow" size={14} />
+                </button>
+              )}
+              <button type="button" className="understand-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
+                <Icon name="upload" size={14} />
+                {loadState.type === "loading" ? "Reading bundle…" : "Load another bundle"}
+              </button>
+            </div>
+            {onSearch && (
+              <form
+                className="understand-search"
+                onSubmit={submitSourceSearch}
+              >
+                <Icon name="search" size={15} />
+                <input
+                  value={sourceSearch}
+                  onChange={(event) => setSourceSearch(event.target.value)}
+                  placeholder="Find a symbol, file, or source text…"
+                  aria-label="Find a symbol, file, or source text in this codebase"
+                />
+                <button type="submit" disabled={!sourceSearch.trim()}>Find</button>
+              </form>
+            )}
+            <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
+          </div>
+          <dl className="understand-facts" aria-label="Active codebase">
+            <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} ready to follow</dd></div>
+            <div><dt>Request flows</dt><dd>{app.entries.length.toLocaleString()} starting points</dd></div>
+            <div><dt>Files</dt><dd>{(app.files.length || new Set(app.nodes.map((node) => node.file).filter(Boolean)).size).toLocaleString()} in this bundle</dd></div>
+            <div><dt>Source previews</dt><dd>{countLabel(app.nodes.filter((node) => node.snippet.trim() || node.sourceWindow?.lines.length).length, "source preview")} of {countLabel(app.nodes.length, "symbol")}</dd></div>
+          </dl>
+        </header>
+
+        {loadState.message && (
+          <p className={`briefing-notice ${loadState.type}`} role={loadState.type === "error" ? "alert" : "status"}>
+            <i />
+            <span>{loadState.message}</span>
+            {loadState.type === "error" && <span className="notice-actions">
+              <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>
+              <a className="notice-action notice-link" href="https://github.com/UnboundCompute/lachesis-explorer/blob/main/docs/GRAPH_EXPLORER_CONTRACT.md" target="_blank" rel="noreferrer">Open bundle contract</a>
+            </span>}
+            <button className="notice-dismiss" type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
+          </p>
+        )}
+
+        {app.coverage.limitations.length > 0 && (
+          <aside className="understand-coverage" aria-label="Bundle coverage note">
+            <div>
+              <span className="panel-label">WHAT THIS BUNDLE INCLUDES</span>
+              <p>
+                {countLabel(app.coverage.includedNodes ?? app.nodes.length, "node")} of {countLabel(app.coverage.indexedNodes ?? app.nodes.length, "indexed node")} are available here. Paths and source context reflect this bundle’s included projection.
+              </p>
+            </div>
+            <div className="understand-coverage-detail">
+              <small>{app.coverage.limitations[0]}{app.coverage.limitations.length > 1 ? ` · +${app.coverage.limitations.length - 1} more` : ""}</small>
+              <button type="button" onClick={onReviewCoverage}>Review data quality <Icon name="arrow" size={12} /></button>
+            </div>
+          </aside>
+        )}
+
+        <section className="understand-questions" aria-labelledby="understand-questions-title">
+          <div className="understand-section-heading">
+            <h2 id="understand-questions-title">What do you want to understand?</h2>
+            <p>Choose the question closest to the job in front of you.</p>
+          </div>
+          <div className="understand-question-list">
+            <button type="button" onClick={() => graphFocus ? onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "") : onView("map")}>
+              <span><b>How does this behavior work?</b><small>{graphFocus ? "Follow one complete call or data path." : "No traceable code path is included in this bundle."}</small></span>
+              <Icon name="arrow" size={14} />
+            </button>
+            <button type="button" onClick={() => firstEntry ? onEntry(0, firstEntry.hops[0]?.node_id ?? "") : onView("map")}>
+              <span><b>What happens after a starting point?</b><small>{firstEntry ? "Walk the request from handler to effect." : "No request flow is included in this bundle."}</small></span>
+              <Icon name="arrow" size={14} />
+            </button>
+            <button type="button" onClick={() => onView("map")}>
+              <span><b>How is the codebase organized?</b><small>Explore modules and their relationships.</small></span>
+              <Icon name="arrow" size={14} />
+            </button>
+            <button type="button" onClick={() => firstSink ? onSink(firstSink.id) : onView("map")}>
+              <span><b>What reaches this code?</b><small>{firstSink ? "Compare paths that arrive at one destination." : "No destination is available in this bundle."}</small></span>
+              <Icon name="arrow" size={14} />
+            </button>
+          </div>
+        </section>
+
+        {graphFocus ? (
+          <section className="understand-start" aria-labelledby="understand-start-title">
+            <div className="understand-section-heading">
+              <h2 id="understand-start-title">A useful place to start</h2>
+              <p>The most complete path included in this bundle.</p>
+            </div>
+            <div className="understand-path">
+              <div className="understand-path-copy">
+                <span>{pathKindLabel(graphFocus)} · {countLabel(graphFocus.steps.length, "symbol")}</span>
+                <h3 title={flowDisplayName(graphFocus, app.nodes, app.flows)}>{flowActionLabel(graphFocus, app)}</h3>
+                <p>{graphFocus.description || `Follow the path from ${startNode?.label || "its first symbol"} to ${endNode?.label || "its final symbol"}.`}</p>
+              </div>
+              <div className="understand-route" aria-label="Recommended path endpoints">
+                <span><small>Starts at</small><b>{startNode?.label || "Not reported"}</b><em>{nodeLocation(startNode)}</em></span>
+                <i><span /></i>
+                <span><small>Ends at</small><b>{endNode?.label || "Not reported"}</b><em>{nodeLocation(endNode)}</em></span>
+              </div>
+              <button type="button" onClick={() => onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
+                Open this path <Icon name="arrow" size={14} />
+              </button>
+            </div>
+          </section>
+        ) : (
+          <section className="understand-empty">
+            <h2>No ready-made paths were included</h2>
+            <p>The graph is still available. Explore its symbols and relationships directly.</p>
+            <button type="button" onClick={() => onView("map")}>Explore the graph <Icon name="arrow" size={14} /></button>
+          </section>
+        )}
+
+        {otherPaths.length > 0 && (
+          <section className="understand-more" aria-labelledby="understand-more-title">
+            <div className="understand-section-heading">
+              <h2 id="understand-more-title">Other paths in this bundle</h2>
+              <p>Open only what helps answer your next question.</p>
+            </div>
+            <div className="understand-path-list">
+              {otherPaths.map((flow) => (
+                <button type="button" key={flow.id} onClick={() => onFlow(flow.id, flow.sourceNodeId ?? flow.steps[0]?.node_id ?? "")}>
+                  <span><b title={flowDisplayName(flow, app.nodes, app.flows)}>{flowActionLabel(flow, app)}</b><small>{pathKindLabel(flow)} · {countLabel(flow.steps.length, "symbol")}{flowDisplayName(flow, app.nodes, app.flows) === flow.name ? ` · ${pathLocation(flow, app)}` : ""}</small></span>
+                  <Icon name="arrow" size={13} />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <footer className="understand-footer">
+          <span>Source stays beside every step. Path explanations can be copied as portable Markdown.</span>
+          <span>{isDemo ? "Synthetic sample" : "Processed locally"} · {app.language || "language not reported"}</span>
+          {isDemo && <button type="button" onClick={onLoadSecuritySample}>View security projection</button>}
+        </footer>
+      </main>
+    );
+  }
 
   return (
     <main className="investigation-briefing">
@@ -270,7 +502,7 @@ export function HomeView({
                 (graphFocus
                   ? "Start with a bundled path, then move through the symbols and relationships that make the behavior understandable."
                   : "This bundle contains graph structure but no bundled paths. Open the graph to inspect its relationships directly.")
-              : "Start with the strongest witness, inspect what controls it, and keep uncertainty visible. Lachesis shows the path the bundle contains—not a vulnerability verdict."}
+              : "Start with the strongest bundled path, follow its symbols and handoffs, and inspect the source. Security status and uncertainty stay visible when the bundle reports them."}
           </p>
         </div>
         <div className="briefing-actions">
@@ -307,6 +539,7 @@ export function HomeView({
               </button>
             </div>
           )}
+          <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
         </div>
       </header>
 
@@ -315,7 +548,7 @@ export function HomeView({
           <span>01</span>
           <div>
             <b>Choose a path</b>
-            <small>{graphFocus ? `Start with a ${pathKindLabel(graphFocus)} or request path.` : "Open the graph to inspect its relationships."}</small>
+            <small>{graphFocus ? `Start with a ${pathKindLabel(graphFocus)} or request flow.` : "Open the graph to inspect its relationships."}</small>
           </div>
         </li>
         <li>
@@ -341,8 +574,27 @@ export function HomeView({
         >
           <i />
           <span>{loadState.message}</span>
-          <button type="button" onClick={onDismiss} aria-label="Dismiss status message">×</button>
+          {loadState.type === "error" && <span className="notice-actions">
+            <button type="button" className="notice-action" onClick={onUpload}>Try another bundle</button>
+            <a className="notice-action notice-link" href="https://github.com/UnboundCompute/lachesis-explorer/blob/main/docs/GRAPH_EXPLORER_CONTRACT.md" target="_blank" rel="noreferrer">Open bundle contract</a>
+          </span>}
+          <button className="notice-dismiss" type="button" onClick={onDismiss} aria-label="Dismiss status message"><Icon name="close" size={14} /></button>
         </p>
+      )}
+
+      {onSearch && (
+        <form className="briefing-source-search" onSubmit={submitSourceSearch}>
+          <Icon name="search" size={15} />
+          <label htmlFor="briefing-source-search-input">Find a symbol or file in this codebase</label>
+          <input
+            id="briefing-source-search-input"
+            value={sourceSearch}
+            onChange={(event) => setSourceSearch(event.target.value)}
+            placeholder="e.g. src/routes/search.ts or normalize"
+            aria-label="Find a symbol, file, or source text in this codebase"
+          />
+          <button type="submit" disabled={!sourceSearch.trim()}>Find</button>
+        </form>
       )}
 
       <div className="triage-board">
@@ -360,7 +612,7 @@ export function HomeView({
                   <Icon name="target" size={18} />
                 </span>
                 <div>
-                  <h2>{priority.flow.name}</h2>
+                  <h2 title={flowDisplayName(priority.flow, app.nodes, app.flows)}>{flowActionLabel(priority.flow, app)}</h2>
                   <p>
                     {nodeLocation(priority.sink)}
                   </p>
@@ -383,7 +635,7 @@ export function HomeView({
               </div>
               <p className="priority-summary">
                 {priority.evidence?.result_summary ?? priority.flow.description ??
-                  `${priority.flow.steps.length} bundled steps connect the selected source and boundary.`}
+                  `${countLabel(priority.flow.steps.length, "bundled step")} connect${priority.flow.steps.length === 1 ? "s" : ""} the selected source and boundary.`}
               </p>
               <div className="judgment-row">
                 <div>
@@ -396,7 +648,7 @@ export function HomeView({
                 </div>
                 <div>
                   <small>Witness</small>
-                  <b>{priority.flow.steps.length} steps</b>
+                  <b>{countLabel(priority.flow.steps.length, "step")}</b>
                 </div>
               </div>
               {priority.evidence?.limitations?.[0] && (
@@ -434,7 +686,7 @@ export function HomeView({
                   <Icon name="code" size={18} />
                 </span>
                 <div>
-                  <h2>{graphFocus.name}</h2>
+                  <h2 title={flowDisplayName(graphFocus, app.nodes, app.flows)}>{flowActionLabel(graphFocus, app)}</h2>
                   <p>Suggested starting path · code understanding</p>
                 </div>
               </div>
@@ -476,7 +728,7 @@ export function HomeView({
               )}
               <p className="priority-summary">
                 {graphFocus.steps.length > 1
-                  ? `This bundled ${pathKindLabel(graphFocus)} connects ${graphFocus.steps.length} symbols. Open it to inspect each relationship and its exact source location.`
+                  ? `This bundled ${pathKindLabel(graphFocus)} connects ${countLabel(graphFocus.steps.length, "symbol")}. Open it to inspect each relationship and its exact source location.`
                   : "This bundle contains one symbol for this path. Open it to inspect its source and relationships in the surrounding graph."}
               </p>
               <div className="judgment-row">
@@ -490,7 +742,7 @@ export function HomeView({
                 </div>
                 <div>
                   <small>Evidence</small>
-                  <b>{app.mcp.length ? `${app.mcp.length} linked records` : "not supplied"}</b>
+                  <b>{app.mcp.length ? countLabel(app.mcp.length, "linked record") : "not supplied"}</b>
                 </div>
               </div>
               <div className="priority-actions">
@@ -529,8 +781,8 @@ export function HomeView({
             <div className="briefing-empty">
               <h2>Graph structure is ready to explore</h2>
               <p>
-                This bundle includes {app.nodes.length} nodes and{" "}
-                {app.edges.length} relationships, but no graph paths were
+                This bundle includes {countLabel(app.nodes.length, "node")} and{" "}
+                {countLabel(app.edges.length, "relationship")}, but no graph paths were
                 included.
               </p>
               <div className="priority-actions">
@@ -546,9 +798,15 @@ export function HomeView({
             <div className="briefing-empty">
               <h2>No traceable paths available</h2>
               <p>
-                Load a bundle containing finding witnesses or value flows to
-                begin an investigation.
+                This bundle does not include a path to follow yet. Load a bundle
+                with paths, or explore the graph structure that is available.
               </p>
+              <div className="priority-actions">
+                <button type="button" onClick={onUpload} disabled={loadState.type === "loading"}>
+                  {loadState.type === "loading" ? "Reading bundle…" : "Load another bundle"}
+                </button>
+                <button type="button" onClick={() => onView("map")}>Explore current graph</button>
+              </div>
             </div>
           )}
         </section>
@@ -595,6 +853,18 @@ export function HomeView({
               ))}
             </div>
           )}
+          {!graphOnly && !metadataOnly && (
+            <label className="search queue-search">
+              <Icon name="search" size={14} />
+              <input
+                value={queueSearch}
+                onChange={(event) => setQueueSearch(event.target.value)}
+                placeholder="Find a path, symbol, file, or code…"
+                aria-label="Search evidence paths by path, symbol, file, or source code"
+              />
+              {queueSearch && <button type="button" onClick={() => setQueueSearch("")} aria-label="Clear evidence search"><Icon name="close" size={14} /></button>}
+            </label>
+          )}
           <div className="queue-list">
             {queueItems.map((item, index) => (
               <button
@@ -608,7 +878,7 @@ export function HomeView({
                 aria-pressed={
                   item.flow.id === (priority?.flow.id ?? graphFocus?.id)
                 }
-                aria-label={`Select ${item.flow.name}, ${flowContext(item.flow, app)}`}
+                  aria-label={`Select ${flowDisplayName(item.flow, app.nodes, app.flows)}, ${flowContext(item.flow, app)}`}
                 onClick={() =>
                   graphOnly
                     ? onFlow(item.flow.id, direction === "forward" ? item.flow.steps.at(-1)?.node_id ?? "" : item.flow.sourceNodeId ?? item.flow.steps[0]?.node_id ?? "")
@@ -619,11 +889,11 @@ export function HomeView({
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <span className="queue-copy">
-                  <b>{item.flow.name}</b>
+                  <b title={flowDisplayName(item.flow, app.nodes, app.flows)}>{flowActionLabel(item.flow, app)}</b>
                   <small>
                     {graphOnly
-                      ? `${pathKindLabel(item.flow)} · ${item.flow.steps.length} symbols · ${pathLocation(item.flow, app)}`
-                      : `${item.evidence?.confidence ?? "bundle"} confidence · ${item.flow.steps.length} steps`}
+                      ? `${pathKindLabel(item.flow)} · ${countLabel(item.flow.steps.length, "symbol")} · ${pathLocation(item.flow, app)}`
+                      : `${item.evidence?.confidence ?? "bundle"} confidence · ${countLabel(item.flow.steps.length, "step")}`}
                   </small>
                   {graphOnly && <small className="queue-row-context">{flowContext(item.flow, app)}</small>}
                 </span>
@@ -640,10 +910,12 @@ export function HomeView({
                   ? graphFocus
                     ? "This bundle has no security overlay; explore its graph paths instead."
                     : "No paths were included; open the full graph to browse its structure."
-                : "No findings match this filter."}
-              {!graphOnly && !metadataOnly && queueFilter !== "all" && (
-                <button type="button" onClick={() => setQueueFilter("all")}>
-                  Show all findings
+                : queueSearch
+                  ? `No findings match “${queueSearch}”${queueFilter !== "all" ? " with this status filter" : ""}.`
+                  : "No findings match this filter."}
+              {!graphOnly && !metadataOnly && (queueFilter !== "all" || queueSearch) && (
+                <button type="button" onClick={() => { setQueueFilter("all"); setQueueSearch(""); }}>
+                  {queueSearch ? "Clear search and filters" : "Show all findings"}
                 </button>
               )}
             </div>
@@ -681,17 +953,17 @@ export function HomeView({
           <p>Choose a different question when the suggested path is not the one you need.</p>
         </div>
         <div className="question-list">
-          <button type="button" disabled={!graphFocus} onClick={() => graphFocus && onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")}>
+          <button type="button" onClick={() => graphFocus ? onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "") : onView("map")}>
             <b>{pathQuestion(graphFocus).title}</b>
             <small>{graphFocus ? pathQuestion(graphFocus).detail : "No graph paths in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
-          <button type="button" disabled={!firstEntry} onClick={() => firstEntry && onEntry(0, firstEntry.hops[0]?.node_id ?? "")}>
-            <b>What calls this code?</b>
-            <small>{firstEntry ? "Walk a request from entrypoint to effect." : "No request paths in this bundle."}</small>
+          <button type="button" onClick={() => firstEntry ? onEntry(0, firstEntry.hops[0]?.node_id ?? "") : onView("map")}>
+            <b>Which request flow should I follow?</b>
+            <small>{firstEntry ? "Walk a request from starting point to effect." : "No request flows in this bundle."}</small>
             <Icon name="arrow" size={12} />
           </button>
-          <button type="button" disabled={!firstSink} onClick={() => firstSink && onSink(firstSink.id)}>
+          <button type="button" onClick={() => firstSink ? onSink(firstSink.id) : onView("map")}>
             <b>What converges here?</b>
             <small>{firstSink ? "Compare paths that reach one boundary." : "No boundary nodes in this bundle."}</small>
             <Icon name="arrow" size={12} />
@@ -699,6 +971,11 @@ export function HomeView({
           <button type="button" onClick={() => onView("map")}>
             <b>How is it connected?</b>
             <small>Survey modules, relationships, and shape.</small>
+            <Icon name="arrow" size={12} />
+          </button>
+          <button type="button" onClick={() => onView("compare")}>
+            <b>What changed between revisions?</b>
+            <small>Load another bundle to compare paths and relationships.</small>
             <Icon name="arrow" size={12} />
           </button>
         </div>
@@ -724,7 +1001,9 @@ export function HomeView({
                 ? graphFocus
                   ? onFlow(graphFocus.id, graphFocus.sourceNodeId ?? graphFocus.steps[0]?.node_id ?? "")
                   : onView("map")
-                : onView("investigate")
+                : app.findings.length
+                  ? onView("investigate")
+                  : onView("map")
             }
           >
             <span className="reading-metric">
@@ -754,7 +1033,7 @@ export function HomeView({
             <span>
               <b>Graph topology</b>
               <small>
-                {app.edges.length} relationships · {dynamicCount} dynamic.
+                {countLabel(app.edges.length, "relationship")} · {countLabel(dynamicCount, "dynamic")}
               </small>
             </span>
             <Icon name="arrow" size={13} />
@@ -764,12 +1043,12 @@ export function HomeView({
             onClick={() =>
               app.entries[0]
                 ? onEntry(0, app.entries[0].hops[0]?.node_id ?? "")
-                : onView("journey")
+                : onView("map")
             }
           >
             <span className="reading-metric">{app.entries.length}</span>
             <span>
-              <b>Request paths</b>
+              <b>Request flows</b>
               <small>
                 {incompletePaths
                   ? `${incompletePaths} use derived layout`
@@ -793,8 +1072,8 @@ export function HomeView({
           </span>
           <span className="coverage-note">
             <i />
-            {(app.coverage.includedNodes ?? app.nodes.length).toLocaleString()} graph nodes shown ·{" "}
-            {(app.coverage.indexedNodes ?? app.nodes.length).toLocaleString()} indexed
+            {countLabel(app.coverage.includedNodes ?? app.nodes.length, "graph node")} shown ·{" "}
+            {countLabel(app.coverage.indexedNodes ?? app.nodes.length, "indexed node")}
           </span>
         </div>
         <div>

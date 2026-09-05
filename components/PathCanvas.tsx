@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { LayoutPoint, Node, Step } from '../lib/lachesis'
+import { countLabel, type LayoutPoint, type Node, type Step } from '../lib/lachesis'
 import { trackEvent } from '../lib/analytics'
+import { Icon } from './Icon'
 
 export type PathItem = {
   id: string
@@ -22,6 +23,7 @@ type Props = {
   points?: Array<LayoutPoint | undefined>
   layoutSource: 'precomputed' | 'derived'
   title?: string
+  direction?: 'backward' | 'forward'
 }
 
 const shorten = (value: string, limit = 18) =>
@@ -56,9 +58,12 @@ export function PathCanvas({
   points,
   layoutSource,
   title = 'Evidence path',
+  direction = 'backward',
 }: Props) {
+  const securityPath = title === 'Witness path'
   const itemUnit =
-    title === 'Code path' ? 'symbols' : title === 'Request path' ? 'hops' : 'nodes'
+    title === 'Code path' ? 'symbols' : title === 'Request flow' ? 'steps' : 'nodes'
+  const itemSingular = title === 'Code path' ? 'symbol' : title === 'Request flow' ? 'step' : 'node'
   const [viewport, setViewport] = useState<'fit' | 'reset'>('fit')
   const [focused, setFocused] = useState(false)
   const [zoom, setZoom] = useState(1)
@@ -88,6 +93,15 @@ export function PathCanvas({
     },
   )
   const selectedItem = items[selectedIndex]
+  const readingExplanation = selectedItem
+    ? selectedIndex === 0
+      ? 'The path starts here.'
+      : selectedIndex === items.length - 1
+        ? 'The path ends here.'
+        : selectedItem.relation
+          ? `This step continues the path via ${selectedItem.relation}.`
+          : 'This step continues the path.'
+    : ''
   const occurrenceNumbers = items.reduce<number[]>((result, item, index) => {
     result[index] = items.slice(0, index).filter((previous) => previous.id === item.id).length + 1
     return result
@@ -104,6 +118,10 @@ export function PathCanvas({
   }, [])
 
   useEffect(() => {
+    const activeElement = document.activeElement
+    if (!focusAfterSelection.current && !activeElement?.closest('.path-canvas')) {
+      return
+    }
     selectedRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     selectedGraphRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     if (focusAfterSelection.current) {
@@ -133,10 +151,11 @@ export function PathCanvas({
       <div className="canvas-bar">
         <div>
           <span className="canvas-title">{title}</span>
-          <span className="canvas-direction">Read left → right</span>
+          <span className="canvas-direction">Read {direction === 'forward' ? 'right → left' : 'left → right'}</span>
           <span className="canvas-count">
+            {selectedItem ? `step ${selectedIndex + 1} / ${items.length} · ` : ''}
             {focused ? `${start + 1}–${end} of ` : ''}
-            {items.length} {itemUnit}
+            {countLabel(items.length, itemSingular)}
           </span>
         </div>
         <div className="canvas-actions">
@@ -169,9 +188,9 @@ export function PathCanvas({
             Reset
           </button>
           <div className="zoom-controls" role="group" aria-label="Path zoom">
-            <button type="button" onClick={() => adjustZoom(-.1)} aria-label="Zoom path out">−</button>
+            <button type="button" onClick={() => adjustZoom(-.1)} aria-label="Zoom path out"><Icon name="minus" size={13} /></button>
             <output aria-live="polite">{Math.round(zoom * 100)}%</output>
-            <button type="button" onClick={() => adjustZoom(.1)} aria-label="Zoom path in">+</button>
+            <button type="button" onClick={() => adjustZoom(.1)} aria-label="Zoom path in"><Icon name="plus" size={13} /></button>
           </div>
         </div>
       </div>
@@ -187,6 +206,7 @@ export function PathCanvas({
             {repeatedIds.has(selectedItem.id) && ` · revisit ${occurrenceNumbers[selectedIndex]}`}
             {selectedItem.caption ? ` · ${selectedItem.caption}` : ''}
           </small>
+          <p className="path-reading-explanation">{readingExplanation}</p>
           {(selectedItem.edge?.confidence || selectedItem.edge?.limitations?.length) && (
             <em>
               {selectedItem.edge.confidence
@@ -215,14 +235,14 @@ export function PathCanvas({
               >
                 {index > 0 && <i aria-hidden="true">→</i>}
                 <b>{boundary.label}</b>
-                <small>{boundary.end - boundary.start + 1} {itemUnit}</small>
+                <small>{countLabel(boundary.end - boundary.start + 1, itemSingular)}</small>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      <div className="canvas-viewport" role="region" aria-label={`${title} graph canvas`}>
+      <div className="canvas-viewport" role="region" aria-label={`${title}, read ${direction === 'forward' ? 'end to start' : 'start to end'}`}>
         <svg
           viewBox={viewBox}
           style={{ width: `${zoom * 100}%`, minWidth: `${Math.max(420, 620 * zoom)}px`, height: `${270 * zoom}px` }}
@@ -341,18 +361,20 @@ export function PathCanvas({
               type="button"
               key={`${item.id}-${start + index}`}
               className={occurrenceSelected ? 'selected' : ''}
+              title={`${item.label} · ${item.node.label || item.node.id}`}
               onClick={() => onSelect(item.id, start + index)}
               aria-pressed={occurrenceSelected}
               aria-current={occurrenceSelected ? 'step' : undefined}
-                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
+                aria-label={`${item.label}, step ${start + index + 1} of ${items.length}, ${item.node.label || item.node.id}${item.relation ? `, via ${item.relation}` : ''}${item.node.scope ? `, ${scopeLabel(item.node)}` : ''}${item.node.scope?.kind ? `, ${item.node.scope.kind} boundary` : ''}`}
             >
               <span>{String(start + index + 1).padStart(2, '0')}</span>
               <b>{item.label}</b>
               <small>
                 {item.node.label || item.node.id} · {item.node.scope ? `${scopeLabel(item.node)} · ` : ''}{nodeLocation(item.node)}
+                {item.relation ? ` · via ${item.relation}` : ''}
                 {repeatedIds.has(item.id) ? ` · revisit ${occurrenceNumbers[start + index]}` : ''}
-                {item.edge?.alias ? ' · alias' : ''}
-                {item.edge?.dynamic ? ' · dynamic' : ''}
+                {item.edge?.alias ? ' · alternate connection' : ''}
+                {item.edge?.dynamic ? ' · runtime-dependent connection' : ''}
               </small>
             </button>
           )
@@ -360,11 +382,11 @@ export function PathCanvas({
       </div>
 
       <div className="graph-legend" aria-label="Graph color legend">
-        <span><i className="legend-exact" />exact path</span>
-        <span><i className="legend-alias" />alias</span>
-        <span><i className="legend-dynamic" />dynamic</span>
-        <span><i className="legend-sink" />sink</span>
-        {items.some((item) => item.node.scope?.kind === 'external' || item.node.scope?.kind === 'generated') && <span><i className="legend-scope" />external / generated context</span>}
+        <span title="The bundle recorded this relationship directly"><i className="legend-exact" />recorded relationship</span>
+        <span title="The relationship uses an alternate or aliased name"><i className="legend-alias" />alternate relationship</span>
+        <span title="The relationship depends on runtime behavior"><i className="legend-dynamic" />runtime-dependent relationship</span>
+        <span title={securityPath ? 'The path reaches its reported security destination' : 'The final symbol in this path'}><i className="legend-sink" />{securityPath ? 'security destination' : 'path destination'}</span>
+        {items.some((item) => item.node.scope?.kind === 'external' || item.node.scope?.kind === 'generated') && <span title="This symbol belongs to generated or external code"><i className="legend-scope" />external / generated code</span>}
         {repeatedIds.size > 0 && <span><i className="legend-revisited" />revisited symbol</span>}
       </div>
     </div>

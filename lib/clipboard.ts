@@ -15,3 +15,15 @@ export async function copyText(value: string) {
   input.remove();
   if (!copied) throw new Error("Clipboard fallback failed");
 }
+
+export function downloadText(value: string, filename: string) {
+  if (typeof document === "undefined" || typeof URL === "undefined") {
+    throw new Error("Downloads unavailable")
+  }
+  const href = URL.createObjectURL(new Blob([value], { type: "text/markdown;charset=utf-8" }))
+  const link = document.createElement("a")
+  link.href = href
+  link.download = filename
+  link.click()
+  window.setTimeout(() => URL.revokeObjectURL(href), 0)
+}

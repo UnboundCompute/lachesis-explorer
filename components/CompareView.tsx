@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { App, Flow } from '../lib/lachesis'
+import { countLabel, entryDisplayName, flowDisplayName, type App, type Flow } from '../lib/lachesis'
+import { Icon } from './Icon'
 import { copyText } from '../lib/clipboard'
 import { trackEvent } from '../lib/analytics'
 
@@ -45,6 +46,21 @@ function flowScopes(flow: Flow, app: App) {
   return scopes
 }
 
+function sourceCoverage(flow: Flow, app: App) {
+  const available = flow.steps.filter((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+  }).length;
+  return `${available}/${flow.steps.length} source previews`;
+}
+
+function changeReasons(base: Flow, compare: Flow) {
+  const reasons: string[] = [];
+  if (base.kind !== compare.kind) reasons.push("kind changed");
+  if (JSON.stringify(base.steps) !== JSON.stringify(compare.steps)) reasons.push("path changed");
+  return reasons;
+}
+
 function flowKind(flow: Flow) {
   const kind = flow.kind?.trim().toLowerCase()
   if (kind === 'call-path' || kind === 'callpath') return 'Call paths'
@@ -53,13 +69,26 @@ function flowKind(flow: Flow) {
   return flow.kind?.trim() || 'Graph paths'
 }
 
+function flowComparisonLabel(flow: Flow, app: App) {
+  const exact = flowDisplayName(flow, app.nodes, app.flows)
+  if (exact.length <= 56 && !/__builtin_|___chk\b/.test(exact)) return exact
+  const pathNodes = flow.steps.map(step => app.nodes.find(node => node.id === step.node_id)).filter(Boolean) as App['nodes']
+  const first = pathNodes[0]
+  const last = pathNodes.at(-1)
+  const firstLabel = first?.label || first?.id || 'origin unavailable'
+  const lastLabel = last?.label || last?.id || 'destination unavailable'
+  const endpoints = firstLabel === lastLabel ? firstLabel : `${firstLabel} → ${lastLabel}`
+  const location = first?.file ? `${first.file}:${first.line || '—'}` : 'source unavailable'
+  return `${flowKind(flow)} · ${endpoints} · ${location}`
+}
+
 function itemLabel(item: { id: string }, app: App) {
   const node = app.nodes.find((value) => value.id === item.id)
   if (node) return node.label || node.id
   const flow = app.flows.find((value) => value.id === item.id)
-  if (flow) return flow.name
+  if (flow) return flowComparisonLabel(flow, app)
   const entry = app.entries.find((value) => value.id === item.id)
-  if (entry) return entry.label
+  if (entry) return entryDisplayName(entry, app.nodes, app.entries)
   const edge = app.edges.find((value) => value.id === item.id)
   if (edge) {
     const source = app.nodes.find((value) => value.id === edge.source)?.label || edge.source
@@ -67,6 +96,52 @@ function itemLabel(item: { id: string }, app: App) {
     return `${source} → ${target}`
   }
   return item.id
+}
+
+function diffSearchText(item: { id: string }, app: App) {
+  const node = app.nodes.find((value) => value.id === item.id)
+  const flow = app.flows.find((value) => value.id === item.id)
+  const edge = app.edges.find((value) => value.id === item.id)
+  return [
+    itemLabel(item, app),
+    node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.sourceWindow?.lines.join(" "),
+    node?.file, node?.module, node?.scope?.label, node?.scope?.service,
+    flow?.description, flow ? flowPath(flow, app) : undefined,
+    flow?.steps.flatMap((step) => [step.role, step.note, step.edge?.relation]).join(" "),
+    edge?.relation,
+  ].filter(Boolean).join(" ").toLowerCase()
+}
+
+function matchesQuery(text: string, query: string) {
+  return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => text.includes(term))
+}
+
+function matchingFlowNodeId(flow: Flow, app: App, query: string) {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter((term) => term && !term.includes(":"));
+  if (!terms.length) return flow.steps[0]?.node_id ?? "";
+  const match = flow.steps.find((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    const haystack = [
+      step.role,
+      step.note,
+      step.edge?.relation,
+      node?.label,
+      node?.qualifiedName,
+      node?.signature,
+      node?.documentation,
+      node?.snippet,
+      node?.sourceWindow?.lines.join(" "),
+      node?.file,
+      node?.module,
+      node?.scope?.label,
+      node?.scope?.service,
+      node?.scope?.package,
+      node?.scope?.module,
+      node?.scope?.repository,
+    ].filter(Boolean).join(" ").toLowerCase();
+    return terms.every((term) => haystack.includes(term));
+  });
+  return match?.node_id ?? flow.steps[0]?.node_id ?? "";
 }
 
 function DiffColumn({
@@ -81,6 +156,7 @@ function DiffColumn({
   openNodes = false,
   onOpenNode,
   comparisonOnly = false,
+  query = "",
 }: {
   label: string
   items: { id: string }[]
@@ -93,14 +169,18 @@ function DiffColumn({
   openNodes?: boolean
   onOpenNode?: (nodeId: string) => void
   comparisonOnly?: boolean
+  query?: string
 }) {
   const [copyState, setCopyState] = useState<{ id: string; status: 'copied' | 'failed' } | null>(null)
   const [expanded, setExpanded] = useState(false)
-  const itemIdentity = items.map(item => item.id).join('|')
+  const filteredItems = query.trim()
+    ? items.filter((item) => matchesQuery(diffSearchText(item, app), query))
+    : items
+  const itemIdentity = `${items.map(item => item.id).join('|')}|${query}`
   useEffect(() => { setCopyState(null); setExpanded(false) }, [app, itemIdentity])
   async function copyPreview(flow: Flow) {
     try {
-      await copyText(`${flow.name}\n${flowSequence(flow, app)}`)
+      await copyText(`${flowDisplayName(flow, app.nodes, app.flows)}\n${flowSequence(flow, app)}`)
       setCopyState({ id: flow.id, status: 'copied' })
       trackEvent('revision_path_copied')
     } catch {
@@ -111,17 +191,17 @@ function DiffColumn({
   }
   return (
     <div>
-      <span className={className}>{label} · {items.length}</span>
-      {items.length ? (
-        (expanded ? items : items.slice(0, 8)).map((item) => {
+      <span className={className}>{label} · {query.trim() ? `${filteredItems.length} / ${items.length}` : items.length}</span>
+      {filteredItems.length ? (
+        (expanded ? filteredItems : filteredItems.slice(0, 8)).map((item) => {
           const flow = actionable ? app.flows.find((value) => value.id === item.id) : undefined
           const preview = previewFlows ? app.flows.find((value) => value.id === item.id) : undefined
           const previewScopes = preview ? flowScopes(preview, app) : []
-          const firstNodeId = flow?.steps[0]?.node_id
+          const firstNodeId = flow ? matchingFlowNodeId(flow, app, query) : undefined
           const node = openNodes ? app.nodes.find((value) => value.id === item.id) : undefined
           return preview ? (
             <details className="diff-flow-preview" key={item.id}>
-              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {preview.steps.length} steps</small></summary>
+              <summary title={item.id}><span>{itemLabel(item, app)}</span><small>Preview · {countLabel(preview.steps.length, 'step')} · {sourceCoverage(preview, app)}</small></summary>
               <p>{flowPath(preview, app) || "No step sequence available."}</p>
               {previewScopes.length > 1 && <small className="diff-flow-context">Context: {previewScopes.join(' → ')}</small>}
               <button type="button" className="diff-copy-action" onClick={() => copyPreview(preview)}>{copyState?.id === preview.id && copyState.status === 'copied' ? 'Copied' : copyState?.id === preview.id && copyState.status === 'failed' ? 'Copy failed' : 'Copy sequence'}</button>
@@ -131,7 +211,7 @@ function DiffColumn({
               type="button"
               className="diff-item-action"
               key={item.id}
-              title={`Open ${itemLabel(item, app)} in Graph Path`}
+              title={`Open ${itemLabel(item, app)} in Trace`}
               onClick={() => onOpenFlow(flow.id, firstNodeId)}
             >
               <span>{itemLabel(item, app)}</span><small>Open ↗</small>
@@ -149,11 +229,11 @@ function DiffColumn({
           ) : <p key={item.id} title={item.id}><span>{itemLabel(item, app)}</span>{comparisonOnly && <small>Comparison only</small>}</p>
         })
       ) : (
-        <p className="diff-empty">{empty}</p>
+        <p className="diff-empty">{items.length && query.trim() ? `No ${label.toLowerCase()} items match this search.` : empty}</p>
       )}
-      {items.length > 8 && (
+      {filteredItems.length > 8 && (
         <button type="button" className="diff-expand" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
-          {expanded ? 'Show fewer' : `Show all ${items.length}`}
+          {expanded ? 'Show fewer' : `Show all ${countLabel(filteredItems.length, 'item')}`}
         </button>
       )}
     </div>
@@ -162,7 +242,8 @@ function DiffColumn({
 
 export function CompareView({ base, compare, onUpload, loading = false, onOpenFlow, onOpenNode }: Props) {
   const [showAllChanged, setShowAllChanged] = useState(false)
-  useEffect(() => { setShowAllChanged(false) }, [base, compare])
+  const [comparisonQuery, setComparisonQuery] = useState("")
+  useEffect(() => { setShowAllChanged(false); setComparisonQuery("") }, [base, compare])
   const securityMode =
     base.findings.length > 0 ||
     base.bundle.projection === 'security projection' ||
@@ -170,23 +251,22 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
 
   if (!compare) {
     return (
-      <section className="compare-empty">
-        <span className="context-kicker">REVISION DIFF</span>
-        <h2>Compare two {securityMode ? 'evidence' : 'graph'} bundles.</h2>
+      <main className="compare-empty" aria-label="Revision comparison">
+        <h2>Compare two code graph bundles.</h2>
         <p>
           Load a second bundle to see added, removed, and changed{' '}
-          {securityMode ? 'evidence' : 'graph structure'} without replacing the active investigation.
+          graph structure{securityMode ? ' and any reported security context' : ''} without replacing the active investigation.
         </p>
         <button type="button" className="context-upload" onClick={onUpload} disabled={loading} aria-busy={loading}>
           <span>Load comparison bundle</span>
-          <span>＋</span>
+          <Icon name="plus" size={15} />
         </button>
         <div className="compare-steps">
-          <div><b>01</b><span><strong>Added</strong><small>New nodes, relationships, paths, and request paths.</small></span></div>
+          <div><b>01</b><span><strong>Added</strong><small>New nodes, relationships, paths, and request flows.</small></span></div>
           <div><b>02</b><span><strong>Removed</strong><small>Items absent from the comparison bundle.</small></span></div>
           <div><b>03</b><span><strong>Changed</strong><small>Same path IDs with a different kind or step sequence.</small></span></div>
         </div>
-      </section>
+      </main>
     )
   }
 
@@ -194,45 +274,61 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
   const edges = delta(base.edges, compare.edges)
   const paths = delta(base.flows, compare.flows)
   const entries = delta(base.entries, compare.entries)
+  const compareFlowsById = new Map(compare.flows.map((flow) => [flow.id, flow]))
   const changedPaths = base.flows
-    .map((flow) => ({ base: flow, compare: compare.flows.find((item) => item.id === flow.id) }))
+    .map((flow) => ({ base: flow, compare: compareFlowsById.get(flow.id) }))
     .filter(
       (item) =>
         item.compare &&
         (item.compare.kind !== item.base.kind ||
           JSON.stringify(item.compare.steps) !== JSON.stringify(item.base.steps)),
     ) as { base: Flow; compare: Flow }[]
+  const visibleChangedPaths = comparisonQuery.trim()
+    ? changedPaths.filter((item) =>
+        matchesQuery(`${diffSearchText(item.base, base)} ${diffSearchText(item.compare, compare)}`, comparisonQuery),
+      )
+    : changedPaths
   const kinds = [...new Set([...base.flows, ...compare.flows].map(flowKind))]
   const pathGroup = kinds.length === 1 ? kinds[0] : 'Graph paths'
   const groups = [
     ['Nodes', nodes],
     ['Relationships', edges],
     [pathGroup, paths],
-    ['Request paths', entries],
+    ['Request flows', entries],
   ] as const
 
   return (
-    <section className="compare-workspace">
+    <main className="compare-workspace" aria-label="Revision comparison">
       <header className="compare-heading">
         <div>
-          <span className="context-kicker">REVISION DIFF</span>
           <h2>{base.commit || 'base'} <span>→</span> {compare.commit || 'comparison'}</h2>
           <p>Deterministic ID and step comparisons. A missing item means it is absent from that bundle, not necessarily deleted from source. Removed paths open in the active bundle; added paths stay comparison-only here.</p>
         </div>
-        <button type="button" className="secondary-button" onClick={onUpload} disabled={loading} aria-busy={loading}>{loading ? "Reading…" : "Load another"}</button>
+        <button type="button" className="secondary-button" onClick={onUpload} disabled={loading} aria-busy={loading}>{loading ? "Reading…" : "Load comparison bundle"}</button>
       </header>
       <div className="compare-summary">
-        <div><span>BASE</span><b>{base.name}</b><small>{base.nodes.length} nodes · {base.flows.length} paths</small></div>
-        <div><span>COMPARISON</span><b>{compare.name}</b><small>{compare.nodes.length} nodes · {compare.flows.length} paths</small></div>
+        <div><span>BASE</span><b>{base.name}</b><small>{countLabel(base.nodes.length, 'node')} · {countLabel(base.flows.length, 'path')}</small></div>
+        <div><span>COMPARISON</span><b>{compare.name}</b><small>{countLabel(compare.nodes.length, 'node')} · {countLabel(compare.flows.length, 'path')}</small></div>
         <div><span>CHANGED PATHS</span><b>{changedPaths.length}</b><small>same path ID, changed kind or sequence</small></div>
       </div>
+      <label className="compare-search">
+        <span aria-hidden="true">⌕</span>
+        <input
+          value={comparisonQuery}
+          onChange={(event) => setComparisonQuery(event.target.value)}
+          placeholder="Find changed symbols, files, paths, or code…"
+          aria-label="Filter comparison changes by symbol, file, path, or source code"
+        />
+        {comparisonQuery && <button type="button" onClick={() => setComparisonQuery("")} aria-label="Clear comparison filter"><Icon name="close" size={14} /></button>}
+      </label>
+      {comparisonQuery && <p className="compare-search-status" role="status">{countLabel(visibleChangedPaths.length, "changed path")} {visibleChangedPaths.length === 1 ? "matches" : "match"} · added, removed, and changed lists are filtered too</p>}
       <div className="compare-grid">
         {groups.map(([label, result]) => (
           <section key={label}>
             <h3>{label}</h3>
             <div className="diff-columns">
-              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" previewFlows={label === pathGroup} comparisonOnly={label !== pathGroup} />
-              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} openNodes={label === "Nodes"} onOpenNode={onOpenNode} />
+              <DiffColumn label="ADDED" items={result.added} app={compare} empty="No additions" className="diff-added" previewFlows={label === pathGroup} comparisonOnly={label !== pathGroup} query={comparisonQuery} />
+              <DiffColumn label="REMOVED" items={result.removed} app={base} empty="No removals" className="diff-removed" actionable={label === pathGroup} onOpenFlow={onOpenFlow} openNodes={label === "Nodes"} onOpenNode={onOpenNode} query={comparisonQuery} />
             </div>
           </section>
         ))}
@@ -245,27 +341,28 @@ export function CompareView({ base, compare, onUpload, loading = false, onOpenFl
           </div>
           <span>{changedPaths.length}</span>
         </div>
-        {changedPaths.length ? (
-          (showAllChanged ? changedPaths : changedPaths.slice(0, 8)).map((item) => (
-            <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, item.base.steps[0]?.node_id ?? "")} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
-              <b>{item.base.name}</b>
+        {visibleChangedPaths.length ? (
+          (showAllChanged ? visibleChangedPaths : visibleChangedPaths.slice(0, 8)).map((item) => (
+            <button type="button" className="changed-flow" key={item.base.id} onClick={() => onOpenFlow?.(item.base.id, matchingFlowNodeId(item.base, base, comparisonQuery))} disabled={!onOpenFlow || !item.base.steps[0]?.node_id}>
+              <b title={item.base.name}>{flowComparisonLabel(item.base, base)}</b>
+              <small className="changed-flow-reasons">{changeReasons(item.base, item.compare).join(" · ")}</small>
               <div>
                 <span><small>BASE</small>{flowPath(item.base, base)}</span>
                 <i>→</i>
                 <span><small>COMPARISON</small>{flowPath(item.compare, compare)}</span>
               </div>
-              {onOpenFlow && <small className="changed-flow-action">Open base path in Graph Path ↗</small>}
+              {onOpenFlow && <small className="changed-flow-action">Open base path in Trace ↗ · {sourceCoverage(item.base, base)} · comparison {sourceCoverage(item.compare, compare)}</small>}
             </button>
           ))
         ) : (
-          <p className="diff-empty">No existing paths changed between these bundles.</p>
+          <p className="diff-empty">{comparisonQuery ? "No changed paths match this search." : "No existing paths changed between these bundles."}</p>
         )}
-        {changedPaths.length > 8 && (
+        {visibleChangedPaths.length > 8 && (
           <button type="button" className="diff-expand changed-expand" onClick={() => setShowAllChanged((value) => !value)} aria-expanded={showAllChanged}>
-            {showAllChanged ? "Show fewer" : `Show all ${changedPaths.length}`}
+            {showAllChanged ? "Show fewer" : `Show all ${countLabel(visibleChangedPaths.length, "changed path")}`}
           </button>
         )}
       </section>
-    </section>
+    </main>
   )
 }

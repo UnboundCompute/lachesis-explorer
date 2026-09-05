@@ -8,15 +8,15 @@ web
 
 ## Users
 
-Developers, application-security engineers, and technical evaluators inspecting how values and requests move through a source-code graph.
+Developers trying to understand an unfamiliar or complex codebase. Application-security engineers and technical evaluators are important secondary users of the same graph.
 
 ## Product Purpose
 
-Lachesis Explorer turns a deterministic Lachesis `bundle.json` into an interactive evidence workbench. Success means a user can load a bundle, select a value or entrypoint, follow the resulting path, inspect the source node, and understand the evidence without a model or server inventing an answer.
+Lachesis Explorer turns a deterministic Lachesis `bundle.json` into a guided code-understanding workspace. Success means a developer can start with a familiar question, follow one focused behavior through the graph, inspect its source without losing context, and share what they learned faster than they could by manually jumping through files and references.
 
 ## Positioning
 
-The explorer renders compiler-derived graph evidence and explicit MCP results. It treats paths as inspectable evidence rather than generated explanations or scanner verdicts.
+The explorer is the understanding layer over Lachesis graphs. It turns compiler-derived relationships and explicit MCP results into inspectable paths rather than generated guesses. Security findings are a specialized projection, not the default language of the product.
 
 ## Operating Context
 
@@ -48,11 +48,12 @@ The product name is Lachesis. The voice is precise, concise, technically honest,
 
 ## Product Principles
 
-1. Evidence before interpretation.
-2. Source context is always one action away.
-3. Color and labels communicate graph semantics, not decoration.
-4. Missing or conservative evidence stays visibly missing or conservative.
-5. The workspace remains fast, keyboard-friendly, and locally operated.
+1. Start with the developer's question, not the graph's data model.
+2. Prefer a focused path over a wall of nodes.
+3. Source context is always one action away.
+4. Every useful explanation can leave the product as a portable artifact.
+5. Missing or conservative graph data stays visibly missing or conservative.
+6. The workspace remains fast, keyboard-friendly, and locally operated.
 
 ## Accessibility & Inclusion
 

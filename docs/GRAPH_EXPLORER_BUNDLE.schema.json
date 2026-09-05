@@ -24,6 +24,7 @@
         "language": { "type": "string", "minLength": 1 },
         "revision": { "type": "string", "minLength": 1 },
         "description": { "type": "string", "description": "Exporter-authored summary of what this graph projection represents." },
+        "source_url_template": { "type": "string", "format": "uri-template", "description": "Optional HTTPS or HTTP URL template for opening a node in its source repository. Supports {file}, {line}, {end_line}, and {revision}." },
         "lines": { "type": "integer", "minimum": 0 },
         "indexed_nodes": { "type": "integer", "minimum": 0 },
         "generated_at": { "type": "string" },
@@ -54,22 +55,31 @@
     },
     "node": {
       "type": "object",
-      "required": ["id", "kind", "file", "line", "label", "snippet"],
+      "required": ["id", "kind", "file", "line", "label"],
+      "anyOf": [
+        { "required": ["snippet"] },
+        { "required": ["source_window"] }
+      ],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "kind": { "type": "string", "minLength": 1 },
-        "file": { "type": "string", "minLength": 1 },
+        "file": { "type": "string", "description": "Repository-relative source path, or an empty string for a synthetic or unmapped node." },
         "line": { "type": "integer", "minimum": 0 },
         "column": { "type": "integer", "minimum": 0 },
         "end_line": { "type": "integer", "minimum": 0 },
         "end_column": { "type": "integer", "minimum": 0 },
         "label": { "type": "string", "minLength": 1 },
         "qualified_name": { "type": "string" },
+        "parent_id": { "type": "string", "minLength": 1, "description": "Optional enclosing symbol, such as a class or parent function." },
         "module": { "type": "string" },
         "scope": { "$ref": "#/$defs/scope", "description": "Optional repository, service, package, and module context used to render path boundaries." },
         "signature": { "type": "string" },
         "documentation": { "type": "string" },
-        "snippet": { "type": "string", "minLength": 1 }
+        "snippet": { "type": "string", "minLength": 1 },
+        "source_window": {
+          "$ref": "#/$defs/source_window",
+          "description": "Optional surrounding source lines for reading context. Lines are one-based from start_line."
+        }
       },
       "additionalProperties": true
     },
@@ -84,6 +94,17 @@
         "label": { "type": "string" }
       },
       "additionalProperties": true
+    },
+    "source_window": {
+      "type": "object",
+      "required": ["start_line", "lines"],
+      "properties": {
+        "start_line": { "type": "integer", "minimum": 1 },
+        "lines": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "highlight_start": { "type": "integer", "minimum": 1 },
+        "highlight_end": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
     },
     "file": {
       "type": "object",

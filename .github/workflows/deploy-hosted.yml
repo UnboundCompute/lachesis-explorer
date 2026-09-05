@@ -1,0 +1,164 @@
+name: Deploy hosted bundle service
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: AWS region for the hosted service
+        required: true
+        default: us-east-1
+        type: string
+      stack_name:
+        description: CloudFormation stack name
+        required: true
+        default: lachesis-bundle-service
+        type: string
+      explorer_origin:
+        description: Exact HTTPS Explorer origin, without a path
+        required: true
+        type: string
+      ecr_repository:
+        description: Existing regional ECR repository name for the worker
+        required: true
+        default: lachesis-worker
+        type: string
+      wheel_url:
+        description: Immutable HTTPS URL for the Lachesis wheel
+        required: true
+        type: string
+      wheel_sha256:
+        description: Published SHA-256 digest for the Lachesis wheel
+        required: true
+        type: string
+      alert_topic_arn:
+        description: SNS topic ARN for production alarms
+        required: true
+        type: string
+      smoke_repository:
+        description: Optional public repository URL for a full build smoke test
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: hosted-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy hosted service
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      STACK_NAME: ${{ inputs.stack_name }}
+      EXPLORER_ORIGIN: ${{ inputs.explorer_origin }}
+      ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+      WHEEL_URL: ${{ inputs.wheel_url }}
+      WHEEL_SHA256: ${{ inputs.wheel_sha256 }}
+      ALERT_TOPIC_ARN: ${{ inputs.alert_topic_arn }}
+      SMOKE_REPOSITORY: ${{ inputs.smoke_repository }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: lachesis-hosted-deploy-${{ github.run_id }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Log in to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Validate immutable release inputs
+        run: |
+          set -euo pipefail
+          case "$WHEEL_URL" in
+            https://*) ;;
+            *) echo "wheel_url must use HTTPS" >&2; exit 1 ;;
+          esac
+          case "$WHEEL_URL" in
+            *latest*|*LATEST*)
+              echo "wheel_url must identify an immutable artifact" >&2
+              exit 1
+              ;;
+          esac
+          case "$WHEEL_SHA256" in
+            *[!0-9a-f]*|'')
+              echo "wheel_sha256 must be 64 lowercase hexadecimal characters" >&2
+              exit 1
+              ;;
+          esac
+          test "${#WHEEL_SHA256}" -eq 64
+
+      - name: Build and push immutable worker image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: deploy-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          docker build \
+            --platform linux/amd64 \
+            --provenance=false \
+            --build-arg LACHESIS_WHEEL_URL="$WHEEL_URL" \
+            --build-arg LACHESIS_WHEEL_SHA256="$WHEEL_SHA256" \
+            -f services/bundle-service/worker/Dockerfile \
+            -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            services/bundle-service
+          docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          digest="$(aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          test "$digest" != "None"
+          worker_image_uri="$REGISTRY/$ECR_REPOSITORY@$digest"
+          echo "WORKER_IMAGE_URI=$worker_image_uri" >> "$GITHUB_ENV"
+
+      - name: Build SAM application
+        run: sam build --template-file services/bundle-service/template.yaml
+
+      - name: Validate transformed SAM template
+        run: >-
+          sam validate --template-file .aws-sam/build/template.yaml
+          --region "$AWS_REGION" --lint
+
+      - name: Deploy SAM stack
+        run: |
+          sam deploy \
+            --template-file .aws-sam/build/template.yaml \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --capabilities CAPABILITY_IAM \
+            --resolve-s3 \
+            --parameter-overrides \
+              ExplorerOrigin="$EXPLORER_ORIGIN" \
+              WorkerImageUri="$WORKER_IMAGE_URI" \
+              AlertTopicArn="$ALERT_TOPIC_ARN" \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
+
+      - name: Run hosted API smoke test
+        run: |
+          api_url="$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
+            --output text)"
+          test -n "$api_url"
+          if [ -n "$SMOKE_REPOSITORY" ]; then
+            node services/bundle-service/smoke-hosted.mjs "$api_url" \
+              --build-url "$SMOKE_REPOSITORY"
+          else
+            node services/bundle-service/smoke-hosted.mjs "$api_url"
+          fi

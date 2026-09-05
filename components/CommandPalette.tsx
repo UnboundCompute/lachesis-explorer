@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { App } from "../lib/lachesis";
+import { countLabel, entryDisplayName, flowDisplayName, type App } from "../lib/lachesis";
 import { Icon } from "./Icon";
 import { trackEvent } from "../lib/analytics";
 
@@ -13,7 +13,15 @@ type Props = {
   onEntry: (index: number, hopId: string) => void;
   onSink: (sinkId: string) => void;
   onNode: (nodeId: string) => void;
+  onFile: (file: string) => void;
   opener?: HTMLElement | null;
+};
+type Command = {
+  id: string;
+  label: string;
+  meta: string;
+  keywords?: string;
+  run: () => void;
 };
 
 function flowLocation(app: App, flow: App["flows"][number]) {
@@ -53,6 +61,95 @@ function nodeContext(node: App["nodes"][number]) {
   return node.scope?.label || node.scope?.service || node.scope?.package || node.scope?.module || node.scope?.repository || node.module || "graph node";
 }
 
+function sourceCoverage(app: App, steps: Array<{ node_id: string }>) {
+  const available = steps.filter((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+  }).length;
+  return `${available}/${steps.length} source previews`;
+}
+
+function matchesCommand(command: Command, query: string) {
+  const haystack = `${command.label} ${command.meta} ${command.keywords ?? ""}`.toLowerCase();
+  return query.trim().toLowerCase().split(/\s+/).filter(Boolean).every((term) => {
+    const [key, ...rest] = term.split(":");
+    if (!rest.length) return haystack.includes(term);
+    const value = rest.join(":");
+    if (key === "file") return command.id.startsWith("file-") && haystack.includes(value);
+    if (key === "path") return command.id.startsWith("flow-") && haystack.includes(value);
+    if (["kind", "module", "scope", "service", "repo", "repository"].includes(key)) return haystack.includes(value);
+    return haystack.includes(value);
+  });
+}
+
+function matchingNodeId(
+  app: App,
+  steps: Array<{
+    node_id: string;
+    role?: string;
+    note?: string;
+    edge?: {
+      relation?: string;
+      alias?: boolean;
+      dynamic?: boolean;
+      confidence?: string;
+      limitations?: string[];
+    };
+  }>,
+  query: string,
+) {
+  const scopedTerms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!scopedTerms.length) return steps[0]?.node_id ?? "";
+  const match = steps.find((step) => {
+    const node = app.nodes.find((item) => item.id === step.node_id);
+    const haystack = [
+      step.role,
+      step.note,
+      step.edge?.relation,
+      node?.label,
+      node?.qualifiedName,
+      node?.signature,
+      node?.documentation,
+      node?.snippet,
+      node?.sourceWindow?.lines.join(" "),
+      node?.file,
+      node?.module,
+      node?.scope?.label,
+      node?.scope?.service,
+      node?.scope?.package,
+      node?.scope?.module,
+      node?.scope?.repository,
+    ].filter(Boolean).join(" ").toLowerCase();
+    return scopedTerms.every((term) => {
+      const [key, ...rest] = term.split(":");
+      const value = rest.join(":");
+      if (rest.length) {
+        if (key === "file") return node?.file.toLowerCase().includes(value);
+        if (key === "kind") return node?.kind.toLowerCase().includes(value);
+        if (key === "module") return [node?.module, node?.scope?.module].some((item) => item?.toLowerCase().includes(value));
+        if (key === "scope" || key === "service" || key === "repo" || key === "repository") {
+          return [node?.scope?.label, node?.scope?.repository, node?.scope?.service, node?.scope?.package, node?.scope?.module]
+            .some((item) => item?.toLowerCase().includes(value));
+        }
+        if (key === "role") return step.role?.toLowerCase().includes(value) ?? false;
+        if (key === "confidence") return step.edge?.confidence?.toLowerCase().includes(value) ?? false;
+        if (key === "edge") {
+          if (value === "alias") return Boolean(step.edge?.alias);
+          if (value === "dynamic") return Boolean(step.edge?.dynamic);
+          if (value === "uncertain") return Boolean(step.edge?.confidence || step.edge?.limitations?.length);
+        }
+        if (key === "has" && (value === "source" || value === "source-preview")) return Boolean(node?.snippet.trim() || node?.sourceWindow?.lines.length);
+        if (key === "has" && (value === "source-gap" || value === "missing-source")) return !node?.snippet.trim() && !node?.sourceWindow?.lines.length;
+        if (key === "has" && value === "mcp") return true;
+        if (key === "path") return true;
+        return false;
+      }
+      return haystack.includes(term);
+    });
+  });
+  return match?.node_id ?? steps[0]?.node_id ?? "";
+}
+
 export function CommandPalette({
   app,
   onClose,
@@ -61,53 +158,65 @@ export function CommandPalette({
   onEntry,
   onSink,
   onNode,
+  onFile,
   opener,
 }: Props) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const normalized = query.trim().toLowerCase();
   const dialogRef = useRef<HTMLElement>(null);
+  const commandInputRef = useRef<HTMLInputElement>(null);
   const activeOptionRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(opener ?? null);
+  const filePaths = useMemo(
+    () => [...new Set([
+      ...app.files.map((file) => file.path).filter(Boolean),
+      ...app.nodes.map((node) => node.file).filter(Boolean),
+    ])],
+    [app.files, app.nodes],
+  );
+  useEffect(() => {
+    commandInputRef.current?.focus();
+  }, []);
   useEffect(() => {
     return () => openerRef.current?.focus();
   }, []);
-  const commands = useMemo(
+  const commands = useMemo<Command[]>(
     () =>
       [
         {
           id: "view-home",
-          label: "Open briefing",
+          label: "Open Understand home",
           meta: "View",
           run: () => onView("home"),
         },
         {
           id: "view-trace",
-          label: "Open graph-path lens",
+          label: "Trace a code path",
           meta: "View",
           run: () => onView("trace"),
         },
         {
           id: "view-journey",
-          label: "Open request-path lens",
+          label: "Walk a request flow",
           meta: "View",
           run: () => onView("journey"),
         },
         {
           id: "view-investigate",
-          label: "Open convergence view",
+          label: "See what reaches a destination",
           meta: "View",
           run: () => onView("investigate"),
         },
         {
           id: "view-map",
-          label: "Open graph view",
+          label: "Explore the codebase graph",
           meta: "View",
           run: () => onView("map"),
         },
         {
           id: "view-compare",
-          label: "Open revision diff",
+          label: "Compare code revisions",
           meta: "View",
           run: () => onView("compare"),
         },
@@ -119,34 +228,40 @@ export function CommandPalette({
         },
         ...app.flows.map((flow) => ({
           id: `flow-${flow.id}`,
-          label: flow.name,
-          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${flow.steps.length} ${app.findings.some((finding) => finding.id === flow.id) ? "nodes" : "symbols"} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
-          run: () => onFlow(flow.id, flow.steps[0]?.node_id ?? ""),
+          label: flowDisplayName(flow, app.nodes, app.flows),
+          meta: `${flowKindLabel(flow, app.findings.some((finding) => finding.id === flow.id))} · ${countLabel(flow.steps.length, app.findings.some((finding) => finding.id === flow.id) ? "node" : "symbol")} · ${sourceCoverage(app, flow.steps)} · ${flowLocation(app, flow)}${flowScopes(app, flow).length > 1 ? ` · ${flowScopes(app, flow).join(" → ")}` : ""}`,
+          keywords: flow.steps.flatMap((step) => {
+            const node = app.nodes.find((item) => item.id === step.node_id);
+            return node ? [node.label, node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.label, node.scope?.service, node.scope?.package, node.scope?.module, node.scope?.repository] : [];
+          }).concat([flow.description, ...flow.steps.flatMap((step) => [step.role, step.note, step.edge?.relation])]).filter(Boolean).join(" "),
+          run: () => onFlow(flow.id, matchingNodeId(app, flow.steps, normalized)),
         })),
         ...app.entries.map((entry, index) => ({
           id: `entry-${entry.id}`,
-          label: entry.label,
-          meta: `Request path · ${entry.hops.length} hops`,
-          run: () => onEntry(index, entry.hops[0]?.node_id ?? ""),
+          label: entryDisplayName(entry, app.nodes, app.entries),
+          meta: `Request flow · ${countLabel(entry.hops.length, "step")} · ${sourceCoverage(app, entry.hops)}`,
+          keywords: entry.hops.flatMap((hop) => {
+            const node = app.nodes.find((item) => item.id === hop.node_id);
+            return [hop.edge_label, hop.caption, node?.label, node?.qualifiedName, node?.signature, node?.documentation, node?.snippet, node?.sourceWindow?.lines.join(" "), node?.file, node?.module];
+          }).filter(Boolean).join(" "),
+          run: () => onEntry(index, matchingNodeId(app, entry.hops, normalized)),
         })),
         ...app.nodes.map((node) => ({
           id: `node-${node.id}`,
           label: node.label || node.id,
           meta: `Symbol · ${node.kind} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"} · ${node.qualifiedName ?? node.module ?? "graph node"}`,
+          keywords: [node.qualifiedName, node.signature, node.documentation, node.snippet, node.sourceWindow?.lines.join(" "), node.file, node.module, node.scope?.module].filter(Boolean).join(" "),
           run: () => onNode(node.id),
         })),
-        ...app.files.flatMap((file) => {
-          const node = app.nodes.find((item) => item.file === file.path);
-          return node
-            ? [
-                {
-                  id: `file-${file.id}`,
-                  label: file.path,
-                  meta: `File · ${file.lines ?? "?"} lines`,
-                  run: () => onNode(node.id),
-                },
-              ]
-            : [];
+        ...filePaths.map((path) => {
+          const file = app.files.find((item) => item.path === path);
+          return {
+            id: `file-${path}`,
+            label: `Open ${path}`,
+            meta: `File · ${file?.lines ?? "?"} lines${file?.module ? ` · ${file.module}` : ""}`,
+            keywords: path,
+            run: () => onFile(path),
+          };
         }),
         ...app.modules.flatMap((module) => {
           const node = app.nodes.find(
@@ -179,15 +294,15 @@ export function CommandPalette({
           .map((node) => ({
             id: `sink-${node.id}`,
             label: node.label || node.id,
-          meta: `Sink · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"}`,
+          meta: `${app.findings.length > 0 || app.bundle.projection === "security projection" ? "Sink" : "Destination"} · ${nodeContext(node)} · ${node.file || "Source unavailable"}:${node.line || "—"}`,
             run: () => onSink(node.id),
           })),
       ].filter(
         (command) =>
           !normalized ||
-          `${command.label} ${command.meta}`.toLowerCase().includes(normalized),
+          matchesCommand(command, normalized),
       ),
-    [app, normalized, onView, onFlow, onEntry, onSink, onNode],
+    [app, filePaths, normalized, onView, onFlow, onEntry, onSink, onNode, onFile],
   );
   const visibleCommands = commands.slice(0, 80);
   useEffect(() => setActive(0), [query]);
@@ -260,12 +375,13 @@ export function CommandPalette({
         <div className="command-search">
           <Icon name="search" size={17} />
           <input
+            ref={commandInputRef}
             id="command-search-input"
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Jump to a view, path, symbol, file, or boundary…"
-            aria-label="Search views, paths, symbols, files, and boundaries"
+            placeholder="Find a path, symbol, file, filter, code, or view…"
+            aria-label="Search views, paths, symbols, files, filters, documentation, and source code"
             aria-controls="command-results"
             role="combobox"
             aria-expanded="true"
@@ -275,8 +391,14 @@ export function CommandPalette({
             }
           />
           <kbd>esc</kbd>
-          <button type="button" className="command-close" onClick={onClose} aria-label="Close jump menu">×</button>
+          <button type="button" className="command-close" onClick={onClose} aria-label="Close jump menu"><Icon name="close" size={16} /></button>
         </div>
+        {query.trim() && (
+          <p className="command-results-status" role="status">
+            {countLabel(commands.length, "result")}
+            {commands.length > visibleCommands.length ? " · refine to see more" : ""}
+          </p>
+        )}
         <div className="command-results" id="command-results" role="listbox" aria-label="Jump results">
           {visibleCommands.length ? (
             visibleCommands.map((command, index) => (
@@ -303,7 +425,10 @@ export function CommandPalette({
               </button>
             ))
           ) : (
-            <p>No matching command.</p>
+            <p>
+              No results for “{query}”. Try a symbol, file path, graph path,
+              or view name.
+            </p>
           )}
           {commands.length > visibleCommands.length && (
             <p className="command-more">

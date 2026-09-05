@@ -19,10 +19,11 @@ import {
   InvestigationTrail,
   type InvestigationEvent,
 } from "../components/InvestigationTrail";
-import { starter, normalize, type App, type Flow } from "../lib/lachesis";
+import { countLabel, starter, normalize, type App, type Flow } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
+import { cancelHostedBuild, getHostedBuildStatus, HostedRequestError, loadHostedBundle, submitHostedBuild, type BuildResponse } from "../lib/hosted-bundle";
 
 type View =
   "home" | "trace" | "journey" | "investigate" | "map" | "compare" | "install";
@@ -31,6 +32,13 @@ type LoadState = {
   message: string;
 };
 type PendingLink = {
+  repository?: string;
+  revision?: string;
+  region?: string;
+  label?: string;
+  anchor?: string;
+  domain?: string;
+  step?: string;
   view?: string;
   flow?: string;
   node?: string;
@@ -47,16 +55,37 @@ type PendingLink = {
   mapOrder?: string;
   mapNeighborhood?: boolean;
 };
+type ViewUrlOverrides = Record<string, string | undefined>;
+type BuildState = { status: "idle" | BuildResponse["status"]; steps: Array<{ key: string; state: string }>; message?: string };
+type HandoffContext = Pick<PendingLink, "repository" | "revision" | "region" | "label" | "anchor" | "flow" | "step" | "domain">;
 
 const viewLabels: Record<View, string> = {
-  home: "Briefing",
-  trace: "Graph path",
-  journey: "Request path",
-  investigate: "Convergence",
-  map: "Graph",
-  compare: "Revision diff",
-  install: "Local workflow",
+  home: "Understand",
+  trace: "Trace",
+  journey: "Request flow",
+  investigate: "What reaches here",
+  map: "Explore",
+  compare: "Compare",
+  install: "Setup",
 };
+
+function bundleImportError(error: unknown, subject: string, kept: string) {
+  const detail = error instanceof Error ? error.message : `Could not read ${subject}`;
+  const jsonError = detail === "This file is not valid JSON." || detail.includes("Unexpected token") || detail.includes("Unexpected end of JSON input");
+  const guidance = jsonError
+    ? "Fix the JSON syntax and try again."
+    : "Check docs/GRAPH_EXPLORER_CONTRACT.md for the required bundle shape.";
+  return `${detail} ${guidance} ${kept}`;
+}
+
+function bundleLoadSummary(next: App) {
+  const counts = `${countLabel(next.nodes.length, "node")} · ${countLabel(next.flows.length, "path")} · ${countLabel(next.edges.length, "relationship")}`;
+  const indexed = next.coverage.indexedNodes;
+  const scope = indexed != null && indexed > next.nodes.length
+    ? ` Showing a focused projection of ${indexed.toLocaleString()} indexed nodes.`
+    : "";
+  return `${counts}.${scope}`;
+}
 
 function stepAtPosition(app: App, flowId: string, position: number, direction: "backward" | "forward") {
   const flow = app.flows.find((item) => item.id === flowId);
@@ -102,6 +131,14 @@ function recommendedSink(app: App) {
     })[0];
 }
 
+function nodeForHandoff(app: App, anchor?: string, region?: string) {
+  const needle = (anchor || region || '').trim().toLowerCase();
+  if (!needle) return undefined;
+  return app.nodes.find((node) => [node.id, node.label, node.qualifiedName, node.signature, node.file, node.scope?.label, node.scope?.module]
+    .filter(Boolean)
+    .some((value) => value!.trim().toLowerCase() === needle));
+}
+
 function isSinkNode(app: App, nodeId: string) {
   return app.nodes.some(
     (node) =>
@@ -121,9 +158,7 @@ export default function Page() {
   const [app, setApp] = useState<App>(starter);
   const [compareApp, setCompareApp] = useState<App | null>(null);
   const [menu, setMenu] = useState(false);
-  const [dark, setDark] = useState(
-    () => typeof window === "undefined" || readLocal("lachesis-theme") !== "light",
-  );
+  const [dark, setDark] = useState(true);
   const [flowId, setFlowId] = useState(starter.flows[0].id);
   const [stepId, setStepId] = useState(starter.flows[0].steps[0].node_id);
   const [stepIndex, setStepIndex] = useState(0);
@@ -143,6 +178,9 @@ export default function Page() {
     message: "",
   });
   const [isDemo, setIsDemo] = useState(true);
+  const [bundleOrigin, setBundleOrigin] = useState<"sample" | "local" | "hosted">("sample");
+  const [hostedBundleId, setHostedBundleId] = useState<string | undefined>();
+  const [buildState, setBuildState] = useState<BuildState>({ status: "idle", steps: [] });
   const [dragActive, setDragActive] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -152,6 +190,9 @@ export default function Page() {
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [recentBundles, setRecentBundles] = useState<RecentBundle[]>([]);
   const [activity, setActivity] = useState<InvestigationEvent[]>([]);
+  const [urlInitialized, setUrlInitialized] = useState(false);
+  const [handoffContext, setHandoffContext] = useState<HandoffContext>({});
+  const [navigation, setNavigation] = useState({ canBack: false, canForward: false });
   const fileRef = useRef<HTMLInputElement>(null);
   const compareFileRef = useRef<HTMLInputElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -159,8 +200,33 @@ export default function Page() {
   const dragDepth = useRef(0);
   const pendingLink = useRef<PendingLink | null>(null);
   const importBusy = useRef(false);
+  const buildController = useRef<AbortController | null>(null);
+  const activeJobId = useRef<string | null>(null);
   const urlReady = useRef(false);
+  const navigationDepth = useRef(0);
+  const navigationMaxDepth = useRef(0);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
+
+  useEffect(() => () => {
+    buildController.current?.abort();
+  }, []);
+
+  function initializeNavigation() {
+    const state = window.history.state;
+    const depth = state?.lachesis === true && Number.isFinite(state.depth) ? state.depth : 0;
+    navigationDepth.current = depth;
+    navigationMaxDepth.current = depth;
+    setNavigation({ canBack: depth > 0, canForward: false });
+    window.history.replaceState({ ...(state ?? {}), lachesis: true, depth }, "", window.location.href);
+  }
+
+  function pushNavigation(params: URLSearchParams) {
+    const depth = navigationDepth.current + 1;
+    navigationDepth.current = depth;
+    navigationMaxDepth.current = depth;
+    setNavigation({ canBack: true, canForward: false });
+    window.history.pushState({ lachesis: true, depth }, "", `${window.location.pathname}?${params.toString()}`);
+  }
 
   const record = useCallback(
     (action: string, target: string, detail: string) =>
@@ -200,9 +266,32 @@ export default function Page() {
     }
   }, []);
   useEffect(() => {
+    if (readLocal("lachesis-theme") === "light") setDark(false);
+  }, []);
+  useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     writeLocal("lachesis-theme", dark ? "dark" : "light");
   }, [dark]);
+  useEffect(() => {
+    if (loadState.type !== "error") return;
+    let settleFrame = 0;
+    const frame = window.requestAnimationFrame(() => {
+      settleFrame = window.requestAnimationFrame(() => {
+        const alert = document.querySelector<HTMLElement>('[role="alert"]');
+        if (!alert) return;
+        const top = alert.getBoundingClientRect().top + window.scrollY;
+        const root = document.documentElement;
+        const previousScrollBehavior = root.style.scrollBehavior;
+        root.style.scrollBehavior = "auto";
+        window.scrollTo(0, Math.max(0, top - 120));
+        root.style.scrollBehavior = previousScrollBehavior;
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(settleFrame);
+    };
+  }, [loadState.type]);
   useEffect(() => {
     const bundle = app.name || "Untitled bundle";
     document.title = `${viewLabels[view]} · ${bundle} · Lachesis`;
@@ -213,16 +302,30 @@ export default function Page() {
       return;
     }
     if (previousView.current !== view) {
-      workspaceRef.current?.focus();
       previousView.current = view;
+      const frame = window.requestAnimationFrame(() => {
+        workspaceRef.current?.focus({ preventScroll: true });
+        window.scrollTo({ top: 0, behavior: "auto" });
+        window.requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: "auto" });
+        });
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [view]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const link: PendingLink = {
+      repository: params.get("repository") ?? undefined,
+      revision: params.get("revision") ?? undefined,
+      region: params.get("region") ?? undefined,
+      label: params.get("label") ?? undefined,
+      anchor: params.get("anchor") ?? undefined,
+      domain: params.get("domain") ?? undefined,
+      step: params.get("step_context") ?? params.get("step") ?? undefined,
       view: params.get("view") ?? undefined,
-      flow: params.get("flow") ?? undefined,
+      flow: params.get("flow_context") ?? params.get("flow") ?? undefined,
       node: params.get("node") ?? undefined,
       direction: params.get("direction") ?? undefined,
       entry: params.get("entry") ?? undefined,
@@ -237,6 +340,16 @@ export default function Page() {
       mapOrder: params.get("map_order") ?? undefined,
       mapNeighborhood: params.get("map_focus") === "neighborhood",
     };
+    setHandoffContext({
+      repository: link.repository,
+      revision: link.revision,
+      region: link.region,
+      label: link.label,
+      anchor: link.anchor,
+      flow: link.flow,
+      step: link.step,
+      domain: link.domain,
+    });
     if (params.get("sample") === "security") {
       pendingLink.current = link;
       setLoadState({ type: "loading", message: "Loading the security sample…" });
@@ -249,12 +362,33 @@ export default function Page() {
         .catch((error) => {
           pendingLink.current = null;
           urlReady.current = true;
+          setUrlInitialized(true);
           setLoadState({
             type: "error",
             message: `${error instanceof Error ? error.message : "Could not load the security sample"} The current bundle was kept.`,
           });
         });
       return;
+    }
+    const hostedBundleId = params.get("bundle");
+    if (hostedBundleId) {
+      pendingLink.current = link;
+      setLoadState({ type: "loading", message: "Loading the hosted bundle…" });
+      const controller = new AbortController();
+      loadHostedBundle(hostedBundleId, controller.signal)
+        .then((raw) => activate(normalize(raw), false, "hosted", hostedBundleId))
+        .catch((error) => {
+          if (controller.signal.aborted) return;
+          pendingLink.current = null;
+          urlReady.current = true;
+          setUrlInitialized(true);
+          setLoadState({
+            type: "error",
+            message: `${error instanceof Error ? error.message : "Could not load the hosted bundle"} The current bundle was kept.`,
+          });
+          trackEvent("bundle_load_failed");
+        });
+      return () => controller.abort();
     }
     if (params.get("scope") === "local") {
       pendingLink.current = link;
@@ -284,7 +418,8 @@ export default function Page() {
       const occurrenceIndex = link.stepOccurrence
         ? linkedSteps.findIndex((step) => step.id === link.stepOccurrence)
         : -1;
-      const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.stepIndex ?? -1;
+      const nodeIndex = link.node ? linkedSteps.findIndex((step) => step.node_id === link.node) : -1;
+      const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.stepIndex ?? nodeIndex;
       if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length && (!link.node || linkedSteps[linkedStepIndex]?.node_id === link.node)) {
         setStepId(linkedSteps[linkedStepIndex].node_id);
         setStepIndex(linkedStepIndex);
@@ -301,7 +436,8 @@ export default function Page() {
       const occurrenceIndex = link.hopOccurrence
         ? starter.entries[index].hops.findIndex((hop) => hop.id === link.hopOccurrence)
         : -1;
-      const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.hopIndex ?? -1;
+      const hopIndex = link.hop ? starter.entries[index].hops.findIndex((hop) => hop.node_id === link.hop) : -1;
+      const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : link.hopIndex ?? hopIndex;
       if (linkedHopIndex >= 0 && linkedHopIndex < starter.entries[index].hops.length && (!link.hop || starter.entries[index].hops[linkedHopIndex]?.node_id === link.hop)) {
         setHopId(starter.entries[index].hops[linkedHopIndex].node_id);
         setHopIndex(linkedHopIndex);
@@ -317,7 +453,13 @@ export default function Page() {
     if (link.direction === "forward") setDirection("forward");
     if (link.view === "trace") setQuery(link.filter ?? "");
     if (link.view === "map") setMapQuery(link.filter ?? "");
-    if (link.mapMode && ["map", "architecture", "health"].includes(link.mapMode)) setMapMode(link.mapMode as OverviewMode);
+    if (link.view === "map") {
+      setMapMode(link.mapMode && ["map", "architecture", "health"].includes(link.mapMode)
+        ? link.mapMode as OverviewMode
+        : link.filter || link.node || link.mapNeighborhood
+          ? "map"
+          : "architecture");
+    }
     if (link.mapOrder && ["path", "centrality"].includes(link.mapOrder)) setMapOrder(link.mapOrder as OverviewNodeOrder);
     setMapNeighborhoodOnly(Boolean(link.mapNeighborhood));
     if (
@@ -326,14 +468,27 @@ export default function Page() {
       starter.nodes.some((node) => node.id === link.node)
     )
       setFocusNodeId(link.node);
+    initializeNavigation();
     urlReady.current = true;
+    setUrlInitialized(true);
   }, []);
 
   useEffect(() => {
-    if (!urlReady.current) return;
+    if (!urlInitialized) return;
     const params = new URLSearchParams();
+    if (handoffContext.repository) params.set("repository", handoffContext.repository);
+    if (handoffContext.revision) params.set("revision", handoffContext.revision);
+    if (handoffContext.region) params.set("region", handoffContext.region);
+    if (handoffContext.label) params.set("label", handoffContext.label);
+    if (handoffContext.anchor) params.set("anchor", handoffContext.anchor);
+    if (handoffContext.flow) params.set("flow_context", handoffContext.flow);
+    if (handoffContext.step) params.set("step_context", handoffContext.step);
+    if (handoffContext.domain) params.set("domain", handoffContext.domain);
     params.set("view", view);
-    if (!isDemo) params.set("scope", "local");
+    const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
+    if (bundleOrigin === "hosted" && hostedBundleId) params.set("bundle", hostedBundleId);
+    else if (!isDemo) params.set("scope", "local");
+    if (isDemo && securityMode) params.set("sample", "security");
     if (view === "trace") {
       params.set("flow", flowId);
       params.set("node", stepId);
@@ -357,11 +512,19 @@ export default function Page() {
       if (mapOrder !== "path") params.set("map_order", mapOrder);
       if (mapNeighborhoodOnly) params.set("map_focus", "neighborhood");
     }
-    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
-  }, [app, direction, entryIndex, focusNodeId, flowId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, view]);
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}`);
+  }, [app, bundleOrigin, direction, entryIndex, focusNodeId, handoffContext, flowId, hostedBundleId, hopId, hopIndex, isDemo, mapMode, mapNeighborhoodOnly, mapOrder, mapQuery, query, sinkId, stepId, stepIndex, urlInitialized, view]);
 
   useEffect(() => {
     function restoreFromUrl() {
+      const state = window.history.state;
+      if (state?.lachesis === true && Number.isFinite(state.depth)) {
+        navigationDepth.current = state.depth;
+        setNavigation({ canBack: state.depth > 0, canForward: state.depth < navigationMaxDepth.current });
+      } else {
+        navigationDepth.current = 0;
+        setNavigation({ canBack: false, canForward: false });
+      }
       const params = new URLSearchParams(window.location.search);
       const nextView = params.get("view");
       if (nextView && ["home", "trace", "journey", "investigate", "map", "compare", "install"].includes(nextView))
@@ -373,7 +536,8 @@ export default function Page() {
           ? linkedSteps.findIndex((step) => step.id === params.get("step_occurrence"))
           : -1;
         const requestedIndex = params.get("step_index") == null ? -1 : Number(params.get("step_index"));
-        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex;
+        const nodeIndex = params.get("node") ? linkedSteps.findIndex((step) => step.node_id === params.get("node")) : -1;
+        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex >= 0 ? requestedIndex : nodeIndex;
         if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length) {
           setFlowId(linkedFlow.id);
           setStepId(linkedSteps[linkedStepIndex].node_id);
@@ -385,7 +549,13 @@ export default function Page() {
       if (nextView === "map") setMapQuery(params.get("filter") ?? "");
       else setMapQuery("");
       const nextMapMode = params.get("map_mode");
-      setMapMode(nextMapMode && ["map", "architecture", "health"].includes(nextMapMode) ? nextMapMode as OverviewMode : "map");
+      setMapMode(nextMapMode && ["map", "architecture", "health"].includes(nextMapMode)
+        ? nextMapMode as OverviewMode
+        : nextView === "map"
+          ? params.get("filter") || params.get("node") || params.get("map_focus")
+            ? "map"
+            : "architecture"
+          : "map");
       const nextMapOrder = params.get("map_order");
       setMapOrder(nextMapOrder === "centrality" ? "centrality" : "path");
       setMapNeighborhoodOnly(params.get("map_focus") === "neighborhood");
@@ -396,7 +566,8 @@ export default function Page() {
           ? hops.findIndex((hop) => hop.id === params.get("hop_occurrence"))
           : -1;
         const requestedIndex = params.get("hop_index") == null ? -1 : Number(params.get("hop_index"));
-        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex;
+        const hopIndex = params.get("hop") ? hops.findIndex((hop) => hop.node_id === params.get("hop")) : -1;
+        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : requestedIndex >= 0 ? requestedIndex : hopIndex;
         if (linkedHopIndex >= 0 && linkedHopIndex < hops.length) {
           setEntryIndex(linkedEntry);
           setHopId(hops[linkedHopIndex].node_id);
@@ -415,6 +586,14 @@ export default function Page() {
     window.addEventListener("popstate", restoreFromUrl);
     return () => window.removeEventListener("popstate", restoreFromUrl);
   }, [app]);
+
+  function traceUrlOverrides(nextFlow: string, nextNode: string, nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction)): ViewUrlOverrides {
+    return { flow: nextFlow, node: nextNode, direction, step_index: String(nextStepIndex) };
+  }
+
+  function journeyUrlOverrides(nextIndex: number, nextHop: string, nextHopIndex = positionForEntry(app, nextIndex, nextHop)): ViewUrlOverrides {
+    return { entry: app.entries[nextIndex]?.id, hop: nextHop, hop_index: String(nextHopIndex) };
+  }
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -460,7 +639,7 @@ export default function Page() {
           setInspectorOpen(false);
           if (inspectorHasFocus)
             window.requestAnimationFrame(() => {
-              const sourceTrigger = document.querySelector<HTMLButtonElement>('[aria-controls="source-inspector"]');
+              const sourceTrigger = document.querySelector<HTMLButtonElement>('.inspector-reopen[aria-expanded="false"]');
               if (sourceTrigger) sourceTrigger.focus();
               else document.querySelector<HTMLButtonElement>(".inspector-reopen")?.focus();
             });
@@ -469,18 +648,38 @@ export default function Page() {
         setDragActive(false);
         return;
       }
-      if (editing || inDialog || event.defaultPrevented) return;
-      if (event.key === "/" && view === "trace") {
+      if (editing || inDialog || event.defaultPrevented || target.closest("button, a, [role='button'], [role='option']")) return;
+      if (event.key === "/") {
+        const searchSelector = view === "trace"
+          ? ".sidebar .search input"
+          : view === "home"
+            ? ".understand-search input, .briefing-source-search input"
+          : view === "map"
+            ? ".query-composer input"
+            : view === "journey"
+              ? ".entry-search input"
+              : view === "investigate"
+                ? ".sink-search input"
+                : view === "compare"
+                  ? ".compare-search input"
+                  : "";
+        const search = searchSelector
+          ? document.querySelector<HTMLInputElement>(searchSelector)
+          : null;
         event.preventDefault();
-        document.querySelector<HTMLInputElement>(".search input")?.focus();
-      }
-      if (event.key === "/" && view === "map") {
-        event.preventDefault();
-        document.querySelector<HTMLInputElement>(".query-composer input")?.focus();
+        if (search) {
+          search.focus();
+          return;
+        }
+        setMenu(false);
+        setHelpOpen(false);
+        commandOpenerRef.current = document.activeElement as HTMLElement | null;
+        setCommandOpen(true);
+        return;
       }
       if (view === "trace" && event.key === "ArrowLeft") {
         setDirection("backward");
-        record("Changed direction", flowId, "comes from");
+        record("Changed path order", flowId, "start to end");
         trackEvent("trace_direction_changed", {
           direction: "backward",
           source: "keyboard",
@@ -488,7 +687,7 @@ export default function Page() {
       }
       if (view === "trace" && event.key === "ArrowRight") {
         setDirection("forward");
-        record("Changed direction", flowId, "goes to");
+        record("Changed path order", flowId, "end to start");
         trackEvent("trace_direction_changed", {
           direction: "forward",
           source: "keyboard",
@@ -499,14 +698,56 @@ export default function Page() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [view, flowId, record, commandOpen, helpOpen, menu]);
 
-  function changeView(next: View) {
+  function changeView(next: View, mapModeOverride?: OverviewMode, focusNodeOverride?: string, mapQueryOverride?: string, urlOverrides?: ViewUrlOverrides) {
     if (next !== view && urlReady.current) {
       const params = new URLSearchParams(window.location.search);
+      [
+        "flow",
+        "node",
+        "direction",
+        "step_index",
+        "step_occurrence",
+        "entry",
+        "hop",
+        "hop_index",
+        "hop_occurrence",
+        "sink",
+        "filter",
+        "map_mode",
+        "map_order",
+        "map_focus",
+      ].forEach((key) => params.delete(key));
       params.set("view", next);
-      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+      if (next === "map" && focusNodeOverride) params.set("node", focusNodeOverride);
+      if (next === "map" && mapQueryOverride) params.set("filter", mapQueryOverride);
+      if (next === "map" && mapModeOverride && mapModeOverride !== "map") params.set("map_mode", mapModeOverride);
+      else if (next === "map" && !focusNodeId && !mapModeOverride && !focusNodeOverride) params.set("map_mode", "architecture");
+      Object.entries(urlOverrides ?? {}).forEach(([key, value]) => {
+        if (value) params.set(key, value);
+      });
+      pushNavigation(params);
+    }
+    if (next === "map" && mapModeOverride) {
+      setMapMode(mapModeOverride);
+    } else if (next === "map" && view !== "map" && !focusNodeId) {
+      setMapMode("architecture");
+      setMapNeighborhoodOnly(false);
     }
     setView(next);
-    record("Changed lens", viewLabels[next], "");
+    record("Changed view", viewLabels[next], "");
+    if (next !== view) {
+      window.requestAnimationFrame(() => {
+        workspaceRef.current?.focus({ preventScroll: true });
+        window.scrollTo({ top: 0, behavior: "auto" });
+      });
+    }
+  }
+
+  function openNodeInMap(nodeId: string) {
+    setFocusNodeId(nodeId);
+    setMapQuery("");
+    changeView("map", "map", nodeId);
+    setMapNeighborhoodOnly(true);
   }
 
   function changeMapMode(next: OverviewMode) {
@@ -515,7 +756,7 @@ export default function Page() {
       params.set("view", "map");
       if (next === "map") params.delete("map_mode");
       else params.set("map_mode", next);
-      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+      pushNavigation(params);
     }
     setMapMode(next);
     record("Changed graph lens", next === "map" ? "Topology" : next === "architecture" ? "Architecture" : "Health", "");
@@ -528,7 +769,7 @@ export default function Page() {
       params.set("view", "map");
       if (next === "path") params.delete("map_order");
       else params.set("map_order", next);
-      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+      pushNavigation(params);
     }
     setMapOrder(next);
   }
@@ -539,7 +780,7 @@ export default function Page() {
       params.set("view", "map");
       if (next) params.set("map_focus", "neighborhood");
       else params.delete("map_focus");
-      window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+      pushNavigation(params);
     }
     setMapNeighborhoodOnly(next);
     trackEvent("topology_neighborhood_toggled", { focused: next });
@@ -548,7 +789,9 @@ export default function Page() {
   async function copyInvestigationLink(params: Record<string, string>) {
     const url = new URL(window.location.href);
     url.search = "";
-    if (isDemo) {
+    if (bundleOrigin === "hosted" && hostedBundleId) {
+      url.searchParams.set("bundle", hostedBundleId);
+    } else if (isDemo) {
       const securityMode = app.findings.length > 0 || app.bundle.projection === "security projection";
       if (securityMode) url.searchParams.set("sample", "security");
     } else {
@@ -559,7 +802,12 @@ export default function Page() {
     });
     try {
       await copyText(url.toString());
-      setLoadState({ type: "success", message: "Investigation link copied." });
+      setLoadState({
+        type: "success",
+        message: isDemo
+          ? "Investigation link copied."
+          : "Local investigation link copied. The recipient will need the same bundle.json to open it.",
+      });
       trackEvent("investigation_link_copied", {
         view: params.view ?? "unknown",
       });
@@ -574,7 +822,55 @@ export default function Page() {
     }
   }
 
-  function activate(next: App, demo = false) {
+  function openSourceFile(file: string) {
+    setMapQuery(`file:${file}`);
+    setMapNeighborhoodOnly(false);
+    setFocusNodeId("");
+    changeView("map", "map", undefined, `file:${file}`);
+    trackEvent("source_file_explored");
+  }
+
+  function replayActivity(target: string) {
+    const node = app.nodes.find((item) => item.id === target || item.label === target);
+    if (node) {
+      openNodeInMap(node.id);
+      record("Reopened graph node", node.label || node.id, "from exploration history");
+      return;
+    }
+    const flow = app.flows.find((item) => item.id === target || item.name === target);
+    if (flow) {
+      const orderedSteps = direction === "forward" ? [...flow.steps].reverse() : flow.steps;
+      const nextNode = orderedSteps[0]?.node_id ?? "";
+      const nextStepIndex = positionForFlow(app, flow.id, nextNode, direction);
+      changeView("trace", undefined, undefined, undefined, traceUrlOverrides(flow.id, nextNode, nextStepIndex));
+      setQuery("");
+      setFlowId(flow.id);
+      setStepId(nextNode);
+      setStepIndex(nextStepIndex);
+      setInspectorOpen(true);
+      record("Reopened graph path", flow.name, "from exploration history");
+      return;
+    }
+    const entryIndex = app.entries.findIndex((item) => item.id === target || item.label === target);
+    if (entryIndex >= 0) {
+      const entry = app.entries[entryIndex];
+      changeView("journey", undefined, undefined, undefined, journeyUrlOverrides(entryIndex, entry.hops[0]?.node_id ?? "", 0));
+      setEntryIndex(entryIndex);
+      setHopId(entry.hops[0]?.node_id ?? "");
+      setHopIndex(0);
+      setInspectorOpen(true);
+      record("Reopened request flow", entry.label, "from exploration history");
+    }
+  }
+
+  function activate(next: App, demo = false, origin: "sample" | "local" | "hosted" = demo ? "sample" : "local", loadedBundleId?: string) {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "auto" });
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      });
+    });
     const pending = pendingLink.current;
     const firstSink = recommendedSink(next)?.id ?? "";
     const firstFlow = recommendedFlow(next.flows);
@@ -597,16 +893,17 @@ export default function Page() {
     setFocusNodeId("");
     let restored = false;
     if (pending) {
+      const requestedView = pending.view ?? (pending.region || pending.label || pending.anchor || pending.domain ? "map" : pending.flow || pending.step ? "trace" : undefined);
       if (
-        pending.view === "home" ||
-        pending.view === "trace" ||
-        pending.view === "journey" ||
-        pending.view === "investigate" ||
-        pending.view === "map" ||
-        pending.view === "compare" ||
-        pending.view === "install"
+        requestedView === "home" ||
+        requestedView === "trace" ||
+        requestedView === "journey" ||
+        requestedView === "investigate" ||
+        requestedView === "map" ||
+        requestedView === "compare" ||
+        requestedView === "install"
       )
-        setView(pending.view);
+        setView(requestedView);
       const linkedFlow = next.flows.find((flow) => flow.id === pending.flow);
       if (linkedFlow) {
         setFlowId(linkedFlow.id);
@@ -620,7 +917,8 @@ export default function Page() {
         const occurrenceIndex = pending.stepOccurrence
           ? linkedSteps.findIndex((step) => step.id === pending.stepOccurrence)
           : -1;
-        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.stepIndex ?? -1;
+        const nodeIndex = pending.node ? linkedSteps.findIndex((step) => step.node_id === pending.node) : -1;
+        const linkedStepIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.stepIndex ?? nodeIndex;
         if (linkedStepIndex >= 0 && linkedStepIndex < linkedSteps.length && (!pending.node || linkedSteps[linkedStepIndex]?.node_id === pending.node)) {
           setStepId(linkedSteps[linkedStepIndex].node_id);
           setStepIndex(linkedStepIndex);
@@ -643,46 +941,51 @@ export default function Page() {
         const occurrenceIndex = pending.hopOccurrence
           ? next.entries[linkedEntry].hops.findIndex((hop) => hop.id === pending.hopOccurrence)
           : -1;
-        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.hopIndex ?? -1;
+        const hopIndex = pending.hop ? next.entries[linkedEntry].hops.findIndex((hop) => hop.node_id === pending.hop) : -1;
+        const linkedHopIndex = occurrenceIndex >= 0 ? occurrenceIndex : pending.hopIndex ?? hopIndex;
         if (linkedHopIndex >= 0 && linkedHopIndex < next.entries[linkedEntry].hops.length && (!pending.hop || next.entries[linkedEntry].hops[linkedHopIndex]?.node_id === pending.hop)) {
           setHopId(next.entries[linkedEntry].hops[linkedHopIndex].node_id);
           setHopIndex(linkedHopIndex);
         }
         restored = true;
       }
+      const handoffNode = nodeForHandoff(next, pending.anchor, pending.region);
       if (
-        pending.view === "map" &&
-        pending.node &&
-        next.nodes.some((node) => node.id === pending.node)
+        requestedView === "map" &&
+        ((pending.node && next.nodes.some((node) => node.id === pending.node)) || handoffNode)
       ) {
-        setFocusNodeId(pending.node);
+        setFocusNodeId(pending.node && next.nodes.some((node) => node.id === pending.node) ? pending.node : handoffNode!.id);
         restored = true;
       }
       if (pending.sink && next.nodes.some((node) => node.id === pending.sink)) {
         setSinkId(pending.sink);
         restored = true;
       }
-      if (pending.view === "install" || pending.view === "map") restored = true;
+      if (requestedView === "install" || requestedView === "map") restored = true;
       if (pending.direction === "forward") setDirection("forward");
       if (pending.view === "trace") setQuery(pending.filter ?? "");
-      if (pending.view === "map") setMapQuery(pending.filter ?? "");
-      if (pending.view === "map" && pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode)) setMapMode(pending.mapMode as OverviewMode);
-      if (pending.view === "map") setMapOrder(pending.mapOrder === "centrality" ? "centrality" : "path");
-      if (pending.view === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
+      if (requestedView === "map") setMapQuery(pending.filter ?? "");
+      if (requestedView === "map") setMapMode(pending.mapMode && ["map", "architecture", "health"].includes(pending.mapMode) ? pending.mapMode as OverviewMode : "architecture");
+      if (requestedView === "map") setMapOrder(pending.mapOrder === "centrality" ? "centrality" : "path");
+      if (requestedView === "map") setMapNeighborhoodOnly(Boolean(pending.mapNeighborhood));
       pendingLink.current = null;
     }
+    initializeNavigation();
     urlReady.current = true;
+    setUrlInitialized(true);
     setMenu(false);
     setInspectorOpen(true);
-    setIsDemo(demo);
+    setIsDemo(origin === "sample");
+    setBundleOrigin(origin);
+    setHostedBundleId(origin === "hosted" ? loadedBundleId : undefined);
     setActivity([]);
     setLoadState({
       type: restored || !pending ? "success" : "error",
       message: restored
-        ? `Loaded ${next.name || "bundle.json"} and restored the local investigation link.`
+        ? `Loaded ${next.name || "bundle.json"} and restored the local investigation link. ${bundleLoadSummary(next)}`
         : pending
-          ? `Loaded ${next.name || "bundle.json"}, but its linked evidence IDs were not found. Opened the first available evidence.`
-          : `Loaded ${next.name || "bundle.json"}.`,
+          ? `Loaded ${next.name || "bundle.json"}, but its linked evidence IDs were not found. Opened the first available evidence. ${bundleLoadSummary(next)}`
+          : `Loaded ${next.name || "bundle.json"}. ${bundleLoadSummary(next)}`,
     });
     const recent: RecentBundle = {
       name: next.name || "Untitled bundle",
@@ -691,6 +994,7 @@ export default function Page() {
       lines: next.lines,
       flows: next.flows.length,
       loadedAt: Date.now(),
+      ...(origin === "hosted" && loadedBundleId ? { bundleId: loadedBundleId } : {}),
     };
     setRecentBundles((current) => {
       const updated = [
@@ -709,7 +1013,7 @@ export default function Page() {
     record(
       "Loaded bundle",
       next.name || "Untitled bundle",
-      `${next.nodes.length} nodes · ${next.flows.length} flows`,
+      `${countLabel(next.nodes.length, "node")} · ${countLabel(next.flows.length, "flow")}`,
     );
     trackEvent("bundle_loaded", {
       has_callpaths: next.entries.length > 0,
@@ -734,12 +1038,102 @@ export default function Page() {
     } catch (error) {
       setLoadState({
         type: "error",
-        message: `${error instanceof Error ? error.message : "Could not read bundle.json"} The current bundle was kept.`,
+        message: bundleImportError(error, "bundle.json", "The current bundle was kept."),
       });
       trackEvent("bundle_load_failed");
     } finally {
       importBusy.current = false;
       setDragActive(false);
+    }
+  }
+
+  async function openRecentHostedBundle(bundleId: string) {
+    if (importBusy.current) return;
+    importBusy.current = true;
+    setLoadState({ type: "loading", message: "Reopening the hosted bundle…" });
+    try {
+      const raw = await loadHostedBundle(bundleId);
+      activate(normalize(raw), false, "hosted", bundleId);
+      trackEvent("recent_hosted_bundle_reopened");
+    } catch (error) {
+      setLoadState({
+        type: "error",
+        message: `${error instanceof Error ? error.message : "Could not reopen the hosted bundle"} The current bundle was kept.`,
+      });
+      trackEvent("bundle_load_failed");
+    } finally {
+      importBusy.current = false;
+    }
+  }
+
+  async function startHostedBuild(gitUrl: string, ref: string) {
+    if (importBusy.current) return;
+    importBusy.current = true;
+    const controller = new AbortController();
+    buildController.current = controller;
+    setBuildState({ status: "queued", steps: [], message: "Submitting build…" });
+    setLoadState({ type: "loading", message: "Preparing a hosted code graph…" });
+    try {
+      let status = await submitHostedBuild(gitUrl, ref, controller.signal);
+      activeJobId.current = status.job_id ?? null;
+      setBuildState({ status: status.status, steps: status.steps ?? [], message: "Build queued…" });
+      let attempts = 0;
+      const buildDeadline = Date.now() + 15 * 60 * 1000;
+      while (!["ready", "too_large", "unsupported_language", "error", "expired", "cancelled"].includes(status.status)) {
+        await new Promise((resolve, reject) => {
+          const remaining = buildDeadline - Date.now();
+          if (remaining <= 0) { reject(new Error("The hosted build took too long. You can build this repository locally instead.")); return; }
+          const timer = window.setTimeout(resolve, Math.min(5000, 1000 + attempts * 500, remaining));
+          controller.signal.addEventListener("abort", () => { window.clearTimeout(timer); reject(new DOMException("Build cancelled", "AbortError")); }, { once: true });
+        });
+        attempts += 1;
+        if (attempts > 180) throw new Error("The hosted build took too long. You can build this repository locally instead.");
+        try {
+          status = await getHostedBuildStatus(status.job_id ?? "", controller.signal);
+        } catch (error) {
+          if (!(error instanceof HostedRequestError) || error.retryAfterMs == null) throw error;
+          await new Promise((resolve, reject) => {
+            const remaining = buildDeadline - Date.now();
+            if (remaining <= 0) { reject(new Error("The hosted build took too long. You can build this repository locally instead.")); return; }
+            const timer = window.setTimeout(resolve, Math.min(error.retryAfterMs!, remaining));
+            controller.signal.addEventListener("abort", () => { window.clearTimeout(timer); reject(new DOMException("Build cancelled", "AbortError")); }, { once: true });
+          });
+          continue;
+        }
+        setBuildState({ status: status.status, steps: status.steps ?? [], message: status.status === "queued" ? "Waiting for a worker…" : undefined });
+      }
+      if (status.status === "too_large" || status.status === "unsupported_language") {
+        setBuildState({ status: status.status, steps: status.steps ?? [], message: "This repository needs the local build path." });
+        setLoadState({ type: "error", message: "The hosted builder cannot handle this repository yet. Run Lachesis locally and upload the resulting bundle.json." });
+        return;
+      }
+      if (status.status !== "ready" || !status.bundle_id) throw new Error(status.error?.message || "The hosted build did not produce a bundle.");
+      const raw = await loadHostedBundle(status.bundle_id, controller.signal);
+      activate(normalize(raw), false, "hosted", status.bundle_id);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setBuildState({ status: "error", steps: [], message: error instanceof Error ? error.message : "Hosted build failed." });
+      setLoadState({ type: "error", message: `${error instanceof Error ? error.message : "Hosted build failed."} The current bundle was kept.` });
+      trackEvent("hosted_build_failed");
+    } finally {
+      if (buildController.current === controller) buildController.current = null;
+      activeJobId.current = null;
+      importBusy.current = false;
+    }
+  }
+
+  async function cancelActiveBuild() {
+    const jobId = activeJobId.current;
+    if (!jobId) return;
+    try {
+      const response = await cancelHostedBuild(jobId);
+      buildController.current?.abort();
+      setBuildState({ status: response.status, steps: response.steps ?? [], message: response.status === "cancelled" ? "Build cancelled." : `Build is already ${response.status}.` });
+      setLoadState({ type: "success", message: response.status === "cancelled" ? "Hosted build cancelled. The current bundle was kept." : `The hosted build is already ${response.status}.` });
+      activeJobId.current = null;
+      importBusy.current = false;
+    } catch (error) {
+      setLoadState({ type: "error", message: `${error instanceof Error ? error.message : "The hosted build could not be cancelled."} The build may still be running.` });
     }
   }
 
@@ -807,7 +1201,7 @@ export default function Page() {
     } catch (error) {
       setLoadState({
         type: "error",
-        message: `${error instanceof Error ? error.message : "Could not read comparison bundle"} The active bundle was kept.`,
+        message: bundleImportError(error, "comparison bundle", "The active bundle was kept."),
       });
       trackEvent("comparison_bundle_load_failed");
     } finally {
@@ -864,12 +1258,18 @@ export default function Page() {
         dark={dark}
         setDark={setDark}
         recentBundles={recentBundles}
+        onOpenRecent={openRecentHostedBundle}
+        canGoBack={navigation.canBack}
+        canGoForward={navigation.canForward}
+        onGoBack={() => window.history.back()}
+        onGoForward={() => window.history.forward()}
       />
       <input
         id="bundle-upload"
         ref={fileRef}
         type="file"
         accept=".json,application/json"
+        aria-label="Load a graph bundle"
         hidden
         onChange={(event) => {
           upload(event.target.files?.[0]);
@@ -880,6 +1280,7 @@ export default function Page() {
         ref={compareFileRef}
         type="file"
         accept=".json,application/json"
+        aria-label="Load a comparison bundle"
         hidden
         onChange={(event) => uploadComparison(event.target.files?.[0])}
       />
@@ -890,7 +1291,8 @@ export default function Page() {
           onClose={() => setCommandOpen(false)}
           onView={changeView}
           onFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            changeView("trace", undefined, undefined, undefined, traceUrlOverrides(nextFlow, nextNode));
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
             setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
@@ -898,19 +1300,19 @@ export default function Page() {
             record("Opened graph path", nextFlow, "via command palette");
           }}
           onEntry={(nextIndex, nextHop) => {
-            changeView("journey");
+            changeView("journey", undefined, undefined, undefined, journeyUrlOverrides(nextIndex, nextHop));
             setEntryIndex(nextIndex);
             setHopId(nextHop);
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
             record(
-              "Opened request path",
+              "Opened request flow",
               app.entries[nextIndex]?.label ?? "Unknown entry",
               "via command palette",
             );
           }}
           onSink={(nextSink) => {
-            changeView("investigate");
+            changeView("investigate", undefined, undefined, undefined, { sink: nextSink });
             setSinkId(nextSink);
             record(
               "Focused sink",
@@ -919,15 +1321,14 @@ export default function Page() {
             );
           }}
           onNode={(nextNode) => {
-            setFocusNodeId(nextNode);
-            changeView("map");
-            setInspectorOpen(true);
+            openNodeInMap(nextNode);
             record(
               "Inspected graph node",
               app.nodes.find((node) => node.id === nextNode)?.label ?? nextNode,
               "via command palette",
             );
           }}
+          onFile={openSourceFile}
         />
       )}
       {helpOpen && (
@@ -972,35 +1373,59 @@ export default function Page() {
           isDemo={isDemo}
           loadState={loadState}
           onUpload={() => fileRef.current?.click()}
+          onReviewCoverage={() => {
+            setMapQuery("");
+            changeView("map", "health");
+          }}
           onLoadSample={loadCodeSample}
           onLoadSecuritySample={loadSecuritySample}
+          onBuild={startHostedBuild}
+          buildState={buildState}
           onView={(next) => changeView(next)}
+          onSearch={(nextQuery) => {
+            setMapQuery(nextQuery);
+            setMapNeighborhoodOnly(false);
+            changeView("map", "map", undefined, nextQuery);
+            trackEvent("home_source_search_submitted");
+          }}
           onDismiss={() => {
             setLoadState({ type: "idle", message: "" });
             workspaceRef.current?.focus();
           }}
           direction={direction}
           onFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            const nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction);
+            changeView("trace", undefined, undefined, undefined, {
+              flow: nextFlow,
+              node: nextNode,
+              direction,
+              step_index: String(nextStepIndex),
+            });
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            setStepIndex(nextStepIndex);
             setInspectorOpen(true);
-            record("Opened priority witness", nextFlow, "from briefing");
+            record("Opened path", nextFlow, "from understanding home");
           }}
           onSink={(nextSink) => {
-            changeView("investigate");
+            changeView("investigate", undefined, undefined, undefined, { sink: nextSink });
             setSinkId(nextSink);
-            record("Focused execution boundary", nextSink, "from briefing");
+            record("Focused destination", nextSink, "from understanding home");
           }}
           onEntry={(nextIndex, nextHop) => {
-            changeView("journey");
+            const nextHopIndex = positionForEntry(app, nextIndex, nextHop);
+            changeView("journey", undefined, undefined, undefined, {
+              entry: app.entries[nextIndex]?.id,
+              hop: nextHop,
+              hop_index: String(nextHopIndex),
+            });
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(positionForEntry(app, nextIndex, nextHop));
+            setHopIndex(nextHopIndex);
             setInspectorOpen(true);
             record(
-              "Opened request path",
+              "Opened request flow",
               app.entries[nextIndex]?.label ?? "Unknown entry",
               "from briefing",
             );
@@ -1019,6 +1444,7 @@ export default function Page() {
         hopIndex={hopIndex}
         sinkId={sinkId}
         focusNodeId={focusNodeId}
+        handoff={handoffContext}
       />
       {view === "trace" && (
         <TraceView
@@ -1038,20 +1464,9 @@ export default function Page() {
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
           onView={(next: "journey" | "map", nextNode) => {
-            if (next === "map" && nextNode) setFocusNodeId(nextNode);
-            changeView(next);
+            if (next === "map" && nextNode) openNodeInMap(nextNode);
+            else changeView(next);
           }}
-          onShare={(position) =>
-            copyInvestigationLink({
-              view: "trace",
-              flow: flowId,
-              node: stepId,
-              direction,
-              filter: query,
-              step_occurrence: stepAtPosition(app, flowId, position, direction)?.id ?? "",
-              step_index: String(position),
-            })
-          }
           onFlow={(nextFlow, nextNode) => {
             setFlowId(nextFlow);
             setStepId(nextNode);
@@ -1059,12 +1474,15 @@ export default function Page() {
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
-            changeView("journey");
+            const nextHopIndex = positionForEntry(app, nextIndex, nextHop);
+            changeView("journey", undefined, undefined, undefined, journeyUrlOverrides(nextIndex, nextHop, nextHopIndex));
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(positionForEntry(app, nextIndex, nextHop));
+            setHopIndex(nextHopIndex);
             setInspectorOpen(true);
           }}
+          onFile={openSourceFile}
+          onShare={(params) => copyInvestigationLink(params)}
         />
       )}
       {view === "journey" && (
@@ -1081,23 +1499,16 @@ export default function Page() {
           onInspectorClose={() => setInspectorOpen(false)}
           onRecord={record}
           onView={(next: "trace" | "map", nextNode) => {
-            if (next === "map" && nextNode) setFocusNodeId(nextNode);
-            changeView(next);
+            if (next === "map" && nextNode) openNodeInMap(nextNode);
+            else changeView(next);
           }}
-          onShare={(position) =>
-            copyInvestigationLink({
-              view: "journey",
-              entry: app.entries[entryIndex]?.id ?? "",
-              hop: hopId,
-              hop_occurrence: app.entries[entryIndex]?.hops[position]?.id ?? "",
-              hop_index: String(position),
-            })
-          }
           onFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            const nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction);
+            changeView("trace", undefined, undefined, undefined, traceUrlOverrides(nextFlow, nextNode, nextStepIndex));
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            setStepIndex(nextStepIndex);
             setInspectorOpen(true);
           }}
           onEntry={(nextIndex, nextHop) => {
@@ -1106,6 +1517,8 @@ export default function Page() {
             setHopIndex(positionForEntry(app, nextIndex, nextHop));
             setInspectorOpen(true);
           }}
+          onFile={openSourceFile}
+          onShare={(params) => copyInvestigationLink(params)}
         />
       )}
       {view === "investigate" && (
@@ -1115,33 +1528,44 @@ export default function Page() {
           setSinkId={setSinkId}
           onRecord={record}
           onEntry={(nextIndex, nextNode) => {
-            changeView("journey");
+            const nextHopIndex = positionForEntry(app, nextIndex, nextNode);
+            changeView("journey", undefined, undefined, undefined, {
+              entry: app.entries[nextIndex]?.id,
+              hop: nextNode,
+              hop_index: String(nextHopIndex),
+            });
             setEntryIndex(nextIndex);
             setHopId(nextNode);
-            setHopIndex(positionForEntry(app, nextIndex, nextNode));
+            setHopIndex(nextHopIndex);
             setInspectorOpen(true);
             record(
-              "Opened connected request path",
+              "Opened connected request flow",
               app.entries[nextIndex]?.label ?? "Unknown entry",
               "from convergence inspector",
             );
           }}
           onOpenFlow={(nextFlow, nextNode, originalPosition) => {
-            changeView("trace");
-            setFlowId(nextFlow);
-            setStepId(nextNode);
             const selectedFlow = app.flows.find((flow) => flow.id === nextFlow);
             const selectedPosition = originalPosition == null || !selectedFlow
               ? positionForFlow(app, nextFlow, nextNode, direction)
               : direction === "forward"
                 ? selectedFlow.steps.length - 1 - originalPosition
                 : originalPosition;
+            changeView("trace", undefined, undefined, undefined, {
+              flow: nextFlow,
+              node: nextNode,
+              direction,
+              step_index: String(selectedPosition),
+            });
+            setQuery("");
+            setFlowId(nextFlow);
+            setStepId(nextNode);
             setStepIndex(selectedPosition);
             setInspectorOpen(true);
           }}
           onView={(next, nextNode) => {
-            if (next === "map" && nextNode) setFocusNodeId(nextNode);
-            changeView(next);
+            if (next === "map" && nextNode) openNodeInMap(nextNode);
+            else changeView(next);
           }}
           onShare={(nextSink) =>
             copyInvestigationLink({ view: "investigate", sink: nextSink })
@@ -1162,25 +1586,29 @@ export default function Page() {
           focusNodeId={focusNodeId}
           onFocusNode={setFocusNodeId}
           onRecord={record}
+          onFile={openSourceFile}
           onShare={(nodeId) =>
             copyInvestigationLink({ view: "map", node: nodeId, filter: mapQuery, map_mode: mapMode, map_order: mapOrder, map_focus: mapNeighborhoodOnly ? "neighborhood" : "" })
           }
           onFlow={(nextFlow, nextNode) => {
-            changeView("trace");
+            const nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction);
+            changeView("trace", undefined, undefined, undefined, traceUrlOverrides(nextFlow, nextNode, nextStepIndex));
+            setQuery("");
             setFlowId(nextFlow);
             setStepId(nextNode);
-            setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
+            setStepIndex(nextStepIndex);
             setInspectorOpen(true);
             record("Opened connected graph path", nextFlow, "from graph");
           }}
           onEntry={(nextIndex, nextHop) => {
-            changeView("journey");
+            const nextHopIndex = positionForEntry(app, nextIndex, nextHop);
+            changeView("journey", undefined, undefined, undefined, journeyUrlOverrides(nextIndex, nextHop, nextHopIndex));
             setEntryIndex(nextIndex);
             setHopId(nextHop);
-            setHopIndex(positionForEntry(app, nextIndex, nextHop));
+            setHopIndex(nextHopIndex);
             setInspectorOpen(true);
             record(
-              "Opened connected request path",
+              "Opened connected request flow",
               app.entries[nextIndex]?.label ?? "Unknown entry",
               "from graph",
             );
@@ -1188,28 +1616,26 @@ export default function Page() {
         />
       )}
       {view === "compare" && (
-        <div role="main" aria-label="Revision comparison">
-          <CompareView
-            base={app}
-            compare={compareApp}
-            loading={loadState.type === "loading"}
-            onUpload={() => compareFileRef.current?.click()}
-            onOpenFlow={(nextFlow, nextNode) => {
-              changeView("trace");
-              setFlowId(nextFlow);
-              setStepId(nextNode);
-              setStepIndex(positionForFlow(app, nextFlow, nextNode, direction));
-              setInspectorOpen(true);
-              record("Opened changed graph path", nextFlow, "from revision diff");
-            }}
-            onOpenNode={(nextNode) => {
-              setFocusNodeId(nextNode);
-              changeView("map");
-              setInspectorOpen(true);
-              record("Inspected removed graph node", app.nodes.find((node) => node.id === nextNode)?.label ?? nextNode, "from revision diff");
-            }}
-          />
-        </div>
+        <CompareView
+          base={app}
+          compare={compareApp}
+          loading={loadState.type === "loading"}
+          onUpload={() => compareFileRef.current?.click()}
+          onOpenFlow={(nextFlow, nextNode) => {
+            const nextStepIndex = positionForFlow(app, nextFlow, nextNode, direction);
+            changeView("trace", undefined, undefined, undefined, traceUrlOverrides(nextFlow, nextNode, nextStepIndex));
+            setQuery("");
+            setFlowId(nextFlow);
+            setStepId(nextNode);
+            setStepIndex(nextStepIndex);
+            setInspectorOpen(true);
+            record("Opened changed graph path", nextFlow, "from revision diff");
+          }}
+          onOpenNode={(nextNode) => {
+            openNodeInMap(nextNode);
+            record("Inspected removed graph node", app.nodes.find((node) => node.id === nextNode)?.label ?? nextNode, "from revision diff");
+          }}
+        />
       )}
       {view === "install" && (
         <InstallView onUpload={() => fileRef.current?.click()} />
@@ -1220,13 +1646,14 @@ export default function Page() {
         app={app}
         items={activity}
         onClear={() => setActivity([])}
+        onReplay={replayActivity}
       />
       <footer>
         <span>
           <i className="status-dot" /> Active bundle: <b>{app.name}</b>
         </span>
         <span>
-          Shortcuts: <b>⌘K</b> jump · <b>/</b> search · <b>← →</b> direction / nodes · <b>↑ ↓</b> topology rows ·{" "}
+          Shortcuts: <b>⌘K</b> jump · <b>/</b> focus search · <b>← →</b> direction / nodes · <b>↑ ↓</b> topology rows ·{" "}
           <b>[ ]</b> step ·{" "}
           <b>Esc</b> close · <button className="footer-help" type="button" onClick={() => { helpOpenerRef.current = document.activeElement as HTMLElement | null; setHelpOpen(true); }}> <b>?</b> keyboard help</button>
         </span>

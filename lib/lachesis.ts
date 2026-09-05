@@ -1,7 +1,8 @@
 import codeExplorationBundle from '../public/code-exploration-bundle.json'
 
 export type NodeScope = { repository?: string; service?: string; package?: string; module?: string; kind?: string; label?: string }
-export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; module?: string; scope?: NodeScope; signature?: string; documentation?: string; snippet: string }
+export type SourceWindow = { startLine: number; lines: string[]; highlightStart?: number; highlightEnd?: number }
+export type Node = { id: string; kind: string; file: string; line: number; column?: number; endLine?: number; endColumn?: number; label: string; qualifiedName?: string; parentId?: string; module?: string; scope?: NodeScope; signature?: string; documentation?: string; snippet: string; sourceWindow?: SourceWindow }
 export type Step = { id?: string; node_id: string; role: string; note?: string; edge?: { relation?: string; alias?: boolean; dynamic?: boolean; confidence?: string; limitations?: string[] } }
 export type Flow = { id: string; name: string; steps: Step[]; kind?: string; description?: string; sourceNodeId?: string; sinkNodeId?: string; confidence?: string; limitations?: string[] }
 export type GuardEvidence = { verdict?: string; note?: string; items?: {node_id?:string;effect?:string}[] }
@@ -15,7 +16,7 @@ export type GraphEntrypoint = { id: string; label: string; kind?: string; nodeId
 export type GraphCoverage = { scope?: string; includedNodes?: number; indexedNodes?: number; limitations: string[]; capabilities: string[] }
 export type EdgeOrigin = 'bundle' | 'value-flow' | 'request-path'
 export type GraphEdge = { id:string; source:string; target:string; relation:string; alias:boolean; dynamic:boolean; confidence?:string; limitations?:string[]; origins:EdgeOrigin[]; flow_ids:string[]; entry_ids:string[] }
-export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[] }
+export type BundleInfo = { format:string; schemaVersion:string; findingSchemaVersion?:string; projection?:string; description?:string; sourceUrlTemplate?:string; engine?:string; catalog?:string; toolchain?:string; generatedAt?:string; fixture:boolean; indexedNodes?:number; includedNodes?:number; capabilities?:string[]; limitations?:string[] }
 export type App = { name: string; language: string; commit: string; lines: number; nodes: Node[]; edges: GraphEdge[]; flows: Flow[]; findings: Flow[]; entries: Entry[]; mcp: Evidence[]; files: GraphFile[]; modules: GraphModule[]; entrypoints: GraphEntrypoint[]; coverage: GraphCoverage; bundle:BundleInfo }
 
 function coverageLimitations(includedNodes: number, indexedNodes: number | undefined, limitations: string[] = []) {
@@ -53,6 +54,22 @@ function normalizeScope(raw: unknown): NodeScope | undefined {
   return Object.keys(scope).length ? scope : undefined
 }
 
+function normalizeSourceWindow(raw: unknown): SourceWindow | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined
+  const value = raw as Record<string, unknown>
+  if (!Array.isArray(value.lines) || !value.lines.length) return undefined
+  const startLine = Number(value.start_line ?? value.startLine ?? 0)
+  if (!Number.isInteger(startLine) || startLine < 1) return undefined
+  const highlightStart = Number(value.highlight_start ?? value.highlightStart ?? 0)
+  const highlightEnd = Number(value.highlight_end ?? value.highlightEnd ?? 0)
+  return {
+    startLine,
+    lines: value.lines.map(String),
+    ...(Number.isInteger(highlightStart) && highlightStart > 0 ? { highlightStart } : {}),
+    ...(Number.isInteger(highlightEnd) && highlightEnd > 0 ? { highlightEnd } : {}),
+  }
+}
+
 function flowRelation(step: Step, pathKind = 'value-flow') {
   const role = step.role.trim().toLowerCase()
   const fallback = pathKind === 'call-path' || pathKind === 'callpath'
@@ -82,8 +99,25 @@ function pointFor(rawLayout: unknown, nodeId: string, index: number): LayoutPoin
   return point && Number.isFinite(Number(point.x)) ? {x:Number(point.x), y:Number(point.y ?? 110)} : undefined
 }
 
+function normalizeNodeRaw(n:any,i:number):Node {
+  return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end_column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),scope:normalizeScope(n.scope??n.context??n.boundary),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??''),sourceWindow:normalizeSourceWindow(n.source_window??n.sourceWindow)}
+}
+
+function normalizeNodeLegacy(n:any,i:number):Node {
+  const node = normalizeNodeRaw(n, i)
+  if (!Number.isFinite(node.endColumn) && n.end_column == null && n.location?.end?.column != null) {
+    return { ...node, endColumn: Number(n.location.end.column) }
+  }
+  return node
+}
+
 function normalizeNode(n:any,i:number):Node {
-  return {id:String(n.id??n.node_id??`node_${i}`),kind:normalizeKind(n.kind??n.type??'node'),file:String(n.file??n.path??''),line:Number(n.line??n.start_line??n.location?.start?.line??0),column:n.column==null?n.location?.start?.column==null?undefined:Number(n.location.start.column):Number(n.column),endLine:n.end_line==null?n.location?.end?.line==null?undefined:Number(n.location.end.line):Number(n.end_line),endColumn:n.end_column==null?n.location?.end?.column==null?undefined:Number(n.location.end.column):Number(n.end_column),label:String(n.label??n.name??n.code??''),qualifiedName:n.qualified_name==null?undefined:String(n.qualified_name),module:n.module==null?undefined:String(n.module),scope:normalizeScope(n.scope??n.context??n.boundary),signature:n.signature==null?undefined:String(n.signature),documentation:n.documentation==null?undefined:String(n.documentation),snippet:String(n.snippet??n.code??n.label??n.name??'')}
+  const node = normalizeNodeLegacy(n, i)
+  const parentId = n.parent_id == null ? n.parentId == null ? undefined : String(n.parentId) : String(n.parent_id)
+  const withParent = parentId ? { ...node, parentId } : node
+  return withParent.snippet.trim() || !withParent.sourceWindow
+    ? withParent
+    : { ...withParent, snippet: withParent.sourceWindow.lines.join("\n") }
 }
 
 function normalizeFiles(raw:unknown):GraphFile[] { return Array.isArray(raw)?raw.map((f:any,i:number)=>({id:String(f.id??f.path??`file_${i}`),path:String(f.path??f.name??f.id??''),module:f.module==null?undefined:String(f.module),language:f.language==null?undefined:String(f.language),lines:f.lines==null?undefined:Number(f.lines)})):[] }
@@ -116,14 +150,23 @@ function assertExplicitEdgeIds(items:EdgeSeed[], label:string) {
 function assertGraphV2Nodes(nodes:Node[]) {
   for (const [index, node] of nodes.entries()) {
     const label = `Graph node ${index}`
-    for (const [field, value] of [['id', node.id], ['kind', node.kind], ['file', node.file], ['label', node.label], ['snippet', node.snippet]] as const) {
+    for (const [field, value] of [['id', node.id], ['kind', node.kind], ['label', node.label]] as const) {
       if (!value.trim()) throw new Error(`${label}.${field} must be a non-empty string.`)
     }
+    if (!node.snippet.trim() && !node.sourceWindow?.lines.length) throw new Error(`${label} must include a snippet or source_window.`)
     const locations: Array<[string, number | undefined]> = [['line', node.line], ['column', node.column], ['endLine', node.endLine], ['endColumn', node.endColumn]]
     for (const [field, value] of locations) {
       if (value != null && (!Number.isInteger(value) || value < 0)) throw new Error(`${label}.${field} must be a non-negative integer.`)
     }
   }
+}
+function assertNodeParentReferences(nodes:Node[]) {
+  const ids = new Set(nodes.map((node) => node.id))
+  nodes.forEach((node) => {
+    if (!node.parentId) return
+    if (node.parentId === node.id) throw new Error(`Graph node "${node.id}" cannot be its own parent.`)
+    if (!ids.has(node.parentId)) throw new Error(`Graph node "${node.id}" references missing parent node "${node.parentId}".`)
+  })
 }
 function assertModuleReferences(modules:GraphModule[], nodeIds:Set<string>) {
   const moduleIds = new Set(modules.map((module) => module.id))
@@ -257,7 +300,7 @@ export function normalize(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:[],entries,mcp,files:normalizeFiles(source.files),modules:normalizeModules(source.modules),entrypoints:normalizeEntrypoints(source.entrypoints),coverage:{scope:'projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:'bundle/0.x',schemaVersion:String(raw.schema_version??'0.x'),projection:'flow projection',description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeBundleV1(raw: any): App {
@@ -309,7 +352,7 @@ function normalizeBundleV1(raw: any): App {
   const edges=deriveGraphEdges(explicitEdges,flows,entries)
   const indexedNodes=Number(meta.nodes_total??0)||undefined
   const limitations=coverageLimitations(nodes.length,indexedNodes)
-  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:'security projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection:String(manifest.analysis_projection??'security projection'),description:meta.description==null?undefined:String(meta.description),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
+  return {name:String(meta.repo??manifest.repository??''),language:String(meta.lang??meta.language??''),commit:String(meta.commit??manifest.commit_sha??''),lines:Number(meta.loc??meta.lines??0),nodes,edges,flows,findings:flows,entries,mcp,files:normalizeFiles(graph.files),modules:normalizeModules(graph.modules),entrypoints:normalizeEntrypoints(graph.entrypoints),coverage:{scope:'security projection',includedNodes:nodes.length,indexedNodes,limitations,capabilities:[]},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:String(raw.schema_version??'1.0'),findingSchemaVersion:manifest.finding_schema_version==null?undefined:String(manifest.finding_schema_version),projection:String(manifest.analysis_projection??'security projection'),description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),engine:manifest.engine_sha==null?undefined:String(manifest.engine_sha),catalog:manifest.catalog_sha==null?undefined:String(manifest.catalog_sha),toolchain:manifest.toolchain_fingerprint==null?undefined:String(manifest.toolchain_fingerprint),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,limitations}}
 }
 
 function normalizeGraphV2(raw:any):App {
@@ -326,6 +369,7 @@ function normalizeGraphV2(raw:any):App {
   const nodes:Node[]=Array.isArray(graph.nodes)?graph.nodes.map(normalizeNode):[]
   if(!nodes.length)throw new Error('The bundle contains no graph nodes.')
   assertGraphV2Nodes(nodes)
+  assertNodeParentReferences(nodes)
   const nodeIds=new Set(nodes.map(node=>node.id))
   if(nodeIds.size!==nodes.length)throw new Error('The bundle contains duplicate node IDs.')
   const files=normalizeFiles(graph.files)
@@ -388,11 +432,48 @@ function normalizeGraphV2(raw:any):App {
   if(!Number.isFinite(includedNodes)||includedNodes!==nodes.length)throw new Error(`Coverage included_nodes (${coverage.included_nodes}) does not match graph.nodes (${nodes.length}).`)
   if(indexedNodes!==undefined&&indexedNodes<includedNodes)throw new Error(`Coverage indexed_nodes (${indexedNodes}) cannot be less than included_nodes (${includedNodes}).`)
   const effectiveLimitations=coverageLimitations(includedNodes,indexedNodes,limitations)
-  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations}}
+  return {name:String(meta.repository??meta.repo??''),language:String(meta.language??meta.lang??''),commit:String(meta.revision??meta.commit??''),lines:Number(meta.lines??meta.loc??0),nodes,edges:deriveGraphEdges(explicitEdges,allFlows,entries),flows:allFlows,findings:findingFlows.filter(flow=>flow.steps.length>0),entries,mcp:evidence,files,modules,entrypoints,coverage:{scope:String(coverage.scope??'repository'),includedNodes,indexedNodes,limitations:effectiveLimitations,capabilities},bundle:{format:String(raw.format??'lachesis-explorer-bundle'),schemaVersion:'2.0',projection:String(raw.analysis_projection??'' )||undefined,description:meta.description==null?undefined:String(meta.description),sourceUrlTemplate:meta.source_url_template==null?undefined:String(meta.source_url_template),generatedAt:meta.generated_at==null?undefined:String(meta.generated_at),fixture:Boolean(meta.fixture),indexedNodes,includedNodes:nodes.length,capabilities,limitations:effectiveLimitations}}
 }
 
 export function indirectionCount(flow: Flow, evidence?: Evidence) {
   return evidence?.indirections ?? flow.steps.filter(step => step.edge?.alias || step.edge?.dynamic).length
+}
+
+export function countLabel(count: number, singular: string, plural = `${singular}s`) {
+  return `${count.toLocaleString()} ${count === 1 ? singular : plural}`
+}
+
+export function flowDisplayName(flow: Flow, nodes: Node[], allFlows: Flow[]) {
+  const duplicate = allFlows.filter((item) => item.name === flow.name).length > 1
+  if (!duplicate) return flow.name
+  const pathNodes = flow.steps
+    .map((step) => nodes.find((node) => node.id === step.node_id))
+    .filter(Boolean) as Node[]
+  const locations = pathNodes
+    .map((node) => `${node.file || "source unavailable"}:${node.line || "—"}`)
+  if (!locations.length) return flow.name
+  const route = locations.length > 1 && locations[0] !== locations.at(-1)
+    ? `${locations[0]} → ${locations.at(-1)}`
+    : locations[0]
+  const labels = pathNodes.map((node) => node.label || node.qualifiedName || node.id)
+  const endpoints = labels.length > 1 && labels[0] !== labels.at(-1)
+    ? `${labels[0]} → ${labels.at(-1)}`
+    : labels[0]
+  return `${endpoints} · ${flow.name} · ${route}`
+}
+
+export function entryDisplayName(entry: Entry, nodes: Node[], allEntries: Entry[]) {
+  const duplicate = allEntries.filter((item) => item.label === entry.label).length > 1
+  if (!duplicate) return entry.label
+  const locations = entry.hops
+    .map((hop) => nodes.find((node) => node.id === hop.node_id))
+    .filter(Boolean)
+    .map((node) => `${node!.file || "source unavailable"}:${node!.line || "—"}`)
+  if (!locations.length) return entry.label
+  const route = locations.length > 1 && locations[0] !== locations.at(-1)
+    ? `${locations[0]} → ${locations.at(-1)}`
+    : locations[0]
+  return `${entry.label} · ${route}`
 }
 
 export const starter:App=normalize(codeExplorationBundle)

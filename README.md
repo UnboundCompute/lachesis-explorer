@@ -25,10 +25,11 @@ Explorer loads a Lachesis `bundle.json` locally and makes the graph readable wit
 - Move between lenses with browser Back/Forward; the URL restores the active lens, sink, path position, direction, and occurrence identity when the bundle is available.
 - Graph links also preserve the selected Graph lens—Topology, Architecture, or Health—and an active focused neighborhood, so a shared system-level view opens in the same reading mode.
 - Copy a selected symbol’s `file:line:column` location from the source inspector.
+- Open a selected symbol in its source repository when the bundle provides `meta.source_url_template`.
 - Copy readable graph-path, request-path, or converging-path sequences with relationships, source locations, and scope context.
 - Move through value-flow and request-path steps sequentially with Previous/Next controls.
 - Use `[` and `]` to step backward or forward while reading a path; text inputs are unaffected.
-- Search symbols by label, qualified name, file, module, or graph ID from the universal command palette.
+- Search symbols by label, qualified name, file, module, or graph ID—and open any cataloged file directly—from the universal command palette.
 - Browse the graph hierarchy from module to file to symbol in the System Map.
 - Reorder topology nodes by path order or centrality across graph paths, request paths, and relationships.
 - Keep a local-only list of recent bundle metadata without storing bundle contents.
@@ -62,7 +63,7 @@ path to the underlying graph and source.
 
 ## Run locally
 
-Requirements: Node.js 20+ and pnpm 10 via Corepack. The repository’s checked-in lockfile and CI use
+Requirements: Node.js 20+ and pnpm 11.25.0 via Corepack. The repository’s checked-in lockfile and CI use
 pnpm; npm remains a supported fallback when you do not need a frozen CI install.
 
 ```bash
@@ -78,6 +79,39 @@ Open [http://localhost:3000](http://localhost:3000). For a production build:
 corepack pnpm run build
 corepack pnpm run start
 ```
+
+To verify a hosted opaque-bundle deep link against a running Explorer server, set
+`LACHESIS_BUNDLE_ID` (for example `b_demo1234`) before running `scripts/smoke-browser.mjs`.
+Design Map consumes the same contract with `?bundle=<opaque-id>` and keeps the bundle ID in its
+Architecture, Flows, Trust, and Lachesis handoff links.
+
+Local handoff check:
+
+```bash
+npm run build && npm run start -- -p 3210
+LACHESIS_BUNDLE_ID=b_demo1234 node scripts/smoke-browser.mjs http://127.0.0.1:3210
+```
+
+The hosted deep-link check confirms that Explorer requests the opaque bundle, restores the map
+lens, and keeps the bundle ID in the URL. `b_demo1234` is a demo-only fixture; production IDs come
+from the deployed SAM bundle service.
+
+Run the browser smoke against the same freshly built `next start` process; restart the local server
+after rebuilding so the HTML and static chunk hashes stay in sync.
+When probing this from a separate Next.js dev server, use the `localhost` hostname for both apps;
+Next’s development-origin guard can reject hydration from a `127.0.0.1` page before the API call.
+
+### Hosted bundle service
+
+Hosted links use an opaque bundle ID and never put a repository URL or storage URL in the browser
+address. Configure the build/artifact service with `NEXT_PUBLIC_BUNDLE_API_URL`; leave it empty
+when a reverse proxy exposes the service at the same origin. The service must provide
+`GET /api/bundles/{bundle_id}` and return the validated bundle JSON directly. The complete
+deployment and rollback gate is in [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md).
+
+Copy `.env.example` to `.env.local` for the configuration template. External production API URLs
+must use HTTPS. The Lambda build service, private artifact storage, retention policy, and public
+deployment gates are specified in [`docs/URL_INTAKE_SPEC.md`](docs/URL_INTAKE_SPEC.md).
 
 ## Bundle format
 
@@ -104,16 +138,21 @@ adjacent scope changes to render boundary segments, highlight cross-context edge
 external or generated nodes. Missing scope is supported for older bundles; those nodes fall back to
 file and module context. Scope is descriptive graph context, not a security conclusion.
 
-At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional fields include:
+For source reading, nodes may also provide `parent_id` for their enclosing symbol and a
+`source_window` containing surrounding lines plus optional highlight bounds. A node must provide
+either a non-empty `snippet` or a non-empty `source_window`; this lets the Explorer preserve useful
+context even when an exporter cannot reduce a whole symbol to one short snippet.
+
+At minimum, a `2.0` bundle needs the `lachesis-explorer-bundle` format, `schema_version`, the required `meta` identity fields (`repository`, `language`, `revision`, `lines`, and `indexed_nodes`), and `graph.nodes`. Paths and findings may be omitted entirely. Legacy bundles need `graph.nodes` and `graph.flows`. Optional `meta.source_url_template` can link a selected symbol to a browsable source host using `{file}`, `{line}`, `{end_line}`, and `{revision}` placeholders. The Explorer validates the result as HTTP(S) and never infers a hosting provider. Optional fields include:
 
 ```json
 {
   "format": "lachesis-explorer-bundle",
   "schema_version": "2.0",
-  "meta": { "repository": "owner/repo", "description": "A short human-readable bundle description", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
+  "meta": { "repository": "owner/repo", "description": "A short human-readable bundle description", "source_url_template": "https://github.com/owner/repo/blob/{revision}/{file}#L{line}", "language": "typescript", "revision": "abc123", "lines": 12345, "indexed_nodes": 0 },
   "graph": {
     "nodes": [
-      { "id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "scope": { "repository": "owner/app", "service": "web-api", "package": "search" }, "snippet": "function search() {}" }
+      { "id": "fn.search", "kind": "function", "file": "src/search.ts", "line": 1, "label": "search", "scope": { "repository": "owner/app", "service": "web-api", "package": "search" }, "snippet": "function search() {}", "source_window": { "start_line": 1, "lines": ["function search() {}"] } }
     ],
     "edges": [],
     "files": [],
@@ -177,7 +216,10 @@ Pull requests are checked automatically by [GitHub Actions](.github/workflows/ci
 
 ## Analytics
 
-The deployed app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. Events cover navigation and product interactions such as changing views or Graph lenses, toggling theme, selecting a graph path, request-path hop, topology node, or convergence node, changing path zoom, focusing or restoring path or convergence views, applying or clearing a semantic filter, loading a bundle, copying an investigation link, path sequence, or install command, and opening a related resource.
+The deployed Vercel app uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for page views and client-side custom events. On non-Vercel hosting, set `NEXT_PUBLIC_ANALYTICS_ENABLED=true` to opt in explicitly. Events cover navigation and product interactions such as changing views or Graph lenses, toggling theme, selecting a graph path, request-path hop, topology node, or convergence node, changing path zoom, focusing or restoring path or convergence views, applying or clearing a semantic filter, loading a bundle, copying or downloading an investigation explanation, copying an investigation link, path sequence, source location, source snippet, or portable node context, opening a source repository or source file, copying an install command, and opening a related resource.
+
+The frontend sends standard browser hardening headers, including no-referrer, MIME-sniffing
+protection, frame denial, a restricted permissions policy, and HTTPS transport enforcement.
 
 Semantic-filter events contain only the fixed surface and filter category; they never include query text or the selected filter value. All event payloads deliberately exclude repository names, filenames, code snippets, path values, and uploaded bundle contents. Analytics is best-effort; the explorer continues to work when it is unavailable.
 
@@ -197,3 +239,12 @@ license text are preserved.
 
 The Lachesis reader that produces the `bundle.json` Explorer renders is a separate project
 under its own license — see the [Lachesis repository](https://github.com/UnboundCompute/lachesis).
+### Demo bundle transport
+
+The Explorer app exposes one intentionally allowlisted demo bundle for local and preview integrations:
+
+```text
+GET /api/bundles/b_demo1234
+```
+
+It serves the schema-valid `public/code-exploration-bundle.json` fixture with permissive CORS, so Design Map and other readers can exercise the opaque-bundle handoff before AWS is deployed. The response is explicitly marked as a demo fixture in `meta.fixture`; it is transport-valid, not verified repository evidence. Uploaded production bundles are served by the AWS SAM service in `services/bundle-service` and use generated opaque IDs.

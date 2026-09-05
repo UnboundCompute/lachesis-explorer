@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { App, Node } from "../lib/lachesis";
+import { countLabel, type App, type Node } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
+import { copyText, downloadText } from "../lib/clipboard";
+import { explainNode } from "../lib/explanations";
 import { Icon } from "./Icon";
 import { NodeInspector } from "./NodeInspector";
 
@@ -20,6 +22,7 @@ type Props = {
   setQuery: (value: string) => void;
   focusNodeId?: string;
   onFocusNode?: (nodeId: string) => void;
+  onFile?: (file: string) => void;
   onRecord: (action: string, target: string, detail: string) => void;
   onFlow?: (flowId: string, nodeId: string) => void;
   onEntry?: (entryIndex: number, nodeId: string) => void;
@@ -43,6 +46,36 @@ const crossesScope = (source: Node, target: Node) =>
   nodeScopeKey(source) !== nodeScopeKey(target) && Boolean(source.scope || target.scope);
 const nodeScopeKind = (node: Node) =>
   node.scope?.kind?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "";
+const hasSource = (node: Node) => Boolean(node.snippet.trim() || node.sourceWindow?.lines.length);
+
+function relatedNodeIds(app: App, value: string, direction: "incoming" | "outgoing") {
+  const matchedIds = new Set(
+    app.nodes
+      .filter((candidate) =>
+        [candidate.id, candidate.label, candidate.qualifiedName]
+          .filter(Boolean)
+          .some((item) => item!.toLowerCase().includes(value)),
+      )
+      .map((candidate) => candidate.id),
+  );
+  const seen = new Set(matchedIds);
+  let frontier = [...matchedIds];
+  while (frontier.length) {
+    const next = new Set<string>();
+    app.edges.forEach((edge) => {
+      const candidate = direction === "incoming"
+        ? frontier.includes(edge.target) ? edge.source : undefined
+        : frontier.includes(edge.source) ? edge.target : undefined;
+      if (candidate && !seen.has(candidate)) {
+        seen.add(candidate);
+        next.add(candidate);
+      }
+    });
+    frontier = [...next];
+  }
+  matchedIds.forEach((id) => seen.delete(id));
+  return seen;
+}
 
 function matches(node: Node, query: string, app: App) {
   return query
@@ -70,6 +103,8 @@ function matches(node: Node, query: string, app: App) {
           return app.mcp.some(
             (item) => item.for === node.id || item.node_ids?.includes(node.id),
           );
+        if (key === "has" && (value === "source" || value === "source-preview")) return hasSource(node);
+        if (key === "has" && (value === "source-gap" || value === "missing-source")) return !hasSource(node);
         if (key === "edge")
           return app.edges.some(
             (edge) =>
@@ -104,6 +139,9 @@ function matches(node: Node, query: string, app: App) {
               flow.kind?.toLowerCase().includes(value) &&
               flow.steps.some((step) => step.node_id === node.id),
           );
+        if (key === "calls" || key === "reaches") {
+          return node.id === value || relatedNodeIds(app, value, key === "calls" ? "incoming" : "outgoing").has(node.id);
+        }
       }
       return [
         node.id,
@@ -117,11 +155,31 @@ function matches(node: Node, query: string, app: App) {
         node.scope?.service,
         node.scope?.repository,
         node.scope?.package,
+        node.signature,
+        node.documentation,
+        node.snippet,
+        node.sourceWindow?.lines.join(" "),
       ]
         .join(" ")
         .toLowerCase()
         .includes(term);
     });
+}
+
+function nodeMatchLabel(node: Node, query: string) {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return "";
+  const fields = [
+    { label: "source", values: [node.snippet, node.sourceWindow?.lines.join(" ")] },
+    { label: "documentation", values: [node.documentation] },
+    { label: "signature", values: [node.signature] },
+    { label: "symbol", values: [node.label, node.qualifiedName, node.id] },
+    { label: "file", values: [node.file, node.module, node.scope?.module] },
+  ];
+  const match = fields.find(({ values }) =>
+    terms.some((term) => values.some((value) => value?.toLowerCase().includes(term))),
+  );
+  return match ? `Found in ${match.label}` : "";
 }
 
 export function OverviewView({
@@ -136,6 +194,7 @@ export function OverviewView({
   setQuery,
   focusNodeId,
   onFocusNode,
+  onFile,
   onRecord,
   onFlow,
   onEntry,
@@ -145,11 +204,18 @@ export function OverviewView({
   const mode = controlledMode ?? localMode;
   const setMode = setControlledMode ?? setLocalMode;
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
+  const [linkState, setLinkState] = useState<"idle" | "copied" | "failed">("idle");
+  const [downloadState, setDownloadState] = useState<"idle" | "downloaded" | "failed">("idle");
+  const [searchText, setSearchText] = useState("");
   const [selectedId, setSelectedId] = useState(app.nodes[0]?.id ?? "");
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [localNeighborhoodOnly, setLocalNeighborhoodOnly] = useState(false);
   const [topologyZoom, setTopologyZoom] = useState(1);
+  const [showAllTopology, setShowAllTopology] = useState(false);
+  const [showAllFilters, setShowAllFilters] = useState(false);
+  const [selectionHistory, setSelectionHistory] = useState<string[]>([]);
   const [localNodeOrder, setLocalNodeOrder] = useState<OverviewNodeOrder>("path");
+  const hasMountedOverview = useRef(false);
   const nodeOrder = controlledNodeOrder ?? localNodeOrder;
   const setNodeOrder = setControlledNodeOrder ?? setLocalNodeOrder;
   const neighborhoodOnly = controlledNeighborhoodOnly ?? localNeighborhoodOnly;
@@ -157,13 +223,24 @@ export function OverviewView({
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   useEffect(() => {
     setSelectedId(app.nodes[0]?.id ?? "");
-    setQuery("");
+    if (hasMountedOverview.current && !query) setQuery("");
+    hasMountedOverview.current = true;
     setExpandedModule(null);
     setShareState("idle");
-    setNeighborhoodOnly(false);
+    setLinkState("idle");
+    setDownloadState("idle");
+    setSearchText("");
+    setShowAllFilters(false);
+    if (!setControlledNeighborhoodOnly) setLocalNeighborhoodOnly(false);
     setTopologyZoom(1);
+    setShowAllTopology(false);
+    setSelectionHistory([]);
     if (!setControlledNodeOrder) setLocalNodeOrder("path");
   }, [app]);
+  useEffect(() => {
+    setSearchText(query);
+    if (/^\S+:/.test(query.trim())) setShowAllFilters(true);
+  }, [query]);
   const contexts = useMemo(() => {
     const grouped = new Map<string, { key: string; label: string; repository?: string; service?: string; module?: string; nodes: Node[]; inbound: number; outbound: number }>();
     const nodeContexts = new Map<string, string>();
@@ -241,38 +318,40 @@ export function OverviewView({
   const filterSuggestions = [
     ...[...new Set(app.flows.map((flow) => flow.kind).filter(Boolean))]
       .slice(0, 2)
-      .map((kind) => ({ label: kind!, query: `path:${kind}` })),
+      .map((kind) => ({ label: kind!.replace(/[-_]+/g, " "), query: `path:${kind}` })),
     securityMode
-      ? { label: "sinks", query: "kind:sink" }
+      ? { label: "Destinations", query: "kind:sink" }
       : { label: primaryCodeKind, query: `kind:${primaryCodeKind}` },
     app.edges.some((edge) => edge.dynamic)
-      ? { label: "dynamic", query: "edge:dynamic" }
+      ? { label: "Runtime-dependent", query: "edge:dynamic" }
       : null,
     app.edges.some((edge) => edge.alias)
-      ? { label: "aliases", query: "edge:alias" }
+      ? { label: "Alternate names", query: "edge:alias" }
       : null,
     app.edges.some((edge) => edge.confidence || edge.limitations?.length)
-      ? { label: "uncertain", query: "edge:uncertain" }
+      ? { label: "Needs review", query: "edge:uncertain" }
       : null,
     app.edges.some((edge) => edge.origins.includes("bundle"))
-      ? { label: "explicit", query: "edge:explicit" }
+      ? { label: "Recorded links", query: "edge:explicit" }
       : null,
     app.edges.some((edge) => edge.origins.some((origin) => origin !== "bundle"))
-      ? { label: "derived", query: "edge:derived" }
+      ? { label: "Inferred links", query: "edge:derived" }
       : null,
     app.edges.some((edge) => edge.origins.includes("value-flow"))
-      ? { label: "value-derived", query: "origin:value-flow" }
+      ? { label: "Value paths", query: "origin:value-flow" }
       : null,
     app.edges.some((edge) => edge.origins.includes("request-path"))
-      ? { label: "request-derived", query: "origin:request-path" }
+      ? { label: "Request flows", query: "origin:request-path" }
       : null,
-    app.mcp.length ? { label: "linked", query: "has:mcp" } : null,
+    app.mcp.length ? { label: "Bundle-linked", query: "has:mcp" } : null,
+    app.nodes.some(hasSource) ? { label: "Has source", query: "has:source" } : null,
+    app.nodes.some((node) => !hasSource(node)) ? { label: "Source gaps", query: "has:source-gap" } : null,
     ...[...new Set(app.nodes.map((node) => node.module || node.scope?.module).filter(Boolean))]
       .slice(0, 2)
-      .map((module) => ({ label: `module:${module}`, query: `module:${module}` })),
+      .map((module) => ({ label: `Module · ${module}`, query: `module:${module}` })),
     ...[...new Set(app.nodes.map((node) => node.scope?.service).filter(Boolean))]
       .slice(0, 2)
-      .map((service) => ({ label: `service:${service}`, query: `service:${service}` })),
+      .map((service) => ({ label: `Service · ${service}`, query: `service:${service}` })),
   ].filter(Boolean) as { label: string; query: string }[];
   useEffect(() => {
     if (
@@ -286,12 +365,31 @@ export function OverviewView({
     }
   }, [inspectorOpen, onFocusNode, selectedId, visible]);
   const visibleIds = new Set(visible.map((node) => node.id));
+  const visibleById = useMemo(() => new Map(visible.map((node) => [node.id, node])), [visible]);
   const edges = app.edges.filter(
     (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
   );
   const selected = inspectorOpen && visible.length
     ? visible.find((node) => node.id === selectedId) ?? visible[0]
     : undefined;
+  const queryTarget = selected ?? visible.find((node) =>
+    app.edges.some((edge) => edge.source === node.id || edge.target === node.id),
+  );
+  const activeQuestion = query.trim().startsWith("calls:")
+    ? "Showing paths into"
+    : query.trim().startsWith("reaches:")
+      ? "Showing paths from"
+      : "";
+  const querySuggestions = queryTarget
+    ? [
+        app.edges.some((edge) => edge.target === queryTarget.id)
+          ? { label: `What reaches ${queryTarget.label || queryTarget.id}?`, query: `calls:${queryTarget.id}` }
+          : null,
+        app.edges.some((edge) => edge.source === queryTarget.id)
+          ? { label: `What does ${queryTarget.label || queryTarget.id} reach?`, query: `reaches:${queryTarget.id}` }
+          : null,
+      ].filter(Boolean) as { label: string; query: string }[]
+    : [];
   const topologySelectedRef = useRef<SVGGElement>(null);
   const focusAfterSelection = useRef(false);
   useEffect(() => {
@@ -348,9 +446,15 @@ export function OverviewView({
       return score(b.id) - score(a.id) || visible.indexOf(a) - visible.indexOf(b);
     });
   }, [app.edges, nodeOrder, participation, visible]);
+  const topologyLimited = !neighborhoodOnly && !showAllTopology && orderedVisible.length > 48;
   const topologyNodes = neighborhoodOnly && selected
     ? orderedVisible.filter((node) => connectedIds.has(node.id))
-    : orderedVisible;
+    : topologyLimited
+      ? [
+          ...(selected ? [selected] : []),
+          ...orderedVisible.filter((node) => node.id !== selected?.id),
+        ].slice(0, 48)
+      : orderedVisible;
   const topologyIds = new Set(topologyNodes.map((node) => node.id));
   const topologyEdges = edges.filter((edge) => topologyIds.has(edge.source) && topologyIds.has(edge.target));
   const chokePoints = app.nodes
@@ -387,20 +491,35 @@ export function OverviewView({
       }))
       .sort((a, b) => b.nodes.length - a.nodes.length);
   }, [app]);
+  const architectureContexts = query
+    ? contexts.filter((context) => context.nodes.some((node) => visibleIds.has(node.id)))
+    : contexts;
+  const architectureModules = query
+    ? modules
+        .map((module) => ({ ...module, nodes: module.nodes.filter((node) => visibleIds.has(node.id)) }))
+        .filter((module) => module.nodes.length > 0)
+    : modules;
+  const includedNodeCount = app.coverage.includedNodes ?? app.nodes.length;
+  const indexedNodeCount = Math.max(1, app.coverage.indexedNodes ?? app.nodes.length);
+  const nodeCoveragePercent = (includedNodeCount / indexedNodeCount) * 100;
   const health = [
     { label: "Graph nodes", value: app.nodes.length },
     { label: "Indexed nodes", value: app.coverage.indexedNodes ?? app.nodes.length },
     {
       label: "Node coverage",
-      value: `${Math.min(100, Math.round(((app.coverage.includedNodes ?? app.nodes.length) / Math.max(1, app.coverage.indexedNodes ?? app.nodes.length)) * 100))}%`,
+      value: nodeCoveragePercent > 0 && nodeCoveragePercent < 1
+        ? "<1%"
+        : `${Math.min(100, Math.round(nodeCoveragePercent))}%`,
     },
     { label: "Relationships", value: app.edges.length },
     { label: "Explicit relationships", value: app.edges.filter((edge) => edge.origins.includes("bundle")).length },
     { label: "Derived relationships", value: app.edges.filter((edge) => edge.origins.some((origin) => origin !== "bundle")).length },
     { label: "Uncertain relationships", value: app.edges.filter((edge) => Boolean(edge.confidence || edge.limitations?.length)).length },
     { label: "Graph paths", value: app.flows.length },
-    { label: "Request paths", value: app.entries.length },
+    { label: "Request flows", value: app.entries.length },
     { label: "Linked records", value: app.mcp.length },
+    { label: "Source previews included", value: `${app.nodes.filter(hasSource).length} / ${app.nodes.length}` },
+    { label: "Documented symbols", value: `${app.nodes.filter((node) => node.documentation?.trim()).length} / ${app.nodes.length}` },
     { label: "Unmapped nodes", value: app.nodes.filter((node) => !node.file).length },
     {
       label: "Missing layouts",
@@ -409,6 +528,9 @@ export function OverviewView({
   ];
   function selectNode(id: string) {
     const node = app.nodes.find((item) => item.id === id);
+    if (node && id !== selectedId && selectedId) {
+      setSelectionHistory((current) => [...current.filter((item) => item !== selectedId), selectedId].slice(-20));
+    }
     setSelectedId(id);
     setInspectorOpen(true);
     onFocusNode?.(id);
@@ -420,23 +542,69 @@ export function OverviewView({
       );
     trackEvent("topology_node_selected");
   }
+  const previousNode = app.nodes.find((node) => node.id === selectionHistory.at(-1));
+  function returnToPreviousNode() {
+    if (!previousNode) return;
+    setSelectionHistory((current) => current.slice(0, -1));
+    if (!visible.some((node) => node.id === previousNode.id)) {
+      setSearchText("");
+      setQuery("");
+      setNeighborhoodOnly(false);
+    }
+    focusAfterSelection.current = true;
+    setSelectedId(previousNode.id);
+    setInspectorOpen(true);
+    onFocusNode?.(previousNode.id);
+    onRecord("Returned to graph node", previousNode.label || previousNode.id, nodeLocation(previousNode));
+    trackEvent("topology_selection_reversed");
+  }
   const summary = selected
-    ? `${selected.label || selected.id} participates in ${flowCount(selected.id)} graph path${flowCount(selected.id) === 1 ? "" : "s"} and ${entryCount(selected.id)} request path${entryCount(selected.id) === 1 ? "" : "s"}. It has ${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length} normalized relationship${app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length === 1 ? "" : "s"}.`
+      ? `${selected.label || selected.id} appears in ${countLabel(flowCount(selected.id), "graph path")} and ${countLabel(entryCount(selected.id), "request flow")}. It has ${countLabel(app.edges.filter((edge) => edge.source === selected.id || edge.target === selected.id).length, "recorded relationship")}.`
     : visible.length
       ? "Select a node to reveal its source, connected paths, and nearby relationships."
       : "";
-  const canvasOrder = neighborhoodOnly ? topologyNodes : orderedVisible;
+  const canvasOrder = topologyNodes;
   const canvasIndexes = new Map(canvasOrder.map((node, index) => [node.id, index]));
   const graphPos = (node: Node) => pos(Math.max(0, canvasIndexes.get(node.id) ?? 0));
   const graphHeight = Math.max(300, Math.ceil(canvasOrder.length / 4) * 92 + 110);
-  const graphViewModified = Boolean(query || neighborhoodOnly || topologyZoom !== 1 || nodeOrder !== "path");
+  const graphViewModified = Boolean(query || neighborhoodOnly || topologyZoom !== 1 || nodeOrder !== "path" || showAllTopology);
   const labelIndex = (node: Node) =>
     String(Math.max(0, canvasIndexes.get(node.id) ?? 0) + 1).padStart(2, "0");
   async function shareNode() {
+    if (!selected) return;
+    try {
+      if (securityMode && onShare) {
+        const copied = await onShare(selected.id);
+        setShareState(copied ? "copied" : "failed");
+      } else {
+        await copyText(explainNode(app, selected, window.location.href));
+        setShareState("copied");
+        trackEvent("node_explanation_copied");
+      }
+    } catch {
+      setShareState("failed");
+      if (!securityMode) trackEvent("node_explanation_copy_failed");
+    }
+    window.setTimeout(() => setShareState("idle"), 1800);
+  }
+  async function shareNodeLink() {
     if (!selected || !onShare) return;
     const copied = await onShare(selected.id);
-    setShareState(copied ? "copied" : "failed");
-    window.setTimeout(() => setShareState("idle"), 1800);
+    setLinkState(copied ? "copied" : "failed");
+    window.setTimeout(() => setLinkState("idle"), 1800);
+  }
+  function downloadNodeExplanation() {
+    if (!selected) return;
+    try {
+      const filename = `${(selected.label || "lachesis-symbol").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 64) || "lachesis-symbol"}.md`;
+      downloadText(explainNode(app, selected, window.location.href), filename);
+      setDownloadState("downloaded");
+      trackEvent("node_explanation_downloaded");
+      window.setTimeout(() => setDownloadState("idle"), 1800);
+    } catch {
+      setDownloadState("failed");
+      trackEvent("node_explanation_download_failed");
+    }
   }
 
   return (
@@ -446,24 +614,60 @@ export function OverviewView({
       <main className="overview-main">
         <header className="overview-heading">
           <div>
-            <span className="context-kicker">SYSTEM MAP</span>
-            <h2>See the graph’s shape before following a path.</h2>
+            <h2>{mode === "architecture" ? "See the codebase by module." : mode === "health" ? "Check the evidence boundary." : "Explore one neighborhood at a time."}</h2>
             <p>
-              Explore normalized relationships, shared choke points, module
-              concentration, and bundle health from the graph data already
-              present.
+              {mode === "architecture"
+                ? "Start with the modules and boundaries in this bundle, then open a symbol when you need its relationships."
+                : mode === "health"
+                  ? "Review what is included, what is inferred, and where this bundle cannot answer with certainty."
+                  : "Search for a symbol, inspect its nearby relationships, or browse the modules that make up this bundle."}
             </p>
           </div>
           <div className="overview-heading-actions">
-            {selected && onShare && (
+            {previousNode && (
+              <button
+                type="button"
+                className="inspector-reopen selection-back"
+                onClick={returnToPreviousNode}
+                title={`Return to ${previousNode.label || previousNode.id}`}
+              >
+                ← Back to {previousNode.label || previousNode.id}
+              </button>
+            )}
+            {selected && (!securityMode || onShare) && (
               <button
                 type="button"
                 className="share-control"
                 onClick={shareNode}
-                aria-label="Copy link to selected graph node"
+                aria-label={securityMode ? "Copy link to selected graph node" : "Copy Markdown explanation for selected symbol"}
+                title={securityMode ? "Copy a shareable link to this graph node" : "Copy a portable Markdown explanation of this symbol"}
                 aria-live="polite"
               >
-                {shareState === "copied" ? "Link copied" : shareState === "failed" ? "Copy failed" : "Copy link"}
+                {shareState === "copied" ? (securityMode ? "Link copied" : "Markdown copied") : shareState === "failed" ? "Copy failed" : securityMode ? "Copy link" : "Copy Markdown"}
+              </button>
+            )}
+            {selected && !securityMode && onShare && (
+              <button
+                type="button"
+                className="share-control"
+                onClick={shareNodeLink}
+                aria-label="Copy link to selected graph node"
+                title="Copy a local link to this exact graph node"
+                aria-live="polite"
+              >
+                {linkState === "copied" ? "Link copied" : linkState === "failed" ? "Copy failed" : "Copy link"}
+              </button>
+            )}
+            {selected && !securityMode && (
+              <button
+                type="button"
+                className="share-control"
+                onClick={downloadNodeExplanation}
+                aria-label="Download Markdown explanation for selected symbol"
+                title="Save a portable Markdown explanation of this symbol"
+                aria-live="polite"
+              >
+                {downloadState === "downloaded" ? "Markdown saved" : downloadState === "failed" ? "Download failed" : "Download .md"}
               </button>
             )}
             {!inspectorOpen && visible.length > 0 && (
@@ -472,7 +676,6 @@ export function OverviewView({
                 className="inspector-reopen"
                 onClick={() => setInspectorOpen(true)}
                 aria-expanded={inspectorOpen}
-                aria-controls="source-inspector"
               >
                 <Icon name="code" size={13} />
                 Show source
@@ -486,7 +689,7 @@ export function OverviewView({
                 onClick={() => setMode("map")}
               >
                 <Icon name="target" size={13} />
-                Topology
+                Map
               </button>
               <button
                 type="button"
@@ -495,16 +698,22 @@ export function OverviewView({
                 onClick={() => setMode("architecture")}
               >
                 <Icon name="matrix" size={13} />
-                Architecture
+                Modules
               </button>
               <button
                 type="button"
                 className={mode === "health" ? "active" : ""}
                 aria-pressed={mode === "health"}
-                onClick={() => setMode("health")}
+                onClick={() => {
+                  setMode("health");
+                  if (query) {
+                    setSearchText("");
+                    setQuery("");
+                  }
+                }}
               >
                 <Icon name="history" size={13} />
-                Health
+                Data quality
               </button>
             </div>
           </div>
@@ -512,35 +721,54 @@ export function OverviewView({
         <div className="query-composer">
           <Icon name="search" size={15} />
           <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter nodes: symbol:query module:search service:api file:src/…"
-            aria-label="Filter graph nodes"
+            id="graph-filter"
+            value={searchText || query}
+            onChange={(event) => {
+              setSearchText(event.target.value);
+              setQuery(event.target.value);
+            }}
+            placeholder="Search symbols, files, modules, or code…"
+            aria-label="Search graph nodes by symbol, file, module, service, documentation, or source code"
+            aria-describedby="graph-filter-help"
           />
           <span className="sr-only" aria-live="polite">
-            {query ? `${visible.length} graph nodes match the current filter.` : "Showing all graph nodes."}
+            {query ? `${countLabel(visible.length, "graph node")} ${visible.length === 1 ? "matches" : "match"} the current filter.` : "Showing all graph nodes."}
           </span>
           <div className="query-chips">
-            {filterSuggestions.map((suggestion) => (
-              <button
-                type="button"
-                key={suggestion.query}
-                onClick={() => {
-                  setQuery(suggestion.query);
-                  trackEvent("semantic_filter_applied", {
-                    surface: "topology",
-                    filter: suggestion.query.split(":", 1)[0] || "text",
-                  });
-                }}
-              >
-                {suggestion.label}
-              </button>
-            ))}
+            <button
+              type="button"
+              className="filter-toggle"
+              aria-expanded={showAllFilters}
+              aria-controls="graph-filter-suggestions"
+              onClick={() => setShowAllFilters((current) => !current)}
+            >
+              {showAllFilters ? "Fewer filters" : `More filters (${filterSuggestions.length})`}
+            </button>
+            <div id="graph-filter-suggestions" className={`filter-suggestion-list${showAllFilters ? " expanded" : ""}`}>
+              {filterSuggestions.map((suggestion) => (
+                <button
+                  type="button"
+                  key={suggestion.query}
+                  onClick={() => {
+                    setSearchText(suggestion.label);
+                    setQuery(suggestion.query);
+                    setShowAllFilters(true);
+                    trackEvent("semantic_filter_applied", {
+                      surface: "topology",
+                      filter: suggestion.query.split(":", 1)[0] || "text",
+                    });
+                  }}
+                >
+                  {suggestion.label}
+                </button>
+              ))}
+            </div>
             {query && (
               <button
                 type="button"
                 className="query-clear"
                 onClick={() => {
+                  setSearchText("");
                   setQuery("");
                   trackEvent("semantic_filter_cleared", { surface: "topology" });
                 }}
@@ -553,19 +781,43 @@ export function OverviewView({
                 type="button"
                 className={`node-order${nodeOrder === "centrality" ? " active" : ""}`}
                 aria-pressed={nodeOrder === "centrality"}
-                aria-label="Order nodes by graph-path participation, request-path participation, and relationship degree"
-                title="Rank by graph paths, request paths, and relationship degree"
+                aria-label="Sort symbols by path relevance or how connected they are"
+                title="Sort by path relevance or connection count"
                 onClick={() => {
                   const next = nodeOrder === "path" ? "centrality" : "path";
                   setNodeOrder(next);
                   trackEvent("graph_node_order_changed", { order: next });
                 }}
               >
-                {nodeOrder === "path" ? "Order: path" : "Order: centrality"}
+                {nodeOrder === "path" ? "Sort: path relevance" : "Sort: most connected"}
               </button>
             )}
           </div>
         </div>
+        {querySuggestions.length > 0 && (
+          <div className="query-intents" role="group" aria-label={`Questions about ${queryTarget?.label || queryTarget?.id}`}>
+            <span aria-live="polite">{activeQuestion || "Ask about"} {queryTarget?.label || queryTarget?.id}</span>
+            {querySuggestions.map((suggestion) => (
+              <button
+                type="button"
+                key={suggestion.query}
+                onClick={() => {
+                  setSearchText(suggestion.label);
+                  setQuery(suggestion.query);
+                  trackEvent("semantic_question_applied", {
+                    surface: "topology",
+                    question: suggestion.query.split(":", 1)[0],
+                  });
+                }}
+              >
+                {suggestion.label}
+              </button>
+            ))}
+          </div>
+        )}
+        <p id="graph-filter-help" className="query-syntax-help">
+          Filters: <code>kind:</code> <code>file:</code> <code>module:</code> <code>has:source</code> <code>edge:dynamic</code> · Questions: <code>calls:</code> into a symbol · <code>reaches:</code> out from a symbol
+        </p>
         {mode === "map" && (
           <>
             <div className="map-summary">
@@ -591,8 +843,8 @@ export function OverviewView({
                 <b>{visible.length ? rolesForNode(selected?.id ?? "").join(" / ") || selected?.kind || "—" : "—"}</b>
               </div>
               <p>
-                {visible.length
-                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${topologyNodes.length} connected context nodes.` : ""}`
+                  {visible.length
+                  ? `${summary}${neighborhoodOnly ? ` Canvas is focused to ${countLabel(topologyNodes.length, "connected context node")}.` : topologyLimited ? ` Showing the ${countLabel(topologyNodes.length, "most relevant node")} of ${countLabel(visible.length, "node")}; open all to inspect the complete topology.` : ""}`
                   : `No nodes match “${query}”. Clear the filter to restore the full topology.`}
                 {selected && visible.length > 1 && (
                   <button
@@ -610,7 +862,25 @@ export function OverviewView({
                     className="neighborhood-toggle"
                     onClick={() => setMode("architecture")}
                   >
-                    Large graph · group by module
+                    Too many nodes? Group by module
+                  </button>
+                )}
+                {topologyLimited && (
+                  <button
+                    type="button"
+                    className="neighborhood-toggle"
+                    onClick={() => setShowAllTopology(true)}
+                  >
+                    Show all {countLabel(visible.length, "node")}
+                  </button>
+                )}
+                {showAllTopology && visible.length > 48 && !neighborhoodOnly && (
+                  <button
+                    type="button"
+                    className="neighborhood-toggle"
+                    onClick={() => setShowAllTopology(false)}
+                  >
+                    Show focused {countLabel(Math.min(48, visible.length), "node")}
                   </button>
                 )}
                 {graphViewModified && (
@@ -618,10 +888,12 @@ export function OverviewView({
                     type="button"
                     className="query-clear"
                     onClick={() => {
+                      setSearchText("");
                       setQuery("");
                       setNeighborhoodOnly(false);
                       setTopologyZoom(1);
                       setNodeOrder("path");
+                      setShowAllTopology(false);
                       trackEvent("graph_view_reset");
                     }}
                   >
@@ -634,19 +906,19 @@ export function OverviewView({
               <>
               <div className="topology-minimap">
                 <div>
-                  <span className="panel-label">TOPOLOGY OVERVIEW</span>
-                  <small>Choose a point to focus its source context.</small>
+                  <span className="panel-label">MAP OVERVIEW</span>
+                  <small>Overview only · use the node list below to focus source context.</small>
                 </div>
                 <div className="topology-zoom" role="group" aria-label="Topology zoom controls">
-                  <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out">−</button>
+                  <button type="button" onClick={() => setTopologyZoom((value) => Math.max(.7, Number((value - .1).toFixed(1))))} aria-label="Zoom topology out"><Icon name="minus" size={13} /></button>
                   <output aria-live="polite">{Math.round(topologyZoom * 100)}%</output>
-                  <button type="button" onClick={() => setTopologyZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom topology in">+</button>
+                  <button type="button" onClick={() => setTopologyZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))} aria-label="Zoom topology in"><Icon name="plus" size={13} /></button>
                   <button type="button" onClick={() => setTopologyZoom(1)}>Reset</button>
                 </div>
-                <svg viewBox="0 0 180 80" aria-label="Topology minimap">
+                <svg viewBox="0 0 180 80" aria-hidden="true">
                   {topologyEdges.map((edge) => {
-                    const source = visible.find((node) => node.id === edge.source);
-                    const target = visible.find((node) => node.id === edge.target);
+                    const source = visibleById.get(edge.source);
+                    const target = visibleById.get(edge.target);
                     if (!source || !target) return null;
                     const a = graphPos(source);
                     const b = graphPos(target);
@@ -654,8 +926,7 @@ export function OverviewView({
                   })}
                   {topologyNodes.map((node) => {
                     const point = graphPos(node);
-                    const select = () => selectNode(node.id);
-                    return <circle key={`mini-${node.id}`} className={selected?.id === node.id ? "selected" : ""} cx={8 + (point.x / 760) * 164} cy={8 + (point.y / graphHeight) * 64} r={selected?.id === node.id ? 3 : 2} onClick={(event) => { event.currentTarget.focus(); select(); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(); } }} role="button" tabIndex={0} aria-pressed={selected?.id === node.id} aria-label={`Focus ${node.label || node.id}${nodeScopeLabel(node) !== "Unscoped nodes" ? ` in ${nodeScopeLabel(node)}` : ""} in topology`} />;
+                    return <circle key={`mini-${node.id}`} className={selected?.id === node.id ? "selected" : ""} cx={8 + (point.x / 760) * 164} cy={8 + (point.y / graphHeight) * 64} r={selected?.id === node.id ? 3 : 2} />;
                   })}
                 </svg>
               </div>
@@ -687,10 +958,8 @@ export function OverviewView({
                     ))}
                   </defs>
                   {topologyEdges.map((edge) => {
-                    const source = visible.find(
-                        (node) => node.id === edge.source,
-                      ),
-                      target = visible.find((node) => node.id === edge.target);
+                    const source = visibleById.get(edge.source),
+                      target = visibleById.get(edge.target);
                     if (!source || !target) return null;
                     const a = graphPos(source),
                       b = graphPos(target);
@@ -767,6 +1036,7 @@ export function OverviewView({
                         aria-label={`${node.label || node.id}, ${node.kind}${roles.length ? `, ${roles.join(" / ")}` : ""}${node.scope?.kind ? `, ${node.scope.kind} boundary` : ""}, ${nodeLocation(node)}`}
                       >
                         <title>{node.label || node.id}</title>
+                        <circle className="topology-hit-area" cx={p.x} cy={p.y} r="30" aria-hidden="true" />
                         <circle cx={p.x} cy={p.y} r="24" />
                         <text x={p.x} y={p.y + 4} textAnchor="middle">
                           {labelIndex(node)}
@@ -792,11 +1062,11 @@ export function OverviewView({
                   })}
                 </svg>
                 <div className="topology-legend" aria-label="Topology relationship legend">
-                  <span><i className="legend-exact" />exact relationship</span>
-                  <span><i className="legend-alias" />alias relationship</span>
-                  <span><i className="legend-dynamic" />dynamic relationship</span>
-                  <span><i className="legend-boundary" />context boundary</span>
-                  {visible.some((node) => node.scope?.kind === "external" || node.scope?.kind === "generated") && <span><i className="legend-scope" />external / generated node</span>}
+                  <span title="The bundle recorded this connection directly"><i className="legend-exact" />recorded connection</span>
+                  <span title="The connection uses an alternate or aliased name"><i className="legend-alias" />alternate connection</span>
+                  <span title="The connection depends on runtime behavior"><i className="legend-dynamic" />runtime-dependent connection</span>
+                  <span title="The connection crosses a module, service, or repository boundary"><i className="legend-boundary" />module / service boundary</span>
+                  {visible.some((node) => node.scope?.kind === "external" || node.scope?.kind === "generated") && <span title="This symbol belongs to generated or external code"><i className="legend-scope" />external / generated code</span>}
                   <span className="topology-hint">Select a node to inspect its source · arrows show direction</span>
                 </div>
                 <div className="topology-node-list" aria-label={neighborhoodOnly ? "Graph nodes in selected neighborhood" : "Graph nodes"}>
@@ -810,14 +1080,15 @@ export function OverviewView({
                       onClick={() => selectNode(node.id)}
                       aria-pressed={selected?.id === node.id}
                       aria-current={selected?.id === node.id ? "step" : undefined}
-                      aria-label={`${node.label || node.id}, ${node.kind}, ${flowCount(node.id)} graph paths, ${entryCount(node.id)} request paths, ${nodeLocation(node)}`}
+                      aria-label={`${node.label || node.id}, ${node.kind}, ${countLabel(flowCount(node.id), "graph path")}, ${countLabel(entryCount(node.id), "request flow")}, ${nodeLocation(node)}`}
                     >
                       <span>{labelIndex(node)}</span>
                       <b>{node.label || node.id}</b>
                       <small>
                         {node.kind}{roles.length ? ` · ${roles.join("/")}` : ""}{node.scope?.kind ? ` · ${node.scope.kind}` : ""} · {node.scope?.label || node.scope?.service || node.scope?.module || node.scope?.repository || "Unscoped"} · {nodeLocation(node)}
                       </small>
-                      <small className="topology-participation">{flowCount(node.id)} graph paths · {entryCount(node.id)} request paths</small>
+                      {query && nodeMatchLabel(node, query) && <small className="topology-match">{nodeMatchLabel(node, query)}</small>}
+                      <small className="topology-participation">{countLabel(flowCount(node.id), "graph path")} · {countLabel(entryCount(node.id), "request flow")} · {hasSource(node) ? "Source preview included" : "Source text unavailable"}</small>
                     </button>
                     );
                   })}
@@ -829,7 +1100,7 @@ export function OverviewView({
                 <Icon name="search" size={18} />
                 <h3>{query ? "No nodes match this filter" : "No graph nodes in this bundle"}</h3>
                 <p>{query ? "Try another query or return to the complete graph." : "Load a bundle that includes graph nodes to inspect its structure here."}</p>
-                {query && <button type="button" onClick={() => setQuery("")}>Clear filter</button>}
+                {query && <button type="button" onClick={() => { setSearchText(""); setQuery(""); }}>Clear filter</button>}
               </div>
             )}
           </>
@@ -837,18 +1108,20 @@ export function OverviewView({
         {mode === "architecture" && (
           <div className="architecture-grid">
             <section>
-              <span className="panel-label">BOUNDARY CONTEXT</span>
-              <div className="context-inventory">
-                {contexts.map((context) => (
+              <span className="panel-label">CODEBASE AREAS</span>
+              {query && <p className="architecture-filter-note">Showing areas and modules containing {visible.length} matching symbol{visible.length === 1 ? "" : "s"}.</p>}
+              {architectureContexts.length || architectureModules.length ? <div className="context-inventory">
+                {architectureContexts.map((context) => (
                   <button
                     type="button"
                     className="context-row"
                     key={context.key}
-                    aria-label={`${context.label}, ${context.nodes.length} symbols, ${context.outbound} outbound and ${context.inbound} inbound boundary transitions`}
+                    aria-label={`${context.label}, ${countLabel(context.nodes.length, "symbol")}, ${context.outbound} outbound and ${context.inbound} inbound boundary transitions`}
                     onClick={() => {
                       const filterValue = context.service || context.repository || context.module;
                       const filterKey = context.service ? "service" : context.repository ? "repo" : context.module ? "module" : "scope";
                       setMode("map");
+                      setSearchText(filterValue || "");
                       setQuery(filterValue ? `${filterKey}:${filterValue}` : "");
                       setNeighborhoodOnly(false);
                       setTopologyZoom(1);
@@ -858,20 +1131,21 @@ export function OverviewView({
                     <span className="context-row-mark" />
                     <span>
                       <b>{context.label}</b>
-                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : context.module ? ` · ${context.module}` : ""} · {context.nodes.length} symbols · {context.outbound} out / {context.inbound} in</small>
+                      <small>{context.repository || "No repository"}{context.service ? ` · ${context.service}` : context.module ? ` · ${context.module}` : ""} · {countLabel(context.nodes.length, "symbol")} · {context.outbound} out / {context.inbound} in</small>
                     </span>
                     <em title={`${context.outbound} outbound · ${context.inbound} inbound boundary transitions`}>{context.nodes.length}</em>
                   </button>
                 ))}
-              </div>
+              </div> : <div className="architecture-filter-empty" role="status">No areas or modules contain this search.</div>}
               <div className="detail-rule" />
-              <span className="panel-label">MODULE CONCENTRATION</span>
-              {modules.map((module) => (
+              <span className="panel-label">MODULES</span>
+              {architectureModules.map((module) => (
                 <div className="module-group" key={module.id}>
                   <button
                     type="button"
                     className="module-row"
                     aria-expanded={expandedModule === module.id}
+                    aria-controls={`module-symbols-${module.id.replace(/[^a-zA-Z0-9_-]+/g, "-")}`}
                     onClick={() =>
                       setExpandedModule(
                         expandedModule === module.id ? null : module.id,
@@ -881,8 +1155,7 @@ export function OverviewView({
                     <div>
                       <b>{module.name}</b>
                       <small>
-                        {module.path || "Module"} · {module.nodes.length}{" "}
-                        symbols
+                        {module.path || "Module"} · {countLabel(module.nodes.length, "symbol")}
                       </small>
                     </div>
                     <span>
@@ -894,8 +1167,7 @@ export function OverviewView({
                     </span>
                     <em>{expandedModule === module.id ? "−" : "+"}</em>
                   </button>
-                  {expandedModule === module.id && (
-                    <div className="module-symbols">
+                  <div id={`module-symbols-${module.id.replace(/[^a-zA-Z0-9_-]+/g, "-")}`} className="module-symbols" hidden={expandedModule !== module.id}>
                       {[
                         ...new Set(
                           module.nodes.map(
@@ -924,8 +1196,7 @@ export function OverviewView({
                             ))}
                         </div>
                       ))}
-                    </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </section>
@@ -941,6 +1212,7 @@ export function OverviewView({
                   onClick={() => {
                     if (!transition.query) return;
                     setMode("map");
+                    setSearchText(`${transition.source} → ${transition.target}`);
                     setQuery(transition.query);
                     setNeighborhoodOnly(false);
                     setTopologyZoom(1);
@@ -953,7 +1225,7 @@ export function OverviewView({
                 </button>
               )) : <p className="diff-empty">No explicit context transitions are available.</p>}
               <div className="detail-rule" />
-              <span className="panel-label">SHARED CHOKE POINTS</span>
+              <span className="panel-label">HIGHLY CONNECTED SYMBOLS</span>
               <p>
                 Nodes repeated across flows and requests. This is concentration
                 context, not a ranking.
@@ -967,7 +1239,7 @@ export function OverviewView({
                   <span className={`kind-dot kind-${item.node.kind}`} />
                   <b>{item.node.label || item.node.id}</b>
                   <small>
-                    {item.flows} flows · {item.entries} requests
+                    {nodeLocation(item.node)} · {countLabel(item.flows, "flow")} · {countLabel(item.entries, "request")}
                   </small>
                 </button>
               ))}
@@ -1006,13 +1278,25 @@ export function OverviewView({
               {app.entries.some((entry) => !entry.hasLayout) && (
                 <p>
                   <i />
-                  Some request paths use derived layout coordinates.
+                  Some request flows use derived layout coordinates.
                 </p>
               )}
               {app.nodes.some((node) => !node.file) && (
                 <p>
                   <i />
                   Some nodes do not include a source file location.
+                </p>
+              )}
+              {app.nodes.some((node) => !node.snippet.trim()) && (
+                <p>
+                  <i />
+                  Some nodes include graph structure without source text; their relationships remain inspectable.
+                </p>
+              )}
+              {app.nodes.some((node) => !node.documentation?.trim()) && (
+                <p>
+                  <i />
+                  Documentation is only available for symbols that the exporter reported.
                 </p>
               )}
               {!app.mcp.length && (
@@ -1031,6 +1315,7 @@ export function OverviewView({
           contextRole={rolesForNode(selected.id).join(" / ") || undefined}
           app={app}
           onNode={selectNode}
+          onFile={onFile}
           onFlow={onFlow}
           onEntry={onEntry}
           onClose={() => setInspectorOpen(false)}
