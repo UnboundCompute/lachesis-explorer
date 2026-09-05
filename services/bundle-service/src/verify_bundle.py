@@ -66,6 +66,8 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
         _fail("bundle must be an object")
     if bundle.get("format") != "lachesis-explorer-bundle" or bundle.get("schema_version") != "2.0":
         _fail("only schema 2.0 graph-first bundles are supported")
+    if "analysis_projection" in bundle:
+        _non_empty_string(bundle["analysis_projection"], "analysis_projection")
 
     meta = bundle.get("meta")
     if not isinstance(meta, dict):
@@ -122,6 +124,23 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
         for step in path["steps"]:
             if not isinstance(step, dict) or step.get("node_id") not in node_ids:
                 _fail(f"paths.values[{index}] references an unknown node")
+
+    request_paths = paths.get("requests", paths.get("request_paths", []))
+    if not isinstance(request_paths, list):
+        _fail("paths.requests must be an array")
+    request_path_ids: set[str] = set()
+    for index, path in enumerate(request_paths):
+        if not isinstance(path, dict) or not isinstance(path.get("hops"), list) or not path["hops"]:
+            _fail(f"paths.requests[{index}] must contain hops")
+        if path.get("id") is not None:
+            if not isinstance(path["id"], str) or not path["id"] or path["id"] in request_path_ids:
+                _fail(f"paths.requests[{index}].id is invalid or duplicated")
+            request_path_ids.add(path["id"])
+        if path.get("entry_node") is not None and path["entry_node"] not in node_ids:
+            _fail(f"paths.requests[{index}].entry_node references an unknown node")
+        for hop in path["hops"]:
+            if not isinstance(hop, dict) or hop.get("node_id") not in node_ids:
+                _fail(f"paths.requests[{index}] references an unknown node")
 
     findings = (bundle.get("security") or {}).get("findings", [])
     if not isinstance(findings, list):
