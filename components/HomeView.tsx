@@ -331,6 +331,11 @@ export function HomeView({
                   Follow “{flowActionLabel(graphFocus, app)}” <Icon name="arrow" size={14} />
                 </button>
               )}
+              {!graphFocus && app.flows.length > 0 && (
+                <button type="button" className="understand-secondary" onClick={() => onView("trace")}>
+                  Review bundled paths <Icon name="arrow" size={14} />
+                </button>
+              )}
               <button type="button" className="understand-secondary" onClick={onUpload} disabled={loadState.type === "loading"}>
                 <Icon name="upload" size={14} />
                 {loadState.type === "loading" ? "Reading bundle…" : "Load another bundle"}
@@ -354,7 +359,7 @@ export function HomeView({
             <BuildIntake onBuild={onBuild} onCancelBuild={onCancelBuild} buildState={buildState} />
           </div>
           <dl className="understand-facts" aria-label="Active codebase">
-            <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} ready to follow</dd></div>
+            <div><dt>Code paths</dt><dd>{app.flows.length.toLocaleString()} {graphFocus ? "ready to follow" : app.flows.length ? "bundled" : "included"}</dd></div>
             <div><dt>Request flows</dt><dd>{app.entries.length.toLocaleString()} starting points</dd></div>
             <div><dt>Files</dt><dd>{(app.files.length || new Set(app.nodes.map((node) => node.file).filter(Boolean)).size).toLocaleString()} in this bundle</dd></div>
             <div><dt>Source previews</dt><dd>{countLabel(app.nodes.filter((node) => node.snippet.trim() || node.sourceWindow?.lines.length).length, "source preview")} of {countLabel(app.nodes.length, "symbol")}</dd></div>
@@ -769,13 +774,12 @@ export function HomeView({
             </div>
           ) : graphOnly ? (
             <div className="briefing-empty">
-              <h2>Graph structure is ready to explore</h2>
-              <p>
-                This bundle includes {countLabel(app.nodes.length, "node")} and{" "}
-                {countLabel(app.edges.length, "relationship")}, but no graph paths were
-                included.
-              </p>
+              <h2>{app.flows.length ? "Paths need more source context" : "Graph structure is ready to explore"}</h2>
+              <p>{app.flows.length
+                ? `This bundle includes ${countLabel(app.flows.length, "bundled path")}, but none has complete source previews for a guided starting point. Review the paths as exported, or explore the graph directly.`
+                : `This bundle includes ${countLabel(app.nodes.length, "node")} and ${countLabel(app.edges.length, "relationship")}, but no graph paths were included.`}</p>
               <div className="priority-actions">
+                {app.flows.length > 0 && <button type="button" onClick={() => onView("trace")}>Review paths</button>}
                 <button type="button" onClick={() => onView("map")}>
                   Open full graph{" "}
                   <span className="action-orb">
@@ -1011,6 +1015,8 @@ export function HomeView({
                   ? "Open the graph while these records await traceable path steps."
                   : graphOnly && graphFocus
                   ? "Trace a bundled path through its connected symbols."
+                  : graphOnly && app.flows.length
+                    ? "Review the exported paths, then open the graph for broader context."
                   : graphOnly
                     ? "Open the graph to inspect its included structure."
                     : "Compare every value converging on a sink."}
