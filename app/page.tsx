@@ -19,7 +19,7 @@ import {
   InvestigationTrail,
   type InvestigationEvent,
 } from "../components/InvestigationTrail";
-import { countLabel, isSecurityProjection, recommendedFlow, starter, normalize, type App } from "../lib/lachesis";
+import { countLabel, recommendedFlow, starter, normalize, type App } from "../lib/lachesis";
 import { trackEvent } from "../lib/analytics";
 import { copyText } from "../lib/clipboard";
 import { readLocal, removeLocal, writeLocal } from "../lib/storage";
@@ -343,26 +343,6 @@ export default function Page() {
       step: link.step,
       domain: link.domain,
     });
-    if (params.get("sample") === "security") {
-      pendingLink.current = link;
-      setLoadState({ type: "loading", message: "Loading the security sample…" });
-      fetch("/demo-bundle.json")
-        .then((response) => {
-          if (!response.ok) throw new Error("The security sample could not be loaded.");
-          return response.json();
-        })
-        .then((raw) => activate(normalize(raw), true))
-        .catch((error) => {
-          pendingLink.current = null;
-          urlReady.current = true;
-          setUrlInitialized(true);
-          setLoadState({
-            type: "error",
-            message: `${error instanceof Error ? error.message : "Could not load the security sample"} The current bundle was kept.`,
-          });
-        });
-      return;
-    }
     const hostedBundleId = params.get("bundle");
     if (hostedBundleId) {
       pendingLink.current = link;
@@ -517,10 +497,8 @@ export default function Page() {
     if (handoffContext.step) params.set("step_context", handoffContext.step);
     if (handoffContext.domain) params.set("domain", handoffContext.domain);
     params.set("view", view);
-    const securityMode = isSecurityProjection(app);
     if (bundleOrigin === "hosted" && hostedBundleId) params.set("bundle", hostedBundleId);
     else if (!isDemo) params.set("scope", "local");
-    if (isDemo && securityMode) params.set("sample", "security");
     if (view === "trace") {
       params.set("flow", flowId);
       params.set("node", stepId);
@@ -832,9 +810,6 @@ export default function Page() {
     const canonicalRepositoryRoute = window.location.pathname.startsWith("/r/");
     if (bundleOrigin === "hosted" && hostedBundleId && !canonicalRepositoryRoute) {
       url.searchParams.set("bundle", hostedBundleId);
-    } else if (isDemo) {
-      const securityMode = isSecurityProjection(app);
-      if (securityMode) url.searchParams.set("sample", "security");
     } else {
       url.searchParams.set("scope", "local");
     }
@@ -1189,51 +1164,6 @@ export default function Page() {
     }
   }
 
-  async function loadCodeSample() {
-    if (importBusy.current) return;
-    importBusy.current = true;
-    setLoadState({
-      type: "loading",
-      message: "Reading the code exploration sample…",
-    });
-    try {
-      const response = await fetch("/code-exploration-bundle.json");
-      if (!response.ok)
-        throw new Error("The code exploration sample could not be loaded.");
-      activate(normalize(await response.json()), true);
-    } catch (error) {
-      setLoadState({
-        type: "error",
-        message: `${error instanceof Error ? error.message : "Could not load the code exploration sample"} The current bundle was kept.`,
-      });
-      trackEvent("bundle_load_failed");
-    } finally {
-      importBusy.current = false;
-    }
-  }
-
-  async function loadSecuritySample() {
-    if (importBusy.current) return;
-    importBusy.current = true;
-    setLoadState({
-      type: "loading",
-      message: "Reading the security sample…",
-    });
-    try {
-      const response = await fetch("/demo-bundle.json");
-      if (!response.ok)
-        throw new Error("The security sample could not be loaded.");
-      activate(normalize(await response.json()), true);
-    } catch (error) {
-      setLoadState({
-        type: "error",
-        message: `${error instanceof Error ? error.message : "Could not load the security sample"} The current bundle was kept.`,
-      });
-      trackEvent("bundle_load_failed");
-    } finally {
-      importBusy.current = false;
-    }
-  }
 
   async function uploadComparison(file?: File) {
     if (!file) return;

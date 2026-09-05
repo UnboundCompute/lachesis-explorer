@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
@@ -12,9 +13,11 @@ try {
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     page.on("pageerror", (error) => errors.push(error.message));
 
-    await page.goto(`${base}/`, { waitUntil: "networkidle" });
-    assert.equal(await page.title(), "Lachesis — Deterministic code graph reader");
-    assert.match(await page.locator("body").innerText(), /Code exploration graph/i, "graph-first fixture projection was not surfaced");
+   await page.goto(`${base}/`, { waitUntil: "networkidle" });
+   assert.equal(await page.title(), "Lachesis — Deterministic code graph reader");
+    const landingText = await page.locator("body").innerText();
+    assert.match(landingText, /Choose what you want to understand/i, "source picker was not surfaced");
+    assert.doesNotMatch(landingText, /Synthetic working bundle|example\/webapp/i, "starter bundle leaked onto the first-run surface");
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     assert.equal(dimensions.scrollWidth, dimensions.width, `horizontal overflow at ${viewport.width}px`);
     assert.equal(await page.locator('meta[name="generator"]').count(), 0, "framework metadata is exposed");
@@ -24,9 +27,12 @@ try {
     await page.close();
   }
 
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto(`${base}/?view=map`, { waitUntil: "networkidle" });
-  assert.equal(await page.getByRole("button", { name: "Map", exact: true }).getAttribute("aria-pressed"), "true", "Explore did not default to Map");
+ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+ await page.goto(`${base}/?view=map`, { waitUntil: "networkidle" });
+ await page.locator("#bundle-upload").setInputFiles("public/code-exploration-bundle.json");
+ await page.getByText("What do you want to understand?", { exact: true }).waitFor();
+  await page.getByRole("button", { name: /^Explore/ }).click();
+ assert.equal(await page.getByRole("button", { name: "Map", exact: true }).getAttribute("aria-pressed"), "true", "Explore did not default to Map");
   const nodes = page.locator(".topology-node-list button");
   assert.ok(await nodes.count() > 0, "graph node list is empty");
   await nodes.first().click();
@@ -44,31 +50,26 @@ try {
   assert.equal(await requestFlowItem.count(), 1, "More menu did not expose focused views");
   await requestFlowItem.click();
   assert.equal(new URL(page.url()).searchParams.get("view"), "journey", "More menu navigation failed");
-  await page.close();
-  const projectionPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await projectionPage.route("**/demo-bundle.json", async (route) => {
-    const response = await route.fetch();
-    const payload = await response.json();
-    payload.evidence_manifest.analysis_projection = "code-understanding";
-    payload.security = { findings: [{ finding_id: "optional-security-context", witness: { steps: [{ node_id: "route.search" }] } }] };
-    await route.fulfill({ response, body: JSON.stringify(payload) });
-  });
-  await projectionPage.goto(`${base}/?sample=security`, { waitUntil: "networkidle" });
-  await projectionPage.waitForFunction(() => document.body.innerText.includes("Understand demo/atlas-commerce"), undefined, { timeout: 10_000 });
+ await page.close();
+ const projectionPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const projectionPayload = JSON.parse(fs.readFileSync("public/demo-bundle.json", "utf8"));
+  projectionPayload.evidence_manifest.analysis_projection = "code-understanding";
+  projectionPayload.security = { findings: [{ finding_id: "optional-security-context", witness: { steps: [{ node_id: "route.search" }] } }] };
+  await projectionPage.goto(`${base}/`, { waitUntil: "networkidle" });
+  await projectionPage.locator("#bundle-upload").setInputFiles({ name: "projection-bundle.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(projectionPayload)) });
+ await projectionPage.waitForFunction(() => document.body.innerText.includes("Understand demo/atlas-commerce"), undefined, { timeout: 10_000 });
   const projectionText = await projectionPage.locator("body").innerText();
   assert.match(projectionText, /Understand demo\/atlas-commerce/, "explicit code-understanding projection entered the wrong mode");
   assert.doesNotMatch(projectionText, /Security evidence projection/, "optional findings overrode code-understanding mode");
   await projectionPage.close();
 
-  const invalidSourceTemplatePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await invalidSourceTemplatePage.route("**/demo-bundle.json", async (route) => {
-    const response = await route.fetch();
-    const payload = await response.json();
-    payload.meta.source_url_template = "https://example.com/{revision}";
-    await route.fulfill({ response, body: JSON.stringify(payload) });
-  });
-  await invalidSourceTemplatePage.goto(`${base}/?sample=security&view=map`, { waitUntil: "networkidle" });
-  const invalidTemplateNode = invalidSourceTemplatePage.locator(".topology-node-list button").first();
+ const invalidSourceTemplatePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const invalidTemplatePayload = JSON.parse(fs.readFileSync("public/demo-bundle.json", "utf8"));
+  invalidTemplatePayload.meta.source_url_template = "https://example.com/{revision}";
+  await invalidSourceTemplatePage.goto(`${base}/`, { waitUntil: "networkidle" });
+  await invalidSourceTemplatePage.locator("#bundle-upload").setInputFiles({ name: "invalid-source-template.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(invalidTemplatePayload)) });
+  await invalidSourceTemplatePage.getByRole("button", { name: /^Explore/ }).click();
+ const invalidTemplateNode = invalidSourceTemplatePage.locator(".topology-node-list button").first();
   await invalidTemplateNode.click();
   const invalidTemplateInspector = invalidSourceTemplatePage.locator("#source-inspector");
   await invalidTemplateInspector.waitFor({ state: "visible", timeout: 10_000 });
