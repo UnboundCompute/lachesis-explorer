@@ -2,7 +2,12 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
+from urllib.parse import urlparse
+
+
+_SOURCE_TEMPLATE_FIELDS = {"file", "line", "end_line", "revision"}
 
 
 def _fail(message: str) -> None:
@@ -24,6 +29,28 @@ def _source_backed(node: dict[str, Any]) -> bool:
     return bool(isinstance(snippet, str) and snippet.strip()) or bool(
         isinstance(window, dict) and isinstance(window.get("lines"), list) and window["lines"]
     )
+
+
+def _validate_source_url_template(value: Any) -> None:
+    _non_empty_string(value, "meta.source_url_template")
+    template = value.strip()
+    fields = set(re.findall(r"\{([^{}]+)\}", template))
+    if fields - _SOURCE_TEMPLATE_FIELDS:
+        _fail("meta.source_url_template contains an unsupported placeholder")
+    rendered = template
+    replacements = {
+        "file": "src/main.py",
+        "line": "12",
+        "end_line": "18",
+        "revision": "a" * 40,
+    }
+    for field, replacement in replacements.items():
+        rendered = rendered.replace("{" + field + "}", replacement)
+    parsed = urlparse(rendered)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        _fail("meta.source_url_template must be an absolute HTTP(S) URL")
+    if parsed.username or parsed.password:
+        _fail("meta.source_url_template must not contain credentials")
 
 
 def _understanding_path_has_source(path: Any, nodes: dict[str, dict[str, Any]], key: str) -> bool:
@@ -127,6 +154,8 @@ def validate_bundle(bundle: Any) -> dict[str, Any]:
     for key in ("lines", "indexed_nodes"):
         if not isinstance(meta.get(key), int) or isinstance(meta[key], bool) or meta[key] < 0:
             _fail(f"meta.{key} must be a non-negative integer")
+    if "source_url_template" in meta:
+        _validate_source_url_template(meta["source_url_template"])
 
     graph = bundle.get("graph")
     if not isinstance(graph, dict) or not isinstance(graph.get("nodes"), list) or not graph["nodes"]:

@@ -116,6 +116,37 @@ class WorkerTests(unittest.TestCase):
 
         self.assertIs(validate_bundle(bundle), bundle)
 
+    def test_validator_accepts_a_safe_source_url_template(self):
+        bundle = {
+            "format": "lachesis-explorer-bundle",
+            "schema_version": "2.0",
+            "meta": {
+                "repository": "owner/repo", "language": "python", "revision": "a" * 40,
+                "lines": 1, "indexed_nodes": 1,
+                "source_url_template": "https://github.com/owner/repo/blob/{revision}/{file}#L{line}-L{end_line}",
+            },
+            "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}]},
+        }
+        self.assertIs(validate_bundle(bundle), bundle)
+
+    def test_validator_rejects_an_unsafe_source_url_template(self):
+        for template in (
+            "javascript:alert(1)",
+            "https://user:pass@example.com/{file}",
+            "https://example.com/{owner}/{file}",
+        ):
+            bundle = {
+                "format": "lachesis-explorer-bundle",
+                "schema_version": "2.0",
+                "meta": {
+                    "repository": "owner/repo", "language": "python", "revision": "a" * 40,
+                    "lines": 1, "indexed_nodes": 1, "source_url_template": template,
+                },
+                "graph": {"nodes": [{"id": "n1", "kind": "function", "file": "main.py", "line": 1, "label": "main", "snippet": "def main(): pass"}]},
+            }
+            with self.assertRaises(ValueError):
+                validate_bundle(bundle)
+
     def test_validator_requires_understanding_entrypoint_and_source_backed_path(self):
         bundle = {
             "format": "lachesis-explorer-bundle",
