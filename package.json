@@ -14,7 +14,7 @@
   },
   "author": "UnboundCompute",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13.0"
   },
   "keywords": [
     "code-property-graph",
