@@ -14,6 +14,15 @@ label. A `2.0` bundle with another format value is invalid and must be
 rejected before it replaces the active bundle. The Explorer still accepts
 older flow-centric bundles through its compatibility adapter.
 
+Producers should include an `analysis_projection` string at the top level.
+Use `code-understanding` when the bundle is selected to teach a reader how
+the codebase is organized and how a representative behavior travels through
+it; use `security-evidence` (or another value containing `security` or
+`audit`) when the bundle is selected primarily for security witnesses. This
+explicit value takes precedence over the presence of optional security
+findings, so adding a finding to an understanding bundle must not turn its
+default UI into an audit queue.
+
 `graph.nodes` must contain at least one node. An empty graph cannot provide a
 meaningful exploration surface and should be reported as an export error
 rather than loaded as a successful snapshot.
@@ -159,6 +168,28 @@ finding should reference graph node and edge IDs where possible. A bundle with
 zero findings remains valid and must present a clean security state rather
 than failing to load. Findings without witness steps may remain as metadata,
 but are not exposed as traceable paths until a witness is available.
+
+### Code-understanding projection requirements
+
+For `analysis_projection: "code-understanding"`, the default guided surface
+must be useful without security findings. A producer should provide:
+
+- at least one `graph.entrypoints` record for a public API, request handler,
+  CLI command, job, event handler, or exported function, with `node_id` mapped
+  to a concrete graph node;
+- at least one `paths.requests` or `paths.values` path with two or more
+  distinct, source-backed nodes, a meaningful `kind` such as `call-path` or
+  `data-flow`, and explicit `source_node` / `sink_node` metadata when the
+  endpoints are known;
+- `graph.modules` and/or node `module` / `scope` metadata sufficient to group
+  the included symbols into real code areas; and
+- `coverage.limitations` that names omitted dependencies, unresolved calls,
+  or projection boundaries rather than implying that the bundle is complete.
+
+The featured path must not be a self-loop, a single-node witness, or a path
+whose nodes all lack file locations and source text. Security findings may be
+included as an optional overlay, but they must not replace the understanding
+paths or entrypoint metadata in the default projection.
 
 Top-level `mcp` records are an independent provenance layer and may be present
 even when `security.findings` is absent. Their `for`/`flow` value identifies the

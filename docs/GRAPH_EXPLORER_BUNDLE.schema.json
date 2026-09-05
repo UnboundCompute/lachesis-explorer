@@ -8,6 +8,7 @@
   "properties": {
     "format": { "const": "lachesis-explorer-bundle" },
     "schema_version": { "const": "2.0" },
+    "analysis_projection": { "type": "string", "description": "Exporter-selected projection, for example code-understanding or security-evidence. Explicit projection metadata takes precedence over optional findings." },
     "meta": { "$ref": "#/$defs/meta" },
     "graph": { "$ref": "#/$defs/graph" },
     "paths": { "$ref": "#/$defs/paths" },

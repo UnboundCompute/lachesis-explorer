@@ -184,6 +184,9 @@ keeps the security-oriented 1.0 export for compatibility, while `lachesis trace`
 the graph-first export. The 2.0 bundle should include:
 
 - repository, language, revision, line count and indexed-node count;
+- explicit `analysis_projection` metadata (`code-understanding` for the
+  comprehension-first surface or a security/audit value for witness-first
+  bundles);
 - graph nodes and edges;
 - files, modules and entrypoints where available;
 - optional value/request paths and security findings;
