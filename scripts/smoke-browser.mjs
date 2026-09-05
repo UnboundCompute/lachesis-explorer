@@ -55,6 +55,7 @@ try {
     assert.equal(hostedUrl.searchParams.get("flow_context"), "packet-decode");
     assert.equal(hostedUrl.searchParams.get("step_context"), "ipv4");
     assert.equal(hostedUrl.searchParams.get("domain"), "memory-safety");
+    assert.equal(await hostedPage.locator(".context-handoff-origin").textContent(), "／DESIGN MAP CONTEXT");
     assert.ok((await hostedPage.locator(".context-handoff-crumb").count()) >= 5, "handoff context was not visible");
     await hostedPage.close();
   }
