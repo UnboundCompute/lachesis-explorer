@@ -3,7 +3,12 @@ const BUNDLE_ID = /^b_[A-Za-z0-9_-]{8,128}$/;
 
 function serviceUrl(path: string) {
   const base = process.env.NEXT_PUBLIC_BUNDLE_API_URL?.trim().replace(/\/$/, "");
-  if (!base) return path;
+  if (!base) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Hosted repository builds are not configured for this deployment.");
+    }
+    return path;
+  }
   try {
     const parsed = new URL(base);
     if (parsed.username || parsed.password || parsed.search || parsed.hash) {
